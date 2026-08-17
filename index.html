@@ -4,17 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Mariners Score Bug</title>
-  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <main id="scorebug" class="scorebug is-loading" aria-live="polite" aria-label="Seattle Mariners game score">
     <section id="game-view" class="game-view">
       <div id="away-team" class="team">
+        <img id="away-logo" class="team__logo" alt="" hidden>
         <span id="away-abbr" class="team__abbr">SEA</span>
         <span id="away-score" class="team__score">–</span>
       </div>
 
       <div id="home-team" class="team">
+        <img id="home-logo" class="team__logo" alt="" hidden>
         <span id="home-abbr" class="team__abbr">OPP</span>
         <span id="home-score" class="team__score">–</span>
       </div>
@@ -65,6 +67,7 @@
     <section id="no-game" class="no-game" hidden>No Mariners game today</section>
   </main>
 
-  <script src="script.js?v=3"></script>
+  <script src="demo-data.js?v=1"></script>
+  <script src="script.js?v=5"></script>
 </body>
 </html>

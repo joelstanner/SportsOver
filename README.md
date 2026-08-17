@@ -1,6 +1,6 @@
 # Seattle Mariners OBS Score Bug
 
-A compact, dependency-free OBS Browser Source overlay powered by the public MLB Stats API. It automatically finds today's Mariners game (team ID `136`) and displays live scores, inning, outs, and occupied bases.
+A compact, dependency-free OBS Browser Source overlay powered by the public MLB Stats API. It automatically finds today's Mariners game (team ID `136`) and displays team logos, live scores, inning, outs, and occupied bases.
 
 ## Run and test locally
 
@@ -11,6 +11,10 @@ py -m http.server 8080
 ```
 
 Then visit [http://localhost:8080](http://localhost:8080) in a browser. Stop the server with `Ctrl+C`.
+
+### Demo a live game
+
+On an off day, open [http://localhost:8080/?demo=live](http://localhost:8080/?demo=live) to render a fixed, realistic live-game example. Demo mode does not call the MLB API or start a polling timer, so the display remains stable while developing and reviewing visual changes. Remove the `?demo=live` query string to return to the real schedule and live data.
 
 Opening `index.html` directly with a `file:///` URL may also work in some browsers, but browser security policies differ. If the MLB request is blocked or the overlay stays blank, use the local HTTP server command above. No backend or API key is needed.
 

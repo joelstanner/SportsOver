@@ -58,9 +58,9 @@ body {
 .team {
   display: flex;
   align-items: center;
-  gap: 9px;
-  min-width: 91px;
-  padding: 0 11px;
+  gap: 6px;
+  min-width: 103px;
+  padding: 0 8px;
   border-bottom: 3px solid transparent;
 }
 
@@ -75,6 +75,18 @@ body {
 }
 
 .team.is-seattle .team__abbr { color: #8de2dc; }
+
+.team__logo {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 50%;
+  background: rgba(247, 251, 255, 0.96);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.45);
+  object-fit: contain;
+}
 
 .team__score {
   margin-left: auto;

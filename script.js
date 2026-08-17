@@ -28,6 +28,8 @@ const els = {
   noGame: document.querySelector("#no-game"),
   awayTeam: document.querySelector("#away-team"),
   homeTeam: document.querySelector("#home-team"),
+  awayLogo: document.querySelector("#away-logo"),
+  homeLogo: document.querySelector("#home-logo"),
   awayAbbr: document.querySelector("#away-abbr"),
   homeAbbr: document.querySelector("#home-abbr"),
   awayScore: document.querySelector("#away-score"),
@@ -57,6 +59,21 @@ const els = {
 
 let activeGamePk = null;
 let refreshTimer = null;
+
+function renderDemoFromUrl() {
+  const demoName = new URLSearchParams(window.location.search).get("demo");
+  if (!demoName) return false;
+
+  const feed = window.MARINERS_DEMO_FEEDS?.[demoName];
+  if (!feed) {
+    console.warn(`[Mariners overlay] Unknown demo "${demoName}". Available demos: live.`);
+    return false;
+  }
+
+  console.info(`[Mariners overlay] Rendering the "${demoName}" demo.`);
+  renderGame(feed);
+  return true;
+}
 
 async function fetchJson(url) {
   const controller = new AbortController();
@@ -144,6 +161,8 @@ function renderGame(feed) {
   els.bug.classList.remove("is-hidden", "is-loading");
   els.awayAbbr.textContent = awayAbbr;
   els.homeAbbr.textContent = homeAbbr;
+  setTeamLogo(els.awayLogo, away);
+  setTeamLogo(els.homeLogo, home);
   els.awayTeam.classList.toggle("is-seattle", Number(away.id) === CONFIG.teamId);
   els.homeTeam.classList.toggle("is-seattle", Number(home.id) === CONFIG.teamId);
 
@@ -289,6 +308,23 @@ function setBase(element, occupied) {
   element.classList.toggle("is-occupied", occupied);
 }
 
+function setTeamLogo(element, team) {
+  const teamId = Number(team.id);
+  if (!Number.isInteger(teamId)) {
+    element.hidden = true;
+    element.removeAttribute("src");
+    return;
+  }
+
+  element.alt = `${team.name || team.teamName || "Team"} logo`;
+  element.hidden = false;
+  element.onerror = () => {
+    element.hidden = true;
+    console.warn(`[Mariners overlay] Logo unavailable for team ${teamId}.`);
+  };
+  element.src = `https://www.mlbstatic.com/team-logos/${teamId}.svg`;
+}
+
 function teamAbbreviation(team) {
   if (Number(team.id) === CONFIG.teamId) return "SEA";
   if (team.abbreviation) return String(team.abbreviation).toUpperCase();
@@ -324,4 +360,4 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-findTodaysGame();
+if (!renderDemoFromUrl()) findTodaysGame();
