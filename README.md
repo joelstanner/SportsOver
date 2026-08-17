@@ -16,6 +16,8 @@ Then visit [http://localhost:8080](http://localhost:8080) in a browser. Stop the
 
 On an off day, open [http://localhost:8080/?demo=live](http://localhost:8080/?demo=live) to render a fixed, realistic live-game example. Demo mode does not call the MLB API or start a polling timer, so the display remains stable while developing and reviewing visual changes. Remove the `?demo=live` query string to return to the real schedule and live data.
 
+For serverless testing in OBS, select `demo.html` as the Browser Source's local file. It redirects to the same fixed live-game example while preserving relative access to the overlay files.
+
 Opening `index.html` directly with a `file:///` URL may also work in some browsers, but browser security policies differ. If the MLB request is blocked or the overlay stays blank, use the local HTTP server command above. No backend or API key is needed.
 
 The MLB Stats API currently responds with permissive CORS headers, so requests from `http://localhost` work directly; the local server only serves these static files.
@@ -24,14 +26,14 @@ To diagnose a problem, open the browser developer console. Network/API failures 
 
 ## Add to OBS
 
-1. Keep the local server running.
-2. In OBS, add a **Browser** source.
-3. Clear **Local file** and enter `http://localhost:8080` as the URL.
+1. In OBS, add a **Browser** source.
+2. Enable **Local file** and select `index.html`.
+3. To preview a live game without a server, select `demo.html` instead. Switch back to `index.html` for real MLB data.
 4. Set the width to `472` and height to `100`.
 5. Leave custom CSS empty. The page is already transparent.
 6. Enable **Refresh browser when scene becomes active** if you want an immediate refresh on scene changes.
 
-If direct local-file loading works on your system, you may instead enable **Local file** and select `index.html`.
+If local-file loading is blocked by a browser or system policy, run the local server and use `http://localhost:8080` as the source URL instead.
 
 ## Recommended dimensions
 
