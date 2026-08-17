@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mariners Score Bug</title>
+  <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+  <main id="scorebug" class="scorebug is-loading" aria-live="polite" aria-label="Seattle Mariners game score">
+    <section id="game-view" class="game-view">
+      <div id="away-team" class="team">
+        <span id="away-abbr" class="team__abbr">SEA</span>
+        <span id="away-score" class="team__score">–</span>
+      </div>
+
+      <div id="home-team" class="team">
+        <span id="home-abbr" class="team__abbr">OPP</span>
+        <span id="home-score" class="team__score">–</span>
+      </div>
+
+      <div class="divider" aria-hidden="true"></div>
+
+      <div id="live-panel" class="live-panel">
+        <div id="live-details" class="live-details">
+          <span id="inning" class="inning">—</span>
+          <span id="count" class="count" aria-label="Ball-strike count">—</span>
+          <span id="outs" class="outs" aria-label="No outs">
+            <span class="out-dot"></span>
+            <span class="out-dot"></span>
+          </span>
+          <div class="diamond" aria-label="Bases empty">
+            <span id="base-second" class="base base--second"></span>
+            <span id="base-third" class="base base--third"></span>
+            <span id="base-first" class="base base--first"></span>
+          </div>
+        </div>
+        <section id="last-play" class="last-play" hidden>
+          <span class="last-play__label">Last play</span>
+          <span id="last-play-viewport" class="last-play__viewport">
+            <span id="last-play-text" class="last-play__text">—</span>
+          </span>
+        </section>
+      </div>
+
+      <div id="status-details" class="status-details" hidden>
+        <span id="matchup" class="matchup"></span>
+        <span id="status" class="status"></span>
+      </div>
+    </section>
+
+    <section id="player-details" class="player-details" hidden>
+      <div class="player-line player-line--pitcher">
+        <span class="player-role">P</span>
+        <span id="pitcher-name" class="player-name">—</span>
+        <span id="pitcher-stat" class="player-stat">— PITCHES</span>
+      </div>
+      <div class="player-line player-line--batter">
+        <span class="player-role">AB</span>
+        <span id="batter-name" class="player-name">—</span>
+        <span id="batter-stat" class="player-stat">— FOR —</span>
+      </div>
+    </section>
+
+    <section id="no-game" class="no-game" hidden>No Mariners game today</section>
+  </main>
+
+  <script src="script.js?v=3"></script>
+</body>
+</html>

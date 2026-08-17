@@ -1,0 +1,304 @@
+:root {
+  /* Quick customization: overall size, typography, spacing, and accent colors. */
+  --bug-width: 460px;
+  --bug-height: 62px;
+  --detail-row-height: 26px;
+  --font-size: 17px;
+  --horizontal-padding: 15px;
+  --navy: #071b2c;
+  --panel: rgba(9, 18, 28, 0.96);
+  --panel-2: rgba(18, 31, 43, 0.98);
+  --teal: #00a7a0;
+  --teal-soft: rgba(0, 167, 160, 0.23);
+  --white: #f7fbff;
+  --muted: #aebbc6;
+  --line: rgba(255, 255, 255, 0.14);
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+body {
+  padding: 6px;
+  color: var(--white);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  font-size: var(--font-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.scorebug {
+  width: var(--bug-width);
+  min-height: var(--bug-height);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: linear-gradient(110deg, var(--navy) 0 26%, var(--panel) 48%, var(--panel-2) 100%);
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.38), inset 0 1px rgba(255, 255, 255, 0.05);
+  transition: opacity 180ms ease;
+}
+
+.scorebug.is-loading { opacity: 0; }
+.scorebug.is-hidden { display: none; }
+
+.game-view {
+  display: flex;
+  align-items: stretch;
+  min-height: calc(var(--bug-height) - 2px);
+  padding: 0 var(--horizontal-padding);
+}
+
+.team {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 91px;
+  padding: 0 11px;
+  border-bottom: 3px solid transparent;
+}
+
+.team:first-child { padding-left: 0; }
+.team.is-seattle { border-bottom-color: var(--teal); background: linear-gradient(180deg, transparent, var(--teal-soft)); }
+
+.team__abbr {
+  color: var(--muted);
+  font-size: 0.84em;
+  font-weight: 750;
+  letter-spacing: 0.075em;
+}
+
+.team.is-seattle .team__abbr { color: #8de2dc; }
+
+.team__score {
+  margin-left: auto;
+  color: var(--white);
+  font-size: 1.3em;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.divider {
+  width: 1px;
+  height: 28px;
+  margin: auto 13px auto 3px;
+  background: var(--line);
+}
+
+.live-details {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 38px;
+  min-width: 0;
+}
+
+.live-panel {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.inning,
+.count,
+.status {
+  white-space: nowrap;
+  font-size: 0.76em;
+  font-weight: 750;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.inning { min-width: 36px; color: var(--white); }
+.count {
+  min-width: 25px;
+  color: var(--white);
+  text-align: center;
+}
+.outs {
+  display: flex;
+  min-width: 26px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.out-dot {
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid #788691;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.out-dot.is-recorded {
+  border-color: #ffe173;
+  background: #f5c842;
+  box-shadow: 0 0 5px rgba(245, 200, 66, 0.42);
+}
+
+.diamond {
+  position: relative;
+  width: 39px;
+  height: 31px;
+  flex: 0 0 39px;
+}
+
+.base {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid #788691;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.04);
+  transform: rotate(45deg);
+}
+
+.base.is-occupied {
+  border-color: #d9fffb;
+  background: #78ddd6;
+  box-shadow: 0 0 5px rgba(120, 221, 214, 0.45);
+}
+
+.base--second { top: 1px; left: 15px; }
+.base--third { top: 14px; left: 2px; }
+.base--first { top: 14px; right: 2px; }
+
+.status-details {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.status-details[hidden],
+.live-panel[hidden],
+.live-details[hidden],
+.player-details[hidden],
+.last-play[hidden],
+.game-view[hidden],
+.no-game[hidden] { display: none; }
+
+.matchup {
+  overflow: hidden;
+  color: var(--white);
+  font-size: 0.82em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status { color: #9bded9; text-align: right; }
+
+.player-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: var(--detail-row-height);
+  border-top: 1px solid var(--line);
+  background: rgba(2, 10, 17, 0.42);
+}
+
+.player-line {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 0 11px;
+  font-size: 0.66em;
+  line-height: 1;
+}
+
+.player-line--batter { border-left: 1px solid var(--line); }
+
+.player-role {
+  flex: 0 0 auto;
+  color: #83d9d3;
+  font-size: 0.9em;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.player-name {
+  overflow: hidden;
+  color: var(--white);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-stat {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.88em;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+}
+
+.last-play {
+  display: flex;
+  height: 20px;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  border-top: 1px solid var(--line);
+  font-size: 0.56em;
+  line-height: 1;
+}
+
+.last-play__label {
+  flex: 0 0 auto;
+  color: #83d9d3;
+  font-size: 0.9em;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.last-play__text {
+  display: inline-block;
+  color: var(--muted);
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.last-play__viewport {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.last-play.is-scrolling .last-play__text {
+  padding-left: 100%;
+  animation: last-play-scroll var(--scroll-duration, 14s) linear infinite;
+}
+
+@keyframes last-play-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+
+.no-game {
+  min-height: calc(var(--bug-height) - 2px);
+  padding: 0 var(--horizontal-padding);
+  color: var(--muted);
+  font-size: 0.78em;
+  font-weight: 650;
+  letter-spacing: 0.035em;
+  line-height: calc(var(--bug-height) - 2px);
+}
