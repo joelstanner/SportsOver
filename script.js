@@ -66,7 +66,7 @@ function renderDemoFromUrl() {
 
   const feed = window.MARINERS_DEMO_FEEDS?.[demoName];
   if (!feed) {
-    console.warn(`[Mariners overlay] Unknown demo "${demoName}". Available demos: live.`);
+    console.warn(`[Mariners overlay] Unknown demo "${demoName}". Available demos: pregame, live.`);
     return false;
   }
 
@@ -103,7 +103,7 @@ function chooseGame(games) {
 
 async function findTodaysGame() {
   try {
-    const schedule = await fetchJson(SCHEDULE_URL);
+    const schedule = await fetchJson(`${SCHEDULE_URL}&date=${formatLocalDate(new Date())}`);
     const games = schedule.dates?.flatMap(date => date.games ?? []) ?? [];
     const game = chooseGame(games);
     if (!game?.gamePk) {
@@ -336,7 +336,18 @@ function formatLocalTime(isoDate) {
   if (!isoDate) return "";
   const date = new Date(isoDate);
   if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(date);
+  return new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  }).format(date);
+}
+
+function formatLocalDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function showElement(element, visible) {

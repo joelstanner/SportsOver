@@ -3,6 +3,19 @@
 // Static game data for visual development on off days. This intentionally
 // mirrors only the parts of the MLB live-feed response that the overlay uses.
 window.MARINERS_DEMO_FEEDS = Object.freeze({
+  pregame: {
+    gameData: {
+      datetime: { dateTime: "2026-08-19T01:40:00Z" },
+      status: {
+        abstractGameState: "Preview",
+        detailedState: "Scheduled",
+      },
+      teams: {
+        away: { id: 136, name: "Seattle Mariners", abbreviation: "SEA" },
+        home: { id: 133, name: "Oakland Athletics", abbreviation: "ATH" },
+      },
+    },
+  },
   live: {
     gameData: {
       status: {

@@ -14,7 +14,7 @@ Then visit [http://localhost:8080](http://localhost:8080) in a browser. Stop the
 
 ### Demo a live game
 
-On an off day, open [http://localhost:8080/?demo=live](http://localhost:8080/?demo=live) to render a fixed, realistic live-game example. Demo mode does not call the MLB API or start a polling timer, so the display remains stable while developing and reviewing visual changes. Remove the `?demo=live` query string to return to the real schedule and live data.
+On an off day, open [http://localhost:8080/?demo=live](http://localhost:8080/?demo=live) for a fixed live-game example or [http://localhost:8080/?demo=pregame](http://localhost:8080/?demo=pregame) for a scheduled-game example. Demo mode does not call the MLB API or start a polling timer, so the display remains stable while developing and reviewing visual changes. Remove the `?demo=` query string to return to the real schedule and live data.
 
 For serverless testing in OBS, select `demo.html` as the Browser Source's local file. It redirects to the same fixed live-game example while preserving relative access to the overlay files.
 
@@ -58,9 +58,10 @@ In `script.js`, change `showNoGameMessage` to `false` to hide the source complet
 ## Display behavior
 
 - **Live:** scores, top/bottom inning indicator, `MID` and `END` labels between innings, inning, ball-strike count, yellow-dot out indicators, base occupancy, current pitcher with pitch count, current batter with game hits/at-bats, and MLB's most recent completed-play description
-- **Pregame:** matchup and scheduled time in the computer's local time zone
+- **Pregame:** matchup and scheduled time with the computer's local time zone abbreviation
 - **Final:** final score and `FINAL`
 - **Delayed/postponed/suspended:** MLB's detailed status
 - **No game:** a subtle message, or fully hidden via the configuration noted above
 
 The overlay rechecks the schedule every five minutes on off days and keeps the last good display through temporary network failures.
+Schedule lookups explicitly use the computer's current local calendar date, including after the date rolls over at midnight.
