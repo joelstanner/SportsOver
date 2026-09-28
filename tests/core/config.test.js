@@ -17,10 +17,10 @@ function memoryStorage() {
   };
 }
 
-test("defaults to Mariners, Seahawks, Kraken, then Sounders", () => {
+test("defaults to Mariners, Seahawks, Kraken, Sounders, then Pistons", () => {
   const config = configApi.loadConfig(memoryStorage());
-  assert.deepEqual(config.favorites.map(favorite => favorite.teamKey), ["mlb:136", "nfl:sea", "nhl:sea", "mls:9726"]);
-  assert.deepEqual(configApi.enabledTeams(config).map(team => team.name), ["Seattle Mariners", "Seattle Seahawks", "Seattle Kraken", "Seattle Sounders FC"]);
+  assert.deepEqual(config.favorites.map(favorite => favorite.teamKey), ["mlb:136", "nfl:sea", "nhl:sea", "mls:9726", "nba:det"]);
+  assert.deepEqual(configApi.enabledTeams(config).map(team => team.name), ["Seattle Mariners", "Seattle Seahawks", "Seattle Kraken", "Seattle Sounders FC", "Detroit Pistons"]);
 });
 
 test("normalizes favorite order and behavior settings", () => {
@@ -47,7 +47,13 @@ test("normalizes favorite order and behavior settings", () => {
 test("migrates older saved settings to include new default teams", () => {
   const storage = memoryStorage();
   storage.setItem(configApi.STORAGE_KEY, JSON.stringify({ version: 1, favorites: [{ teamKey: "nfl:sea", enabled: true }] }));
-  assert.deepEqual(configApi.loadConfig(storage).favorites.map(favorite => favorite.teamKey), ["nfl:sea", "mlb:136", "nhl:sea", "mls:9726"]);
+  assert.deepEqual(configApi.loadConfig(storage).favorites.map(favorite => favorite.teamKey), ["nfl:sea", "nhl:sea", "mls:9726", "nba:det"]);
+});
+
+test("adds only the Pistons when migrating version two settings", () => {
+  const storage = memoryStorage();
+  storage.setItem(configApi.STORAGE_KEY, JSON.stringify({ version: 2, favorites: [{ teamKey: "mls:9726", enabled: true }] }));
+  assert.deepEqual(configApi.loadConfig(storage).favorites.map(favorite => favorite.teamKey), ["mls:9726", "nba:det"]);
 });
 
 test("saves, loads, and resets configuration", () => {
@@ -55,5 +61,5 @@ test("saves, loads, and resets configuration", () => {
   configApi.saveConfig({ favorites: [{ teamKey: "nfl:sea", enabled: true }], rotationSeconds: 45 }, storage);
   assert.deepEqual(configApi.loadConfig(storage).favorites, [{ teamKey: "nfl:sea", enabled: true }]);
   assert.equal(configApi.loadConfig(storage).rotationSeconds, 45);
-  assert.deepEqual(configApi.resetConfig(storage).favorites.map(favorite => favorite.teamKey), ["mlb:136", "nfl:sea", "nhl:sea", "mls:9726"]);
+  assert.deepEqual(configApi.resetConfig(storage).favorites.map(favorite => favorite.teamKey), ["mlb:136", "nfl:sea", "nhl:sea", "mls:9726", "nba:det"]);
 });

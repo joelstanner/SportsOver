@@ -7,14 +7,16 @@
     Object.freeze({ key: "nfl:sea", sport: "football", league: "NFL", teamId: "SEA", name: "Seattle Seahawks", abbreviation: "SEA", provider: "espn-nfl", providerStatus: "live" }),
     Object.freeze({ key: "nhl:sea", sport: "hockey", league: "NHL", teamId: "SEA", name: "Seattle Kraken", abbreviation: "SEA", provider: "espn-nhl", providerStatus: "live" }),
     Object.freeze({ key: "mls:9726", sport: "soccer", league: "MLS", teamId: 9726, name: "Seattle Sounders FC", abbreviation: "SEA", provider: "espn-mls", providerStatus: "live" }),
+    Object.freeze({ key: "nba:det", sport: "basketball", league: "NBA", teamId: "DET", name: "Detroit Pistons", abbreviation: "DET", provider: "espn-nba", providerStatus: "live" }),
   ]);
   const DEFAULT_CONFIG = Object.freeze({
-    version: 2,
+    version: 3,
     favorites: Object.freeze([
       Object.freeze({ teamKey: "mlb:136", enabled: true }),
       Object.freeze({ teamKey: "nfl:sea", enabled: true }),
       Object.freeze({ teamKey: "nhl:sea", enabled: true }),
       Object.freeze({ teamKey: "mls:9726", enabled: true }),
+      Object.freeze({ teamKey: "nba:det", enabled: true }),
     ]),
     rotationSeconds: 30,
     fallbackMode: "up-next",
@@ -38,7 +40,7 @@
 
     const rotationSeconds = Number(source.rotationSeconds);
     return {
-      version: 2,
+      version: 3,
       favorites,
       rotationSeconds: Number.isFinite(rotationSeconds)
         ? Math.min(300, Math.max(10, Math.round(rotationSeconds)))
@@ -76,13 +78,15 @@
   }
 
   function migrateConfig(source) {
-    if (Number(source?.version || 1) >= 2) return source;
+    const version = Number(source?.version || 1);
+    if (version >= 3) return source;
     const favorites = Array.isArray(source?.favorites) ? [...source.favorites] : [];
     const existing = new Set(favorites.map(favorite => String(favorite?.teamKey || "").toLowerCase()));
-    DEFAULT_CONFIG.favorites.forEach(favorite => {
+    const additions = version < 2 ? ["nhl:sea", "mls:9726", "nba:det"] : ["nba:det"];
+    DEFAULT_CONFIG.favorites.filter(favorite => additions.includes(favorite.teamKey)).forEach(favorite => {
       if (!existing.has(favorite.teamKey)) favorites.push(favorite);
     });
-    return { ...source, version: 2, favorites };
+    return { ...source, version: 3, favorites };
   }
 
   function enabledTeams(config) {

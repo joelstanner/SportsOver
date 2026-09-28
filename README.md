@@ -1,6 +1,6 @@
 # Universal Sports OBS Overlay
 
-A compact, dependency-free OBS Browser Source overlay with sport-specific layouts. The MLB provider finds the current Mariners game, while ESPN adapters find the current Seahawks, Kraken, and Sounders games. All four normalize live data into the same event lifecycle before their sport-specific layouts render it.
+A compact, dependency-free OBS Browser Source overlay with sport-specific layouts. The MLB provider finds the current Mariners game, while ESPN adapters find the current Seahawks, Kraken, Sounders, and Pistons games. All five normalize live data into the same event lifecycle before their sport-specific layouts render it.
 
 The current refactor preserves the production Mariners appearance and behavior while separating shared event state, MLB data normalization, baseball rendering, and polling orchestration. Future sports can use different layouts without forcing their details into baseball-shaped UI.
 
@@ -14,7 +14,7 @@ py -m http.server 8080
 
 Then visit [http://localhost:8080](http://localhost:8080) in a browser. Stop the server with `Ctrl+C`.
 
-Open [http://localhost:8080/admin/](http://localhost:8080/admin/) for the local control room. Its Settings tab stores favorite-team order and banner behavior in this browser. Mariners, Seahawks, Kraken, and Sounders are the defaults. The Live tab embeds the real provider-backed baseball, football, hockey, or soccer banner. The Demo Lab tab previews every supported lifecycle and orchestration state without calling live providers or changing saved settings.
+Open [http://localhost:8080/admin/](http://localhost:8080/admin/) for the local control room. Its Settings tab stores favorite-team order and banner behavior in this browser. Mariners, Seahawks, Kraken, Sounders, and Pistons are the defaults. The Live tab embeds the real provider-backed baseball, football, hockey, soccer, or basketball banner. The Demo Lab tab previews every supported lifecycle and orchestration state without calling live providers or changing saved settings.
 
 ### Demo a live game
 
@@ -103,7 +103,13 @@ sports-obs-overlay/
 │   │   ├── style.css
 │   │   └── providers/
 │   │       └── espn.js
-│   └── soccer/
+│   ├── soccer/
+│   │   ├── demo-data.js
+│   │   ├── layout.js
+│   │   ├── style.css
+│   │   └── providers/
+│   │       └── espn.js
+│   └── basketball/
 │       ├── demo-data.js
 │       ├── layout.js
 │       ├── style.css
@@ -119,7 +125,9 @@ sports-obs-overlay/
         │   └── demo-data.test.js
         ├── hockey/
         │   └── espn-provider.test.js
-        └── soccer/
+        ├── soccer/
+        │   └── espn-provider.test.js
+        └── basketball/
             └── espn-provider.test.js
 ```
 
@@ -137,6 +145,13 @@ sports-obs-overlay/
 - `sports/football/providers/espn.js`: unauthenticated ESPN schedule and game-summary adapter for live Seahawks data. ESPN does not publish a compatibility contract for this feed, so normalization tests protect the overlay and the adapter remains replaceable.
 - `sports/hockey/providers/espn.js`: free, unauthenticated ESPN schedule and game-summary adapter for live Kraken data, including scores, period, clock, shots, power-play totals, scoring plays, records, and team logos.
 - `sports/soccer/providers/espn.js`: free, unauthenticated ESPN MLS schedule and match-summary adapter for live Sounders data, including scores, half, clock, possession, shots on target, match events, records, and team logos.
+- `sports/basketball/providers/espn.js`: free, unauthenticated ESPN schedule and game-summary adapter for live Pistons data, including scores, quarter, clock, field-goal percentage, rebounds, scoring plays, records, and team logos.
+
+## Provider selection policy
+
+For every new sport, evaluate a free league-owned feed first. Verify schedule coverage, live details, logos, authentication requirements, browser CORS compatibility, and reliability from a static OBS browser source. Use the league feed when it passes those checks; otherwise use the best free browser-compatible fallback and document why. ESPN is a fallback, not the default assumption.
+
+The NBA-owned live-data CDN was evaluated for basketball. It returned HTTP 403 and restricted browser CORS access to `nba.com`, so this static overlay uses the ESPN adapter instead of adding a proxy dependency.
 
 Add future sports as sibling folders under `sports/`, using sport names for folders and league names for providers. For example, an NFL provider belongs at `sports/football/providers/nfl.js`.
 
@@ -145,5 +160,5 @@ The shared lifecycle is `pregame`, `live`, `interrupted`, and `final`. No-game a
 Run the dependency-free normalization tests with:
 
 ```powershell
-node --test tests/core/*.test.js tests/sports/baseball/*.test.js tests/sports/football/*.test.js
+node --test tests/core/*.test.js tests/sports/baseball/*.test.js tests/sports/football/*.test.js tests/sports/hockey/*.test.js tests/sports/soccer/*.test.js tests/sports/basketball/*.test.js
 ```
