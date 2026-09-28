@@ -5,12 +5,14 @@
   const TEAM_CATALOG = Object.freeze([
     Object.freeze({ key: "mlb:136", sport: "baseball", league: "MLB", teamId: 136, name: "Seattle Mariners", abbreviation: "SEA", provider: "mlb", providerStatus: "live" }),
     Object.freeze({ key: "nfl:sea", sport: "football", league: "NFL", teamId: "SEA", name: "Seattle Seahawks", abbreviation: "SEA", provider: "espn-nfl", providerStatus: "live" }),
+    Object.freeze({ key: "nhl:sea", sport: "hockey", league: "NHL", teamId: "SEA", name: "Seattle Kraken", abbreviation: "SEA", provider: "espn-nhl", providerStatus: "live" }),
   ]);
   const DEFAULT_CONFIG = Object.freeze({
     version: 1,
     favorites: Object.freeze([
       Object.freeze({ teamKey: "mlb:136", enabled: true }),
       Object.freeze({ teamKey: "nfl:sea", enabled: true }),
+      Object.freeze({ teamKey: "nhl:sea", enabled: true }),
     ]),
     rotationSeconds: 30,
     fallbackMode: "up-next",

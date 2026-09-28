@@ -17,10 +17,10 @@ function memoryStorage() {
   };
 }
 
-test("defaults to Mariners then Seahawks", () => {
+test("defaults to Mariners, Seahawks, then Kraken", () => {
   const config = configApi.loadConfig(memoryStorage());
-  assert.deepEqual(config.favorites.map(favorite => favorite.teamKey), ["mlb:136", "nfl:sea"]);
-  assert.deepEqual(configApi.enabledTeams(config).map(team => team.name), ["Seattle Mariners", "Seattle Seahawks"]);
+  assert.deepEqual(config.favorites.map(favorite => favorite.teamKey), ["mlb:136", "nfl:sea", "nhl:sea"]);
+  assert.deepEqual(configApi.enabledTeams(config).map(team => team.name), ["Seattle Mariners", "Seattle Seahawks", "Seattle Kraken"]);
 });
 
 test("normalizes favorite order and behavior settings", () => {
@@ -49,5 +49,5 @@ test("saves, loads, and resets configuration", () => {
   configApi.saveConfig({ favorites: [{ teamKey: "nfl:sea", enabled: true }], rotationSeconds: 45 }, storage);
   assert.deepEqual(configApi.loadConfig(storage).favorites, [{ teamKey: "nfl:sea", enabled: true }]);
   assert.equal(configApi.loadConfig(storage).rotationSeconds, 45);
-  assert.deepEqual(configApi.resetConfig(storage).favorites.map(favorite => favorite.teamKey), ["mlb:136", "nfl:sea"]);
+  assert.deepEqual(configApi.resetConfig(storage).favorites.map(favorite => favorite.teamKey), ["mlb:136", "nfl:sea", "nhl:sea"]);
 });

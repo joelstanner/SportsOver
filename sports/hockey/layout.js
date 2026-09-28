@@ -1,0 +1,131 @@
+"use strict";
+
+(function initializeHockeyLayout(global) {
+  const { EVENT_STATES } = global.SportsOverlay.model;
+
+  function createLayout(root = document) {
+    const mount = root.querySelector("#sports-overlay");
+    if (!mount) throw new Error("Hockey layout requires the sports overlay mount point.");
+    mount.className = "hockey-scorebug is-loading";
+    mount.setAttribute("aria-label", "Hockey game score");
+    mount.innerHTML = `
+      <section class="hockey-main">
+        <div class="hockey-team">
+          <span id="hockey-away-mark" class="hockey-mark"><img alt="" hidden><span>AWY</span></span>
+          <div><strong id="hockey-away-abbr">AWY</strong><span id="hockey-away-record" class="hockey-record"></span></div>
+          <strong id="hockey-away-score" class="hockey-score">—</strong>
+        </div>
+        <div class="hockey-center"><strong id="hockey-clock">—</strong><span id="hockey-period">—</span></div>
+        <div class="hockey-team hockey-team--home">
+          <strong id="hockey-home-score" class="hockey-score">—</strong>
+          <div><strong id="hockey-home-abbr">HME</strong><span id="hockey-home-record" class="hockey-record"></span></div>
+          <span id="hockey-home-mark" class="hockey-mark"><img alt="" hidden><span>HME</span></span>
+        </div>
+      </section>
+      <section id="hockey-status" class="hockey-status" hidden><span id="hockey-matchup"></span><strong id="hockey-status-text"></strong></section>
+      <section id="hockey-live-detail" class="hockey-live-detail" hidden>
+        <div><span>SHOTS</span><strong id="hockey-shots"></strong></div>
+        <div><span>POWER PLAY</span><strong id="hockey-power-play"></strong></div>
+      </section>
+      <section id="hockey-last-play" class="hockey-last-play" hidden></section>`;
+
+    const find = selector => mount.querySelector(selector);
+    const els = {
+      bug: mount,
+      awayMark: find("#hockey-away-mark"), homeMark: find("#hockey-home-mark"),
+      awayAbbr: find("#hockey-away-abbr"), homeAbbr: find("#hockey-home-abbr"),
+      awayRecord: find("#hockey-away-record"), homeRecord: find("#hockey-home-record"),
+      awayScore: find("#hockey-away-score"), homeScore: find("#hockey-home-score"),
+      clock: find("#hockey-clock"), period: find("#hockey-period"),
+      status: find("#hockey-status"), matchup: find("#hockey-matchup"), statusText: find("#hockey-status-text"),
+      detail: find("#hockey-live-detail"), shots: find("#hockey-shots"), powerPlay: find("#hockey-power-play"),
+      lastPlay: find("#hockey-last-play"),
+    };
+
+    function render(event) {
+      const { away, home } = event.teams;
+      els.bug.classList.remove("is-loading", "is-hidden");
+      els.bug.dataset.sport = event.sport;
+      els.bug.dataset.state = event.state;
+      els.bug.setAttribute("aria-label", `${away.name} at ${home.name} ${event.league} game`);
+      setTeam(els.awayMark, els.awayAbbr, els.awayRecord, away);
+      setTeam(els.homeMark, els.homeAbbr, els.homeRecord, home);
+      const showScore = event.state !== EVENT_STATES.PREGAME;
+      els.awayScore.textContent = showScore ? away.score ?? 0 : "";
+      els.homeScore.textContent = showScore ? home.score ?? 0 : "";
+      hide(els.status); hide(els.detail); hide(els.lastPlay);
+
+      if (event.state === EVENT_STATES.LIVE) {
+        const details = event.details;
+        els.clock.textContent = details.clock || "—";
+        els.period.textContent = details.period || "—";
+        els.shots.textContent = `${away.abbreviation} ${details.awayShots ?? "—"} · ${home.abbreviation} ${details.homeShots ?? "—"}`;
+        els.powerPlay.textContent = `${away.abbreviation} ${details.awayPowerPlay || "—"} · ${home.abbreviation} ${details.homePowerPlay || "—"}`;
+        show(els.detail);
+        if (details.lastPlay) {
+          els.lastPlay.textContent = details.lastPlay;
+          show(els.lastPlay);
+        }
+      } else {
+        els.clock.textContent = "";
+        els.period.textContent = "";
+        els.matchup.textContent = `${away.abbreviation} at ${home.abbreviation}`;
+        els.statusText.textContent = statusText(event);
+        show(els.status);
+      }
+      return event.state;
+    }
+
+    function renderNoEvent(message = "No selected hockey game", visible = true) {
+      els.bug.classList.remove("is-loading");
+      els.bug.classList.toggle("is-hidden", !visible);
+      if (!visible) return;
+      els.clock.textContent = "";
+      els.period.textContent = "";
+      els.matchup.textContent = "Hockey";
+      els.statusText.textContent = message;
+      hide(els.detail); hide(els.lastPlay); show(els.status);
+    }
+
+    function handleError(message, error) {
+      console.warn(`[Sports overlay] ${message}. Keeping the last good display.`, error);
+      els.bug.classList.remove("is-loading");
+    }
+
+    return Object.freeze({ render, renderNoEvent, handleError });
+  }
+
+  function setTeam(mark, abbreviation, record, team) {
+    const logo = mark.querySelector("img");
+    const fallback = mark.querySelector("span");
+    fallback.textContent = team.abbreviation;
+    fallback.hidden = Boolean(team.logoUrl);
+    logo.hidden = !team.logoUrl;
+    logo.alt = team.logoUrl ? `${team.name} logo` : "";
+    if (team.logoUrl) logo.src = team.logoUrl;
+    else logo.removeAttribute("src");
+    logo.onerror = () => { logo.hidden = true; fallback.hidden = false; };
+    abbreviation.textContent = team.abbreviation;
+    record.textContent = team.record || "";
+  }
+
+  function statusText(event) {
+    if (event.state === EVENT_STATES.FINAL) return "FINAL";
+    if (event.state === EVENT_STATES.INTERRUPTED) return event.detailedState;
+    return formatStart(event.startTime) || event.detailedState;
+  }
+
+  function formatStart(isoDate) {
+    if (!isoDate) return "";
+    const date = new Date(isoDate);
+    if (Number.isNaN(date.getTime())) return "";
+    return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(date);
+  }
+
+  function show(element) { element.hidden = false; }
+  function hide(element) { element.hidden = true; }
+
+  const layout = Object.freeze({ createLayout });
+  global.SportsOverlay.hockeyLayout = layout;
+  global.SportsOverlay.registry?.registerLayout("hockey", layout);
+})(typeof window === "undefined" ? globalThis : window);
