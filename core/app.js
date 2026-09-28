@@ -8,24 +8,27 @@ const CONFIG = Object.freeze({
   requestTimeoutMs: 8_000,
 });
 
-const mlb = window.SportsOverlay.registry.getProvider("mlb");
-const provider = mlb.createClient(CONFIG);
-const layout = window.SportsOverlay.registry.getLayout("baseball").createLayout();
+const query = new URLSearchParams(window.location.search);
+const selectedSport = query.get("sport") || "baseball";
+const layout = window.SportsOverlay.registry.getLayout(selectedSport).createLayout();
+const mlb = selectedSport === "baseball" ? window.SportsOverlay.registry.getProvider("mlb") : null;
+const provider = mlb?.createClient(CONFIG) ?? null;
 let activeGameId = null;
 let refreshTimer = null;
 
 function renderDemoFromUrl() {
-  const demoName = new URLSearchParams(window.location.search).get("demo");
+  const demoName = query.get("demo");
   if (!demoName) return false;
 
-  const feed = window.MARINERS_DEMO_FEEDS?.[demoName];
-  if (!feed) {
-    console.warn(`[Sports overlay] Unknown demo "${demoName}". Available demos: pregame, live.`);
+  const event = window.SportsOverlay.registry.getDemo(selectedSport, demoName);
+  if (!event) {
+    const available = window.SportsOverlay.registry.listDemos(selectedSport).join(", ");
+    console.warn(`[Sports overlay] Unknown ${selectedSport} demo "${demoName}". Available demos: ${available}.`);
     return false;
   }
 
-  console.info(`[Sports overlay] Rendering the "${demoName}" MLB demo.`);
-  layout.render(mlb.normalizeFeed(feed, CONFIG.teamId, `demo-${demoName}`));
+  console.info(`[Sports overlay] Rendering the "${demoName}" ${selectedSport} demo.`);
+  layout.render(event);
   return true;
 }
 
@@ -81,4 +84,10 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-if (!renderDemoFromUrl()) findTodaysGame();
+if (!renderDemoFromUrl()) {
+  if (selectedSport === "baseball") {
+    findTodaysGame();
+  } else {
+    layout.renderNoEvent(`No live ${selectedSport} provider configured`, true);
+  }
+}

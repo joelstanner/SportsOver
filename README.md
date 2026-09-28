@@ -1,6 +1,6 @@
 # Universal Sports OBS Overlay
 
-A compact, dependency-free OBS Browser Source overlay with sport-specific layouts. MLB is the first provider and baseball is the reference layout: it automatically finds today's Mariners game (team ID `136`) and displays team logos, live scores, inning, outs, occupied bases, current players, and the latest completed play.
+A compact, dependency-free OBS Browser Source overlay with sport-specific layouts. MLB is the first live provider and baseball is the reference layout: it automatically finds today's Mariners game (team ID `136`) and displays team logos, live scores, inning, outs, occupied bases, current players, and the latest completed play. A fixed-data football module proves that a second sport can use the same lifecycle and registry with its own presentation.
 
 The current refactor preserves the production Mariners appearance and behavior while separating shared event state, MLB data normalization, baseball rendering, and polling orchestration. Future sports can use different layouts without forcing their details into baseball-shaped UI.
 
@@ -16,7 +16,7 @@ Then visit [http://localhost:8080](http://localhost:8080) in a browser. Stop the
 
 ### Demo a live game
 
-On an off day, open [http://localhost:8080/?demo=live](http://localhost:8080/?demo=live) for a fixed live-game example or [http://localhost:8080/?demo=pregame](http://localhost:8080/?demo=pregame) for a scheduled-game example. Demo mode does not call the MLB API or start a polling timer, so the display remains stable while developing and reviewing visual changes. Remove the `?demo=` query string to return to the real schedule and live data.
+On an off day, open [http://localhost:8080/?demo=live](http://localhost:8080/?demo=live) for a fixed baseball example. Add `sport=football` for the football layout, such as [http://localhost:8080/?sport=football&demo=live](http://localhost:8080/?sport=football&demo=live). Both sports provide `pregame`, `live`, `interrupted`, and `final` demos. Demo mode does not call a live API or start a polling timer, so the display remains stable while developing and reviewing visual changes. Remove the query string to return to real MLB data.
 
 For serverless testing in OBS, select `demo.html` as the Browser Source's local file. It redirects to the same fixed live-game example while preserving relative access to the overlay files.
 
@@ -78,16 +78,24 @@ sports-obs-overlay/
 │   ├── event-model.js
 │   └── registry.js
 ├── sports/
-│   └── baseball/
+│   ├── baseball/
+│   │   ├── demo-data.js
+│   │   ├── layout.js
+│   │   ├── style.css
+│   │   └── providers/
+│   │       └── mlb.js
+│   └── football/
 │       ├── demo-data.js
 │       ├── layout.js
-│       ├── style.css
-│       └── providers/
-│           └── mlb.js
+│       └── style.css
 └── tests/
+    ├── core/
+    │   └── registry.test.js
     └── sports/
-        └── baseball/
-            └── mlb-provider.test.js
+        ├── baseball/
+        │   └── mlb-provider.test.js
+        └── football/
+            └── demo-data.test.js
 ```
 
 - `core/event-model.js`: shared event envelope and lifecycle states used by selection and rotation.
@@ -97,6 +105,9 @@ sports-obs-overlay/
 - `sports/baseball/layout.js`: creates baseball markup and renders scores, innings, counts, outs, bases, players, and last play.
 - `sports/baseball/style.css`: baseball-specific presentation.
 - `sports/baseball/demo-data.js`: stable MLB fixtures for visual development.
+- `sports/football/layout.js`: creates football markup and renders scores, quarter, clock, down and distance, field position, possession, and last play.
+- `sports/football/style.css`: football-specific presentation.
+- `sports/football/demo-data.js`: fixed NFL fixtures covering every shared lifecycle state.
 
 Add future sports as sibling folders under `sports/`, using sport names for folders and league names for providers. For example, an NFL provider belongs at `sports/football/providers/nfl.js`.
 
@@ -105,5 +116,5 @@ The shared lifecycle is `pregame`, `live`, `interrupted`, and `final`. No-game a
 Run the dependency-free normalization tests with:
 
 ```powershell
-node --test tests/sports/baseball/*.test.js
+node --test tests/core/*.test.js tests/sports/baseball/*.test.js tests/sports/football/*.test.js
 ```

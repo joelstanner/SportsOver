@@ -81,3 +81,9 @@ window.MARINERS_DEMO_FEEDS = Object.freeze({
     },
   },
 });
+
+Object.entries(window.MARINERS_DEMO_FEEDS).forEach(([name, feed]) => {
+  window.SportsOverlay.registry.registerDemo("baseball", name, () =>
+    window.SportsOverlay.mlb.normalizeFeed(feed, 136, `demo-${name}`)
+  );
+});
