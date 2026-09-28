@@ -1,6 +1,8 @@
-# Seattle Mariners OBS Score Bug
+# Universal Sports OBS Overlay
 
-A compact, dependency-free OBS Browser Source overlay powered by the public MLB Stats API. It automatically finds today's Mariners game (team ID `136`) and displays team logos, live scores, inning, outs, and occupied bases.
+A compact, dependency-free OBS Browser Source overlay with sport-specific layouts. MLB is the first provider and baseball is the reference layout: it automatically finds today's Mariners game (team ID `136`) and displays team logos, live scores, inning, outs, occupied bases, current players, and the latest completed play.
+
+The current refactor preserves the production Mariners appearance and behavior while separating shared event state, MLB data normalization, baseball rendering, and polling orchestration. Future sports can use different layouts without forcing their details into baseball-shaped UI.
 
 ## Run and test locally
 
@@ -45,7 +47,7 @@ At a 2560 × 1440 canvas, this occupies about 18% of the screen width and remain
 
 ## Customization
 
-The main controls are at the top of `style.css` in the `:root` block:
+The main controls are at the top of `sports/baseball/style.css` in the `:root` block:
 
 - `--bug-width`, `--bug-height`, and `--detail-row-height`: overall overlay sizes
 - `--font-size`: base text size
@@ -53,7 +55,7 @@ The main controls are at the top of `style.css` in the `:root` block:
 - `--navy`, `--panel`, and `--panel-2`: background styling
 - `--teal` and `--teal-soft`: Seattle accent styling
 
-In `script.js`, change `showNoGameMessage` to `false` to hide the source completely on days with no Mariners game. The polling interval is `pollIntervalMs` (12 seconds by default).
+In `core/app.js`, change `showNoGameMessage` to `false` to hide the source completely on days with no Mariners game. The polling interval is `pollIntervalMs` (12 seconds by default).
 
 ## Display behavior
 
@@ -65,3 +67,43 @@ In `script.js`, change `showNoGameMessage` to `false` to hide the source complet
 
 The overlay rechecks the schedule every five minutes on off days and keeps the last good display through temporary network failures.
 Schedule lookups explicitly use the computer's current local calendar date, including after the date rolls over at midnight.
+
+## Architecture
+
+```text
+sports-obs-overlay/
+├── index.html
+├── core/
+│   ├── app.js
+│   ├── event-model.js
+│   └── registry.js
+├── sports/
+│   └── baseball/
+│       ├── demo-data.js
+│       ├── layout.js
+│       ├── style.css
+│       └── providers/
+│           └── mlb.js
+└── tests/
+    └── sports/
+        └── baseball/
+            └── mlb-provider.test.js
+```
+
+- `core/event-model.js`: shared event envelope and lifecycle states used by selection and rotation.
+- `core/registry.js`: connects named providers and sport layouts without hard-coding their implementation paths into shared logic.
+- `core/app.js`: current single-event orchestration and refresh timing.
+- `sports/baseball/providers/mlb.js`: MLB schedule/live-feed requests and normalization into the shared event envelope.
+- `sports/baseball/layout.js`: creates baseball markup and renders scores, innings, counts, outs, bases, players, and last play.
+- `sports/baseball/style.css`: baseball-specific presentation.
+- `sports/baseball/demo-data.js`: stable MLB fixtures for visual development.
+
+Add future sports as sibling folders under `sports/`, using sport names for folders and league names for providers. For example, an NFL provider belongs at `sports/football/providers/nfl.js`.
+
+The shared lifecycle is `pregame`, `live`, `interrupted`, and `final`. No-game and temporary-error behavior remain orchestration concerns: no game may hide or show a message, while an error retains the last good display.
+
+Run the dependency-free normalization tests with:
+
+```powershell
+node --test tests/sports/baseball/*.test.js
+```
