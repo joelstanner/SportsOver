@@ -58,6 +58,15 @@ test("normalizes pregame, interrupted, and final lifecycle states", () => {
   assert.equal(final.state, EVENT_STATES.FINAL);
 });
 
+test("registers fixed demos for every baseball lifecycle state", () => {
+  assert.deepEqual(
+    global.SportsOverlay.registry.listDemos("baseball"),
+    ["pregame", "live", "interrupted", "final"],
+  );
+  assert.equal(global.SportsOverlay.registry.getDemo("baseball", "interrupted").state, EVENT_STATES.INTERRUPTED);
+  assert.equal(global.SportsOverlay.registry.getDemo("baseball", "final").state, EVENT_STATES.FINAL);
+});
+
 test("chooses live before preview and final games", () => {
   const games = [
     { gamePk: 1, gameDate: "2026-09-28T18:00:00Z", status: { abstractGameState: "Final" } },

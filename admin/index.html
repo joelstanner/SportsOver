@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sports Overlay Control Room</title>
+  <link rel="stylesheet" href="admin.css?v=1">
+</head>
+<body>
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">ANTLERJONES STREAM TOOLS</p>
+      <h1>Sports Overlay</h1>
+      <p class="subtitle">Choose favorite teams and inspect every banner state.</p>
+    </div>
+    <span class="local-badge">LOCAL CONTROL</span>
+  </header>
+
+  <nav class="tabs" aria-label="Sports overlay sections">
+    <button class="tab is-active" type="button" data-tab="settings" aria-selected="true">Settings</button>
+    <button class="tab" type="button" data-tab="live" aria-selected="false">Live</button>
+    <button class="tab" type="button" data-tab="demo" aria-selected="false">Demo lab</button>
+  </nav>
+
+  <main>
+    <section id="settings-panel" class="panel" data-panel="settings">
+      <div class="panel-heading">
+        <div><p class="section-kicker">SELECTION ORDER</p><h2>Favorite teams</h2></div>
+        <p>Enabled teams are considered from top to bottom.</p>
+      </div>
+      <div id="favorites-list" class="favorites-list" aria-live="polite"></div>
+      <div class="add-favorite">
+        <label for="team-picker">Add favorite</label>
+        <select id="team-picker"></select>
+        <button id="add-team" class="button button--secondary" type="button">Add team</button>
+      </div>
+
+      <div class="settings-grid">
+        <label class="field">Display mode
+          <select id="display-mode">
+            <option value="automatic">Automatic priority</option>
+            <option value="rotate">Rotate live favorites</option>
+            <option value="top-favorite">Top favorite only</option>
+          </select>
+        </label>
+        <label class="field">Rotation interval
+          <span class="input-suffix"><input id="rotation-seconds" type="number" min="10" max="300" step="5"><span>seconds</span></span>
+        </label>
+        <label class="field">When nothing is live
+          <select id="fallback-mode">
+            <option value="up-next">Show next upcoming game</option>
+            <option value="recent-final">Show most recent final</option>
+            <option value="hide">Hide the banner</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button id="save-settings" class="button button--primary" type="button">Save settings</button>
+        <button id="reset-settings" class="button button--quiet" type="button">Restore defaults</button>
+        <span id="save-status" class="save-status" role="status"></span>
+      </div>
+    </section>
+
+    <section id="live-panel" class="panel" data-panel="live" hidden>
+      <div class="panel-heading">
+        <div><p class="section-kicker">PROVIDER DATA</p><h2>Live banner</h2></div>
+        <p>Uses the same providers, polling, and saved favorites as the OBS banner.</p>
+      </div>
+      <div class="live-controls">
+        <label class="field">Sport
+          <select id="live-sport"><option value="football">Football · Seahawks</option><option value="baseball">Baseball · Mariners</option></select>
+        </label>
+        <button id="refresh-live" class="button button--secondary" type="button">Refresh now</button>
+        <a id="open-live" class="button button--quiet-link" href="../index.html?sport=football" target="_blank" rel="noopener">Open full preview</a>
+      </div>
+      <div class="preview-shell">
+        <div class="preview-label"><span>LIVE OBS PREVIEW</span><code>472 × 100</code></div>
+        <div class="preview-stage">
+          <iframe id="live-preview" title="Live sports banner preview" width="472" height="100"></iframe>
+        </div>
+      </div>
+      <p class="live-note">Temporary provider failures retain the last successfully rendered score.</p>
+    </section>
+
+    <section id="demo-panel" class="panel" data-panel="demo" hidden>
+      <div class="panel-heading">
+        <div><p class="section-kicker">FIXED TEST DATA</p><h2>Demo lab</h2></div>
+        <p>Preview-only. No live APIs, polling, or saved-setting changes.</p>
+      </div>
+      <div class="demo-controls">
+        <label class="field">Sport
+          <select id="demo-sport"><option value="baseball">Baseball · MLB</option><option value="football">Football · NFL</option></select>
+        </label>
+        <label class="field">State
+          <select id="demo-state">
+            <option value="pregame">Pregame</option>
+            <option value="live" selected>Live</option>
+            <option value="interrupted">Interrupted / postponed</option>
+            <option value="final">Final</option>
+            <option value="no-event">No event</option>
+            <option value="offline">Offline</option>
+            <option value="error">Provider error</option>
+          </select>
+        </label>
+        <button id="refresh-demo" class="button button--secondary" type="button">Refresh preview</button>
+      </div>
+      <div class="preview-shell">
+        <div class="preview-label"><span>OBS PREVIEW</span><code id="preview-size">472 × 100</code></div>
+        <div class="preview-stage">
+          <iframe id="demo-preview" title="Sports banner demo preview" width="472" height="100"></iframe>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <template id="favorite-template">
+    <article class="favorite-card">
+      <span class="team-mark"></span>
+      <div class="team-copy"><strong class="team-name"></strong><span class="team-meta"></span></div>
+      <span class="provider-badge"></span>
+      <label class="toggle"><input class="team-enabled" type="checkbox"><span>Enabled</span></label>
+      <div class="order-buttons">
+        <button class="icon-button move-up" type="button" aria-label="Move favorite up">↑</button>
+        <button class="icon-button move-down" type="button" aria-label="Move favorite down">↓</button>
+      </div>
+      <button class="remove-team" type="button">Remove</button>
+    </article>
+  </template>
+
+  <script src="../core/config.js?v=1"></script>
+  <script src="admin.js?v=1"></script>
+</body>
+</html>

@@ -1,18 +1,21 @@
 "use strict";
 
+const savedConfig = window.SportsOverlay.config.loadConfig();
+const query = new URLSearchParams(window.location.search);
+const selectedSport = query.get("sport") || "baseball";
+const selectedTeam = window.SportsOverlay.config.enabledTeams(savedConfig)
+  .find(team => team.sport === selectedSport);
 const CONFIG = Object.freeze({
-  teamId: 136,
+  teamId: selectedTeam?.teamId ?? null,
   pollIntervalMs: 12_000,
   scheduleRetryMs: 5 * 60_000,
-  showNoGameMessage: true,
+  showNoGameMessage: savedConfig.fallbackMode !== "hide",
   requestTimeoutMs: 8_000,
 });
 
-const query = new URLSearchParams(window.location.search);
-const selectedSport = query.get("sport") || "baseball";
 const layout = window.SportsOverlay.registry.getLayout(selectedSport).createLayout();
-const mlb = selectedSport === "baseball" ? window.SportsOverlay.registry.getProvider("mlb") : null;
-const provider = mlb?.createClient(CONFIG) ?? null;
+const providerModule = selectedTeam ? window.SportsOverlay.registry.getProvider(selectedTeam.provider) : null;
+const provider = providerModule?.createClient(CONFIG) ?? null;
 let activeGameId = null;
 let refreshTimer = null;
 
@@ -32,26 +35,39 @@ function renderDemoFromUrl() {
   return true;
 }
 
+function renderScenarioFromUrl() {
+  const scenario = query.get("scenario");
+  if (!scenario) return false;
+  const messages = {
+    "no-event": `No selected ${selectedSport} game`,
+    offline: "Sports data offline",
+    error: "Provider error · keeping last known score",
+  };
+  if (!messages[scenario]) return false;
+  layout.renderNoEvent(messages[scenario], true);
+  return true;
+}
+
 async function findTodaysGame() {
+  if (!CONFIG.teamId) {
+    layout.renderNoEvent(`No enabled ${selectedSport} favorite configured`, CONFIG.showNoGameMessage);
+    return;
+  }
   try {
-    const game = mlb.chooseGame(await provider.findGames());
-    if (!game?.gamePk) {
+    const game = providerModule.chooseGame(await provider.findGames(), CONFIG.teamId);
+    const gameId = game?.gamePk ?? game?.id;
+    if (!gameId) {
       activeGameId = null;
-      layout.renderNoEvent("No Mariners game today", CONFIG.showNoGameMessage);
+      layout.renderNoEvent(`No ${selectedTeam.name} game found`, CONFIG.showNoGameMessage);
       scheduleNext(CONFIG.scheduleRetryMs, findTodaysGame);
       return;
     }
 
-    if (game.status?.abstractGameState === "Final" && game.gamePk === activeGameId) {
-      scheduleNext(CONFIG.scheduleRetryMs, findTodaysGame);
-      return;
-    }
-
-    activeGameId = game.gamePk;
-    console.info(`[Sports overlay] Found MLB game ${activeGameId}.`);
+    activeGameId = gameId;
+    console.info(`[Sports overlay] Found ${selectedTeam.league} game ${activeGameId}.`);
     await updateGame();
   } catch (error) {
-    layout.handleError("MLB schedule lookup failed", error);
+    layout.handleError(`${selectedTeam.league} schedule lookup failed`, error);
     scheduleNext(CONFIG.scheduleRetryMs, findTodaysGame);
   }
 }
@@ -67,7 +83,7 @@ async function updateGame() {
       return;
     }
   } catch (error) {
-    layout.handleError(`MLB update failed for game ${activeGameId}`, error);
+    layout.handleError(`${selectedTeam.league} update failed for game ${activeGameId}`, error);
   }
   scheduleNext(CONFIG.pollIntervalMs, updateGame);
 }
@@ -84,8 +100,8 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-if (!renderDemoFromUrl()) {
-  if (selectedSport === "baseball") {
+if (!renderDemoFromUrl() && !renderScenarioFromUrl()) {
+  if (provider) {
     findTodaysGame();
   } else {
     layout.renderNoEvent(`No live ${selectedSport} provider configured`, true);

@@ -87,3 +87,21 @@ Object.entries(window.MARINERS_DEMO_FEEDS).forEach(([name, feed]) => {
     window.SportsOverlay.mlb.normalizeFeed(feed, 136, `demo-${name}`)
   );
 });
+
+const baseballLiveDemo = window.SportsOverlay.registry.getDemo("baseball", "live");
+window.SportsOverlay.registry.registerDemo("baseball", "interrupted", () =>
+  window.SportsOverlay.model.createEvent({
+    ...baseballLiveDemo,
+    id: "demo-interrupted",
+    state: window.SportsOverlay.model.EVENT_STATES.INTERRUPTED,
+    detailedState: "Rain delay",
+  })
+);
+window.SportsOverlay.registry.registerDemo("baseball", "final", () =>
+  window.SportsOverlay.model.createEvent({
+    ...baseballLiveDemo,
+    id: "demo-final",
+    state: window.SportsOverlay.model.EVENT_STATES.FINAL,
+    detailedState: "Final",
+  })
+);

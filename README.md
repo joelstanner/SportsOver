@@ -1,6 +1,6 @@
 # Universal Sports OBS Overlay
 
-A compact, dependency-free OBS Browser Source overlay with sport-specific layouts. MLB is the first live provider and baseball is the reference layout: it automatically finds today's Mariners game (team ID `136`) and displays team logos, live scores, inning, outs, occupied bases, current players, and the latest completed play. A fixed-data football module proves that a second sport can use the same lifecycle and registry with its own presentation.
+A compact, dependency-free OBS Browser Source overlay with sport-specific layouts. The MLB provider finds the current Mariners game, while the ESPN NFL adapter finds the current Seahawks game. Both normalize live data into the same event lifecycle before their sport-specific layouts render it.
 
 The current refactor preserves the production Mariners appearance and behavior while separating shared event state, MLB data normalization, baseball rendering, and polling orchestration. Future sports can use different layouts without forcing their details into baseball-shaped UI.
 
@@ -13,6 +13,8 @@ py -m http.server 8080
 ```
 
 Then visit [http://localhost:8080](http://localhost:8080) in a browser. Stop the server with `Ctrl+C`.
+
+Open [http://localhost:8080/admin/](http://localhost:8080/admin/) for the local control room. Its Settings tab stores favorite-team order and banner behavior in this browser. Mariners and Seahawks are the defaults. The Live tab embeds the real provider-backed baseball or football banner. The Demo Lab tab previews every supported lifecycle and orchestration state without calling live providers or changing saved settings.
 
 ### Demo a live game
 
@@ -73,8 +75,13 @@ Schedule lookups explicitly use the computer's current local calendar date, incl
 ```text
 sports-obs-overlay/
 ├── index.html
+├── admin/
+│   ├── index.html
+│   ├── admin.js
+│   └── admin.css
 ├── core/
 │   ├── app.js
+│   ├── config.js
 │   ├── event-model.js
 │   └── registry.js
 ├── sports/
@@ -87,7 +94,9 @@ sports-obs-overlay/
 │   └── football/
 │       ├── demo-data.js
 │       ├── layout.js
-│       └── style.css
+│       ├── style.css
+│       └── providers/
+│           └── espn.js
 └── tests/
     ├── core/
     │   └── registry.test.js
@@ -99,15 +108,17 @@ sports-obs-overlay/
 ```
 
 - `core/event-model.js`: shared event envelope and lifecycle states used by selection and rotation.
+- `core/config.js`: versioned local settings, favorite-team catalog, validation, and persistence.
 - `core/registry.js`: connects named providers and sport layouts without hard-coding their implementation paths into shared logic.
 - `core/app.js`: current single-event orchestration and refresh timing.
 - `sports/baseball/providers/mlb.js`: MLB schedule/live-feed requests and normalization into the shared event envelope.
 - `sports/baseball/layout.js`: creates baseball markup and renders scores, innings, counts, outs, bases, players, and last play.
 - `sports/baseball/style.css`: baseball-specific presentation.
 - `sports/baseball/demo-data.js`: stable MLB fixtures for visual development.
-- `sports/football/layout.js`: creates football markup and renders scores, quarter, clock, down and distance, field position, possession, and last play.
+- `sports/football/layout.js`: creates football markup and renders team logos, scores, quarter, clock, down and distance, field position, possession, and last play.
 - `sports/football/style.css`: football-specific presentation.
 - `sports/football/demo-data.js`: fixed NFL fixtures covering every shared lifecycle state.
+- `sports/football/providers/espn.js`: unauthenticated ESPN schedule and game-summary adapter for live Seahawks data. ESPN does not publish a compatibility contract for this feed, so normalization tests protect the overlay and the adapter remains replaceable.
 
 Add future sports as sibling folders under `sports/`, using sport names for folders and league names for providers. For example, an NFL provider belongs at `sports/football/providers/nfl.js`.
 

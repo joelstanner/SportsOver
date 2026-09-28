@@ -11,7 +11,7 @@
     mount.innerHTML = `
       <section class="football-main">
         <div class="football-team">
-          <span id="football-away-mark" class="football-mark">DET</span>
+          <span id="football-away-mark" class="football-mark"><img alt="" hidden><span>DET</span></span>
           <div><span class="football-team-name"><span id="football-away-abbr" class="football-abbr">DET</span><span id="football-away-possession" class="football-possession" aria-label="Possession" hidden>🏈</span></span><span id="football-away-record" class="football-record"></span></div>
           <strong id="football-away-score" class="football-score">—</strong>
         </div>
@@ -19,7 +19,7 @@
         <div class="football-team football-team--home">
           <strong id="football-home-score" class="football-score">—</strong>
           <div><span class="football-team-name"><span id="football-home-abbr" class="football-abbr">SEA</span><span id="football-home-possession" class="football-possession" aria-label="Possession" hidden>🏈</span></span><span id="football-home-record" class="football-record"></span></div>
-          <span id="football-home-mark" class="football-mark football-mark--home">SEA</span>
+          <span id="football-home-mark" class="football-mark football-mark--home"><img alt="" hidden><span>SEA</span></span>
         </div>
       </section>
       <section id="football-status" class="football-status" hidden><span id="football-matchup"></span><strong id="football-status-text"></strong></section>
@@ -105,7 +105,18 @@
   }
 
   function setTeam(mark, abbreviation, record, team) {
-    mark.textContent = team.abbreviation;
+    const logo = mark.querySelector("img");
+    const fallback = mark.querySelector("span");
+    fallback.textContent = team.abbreviation;
+    fallback.hidden = Boolean(team.logoUrl);
+    logo.hidden = !team.logoUrl;
+    logo.alt = team.logoUrl ? `${team.name} logo` : "";
+    if (team.logoUrl) logo.src = team.logoUrl;
+    else logo.removeAttribute("src");
+    logo.onerror = () => {
+      logo.hidden = true;
+      fallback.hidden = false;
+    };
     abbreviation.textContent = team.abbreviation;
     record.textContent = team.record || "";
   }
