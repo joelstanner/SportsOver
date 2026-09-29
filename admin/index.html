@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sports Overlay Control Room</title>
-  <link rel="stylesheet" href="admin.css?v=3">
+  <link rel="stylesheet" href="admin.css?v=4">
 </head>
 <body>
   <header class="masthead">
@@ -59,23 +59,46 @@
 
     <section id="live-panel" class="panel" data-panel="live" hidden>
       <div class="panel-heading">
-        <div><p class="section-kicker">PROVIDER DATA</p><h2>Live banner</h2></div>
-        <p>Uses the same providers, polling, and saved favorites as the OBS banner.</p>
+        <div><p class="section-kicker">PROVIDER DATA</p><h2>Live banners</h2></div>
+        <p>Compare the saved production rotation with a single-sport provider preview.</p>
       </div>
-      <div class="live-controls">
-        <label class="field">Sport
-          <select id="live-sport"><option value="football">Football · Seahawks</option><option value="college-football">College football · top favorite</option><option value="hockey">Hockey · Kraken</option><option value="soccer">Soccer · Sounders</option><option value="basketball">Basketball · Pistons</option><option value="baseball">Baseball · Mariners</option></select>
-        </label>
-        <button id="refresh-live" class="button button--secondary" type="button">Refresh now</button>
-        <a id="open-live" class="button button--quiet-link" href="../index.html?sport=football" target="_blank" rel="noopener">Open full preview</a>
-      </div>
-      <div class="preview-shell">
-        <div class="preview-label"><span>LIVE OBS PREVIEW</span><code>472 × 100</code></div>
-        <div class="preview-stage">
-          <iframe id="live-preview" title="Live sports banner preview" width="472" height="100"></iframe>
+
+      <div class="live-preview-block">
+        <div class="live-preview-heading">
+          <div><p class="section-kicker">SAVED PRODUCTION SETTINGS</p><h3>Production banner</h3></div>
+          <div class="preview-actions">
+            <button id="refresh-production" class="button button--secondary" type="button">Refresh now</button>
+            <a class="button button--quiet-link" href="../index.html" target="_blank" rel="noopener">Open full preview</a>
+          </div>
         </div>
+        <div class="preview-shell">
+          <div class="preview-label"><span>PRODUCTION OBS PREVIEW</span><code>472 × 100</code></div>
+          <div class="preview-stage">
+            <iframe id="production-preview" title="Production sports banner preview" width="472" height="100"></iframe>
+          </div>
+        </div>
+        <p class="live-note">Unfiltered. Uses the exact saved priorities, favorites, fallback, spotlight, and rotation settings.</p>
       </div>
-      <p class="live-note">Temporary provider failures retain the last successfully rendered score.</p>
+
+      <div class="live-preview-block">
+        <div class="live-preview-heading">
+          <div><p class="section-kicker">SPORT INSPECTION</p><h3>Selected sport</h3></div>
+        </div>
+        <div class="live-controls">
+          <label class="field">Sport
+            <select id="live-sport"><option value="football">Football · Seahawks</option><option value="college-football">College football · top favorite</option><option value="hockey">Hockey · Kraken</option><option value="soccer">Soccer · Sounders</option><option value="basketball">Basketball · Pistons</option><option value="baseball">Baseball · Mariners</option></select>
+          </label>
+          <button id="refresh-live" class="button button--secondary" type="button">Refresh now</button>
+          <a id="open-live" class="button button--quiet-link" href="../index.html?sport=football" target="_blank" rel="noopener">Open full preview</a>
+        </div>
+        <div class="preview-shell">
+          <div class="preview-label"><span>SELECTED SPORT PREVIEW</span><code>472 × 100</code></div>
+          <div class="preview-stage">
+            <iframe id="live-preview" title="Selected sport banner preview" width="472" height="100"></iframe>
+          </div>
+        </div>
+        <p class="live-note">Filtered to one sport for provider inspection. This is not the full production rotation.</p>
+      </div>
     </section>
 
     <section id="demo-panel" class="panel" data-panel="demo" hidden>
@@ -144,6 +167,6 @@
   </template>
 
   <script src="../core/config.js?v=8"></script>
-  <script src="admin.js?v=5"></script>
+  <script src="admin.js?v=6"></script>
 </body>
 </html>

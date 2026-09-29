@@ -14,6 +14,7 @@
   document.querySelector("#display-mode").addEventListener("change", readBehaviorFields);
   document.querySelector("#rotation-seconds").addEventListener("input", readBehaviorFields);
   document.querySelector("#fallback-mode").addEventListener("change", readBehaviorFields);
+  document.querySelector("#refresh-production").addEventListener("click", updateProduction);
   document.querySelector("#live-sport").addEventListener("change", updateLive);
   document.querySelector("#refresh-live").addEventListener("click", updateLive);
   document.querySelector("#demo-sport").addEventListener("change", updateDemo);
@@ -32,7 +33,10 @@
     document.querySelectorAll("[data-panel]").forEach(panel => {
       panel.hidden = panel.dataset.panel !== name;
     });
-    if (name === "live") updateLive();
+    if (name === "live") {
+      updateProduction();
+      updateLive();
+    }
     if (name === "demo") updateDemo();
   }
 
@@ -214,5 +218,9 @@
     const url = `../index.html?sport=${encodeURIComponent(sport)}`;
     document.querySelector("#live-preview").src = url;
     document.querySelector("#open-live").href = url;
+  }
+
+  function updateProduction() {
+    document.querySelector("#production-preview").src = "../index.html";
   }
 })(window);
