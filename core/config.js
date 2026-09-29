@@ -58,6 +58,12 @@
     return catalogs.flatMap(normalizeCatalog);
   }
 
+  async function reloadTeamCatalog() {
+    const teams = await loadTeamCatalog();
+    TEAM_CATALOG.splice(0, TEAM_CATALOG.length, ...teams);
+    return TEAM_CATALOG;
+  }
+
   function normalizeCatalog(catalog) {
     const sport = String(catalog?.sport || "");
     const league = String(catalog?.league || "");
@@ -253,6 +259,7 @@
     SPORT_CATALOG,
     TEAM_CATALOG,
     ready,
+    reloadTeamCatalog,
     DEFAULT_CONFIG,
     normalizeConfig,
     loadConfig,

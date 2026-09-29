@@ -54,6 +54,30 @@
           </div>
         </div>
       </section>
+
+      <section class="watch-team-panel catalog-refresh-panel" aria-labelledby="catalog-refresh-heading">
+        <div>
+          <p class="section-kicker">TEAM DIRECTORY</p>
+          <h3 id="catalog-refresh-heading">Refresh team data</h3>
+          <p>Pull current names, IDs, logos, and colors from MLB and ESPN.</p>
+        </div>
+        <div class="watch-team-controls">
+          <label class="field" for="catalog-refresh-sport">Sport</label>
+          <div class="watch-team-inputs">
+            <select id="catalog-refresh-sport">
+              <option value="all">All sports</option>
+              <option value="baseball">Baseball · MLB</option>
+              <option value="football">Football · NFL</option>
+              <option value="college-football">College football · NCAAF</option>
+              <option value="hockey">Hockey · NHL</option>
+              <option value="soccer">Soccer · MLS</option>
+              <option value="basketball">Basketball · NBA</option>
+            </select>
+            <button id="refresh-team-catalog" class="button button--secondary" type="button">Refresh teams</button>
+          </div>
+          <span id="catalog-refresh-status" class="catalog-refresh-status" role="status"></span>
+        </div>
+      </section>
       <div id="sports-list" class="sports-list" aria-live="polite"></div>
 
       <div class="settings-grid">
@@ -256,6 +280,6 @@
   <script src="../sports/hockey/providers/espn.js?v=2"></script>
   <script src="../sports/soccer/providers/espn.js?v=2"></script>
   <script src="../sports/basketball/providers/espn.js?v=3"></script>
-  <script src="admin.js?v=14"></script>
+  <script src="admin.js?v=15"></script>
 </body>
 </html>

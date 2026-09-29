@@ -6,17 +6,17 @@ The current refactor preserves the production Mariners appearance and behavior w
 
 ## Run and test locally
 
-The most reliable option is to serve this folder over local HTTP. In PowerShell, open this folder and run:
+Serve this folder with the included local control server:
 
-```powershell
-py -m http.server 8080
+```text
+node scripts/serve.mjs
 ```
 
 Then visit [http://localhost:8080](http://localhost:8080) in a browser. Stop the server with `Ctrl+C`.
 
 Open [http://localhost:8080/admin/](http://localhost:8080/admin/) for the local control room. Its Settings tab adds teams from one global picker, ranks sport categories first, then ranks included watched teams independently inside each sport. Mariners, Seahawks, Nebraska, Washington, Kraken, Sounders, and Pistons are watched by default. NFL and college football remain separate categories. Existing favorite settings migrate automatically. Live Control discovers current provider games and offers automatic, hybrid, or fully curated queues with add, remove, reorder, sport filtering, team search, per-game timing, and a single-game lock that freezes rotation. Queue changes use Apply; timing and lock changes save immediately and refresh other open same-origin banner pages. The Demo Lab previews every supported lifecycle and orchestration state without calling live providers or changing saved settings, including scrolling-info and three-second all-sports rotation tests.
 
-Team directories live in each `sports/<sport>/teams.json`. MLB, NFL, NHL, MLS, and NBA catalogs include every current team. Refresh those five catalogs with `node scripts/update-team-catalog.mjs`; the updater preserves the production theme overrides. College football contains ESPN's complete team directory, including every Big Ten program. Watched-team rankings remain browser-local settings and are not overwritten by catalog refreshes.
+Team directories live in each `sports/<sport>/teams.json`. The control room can refresh one sport or all sports from MLB and ESPN when served by `node scripts/serve.mjs`. The command-line equivalent is `node scripts/update-team-catalog.mjs [sport]`, where the optional sport is `baseball`, `football`, `college-football`, `hockey`, `soccer`, or `basketball`. Production theme overrides are preserved. College football contains ESPN's complete team directory, including every Big Ten program. Watched-team rankings remain browser-local settings and are not overwritten by catalog refreshes.
 
 Default display times are 20 seconds for live games, 5 seconds for upcoming games, and 10 seconds for finals. Each queued game can be adjusted in five-second steps from Live Control. The unfiltered overlay rotates through ranked sport categories with a short slide/fade transition between games. When no included watched team in a sport is live, automatic and rotate modes add one league-wide live spotlight game beside that sport's watched-team fallback. A live watched team suppresses the league-wide spotlight. Top-watched-team mode never adds spotlight games. Use `?sport=` to scope a preview to one sport.
 
@@ -30,7 +30,7 @@ For serverless testing in OBS, select `demo.html` as the Browser Source's local 
 
 Opening `index.html` directly with a `file:///` URL may also work in some browsers, but browser security policies differ. If the MLB request is blocked or the overlay stays blank, use the local HTTP server command above. No backend or API key is needed.
 
-The MLB Stats API currently responds with permissive CORS headers, so requests from `http://localhost` work directly; the local server only serves these static files.
+The local control server serves the static overlay and provides the local-only endpoint used to update team catalog files.
 
 To diagnose a problem, open the browser developer console. Network/API failures are logged there while the overlay keeps its last valid display.
 
@@ -153,7 +153,9 @@ sports-obs-overlay/
 - `core/timeouts.js`: normalizes provider timeout counts and renders accessible broadcast-style timeout pips for football and basketball.
 - `core/config.js`: versioned local settings, nested sport/watched-team rankings, team-catalog loading, validation, migration, and persistence.
 - `sports/*/teams.json`: provider IDs, names, abbreviations, colors, and logos used by the team picker and banner themes.
-- `scripts/update-team-catalog.mjs`: refreshes the five professional-league catalogs from MLB and ESPN directories.
+- `scripts/team-catalog.mjs`: shared MLB/ESPN catalog refresh and normalization logic.
+- `scripts/update-team-catalog.mjs`: command-line catalog refresh for one sport or all sports.
+- `scripts/serve.mjs`: local static server plus the control-room catalog refresh endpoint.
 - `core/registry.js`: connects named providers and sport layouts without hard-coding their implementation paths into shared logic.
 - `core/app.js`: ranked cross-sport rotation, current-event orchestration, and refresh timing.
 - `sports/baseball/providers/mlb.js`: MLB schedule/live-feed requests and normalization into the shared event envelope.

@@ -50,6 +50,10 @@ h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.7rem); line-height: 0.95; letter-s
 .watch-team-panel > div > p:last-child { margin: 7px 0 0; color: var(--muted); font-size: 0.78rem; }
 .watch-team-controls { display: grid; gap: 8px; }
 .watch-team-inputs { display: grid; grid-template-columns: minmax(180px, 1fr) auto; gap: 10px; }
+.catalog-refresh-panel { margin-top: -6px; }
+.catalog-refresh-status { min-height: 1em; color: var(--muted); font-size: 0.75rem; }
+.catalog-refresh-status.is-saved { color: var(--teal); }
+.catalog-refresh-status.is-error { color: var(--danger); }
 .sport-card { overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: rgba(8, 16, 19, 0.72); }
 .sport-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 18px; background: var(--panel-raised); }
 .sport-heading > div:first-child { display: flex; align-items: baseline; gap: 10px; }

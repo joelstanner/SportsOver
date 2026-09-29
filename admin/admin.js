@@ -10,6 +10,8 @@
   const status = document.querySelector("#save-status");
   const teamPicker = document.querySelector("#team-picker");
   const addTeamButton = document.querySelector("#add-team");
+  const refreshCatalogButton = document.querySelector("#refresh-team-catalog");
+  const catalogRefreshStatus = document.querySelector("#catalog-refresh-status");
   const undoLiveButton = document.querySelector("#undo-live-change");
   const liveConfigKeys = ["rotationMode", "includedGames", "excludedGames", "rotationOrder", "gameDurations", "lockedGameKey"];
   let undoLiveConfig = null;
@@ -25,6 +27,7 @@
   document.querySelector("#reset-settings").addEventListener("click", resetSettings);
   teamPicker.addEventListener("change", updateAddTeamButton);
   addTeamButton.addEventListener("click", addTeam);
+  refreshCatalogButton.addEventListener("click", refreshTeamCatalog);
   document.querySelector("#display-mode").addEventListener("change", readBehaviorFields);
   document.querySelector("#fallback-mode").addEventListener("change", readBehaviorFields);
   document.querySelector("#rotation-mode").addEventListener("change", updateRotationControls);
@@ -134,6 +137,35 @@
 
   function updateAddTeamButton() {
     addTeamButton.disabled = !teamPicker.value;
+  }
+
+  async function refreshTeamCatalog() {
+    const sport = document.querySelector("#catalog-refresh-sport").value;
+    refreshCatalogButton.disabled = true;
+    catalogRefreshStatus.textContent = sport === "all" ? "Refreshing all team directories…" : "Refreshing team directory…";
+    catalogRefreshStatus.className = "catalog-refresh-status";
+    try {
+      const response = await fetch("../api/team-catalog/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sport }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || `Refresh returned HTTP ${response.status}`);
+      await configApi.reloadTeamCatalog();
+      renderSettings();
+      const total = payload.results.reduce((sum, result) => sum + result.count, 0);
+      catalogRefreshStatus.textContent = `${payload.results.length} ${payload.results.length === 1 ? "directory" : "directories"} refreshed · ${total} teams`;
+      catalogRefreshStatus.className = "catalog-refresh-status is-saved";
+    } catch (error) {
+      const serverHint = /404|405|501|Unexpected token/i.test(error.message)
+        ? " Start with: node scripts/serve.mjs"
+        : "";
+      catalogRefreshStatus.textContent = `${error.message}.${serverHint}`;
+      catalogRefreshStatus.className = "catalog-refresh-status is-error";
+    } finally {
+      refreshCatalogButton.disabled = false;
+    }
   }
 
   function renderFavorite(group, favorite, index, favoriteList) {
