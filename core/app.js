@@ -238,7 +238,7 @@ async function discoverSport(context) {
   }).map(candidate => ({
     kind: "manual",
     candidate,
-    featuredTeamId: candidate.teamKeys.find(teamId => favoriteIds.includes(String(teamId).toUpperCase())) ?? candidate.teamKeys[0] ?? null,
+    featuredTeamId: candidate.teamKeys.find(teamId => favoriteIds.includes(String(teamId).toUpperCase())) ?? null,
     context,
   }));
   return { automaticEntries, availableEntries };
