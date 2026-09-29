@@ -81,6 +81,31 @@ const root = path.resolve(__dirname, '../..');
     await chrome.getByText('Games refreshed', { exact: true }).waitFor();
     assert.ok([...adminSchedules].some(path => path.includes('/teams/158/schedule')));
     assert.ok([...adminSchedules].some(path => path.includes('/teams/264/schedule')));
+    const postseason = await contexts[1].newPage();
+    await postseason.clock.install();
+    await postseason.goto('http://127.0.0.1:8000/sports/?sport=baseball&demo=live');
+    await postseason.evaluate(() => {
+      const api = window.SportsOverlay;
+      const event = api.registry.getDemo('baseball', 'live');
+      window.postseasonEvent = api.mlb.withSchedule(event, {
+        gamePk: event.id, gameType: 'F', seriesGameNumber: 1, gamesInSeries: 3,
+        seriesDescription: 'AL Wild Card Series', status: { abstractGameState: 'Live' },
+        seriesStatus: { wins: 0, losses: 0, result: 'Series tied 0-0' },
+      });
+      window.postseasonLayout = api.baseballLayout.createLayout();
+      window.postseasonLayout.render(window.postseasonEvent);
+    });
+    assert.match(await postseason.locator('#series-text').innerText(), /AL WILD CARD · GAME 1 · BEST OF 3/);
+    const box = await postseason.locator('#sports-overlay').boundingBox();
+    assert.ok(box.width <= 460 && box.height <= 88, JSON.stringify(box));
+    await postseason.screenshot({ path: '/tmp/sports-postseason-footer.png' });
+    await postseason.clock.runFor(8000);
+    assert.equal(await postseason.locator('#series-text').innerText(), 'SERIES TIED 0-0');
+    await postseason.evaluate(() => window.postseasonLayout.render(window.postseasonEvent));
+    await postseason.clock.runFor(8000);
+    assert.equal(await postseason.locator('#player-details').isVisible(), true);
+    assert.equal(await postseason.locator('#series-details').isVisible(), false);
+    await postseason.close();
     assert.deepEqual(errors, []);
     console.log('Browser integration passed: isolated profiles, no reload, draft preservation, conflict/reapply.');
   } finally { await browser.close(); }

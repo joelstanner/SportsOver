@@ -314,3 +314,6 @@ body {
   letter-spacing: 0.035em;
   line-height: calc(var(--bug-height) - 2px);
 }
+
+.series-details { height: 26px; padding: 0 11px; display: block; line-height: 25px; border-top: 1px solid var(--line); background: #09131d; color: #83d9d3; font-size: 11px; font-weight: 750; letter-spacing: .2px; white-space: nowrap; overflow: hidden; }
+.series-details[hidden] { display: none; }

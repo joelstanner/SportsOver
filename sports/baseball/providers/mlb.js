@@ -34,12 +34,12 @@
     }
 
     async function findGames(date = new Date()) {
-      const schedule = await fetchJson(`${scheduleUrl}&startDate=${formatLocalDate(addDays(date, -1))}&endDate=${formatLocalDate(addDays(date, 7))}`);
+      const schedule = await fetchJson(`${scheduleUrl}&startDate=${formatLocalDate(addDays(date, -1))}&endDate=${formatLocalDate(addDays(date, 7))}&hydrate=seriesStatus`);
       return schedule.dates?.flatMap(entry => entry.games ?? []) ?? [];
     }
 
     async function findLeagueGames(date = new Date()) {
-      const schedule = await fetchJson(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${formatLocalDate(date)}&hydrate=broadcasts,linescore`);
+      const schedule = await fetchJson(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${formatLocalDate(date)}&hydrate=broadcasts,linescore,seriesStatus`);
       return schedule.dates?.flatMap(entry => entry.games ?? []) ?? [];
     }
 
@@ -49,6 +49,31 @@
     }
 
     return Object.freeze({ findGames, findLeagueGames, getEvent });
+  }
+
+  function withSchedule(event, game) {
+    const rounds = { F: "WILD CARD", D: "DIVISION SERIES", L: "CHAMPIONSHIP", W: "WORLD SERIES" };
+    if (!game || String(game.gamePk) !== event.id || !rounds[game.gameType]) return event;
+    const status = game.seriesStatus || {};
+    const number = game.seriesGameNumber ?? status.gameNumber;
+    const length = status.totalGames ?? game.gamesInSeries;
+    const validNumber = Number.isInteger(number) && number >= 1 && number <= 9;
+    const validLength = Number.isInteger(length) && [1, 3, 5, 7, 9].includes(length)
+      && validNumber && number <= length;
+    const description = String(game.seriesDescription || status.description || "");
+    const league = /^(AL|NL)\b/.exec(description)?.[1];
+    const round = `${league && game.gameType !== "W" ? league + " " : ""}${rounds[game.gameType]}`;
+    const identity = [round, validNumber ? `GAME ${number}` : "", validLength ? `BEST OF ${length}` : ""].filter(Boolean).join(" · ");
+    const final = event.state === EVENT_STATES.FINAL;
+    const scheduleFinal = game.status?.abstractGameState === "Final";
+    const completed = status.wins + status.losses;
+    const validRecord = Number.isInteger(status.wins) && status.wins >= 0 && status.wins <= 9
+      && Number.isInteger(status.losses) && status.losses >= 0 && status.losses <= 9;
+    const compatible = validNumber && validRecord && final === scheduleFinal
+      && completed === number - (final ? 0 : 1);
+    const result = typeof status.result === "string" ? status.result.trim() : "";
+    const standing = compatible && result.length <= 100 && !/[\x00-\x1f<>]/.test(result) ? result.toUpperCase() : "";
+    return { ...event, details: { ...event.details, series: { identity, standing } } };
   }
 
   function chooseGame(games) {
@@ -179,6 +204,7 @@
   const provider = Object.freeze({
     createClient,
     chooseGame,
+    withSchedule,
     normalizeFeed,
     normalizeState,
     toCandidate: game => global.SportsOverlay.selection.mlbCandidate(game),

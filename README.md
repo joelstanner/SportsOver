@@ -256,3 +256,20 @@ are fetched. With no included teams, only the league scoreboard is queried.
 Duplicate games are merged; a failed team schedule does not discard successful
 feeds. Discovery allows four concurrent operations per sport and retains the
 per-feed refresh cache. More included teams can mean more distinct requests.
+
+
+### MLB postseason context
+
+Postseason games use the existing footer for round, series game number, and
+best-of length. During play, it cycles through series identity, compatible series
+standing (when supplied), and pitcher/batter details every eight seconds. Long
+provider result text uses the existing marquee and gets enough time to scroll;
+reduced-motion settings retain the existing static-text fallback. Pregame, final,
+interruptions, and inning breaks omit the player phase. Regular-season games keep
+the original footer. The OBS source remains 472 × 100.
+
+Series metadata comes from `seriesStatus` hydration on existing cached schedule
+requests and is joined to game feeds by game ID. No additional polling loop or
+request is added. A standing is omitted when the completed series-game count or
+schedule final status disagrees with the detailed game feed. Normal score updates
+do not restart footer phases. Missing metadata leaves the usual game display.

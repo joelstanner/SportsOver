@@ -59,10 +59,13 @@
           <span id="batter-stat" class="player-stat">— FOR —</span>
         </div>
       </section>
+      <section id="series-details" class="series-details" hidden aria-live="off"><span id="series-text" class="scorebug-scroll-text"></span></section>
       <section id="no-game" class="no-game" hidden>No selected baseball game today</section>`;
 
     const els = {
       bug: mount,
+      seriesDetails: root.querySelector("#series-details"),
+      seriesText: root.querySelector("#series-text"),
       gameView: root.querySelector("#game-view"),
       noGame: root.querySelector("#no-game"),
       awayTeam: root.querySelector("#away-team"),
@@ -96,6 +99,53 @@
       diamond: root.querySelector(".diamond"),
     };
 
+    let footerTimer = null;
+    let footerGame = null;
+    let footerPhase = 0;
+    let footerEvent = null;
+
+    function dispose() {
+      clearTimeout(footerTimer);
+      footerTimer = null;
+      footerGame = null;
+      footerEvent = null;
+      footerPhase = 0;
+    }
+
+    function updateFooter(event) {
+      if (footerGame !== event.id) { dispose(); footerGame = event.id; }
+      footerEvent = event;
+      paintFooter();
+    }
+
+    function paintFooter() {
+      const event = footerEvent;
+      if (!event) return;
+      const series = event.details.series;
+      const players = event.state === EVENT_STATES.LIVE
+        && !["middle", "end"].includes(String(event.details.inningState || "").toLowerCase());
+      const phases = series ? [series.identity, series.standing, players ? "players" : ""].filter(Boolean) : [];
+      if (!phases.length) {
+        clearTimeout(footerTimer); footerTimer = null; footerPhase = 0;
+        showElement(els.seriesDetails, false);
+        return;
+      }
+      const phase = phases[footerPhase % phases.length];
+      showElement(els.playerDetails, phase === "players");
+      showElement(els.seriesDetails, phase !== "players");
+      if (phase !== "players") {
+        global.SportsOverlay.scrolling.render(els.seriesDetails, els.seriesText, phase);
+      }
+      if (phases.length > 1 && footerTimer === null) footerTimer = setTimeout(() => {
+        footerTimer = null;
+        if (!mount.isConnected) { dispose(); return; }
+        footerPhase += 1;
+        paintFooter();
+      }, phase !== "players" && els.seriesText.scrollWidth > els.seriesDetails.clientWidth
+        ? Math.max(20, phase.length / 3.5) * 1000 : 8000);
+      if (phases.length === 1) { clearTimeout(footerTimer); footerTimer = null; }
+    }
+
     function render(event) {
       const { away, home } = event.teams;
       showElement(els.gameView, true);
@@ -124,6 +174,7 @@
         els.homeScore.textContent = "";
         renderStatus(event, formatLocalTime(event.startTime) || event.detailedState);
       }
+      updateFooter(event);
       return event.state;
     }
 
@@ -201,6 +252,8 @@
     }
 
     function renderNoEvent(message = "No selected game today", visible = true) {
+      dispose();
+      showElement(els.seriesDetails, false);
       hideExtendedDetails();
       els.bug.classList.remove("is-loading");
       els.bug.classList.toggle("is-hidden", !visible);
@@ -225,7 +278,7 @@
       els.homeScore.textContent = event.teams.home.score ?? 0;
     }
 
-    return Object.freeze({ render, renderNoEvent, handleError });
+    return Object.freeze({ render, renderNoEvent, handleError, dispose });
   }
 
   function setTeam(container, logo, abbreviation, team) {

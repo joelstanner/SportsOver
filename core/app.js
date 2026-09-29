@@ -72,6 +72,7 @@ function createSportContext(group) {
 
 function activateLayout(sport) {
   if (activeLayoutSport === sport && layout) return layout;
+  layout?.dispose?.();
   activeLayoutSport = sport;
   layout = window.SportsOverlay.registry.getLayout(sport).createLayout();
   return layout;
@@ -247,7 +248,12 @@ function renderCurrentGame(options = {}) {
 async function renderGame(entry, revision, { animate = false } = {}) {
   if (revision !== requestRevision) return;
   try {
-    const event = await entry.context.provider.getEvent(entry.candidate.id, entry.featuredTeamId);
+    let event = await entry.context.provider.getEvent(entry.candidate.id, entry.featuredTeamId);
+    const discovered = cachedDiscoveries?.flatMap(result => result.availableEntries)
+      .find(candidate => entryKey(candidate) === entryKey(entry));
+    if (entry.context.providerModule.withSchedule) {
+      event = entry.context.providerModule.withSchedule(event, discovered?.candidate.raw);
+    }
     if (revision !== requestRevision) return;
     if (animate && !await transitionOut(revision)) return;
     if (!animate) clearTransitionClasses();
