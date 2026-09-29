@@ -1,12 +1,19 @@
 "use strict";
 
+(async function initializeSportsOverlay() {
+
+await window.SportsOverlay.config.ready;
+
 const savedConfig = window.SportsOverlay.config.loadConfig();
 const query = new URLSearchParams(window.location.search);
+if (query.get("surface") === "admin") {
+  document.documentElement.style.background = "#26373b";
+  document.body.style.background = "#26373b";
+}
 const requestedSport = query.get("sport");
 const CONFIG = Object.freeze({
   pollIntervalMs: 12_000,
   scheduleRetryMs: 5 * 60_000,
-  rotationIntervalMs: savedConfig.rotationSeconds * 1_000,
   includeSpotlight: savedConfig.displayMode !== "top-favorite",
   showNoGameMessage: savedConfig.fallbackMode !== "hide",
   requestTimeoutMs: 8_000,
@@ -38,7 +45,8 @@ function createSportContext(group) {
     .filter(favorite => favorite.enabled)
     .map(favorite => window.SportsOverlay.config.findTeam(favorite.teamKey))
     .filter(Boolean);
-  const selectedTeam = favoriteTeams[0];
+  const selectedTeam = favoriteTeams[0]
+    || window.SportsOverlay.config.TEAM_CATALOG.find(team => team.sport === group.sport);
   if (!selectedTeam) return null;
   const providerModule = window.SportsOverlay.registry.getProvider(selectedTeam.provider);
   const provider = providerModule.createClient({
@@ -141,19 +149,30 @@ async function discoverGames() {
   clearTimeout(pollTimer);
   clearTimeout(rotationTimer);
   if (!sportContexts.length) {
-    layout.renderNoEvent(`No enabled ${initialSport} favorite configured`, CONFIG.showNoGameMessage);
+    layout.renderNoEvent(`No included ${initialSport} team configured`, CONFIG.showNoGameMessage);
     return;
   }
 
-  const queues = await Promise.all(sportContexts.map(discoverSport));
+  const discoveries = await Promise.all(sportContexts.map(discoverSport));
   const previousKey = entryKey(rotationQueue[currentIndex]);
-  rotationQueue = queues.flat();
-  currentIndex = Math.max(0, rotationQueue.findIndex(entry => entryKey(entry) === previousKey));
+  rotationQueue = window.SportsOverlay.selection.applyRotationControls({
+    automaticEntries: discoveries.flatMap(result => result.automaticEntries),
+    availableEntries: discoveries.flatMap(result => result.availableEntries),
+    mode: savedConfig.rotationMode,
+    includedGameKeys: savedConfig.includedGames,
+    excludedGameKeys: savedConfig.excludedGames,
+    rotationOrder: savedConfig.rotationOrder,
+    keyOf: entryKey,
+  });
+  const lockedIndex = rotationQueue.findIndex(entry => entryKey(entry) === savedConfig.lockedGameKey);
+  currentIndex = lockedIndex >= 0
+    ? lockedIndex
+    : Math.max(0, rotationQueue.findIndex(entry => entryKey(entry) === previousKey));
   const changedGame = Boolean(previousKey && entryKey(rotationQueue[currentIndex]) !== previousKey);
 
   if (!rotationQueue.length) {
     requestRevision += 1;
-    layout.renderNoEvent("No favorite or live spotlight games found", CONFIG.showNoGameMessage);
+    layout.renderNoEvent("No watched or live spotlight games found", CONFIG.showNoGameMessage);
     scheduleDiscovery();
     return;
   }
@@ -173,14 +192,31 @@ async function discoverSport(context) {
   const leagueGames = leagueResult.status === "fulfilled" ? leagueResult.value : [];
   if (favoriteResult.status === "rejected") console.warn(`[Sports overlay] ${context.selectedTeam.league} favorite schedule lookup failed.`, favoriteResult.reason);
   if (leagueResult.status === "rejected") console.warn(`[Sports overlay] ${context.selectedTeam.league} league scoreboard lookup failed.`, leagueResult.reason);
-  return window.SportsOverlay.selection.buildRotationQueue({
+  const automaticEntries = context.favoriteTeams.length ? window.SportsOverlay.selection.buildRotationQueue({
     favoriteGames,
     leagueGames,
     favoriteTeamIds: context.favoriteTeams.map(team => team.teamId),
     toCandidate: context.providerModule.toCandidate,
     fallbackMode: savedConfig.fallbackMode,
     includeSpotlight: CONFIG.includeSpotlight,
-  }).map(entry => ({ ...entry, context }));
+  }).map(entry => ({ ...entry, context })) : [];
+  const favoriteIds = context.favoriteTeams.map(team => String(team.teamId).toUpperCase());
+  const candidates = [...leagueGames, ...favoriteGames]
+    .map(context.providerModule.toCandidate)
+    .filter(candidate => candidate.id);
+  const seen = new Set();
+  const availableEntries = candidates.filter(candidate => {
+    const key = `${context.sport}:${candidate.id}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).map(candidate => ({
+    kind: "manual",
+    candidate,
+    featuredTeamId: candidate.teamKeys.find(teamId => favoriteIds.includes(String(teamId).toUpperCase())) ?? candidate.teamKeys[0] ?? null,
+    context,
+  }));
+  return { automaticEntries, availableEntries };
 }
 
 function renderCurrentGame(options = {}) {
@@ -227,11 +263,12 @@ function schedulePoll() {
 function scheduleRotation() {
   clearTimeout(rotationTimer);
   if (rotationQueue.length < 2) return;
+  if (entryKey(rotationQueue[currentIndex]) === savedConfig.lockedGameKey) return;
   rotationTimer = setTimeout(async () => {
     currentIndex = (currentIndex + 1) % rotationQueue.length;
     await renderCurrentGame({ animate: true });
     scheduleRotation();
-  }, CONFIG.rotationIntervalMs);
+  }, window.SportsOverlay.selection.gameDurationSeconds(rotationQueue[currentIndex], savedConfig.gameDurations, entryKey) * 1_000);
 }
 
 async function transitionOut(revision) {
@@ -296,8 +333,13 @@ function entryKey(entry) {
 
 const staticPreview = renderDemoFromUrl() || renderScenarioFromUrl();
 if (!staticPreview) {
+  window.addEventListener("storage", event => {
+    if (event.key === window.SportsOverlay.config.STORAGE_KEY) window.location.reload();
+  });
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) discoverGames();
   });
   discoverGames();
 }
+
+})();

@@ -5,7 +5,7 @@
   border: 1px solid var(--hockey-line);
   border-radius: 9px;
   color: #f7fbff;
-  background: linear-gradient(112deg, #06172a, #0b2435 50%, #102d3b);
+  background: linear-gradient(112deg, var(--team-primary-deep, #06172a), #0b2435 50%, var(--team-accent-deep, #102d3b));
   box-shadow: 0 5px 18px rgba(0, 0, 0, 0.38), inset 0 1px rgba(255, 255, 255, 0.05);
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
 }
@@ -15,7 +15,7 @@
 .hockey-main { display: grid; grid-template-columns: 1fr 72px 1fr; align-items: center; min-height: 42px; padding: 0 13px; }
 .hockey-team { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .hockey-team--home { justify-content: flex-end; text-align: right; }
-.hockey-mark { display: grid; place-items: center; width: 27px; height: 27px; flex: 0 0 27px; border-radius: 50%; background: rgba(75, 180, 197, 0.18); color: #8de4ef; font-size: 8px; font-weight: 900; }
+.hockey-mark { display: grid; place-items: center; width: 27px; height: 27px; flex: 0 0 27px; border-radius: 50%; background: rgba(var(--team-accent-rgb, 75, 180, 197), 0.2); color: var(--team-accent-text, #8de4ef); font-size: 8px; font-weight: 900; }
 .hockey-mark img { width: 26px; height: 26px; object-fit: contain; }
 .hockey-mark img:not([hidden]) + span { display: none; }
 .hockey-team strong { display: block; font-size: 0.82em; letter-spacing: 0.075em; }

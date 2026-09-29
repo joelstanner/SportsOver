@@ -6,7 +6,7 @@
   border: 1px solid var(--soccer-line);
   border-radius: 9px;
   color: #f7fbff;
-  background: linear-gradient(110deg, #041a16, rgba(8, 35, 31, 0.98) 48%, rgba(11, 47, 42, 0.98));
+  background: linear-gradient(110deg, var(--team-primary-deep, #041a16), rgba(8, 35, 31, 0.98) 48%, var(--team-accent-deep, #0b2f2a));
   box-shadow: 0 5px 18px rgba(0, 0, 0, 0.38), inset 0 1px rgba(255, 255, 255, 0.05);
 }
 .soccer-scorebug.is-loading { opacity: 0; }
@@ -15,7 +15,7 @@
 .soccer-main { display: grid; grid-template-columns: 1fr 72px 1fr; align-items: center; min-height: 42px; padding: 0 13px; }
 .soccer-team { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .soccer-team--away { justify-content: flex-end; text-align: right; }
-.soccer-mark { display: grid; place-items: center; width: 27px; height: 27px; flex: 0 0 27px; border-radius: 50%; background: rgba(45, 200, 77, 0.16); color: #88efa1; font-size: 8px; font-weight: 900; }
+.soccer-mark { display: grid; place-items: center; width: 27px; height: 27px; flex: 0 0 27px; border-radius: 50%; background: rgba(var(--team-accent-rgb, 45, 200, 77), 0.2); color: var(--team-accent-text, #88efa1); font-size: 8px; font-weight: 900; }
 .soccer-mark img { width: 26px; height: 26px; object-fit: contain; }
 .soccer-mark img:not([hidden]) + span { display: none; }
 .soccer-team strong { display: block; font-size: 0.82em; letter-spacing: 0.075em; }

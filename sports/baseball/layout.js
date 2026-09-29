@@ -103,6 +103,7 @@
       els.bug.classList.remove("is-hidden", "is-loading");
       els.bug.dataset.sport = event.sport;
       els.bug.dataset.state = event.state;
+      global.SportsOverlay.teamTheme.apply(els.bug, event);
       els.bug.setAttribute("aria-label", `${away.name} at ${home.name} ${event.league} game`);
       setTeam(els.awayTeam, els.awayLogo, els.awayAbbr, away);
       setTeam(els.homeTeam, els.homeLogo, els.homeAbbr, home);
@@ -229,7 +230,7 @@
 
   function setTeam(container, logo, abbreviation, team) {
     abbreviation.textContent = team.abbreviation;
-    container.classList.toggle("is-seattle", team.featured);
+    container.classList.toggle("is-featured", team.featured);
     if (!team.logoUrl) {
       logo.hidden = true;
       logo.removeAttribute("src");

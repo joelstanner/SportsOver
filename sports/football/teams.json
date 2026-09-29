@@ -1,0 +1,360 @@
+{
+  "sport": "football",
+  "league": "NFL",
+  "provider": "espn-nfl",
+  "updatedAt": "2026-09-29",
+  "teams": [
+    {
+      "key": "nfl:ari",
+      "teamId": "ARI",
+      "name": "Arizona Cardinals",
+      "abbreviation": "ARI",
+      "theme": {
+        "primary": "#a40227",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/ari.png"
+    },
+    {
+      "key": "nfl:atl",
+      "teamId": "ATL",
+      "name": "Atlanta Falcons",
+      "abbreviation": "ATL",
+      "theme": {
+        "primary": "#a71930",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/atl.png"
+    },
+    {
+      "key": "nfl:bal",
+      "teamId": "BAL",
+      "name": "Baltimore Ravens",
+      "abbreviation": "BAL",
+      "theme": {
+        "primary": "#29126f",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/bal.png"
+    },
+    {
+      "key": "nfl:buf",
+      "teamId": "BUF",
+      "name": "Buffalo Bills",
+      "abbreviation": "BUF",
+      "theme": {
+        "primary": "#00338d",
+        "accent": "#d50a0a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/buf.png"
+    },
+    {
+      "key": "nfl:car",
+      "teamId": "CAR",
+      "name": "Carolina Panthers",
+      "abbreviation": "CAR",
+      "theme": {
+        "primary": "#0085ca",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/car.png"
+    },
+    {
+      "key": "nfl:chi",
+      "teamId": "CHI",
+      "name": "Chicago Bears",
+      "abbreviation": "CHI",
+      "theme": {
+        "primary": "#0b1c3a",
+        "accent": "#e64100"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/chi.png"
+    },
+    {
+      "key": "nfl:cin",
+      "teamId": "CIN",
+      "name": "Cincinnati Bengals",
+      "abbreviation": "CIN",
+      "theme": {
+        "primary": "#fb4f14",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/cin.png"
+    },
+    {
+      "key": "nfl:cle",
+      "teamId": "CLE",
+      "name": "Cleveland Browns",
+      "abbreviation": "CLE",
+      "theme": {
+        "primary": "#472a08",
+        "accent": "#ff3c00"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/cle.png"
+    },
+    {
+      "key": "nfl:dal",
+      "teamId": "DAL",
+      "name": "Dallas Cowboys",
+      "abbreviation": "DAL",
+      "theme": {
+        "primary": "#002a5c",
+        "accent": "#b0b7bc"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/dal.png"
+    },
+    {
+      "key": "nfl:den",
+      "teamId": "DEN",
+      "name": "Denver Broncos",
+      "abbreviation": "DEN",
+      "theme": {
+        "primary": "#0a2343",
+        "accent": "#fc4c02"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/den.png"
+    },
+    {
+      "key": "nfl:det",
+      "teamId": "DET",
+      "name": "Detroit Lions",
+      "abbreviation": "DET",
+      "theme": {
+        "primary": "#0076b6",
+        "accent": "#bbbbbb"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/det.png"
+    },
+    {
+      "key": "nfl:gb",
+      "teamId": "GB",
+      "name": "Green Bay Packers",
+      "abbreviation": "GB",
+      "theme": {
+        "primary": "#204e32",
+        "accent": "#ffb612"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/gb.png"
+    },
+    {
+      "key": "nfl:hou",
+      "teamId": "HOU",
+      "name": "Houston Texans",
+      "abbreviation": "HOU",
+      "theme": {
+        "primary": "#021018",
+        "accent": "#eb0028"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/hou.png"
+    },
+    {
+      "key": "nfl:ind",
+      "teamId": "IND",
+      "name": "Indianapolis Colts",
+      "abbreviation": "IND",
+      "theme": {
+        "primary": "#003b75",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/ind.png"
+    },
+    {
+      "key": "nfl:jax",
+      "teamId": "JAX",
+      "name": "Jacksonville Jaguars",
+      "abbreviation": "JAX",
+      "theme": {
+        "primary": "#007487",
+        "accent": "#d7a22a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/jax.png"
+    },
+    {
+      "key": "nfl:kc",
+      "teamId": "KC",
+      "name": "Kansas City Chiefs",
+      "abbreviation": "KC",
+      "theme": {
+        "primary": "#e31837",
+        "accent": "#ffb612"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/kc.png"
+    },
+    {
+      "key": "nfl:lv",
+      "teamId": "LV",
+      "name": "Las Vegas Raiders",
+      "abbreviation": "LV",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#a5acaf"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/lv.png"
+    },
+    {
+      "key": "nfl:lac",
+      "teamId": "LAC",
+      "name": "Los Angeles Chargers",
+      "abbreviation": "LAC",
+      "theme": {
+        "primary": "#0080c6",
+        "accent": "#ffc20e"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/lac.png"
+    },
+    {
+      "key": "nfl:lar",
+      "teamId": "LAR",
+      "name": "Los Angeles Rams",
+      "abbreviation": "LAR",
+      "theme": {
+        "primary": "#003594",
+        "accent": "#ffd100"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/lar.png"
+    },
+    {
+      "key": "nfl:mia",
+      "teamId": "MIA",
+      "name": "Miami Dolphins",
+      "abbreviation": "MIA",
+      "theme": {
+        "primary": "#008e97",
+        "accent": "#fc4c02"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/mia.png"
+    },
+    {
+      "key": "nfl:min",
+      "teamId": "MIN",
+      "name": "Minnesota Vikings",
+      "abbreviation": "MIN",
+      "theme": {
+        "primary": "#4f2683",
+        "accent": "#ffc62f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/min.png"
+    },
+    {
+      "key": "nfl:ne",
+      "teamId": "NE",
+      "name": "New England Patriots",
+      "abbreviation": "NE",
+      "theme": {
+        "primary": "#002a5c",
+        "accent": "#c60c30"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/ne.png"
+    },
+    {
+      "key": "nfl:no",
+      "teamId": "NO",
+      "name": "New Orleans Saints",
+      "abbreviation": "NO",
+      "theme": {
+        "primary": "#d3bc8d",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/no.png"
+    },
+    {
+      "key": "nfl:nyg",
+      "teamId": "NYG",
+      "name": "New York Giants",
+      "abbreviation": "NYG",
+      "theme": {
+        "primary": "#003c7f",
+        "accent": "#c9243f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/nyg.png"
+    },
+    {
+      "key": "nfl:nyj",
+      "teamId": "NYJ",
+      "name": "New York Jets",
+      "abbreviation": "NYJ",
+      "theme": {
+        "primary": "#115740",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/nyj.png"
+    },
+    {
+      "key": "nfl:phi",
+      "teamId": "PHI",
+      "name": "Philadelphia Eagles",
+      "abbreviation": "PHI",
+      "theme": {
+        "primary": "#06424d",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/phi.png"
+    },
+    {
+      "key": "nfl:pit",
+      "teamId": "PIT",
+      "name": "Pittsburgh Steelers",
+      "abbreviation": "PIT",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#ffb612"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/pit.png"
+    },
+    {
+      "key": "nfl:sf",
+      "teamId": "SF",
+      "name": "San Francisco 49ers",
+      "abbreviation": "SF",
+      "theme": {
+        "primary": "#aa0000",
+        "accent": "#b3995d"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/sf.png"
+    },
+    {
+      "key": "nfl:sea",
+      "teamId": "SEA",
+      "name": "Seattle Seahawks",
+      "abbreviation": "SEA",
+      "theme": {
+        "primary": "#002244",
+        "accent": "#69be28"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/sea.png"
+    },
+    {
+      "key": "nfl:tb",
+      "teamId": "TB",
+      "name": "Tampa Bay Buccaneers",
+      "abbreviation": "TB",
+      "theme": {
+        "primary": "#bd1c36",
+        "accent": "#3e3a35"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/tb.png"
+    },
+    {
+      "key": "nfl:ten",
+      "teamId": "TEN",
+      "name": "Tennessee Titans",
+      "abbreviation": "TEN",
+      "theme": {
+        "primary": "#4495d2",
+        "accent": "#001532"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/ten.png"
+    },
+    {
+      "key": "nfl:wsh",
+      "teamId": "WSH",
+      "name": "Washington Commanders",
+      "abbreviation": "WSH",
+      "theme": {
+        "primary": "#5a1414",
+        "accent": "#ffb612"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nfl/500/wsh.png"
+    }
+  ]
+}

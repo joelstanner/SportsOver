@@ -4,42 +4,65 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sports Overlay Control Room</title>
-  <link rel="stylesheet" href="admin.css?v=4">
+  <link rel="stylesheet" href="admin.css?v=13">
 </head>
 <body>
   <header class="masthead">
-    <div>
+    <div class="masthead-copy">
       <p class="eyebrow">ANTLERJONES STREAM TOOLS</p>
       <h1>Sports Overlay</h1>
-      <p class="subtitle">Choose favorite teams and inspect every banner state.</p>
+      <p class="subtitle">Choose teams to watch and inspect every banner state.</p>
     </div>
-    <span class="local-badge">LOCAL CONTROL</span>
+    <section class="masthead-preview" aria-label="Live production banner">
+      <div class="masthead-preview-bar">
+        <span><span class="live-dot"></span>LIVE PRODUCTION</span>
+        <div>
+          <button id="undo-live-change" class="undo-live-button" type="button" hidden>Undo last change</button>
+          <button id="refresh-production" class="preview-refresh" type="button">Refresh</button>
+        </div>
+      </div>
+      <div class="masthead-preview-stage">
+        <iframe id="production-preview" title="Production sports banner preview" width="472" height="100"></iframe>
+      </div>
+    </section>
   </header>
 
   <nav class="tabs" aria-label="Sports overlay sections">
     <button class="tab is-active" type="button" data-tab="settings" aria-selected="true">Settings</button>
-    <button class="tab" type="button" data-tab="live" aria-selected="false">Live</button>
+    <button class="tab" type="button" data-tab="live" aria-selected="false">Live control</button>
     <button class="tab" type="button" data-tab="demo" aria-selected="false">Demo lab</button>
   </nav>
 
   <main>
     <section id="settings-panel" class="panel" data-panel="settings">
       <div class="panel-heading">
-        <div><p class="section-kicker">SELECTION ORDER</p><h2>Sports and favorites</h2></div>
-        <p>Rank sports first, then rank favorite teams within each sport.</p>
+        <div><p class="section-kicker">SELECTION ORDER</p><h2>Sports and watched teams</h2></div>
+        <p>Rank sports first, then rank watched teams within each sport.</p>
       </div>
+
+      <section class="watch-team-panel" aria-labelledby="watch-team-heading">
+        <div>
+          <p class="section-kicker">TEAM TRACKING</p>
+          <h3 id="watch-team-heading">Watch another team</h3>
+          <p>Add any supported team. It will appear under its sport, ready to rank.</p>
+        </div>
+        <div class="watch-team-controls">
+          <label class="field" for="team-picker">Team</label>
+          <div class="watch-team-inputs">
+            <select id="team-picker" aria-describedby="watch-team-heading"></select>
+            <button id="add-team" class="button button--secondary" type="button">Watch team</button>
+          </div>
+        </div>
+      </section>
       <div id="sports-list" class="sports-list" aria-live="polite"></div>
 
       <div class="settings-grid">
         <label class="field">Display mode
           <select id="display-mode">
             <option value="automatic">Automatic priority</option>
-            <option value="rotate">Rotate favorite + spotlight</option>
-            <option value="top-favorite">Top favorite only</option>
+            <option value="rotate">Rotate watched team + spotlight</option>
+            <option value="top-favorite">Top watched team only</option>
           </select>
-        </label>
-        <label class="field">Rotation interval
-          <span class="input-suffix"><input id="rotation-seconds" type="number" min="10" max="300" step="5"><span>seconds</span></span>
         </label>
         <label class="field">When nothing is live
           <select id="fallback-mode">
@@ -59,26 +82,59 @@
 
     <section id="live-panel" class="panel" data-panel="live" hidden>
       <div class="panel-heading">
-        <div><p class="section-kicker">PROVIDER DATA</p><h2>Live banners</h2></div>
-        <p>Compare the saved production rotation with a single-sport provider preview.</p>
+        <div><p class="section-kicker">LIVE BANNER</p><h2>Rotation control</h2></div>
+        <p>Choose exactly which games rotate and how long each one stays visible.</p>
       </div>
 
-      <div class="live-preview-block">
-        <div class="live-preview-heading">
-          <div><p class="section-kicker">SAVED PRODUCTION SETTINGS</p><h3>Production banner</h3></div>
-          <div class="preview-actions">
-            <button id="refresh-production" class="button button--secondary" type="button">Refresh now</button>
-            <a class="button button--quiet-link" href="../index.html" target="_blank" rel="noopener">Open full preview</a>
+      <section class="rotation-control" aria-labelledby="rotation-control-heading">
+        <div class="rotation-toolbar">
+          <label class="field">Queue mode
+            <select id="rotation-mode">
+              <option value="automatic">Automatic suggestions</option>
+              <option value="hybrid">Automatic + my changes</option>
+              <option value="curated">Only games I choose</option>
+            </select>
+          </label>
+          <div class="field">
+            <span>Game data</span>
+            <button id="refresh-games" class="button button--secondary" type="button">Refresh games</button>
           </div>
         </div>
-        <div class="preview-shell">
-          <div class="preview-label"><span>PRODUCTION OBS PREVIEW</span><code>472 × 100</code></div>
-          <div class="preview-stage">
-            <iframe id="production-preview" title="Production sports banner preview" width="472" height="100"></iframe>
-          </div>
+        <p class="timing-defaults">Default timing: <strong>Live 20s</strong><span>·</span><strong>Upcoming 5s</strong><span>·</span><strong>Final 10s</strong></p>
+
+        <div class="rotation-columns">
+          <section class="rotation-column">
+            <div class="rotation-column-heading">
+              <div><p class="section-kicker">ON BANNER</p><h3 id="rotation-control-heading">Rotation order</h3></div>
+              <span id="rotation-count" class="count-badge">0 games</span>
+            </div>
+            <div id="rotation-queue" class="game-list" aria-live="polite"></div>
+          </section>
+          <section class="rotation-column">
+            <div class="rotation-column-heading">
+              <div><p class="section-kicker">DISCOVERED</p><h3>Available games</h3></div>
+            </div>
+            <div class="game-filters">
+              <select id="available-sport-filter" aria-label="Filter available games by sport">
+                <option value="">All sports</option>
+                <option value="baseball">MLB</option>
+                <option value="football">NFL</option>
+                <option value="college-football">NCAAF</option>
+                <option value="hockey">NHL</option>
+                <option value="soccer">MLS</option>
+                <option value="basketball">NBA</option>
+              </select>
+              <input id="game-search" type="search" placeholder="Find a team" aria-label="Find an available team">
+            </div>
+            <div id="available-games" class="game-list" aria-live="polite"></div>
+          </section>
         </div>
-        <p class="live-note">Unfiltered. Uses the exact saved priorities, favorites, fallback, spotlight, and rotation settings.</p>
-      </div>
+
+        <div class="actions rotation-actions">
+          <button id="reset-rotation" class="button button--quiet" type="button">Reset rotation</button>
+          <span id="rotation-status" class="save-status" role="status"></span>
+        </div>
+      </section>
 
       <div class="live-preview-block">
         <div class="live-preview-heading">
@@ -86,7 +142,7 @@
         </div>
         <div class="live-controls">
           <label class="field">Sport
-            <select id="live-sport"><option value="football">Football · Seahawks</option><option value="college-football">College football · top favorite</option><option value="hockey">Hockey · Kraken</option><option value="soccer">Soccer · Sounders</option><option value="basketball">Basketball · Pistons</option><option value="baseball">Baseball · Mariners</option></select>
+            <select id="live-sport"><option value="football">Football · Seahawks</option><option value="college-football">College football · top watched team</option><option value="hockey">Hockey · Kraken</option><option value="soccer">Soccer · Sounders</option><option value="basketball">Basketball · Pistons</option><option value="baseball">Baseball · Mariners</option></select>
           </label>
           <button id="refresh-live" class="button button--secondary" type="button">Refresh now</button>
           <a id="open-live" class="button button--quiet-link" href="../index.html?sport=football" target="_blank" rel="noopener">Open full preview</a>
@@ -144,11 +200,6 @@
         </div>
       </header>
       <div class="sport-favorites"></div>
-      <div class="add-favorite">
-        <label>Add favorite</label>
-        <select class="team-picker" aria-label="Team to add"></select>
-        <button class="button button--secondary add-team" type="button">Add team</button>
-      </div>
     </section>
   </template>
 
@@ -157,16 +208,54 @@
       <span class="team-mark"></span>
       <div class="team-copy"><strong class="team-name"></strong><span class="team-meta"></span></div>
       <span class="provider-badge"></span>
-      <label class="toggle"><input class="team-enabled" type="checkbox"><span>Enabled</span></label>
+      <label class="toggle"><input class="team-enabled" type="checkbox"><span>Included</span></label>
       <div class="order-buttons">
-        <button class="icon-button move-up" type="button" aria-label="Move favorite up">↑</button>
-        <button class="icon-button move-down" type="button" aria-label="Move favorite down">↓</button>
+        <button class="icon-button move-up" type="button" aria-label="Move watched team up">↑</button>
+        <button class="icon-button move-down" type="button" aria-label="Move watched team down">↓</button>
       </div>
       <button class="remove-team" type="button">Remove</button>
     </article>
   </template>
 
-  <script src="../core/config.js?v=8"></script>
-  <script src="admin.js?v=6"></script>
+  <template id="queue-game-template">
+    <article class="game-card">
+      <span class="game-sport"></span>
+      <div class="game-copy"><strong class="game-name"></strong><span class="game-meta"></span></div>
+      <span class="game-source"></span>
+      <div class="duration-control" aria-label="Time on banner">
+        <button class="game-time-down" type="button" aria-label="Show game 5 seconds less">−</button>
+        <output class="game-time"></output>
+        <button class="game-time-up" type="button" aria-label="Show game 5 seconds longer">+</button>
+      </div>
+      <div class="order-buttons">
+        <button class="icon-button game-up" type="button" aria-label="Move game up">↑</button>
+        <button class="icon-button game-down" type="button" aria-label="Move game down">↓</button>
+      </div>
+      <div class="game-actions">
+        <button class="lock-game" type="button">Lock</button>
+        <button class="remove-game" type="button">Remove</button>
+      </div>
+    </article>
+  </template>
+
+  <template id="available-game-template">
+    <article class="game-card game-card--available">
+      <span class="game-sport"></span>
+      <div class="game-copy"><strong class="game-name"></strong><span class="game-meta"></span></div>
+      <button class="button button--secondary add-game" type="button">Add</button>
+    </article>
+  </template>
+
+  <script src="../core/config.js?v=12"></script>
+  <script src="../core/event-model.js?v=2"></script>
+  <script src="../core/registry.js?v=2"></script>
+  <script src="../core/game-selection.js?v=3"></script>
+  <script src="../sports/baseball/providers/mlb.js?v=2"></script>
+  <script src="../sports/football/providers/espn.js?v=4"></script>
+  <script src="../sports/college-football/providers/espn.js?v=5"></script>
+  <script src="../sports/hockey/providers/espn.js?v=2"></script>
+  <script src="../sports/soccer/providers/espn.js?v=2"></script>
+  <script src="../sports/basketball/providers/espn.js?v=3"></script>
+  <script src="admin.js?v=14"></script>
 </body>
 </html>

@@ -11,7 +11,7 @@
   border: 1px solid var(--football-line);
   border-radius: 9px;
   color: var(--football-white);
-  background: linear-gradient(110deg, var(--football-bg), var(--football-panel) 48%, var(--football-panel-2));
+  background: linear-gradient(110deg, var(--team-primary-deep, var(--football-bg)), var(--football-panel) 48%, var(--team-accent-deep, var(--football-panel-2)));
   box-shadow: 0 5px 18px rgba(0, 0, 0, 0.38), inset 0 1px rgba(255, 255, 255, 0.05);
 }
 
@@ -21,8 +21,8 @@
 .football-main { display: grid; grid-template-columns: 1fr 76px 1fr; align-items: center; min-height: 42px; padding: 0 14px; }
 .football-team { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .football-team--home { justify-content: flex-end; text-align: right; }
-.football-mark { display: grid; place-items: center; width: 25px; height: 25px; flex: 0 0 25px; border-radius: 50%; color: #fff; background: #1d4ed8; font-size: 8px; font-weight: 800; }
-.football-mark--home { background: #0f766e; }
+.football-mark { display: grid; place-items: center; width: 25px; height: 25px; flex: 0 0 25px; border-radius: 50%; color: var(--team-accent-text, #fff); background: rgba(var(--team-accent-rgb, 29, 78, 216), 0.2); font-size: 8px; font-weight: 800; }
+.football-mark--home { background: rgba(var(--team-accent-rgb, 15, 118, 110), 0.2); }
 .football-mark img { width: 24px; height: 24px; object-fit: contain; }
 .football-mark img:not([hidden]) + span { display: none; }
 .football-team-name { display: flex; align-items: center; gap: 4px; }

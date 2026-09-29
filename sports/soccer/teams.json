@@ -1,0 +1,338 @@
+{
+  "sport": "soccer",
+  "league": "MLS",
+  "provider": "espn-mls",
+  "updatedAt": "2026-09-29",
+  "teams": [
+    {
+      "key": "mls:18418",
+      "teamId": 18418,
+      "name": "Atlanta United FC",
+      "abbreviation": "ATL",
+      "theme": {
+        "primary": "#9d2235",
+        "accent": "#aa9767"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/18418.png"
+    },
+    {
+      "key": "mls:20906",
+      "teamId": 20906,
+      "name": "Austin FC",
+      "abbreviation": "ATX",
+      "theme": {
+        "primary": "#00b140",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/20906.png"
+    },
+    {
+      "key": "mls:9720",
+      "teamId": 9720,
+      "name": "CF Montréal",
+      "abbreviation": "MTL",
+      "theme": {
+        "primary": "#003da6",
+        "accent": "#c1c5c8"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/9720.png"
+    },
+    {
+      "key": "mls:21300",
+      "teamId": 21300,
+      "name": "Charlotte FC",
+      "abbreviation": "CLT",
+      "theme": {
+        "primary": "#0085ca",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/21300.png"
+    },
+    {
+      "key": "mls:182",
+      "teamId": 182,
+      "name": "Chicago Fire FC",
+      "abbreviation": "CHI",
+      "theme": {
+        "primary": "#7ccdef",
+        "accent": "#ff0000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/182.png"
+    },
+    {
+      "key": "mls:184",
+      "teamId": 184,
+      "name": "Colorado Rapids",
+      "abbreviation": "COL",
+      "theme": {
+        "primary": "#8a2432",
+        "accent": "#8ab7e9"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/184.png"
+    },
+    {
+      "key": "mls:183",
+      "teamId": 183,
+      "name": "Columbus Crew",
+      "abbreviation": "CLB",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#fedd00"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/183.png"
+    },
+    {
+      "key": "mls:193",
+      "teamId": 193,
+      "name": "D.C. United",
+      "abbreviation": "DC",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#d61018"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/193.png"
+    },
+    {
+      "key": "mls:18267",
+      "teamId": 18267,
+      "name": "FC Cincinnati",
+      "abbreviation": "CIN",
+      "theme": {
+        "primary": "#003087",
+        "accent": "#fe5000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/18267.png"
+    },
+    {
+      "key": "mls:185",
+      "teamId": 185,
+      "name": "FC Dallas",
+      "abbreviation": "DAL",
+      "theme": {
+        "primary": "#c6093b",
+        "accent": "#001f5b"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/185.png"
+    },
+    {
+      "key": "mls:6077",
+      "teamId": 6077,
+      "name": "Houston Dynamo FC",
+      "abbreviation": "HOU",
+      "theme": {
+        "primary": "#ff6b00",
+        "accent": "#101820"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/6077.png"
+    },
+    {
+      "key": "mls:20232",
+      "teamId": 20232,
+      "name": "Inter Miami CF",
+      "abbreviation": "MIA",
+      "theme": {
+        "primary": "#231f20",
+        "accent": "#f7b5cd"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/20232.png"
+    },
+    {
+      "key": "mls:187",
+      "teamId": 187,
+      "name": "LA Galaxy",
+      "abbreviation": "LA",
+      "theme": {
+        "primary": "#00235d",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/187.png"
+    },
+    {
+      "key": "mls:18966",
+      "teamId": 18966,
+      "name": "LAFC",
+      "abbreviation": "LAFC",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#c7a36f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/18966.png"
+    },
+    {
+      "key": "mls:17362",
+      "teamId": 17362,
+      "name": "Minnesota United FC",
+      "abbreviation": "MIN",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#9bcde4"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/17362.png"
+    },
+    {
+      "key": "mls:18986",
+      "teamId": 18986,
+      "name": "Nashville SC",
+      "abbreviation": "NSH",
+      "theme": {
+        "primary": "#ece83a",
+        "accent": "#1f1646"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/18986.png"
+    },
+    {
+      "key": "mls:189",
+      "teamId": 189,
+      "name": "New England Revolution",
+      "abbreviation": "NE",
+      "theme": {
+        "primary": "#022166",
+        "accent": "#ce0e2d"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/189.png"
+    },
+    {
+      "key": "mls:17606",
+      "teamId": 17606,
+      "name": "New York City FC",
+      "abbreviation": "NYC",
+      "theme": {
+        "primary": "#9fd2ff",
+        "accent": "#000229"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/17606.png"
+    },
+    {
+      "key": "mls:12011",
+      "teamId": 12011,
+      "name": "Orlando City SC",
+      "abbreviation": "ORL",
+      "theme": {
+        "primary": "#60269e",
+        "accent": "#f0d283"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/12011.png"
+    },
+    {
+      "key": "mls:10739",
+      "teamId": 10739,
+      "name": "Philadelphia Union",
+      "abbreviation": "PHI",
+      "theme": {
+        "primary": "#051f31",
+        "accent": "#e0d0a6"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/10739.png"
+    },
+    {
+      "key": "mls:9723",
+      "teamId": 9723,
+      "name": "Portland Timbers",
+      "abbreviation": "POR",
+      "theme": {
+        "primary": "#2c5234",
+        "accent": "#c99700"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/9723.png"
+    },
+    {
+      "key": "mls:4771",
+      "teamId": 4771,
+      "name": "Real Salt Lake",
+      "abbreviation": "RSL",
+      "theme": {
+        "primary": "#a32035",
+        "accent": "#daa900"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/4771.png"
+    },
+    {
+      "key": "mls:190",
+      "teamId": 190,
+      "name": "Red Bull New York",
+      "abbreviation": "RBNY",
+      "theme": {
+        "primary": "#ba0c2f",
+        "accent": "#ffc72c"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/190.png"
+    },
+    {
+      "key": "mls:22529",
+      "teamId": 22529,
+      "name": "San Diego FC",
+      "abbreviation": "SD",
+      "theme": {
+        "primary": "#697a7c",
+        "accent": "#f89e1a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/22529.png"
+    },
+    {
+      "key": "mls:191",
+      "teamId": 191,
+      "name": "San Jose Earthquakes",
+      "abbreviation": "SJ",
+      "theme": {
+        "primary": "#003da6",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/191.png"
+    },
+    {
+      "key": "mls:9726",
+      "teamId": 9726,
+      "name": "Seattle Sounders FC",
+      "abbreviation": "SEA",
+      "theme": {
+        "primary": "#236192",
+        "accent": "#6ab43e"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/9726.png"
+    },
+    {
+      "key": "mls:186",
+      "teamId": 186,
+      "name": "Sporting Kansas City",
+      "abbreviation": "SKC",
+      "theme": {
+        "primary": "#a7c6ed",
+        "accent": "#0a2240"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/186.png"
+    },
+    {
+      "key": "mls:21812",
+      "teamId": 21812,
+      "name": "St. Louis CITY SC",
+      "abbreviation": "STL",
+      "theme": {
+        "primary": "#ec1458",
+        "accent": "#001544"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/21812.png"
+    },
+    {
+      "key": "mls:7318",
+      "teamId": 7318,
+      "name": "Toronto FC",
+      "abbreviation": "TOR",
+      "theme": {
+        "primary": "#aa182c",
+        "accent": "#a2a9ad"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/7318.png"
+    },
+    {
+      "key": "mls:9727",
+      "teamId": 9727,
+      "name": "Vancouver Whitecaps",
+      "abbreviation": "VAN",
+      "theme": {
+        "primary": "#ffffff",
+        "accent": "#12284c"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/soccer/500/9727.png"
+    }
+  ]
+}

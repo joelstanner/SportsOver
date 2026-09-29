@@ -97,6 +97,48 @@
       .sort((a, b) => interestScore(b) - interestScore(a) || dateValue(a.startTime) - dateValue(b.startTime) || a.id.localeCompare(b.id))[0] ?? null;
   }
 
+  function applyRotationControls({ automaticEntries = [], availableEntries = [], mode = "automatic", includedGameKeys = [], excludedGameKeys = [], rotationOrder = [], keyOf = defaultEntryKey }) {
+    const available = deduplicateEntries([...availableEntries, ...automaticEntries], keyOf);
+    const automatic = deduplicateEntries(automaticEntries, keyOf);
+    const byKey = new Map(available.map(entry => [keyOf(entry), entry]));
+    const included = includedGameKeys.map(key => byKey.get(key)).filter(Boolean);
+    const base = mode === "curated" ? included : mode === "hybrid" ? [...automatic, ...included] : automatic;
+    const excluded = new Set(excludedGameKeys);
+    const order = new Map(rotationOrder.map((key, index) => [key, index]));
+    return deduplicateEntries(base, keyOf)
+      .filter(entry => !excluded.has(keyOf(entry)))
+      .map((entry, index) => ({ entry, index }))
+      .sort((a, b) => {
+        const aOrder = order.has(keyOf(a.entry)) ? order.get(keyOf(a.entry)) : Number.MAX_SAFE_INTEGER;
+        const bOrder = order.has(keyOf(b.entry)) ? order.get(keyOf(b.entry)) : Number.MAX_SAFE_INTEGER;
+        return aOrder - bOrder || a.index - b.index;
+      })
+      .map(item => item.entry);
+  }
+
+  function deduplicateEntries(entries, keyOf) {
+    const seen = new Set();
+    return entries.filter(entry => {
+      const key = keyOf(entry);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  function defaultEntryKey(entry) {
+    return entry?.candidate?.sport && entry?.candidate?.id ? `${entry.candidate.sport}:${entry.candidate.id}` : "";
+  }
+
+  function gameDurationSeconds(entry, overrides = {}, keyOf = defaultEntryKey) {
+    const override = Number(overrides?.[keyOf(entry)]);
+    if (Number.isFinite(override)) return Math.min(300, Math.max(5, Math.round(override / 5) * 5));
+    const state = entry?.candidate?.state;
+    if (state === "live" || state === "interrupted") return 20;
+    if (state === "final") return 10;
+    return 5;
+  }
+
   function interestScore(candidate) {
     let score = 0;
     if (candidate.postseason) score += 100;
@@ -144,6 +186,8 @@
     espnCandidate,
     mlbCandidate,
     buildRotationQueue,
+    applyRotationControls,
+    gameDurationSeconds,
     chooseSpotlight,
     interestScore,
   });

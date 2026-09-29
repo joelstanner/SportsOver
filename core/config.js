@@ -10,17 +10,16 @@
     Object.freeze({ key: "soccer", name: "Soccer", league: "MLS" }),
     Object.freeze({ key: "basketball", name: "Basketball", league: "NBA" }),
   ]);
-  const TEAM_CATALOG = Object.freeze([
-    Object.freeze({ key: "mlb:136", sport: "baseball", league: "MLB", teamId: 136, name: "Seattle Mariners", abbreviation: "SEA", logoUrl: "https://www.mlbstatic.com/team-logos/136.svg", provider: "mlb", providerStatus: "live" }),
-    Object.freeze({ key: "nfl:sea", sport: "football", league: "NFL", teamId: "SEA", name: "Seattle Seahawks", abbreviation: "SEA", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/sea.png", provider: "espn-nfl", providerStatus: "live" }),
-    Object.freeze({ key: "ncaaf:158", sport: "college-football", league: "NCAAF", teamId: "158", name: "Nebraska Cornhuskers", abbreviation: "NEB", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/158.png", provider: "espn-ncaaf", providerStatus: "live" }),
-    Object.freeze({ key: "ncaaf:264", sport: "college-football", league: "NCAAF", teamId: "264", name: "Washington Huskies", abbreviation: "WASH", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/264.png", provider: "espn-ncaaf", providerStatus: "live" }),
-    Object.freeze({ key: "nhl:sea", sport: "hockey", league: "NHL", teamId: "SEA", name: "Seattle Kraken", abbreviation: "SEA", logoUrl: "https://a.espncdn.com/i/teamlogos/nhl/500/sea.png", provider: "espn-nhl", providerStatus: "live" }),
-    Object.freeze({ key: "mls:9726", sport: "soccer", league: "MLS", teamId: 9726, name: "Seattle Sounders FC", abbreviation: "SEA", logoUrl: "https://a.espncdn.com/i/teamlogos/soccer/500/9726.png", provider: "espn-mls", providerStatus: "live" }),
-    Object.freeze({ key: "nba:det", sport: "basketball", league: "NBA", teamId: "DET", name: "Detroit Pistons", abbreviation: "DET", logoUrl: "https://a.espncdn.com/i/teamlogos/nba/500/det.png", provider: "espn-nba", providerStatus: "live" }),
-  ]);
+  const CATALOG_SPORTS = Object.freeze(["baseball", "football", "college-football", "hockey", "soccer", "basketball"]);
+  const TEAM_CATALOG = loadTeamCatalogSync();
+  const ready = TEAM_CATALOG.length
+    ? Promise.resolve(TEAM_CATALOG)
+    : loadTeamCatalog().then(teams => {
+      TEAM_CATALOG.push(...teams);
+      return TEAM_CATALOG;
+    });
   const DEFAULT_CONFIG = Object.freeze({
-    version: 5,
+    version: 6,
     sports: Object.freeze([
       frozenSport("baseball", ["mlb:136"]),
       frozenSport("football", ["nfl:sea"]),
@@ -30,11 +29,53 @@
       frozenSport("basketball", ["nba:det"]),
     ]),
     rotationSeconds: 10,
+    rotationMode: "automatic",
+    includedGames: Object.freeze([]),
+    excludedGames: Object.freeze([]),
+    rotationOrder: Object.freeze([]),
+    gameDurations: Object.freeze({}),
+    lockedGameKey: null,
     fallbackMode: "up-next",
     displayMode: "automatic",
   });
   const FALLBACK_MODES = new Set(["up-next", "recent-final", "hide"]);
   const DISPLAY_MODES = new Set(["automatic", "rotate", "top-favorite"]);
+  const ROTATION_MODES = new Set(["automatic", "hybrid", "curated"]);
+
+  function loadTeamCatalogSync() {
+    if (typeof module === "undefined" || !module.exports || typeof require !== "function") return [];
+    return CATALOG_SPORTS.flatMap(sport => normalizeCatalog(require(`../sports/${sport}/teams.json`)));
+  }
+
+  async function loadTeamCatalog() {
+    const scriptUrl = document.currentScript?.src || `${global.location?.origin || ""}/core/config.js`;
+    const catalogs = await Promise.all(CATALOG_SPORTS.map(async sport => {
+      const url = new URL(`../sports/${sport}/teams.json`, scriptUrl);
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Team catalog ${sport} returned HTTP ${response.status}`);
+      return response.json();
+    }));
+    return catalogs.flatMap(normalizeCatalog);
+  }
+
+  function normalizeCatalog(catalog) {
+    const sport = String(catalog?.sport || "");
+    const league = String(catalog?.league || "");
+    const provider = String(catalog?.provider || "");
+    if (!findSportMetadata(sport) || !league || !provider || !Array.isArray(catalog?.teams)) return [];
+    return catalog.teams.map(team => Object.freeze({
+      ...team,
+      sport,
+      league,
+      provider,
+      providerStatus: "live",
+      theme: Object.freeze({ ...team.theme }),
+    }));
+  }
+
+  function findSportMetadata(sportKey) {
+    return SPORT_CATALOG.find(sport => sport.key === String(sportKey || "").toLowerCase()) || null;
+  }
 
   function frozenSport(sport, teamKeys) {
     return Object.freeze({
@@ -63,14 +104,45 @@
 
     const rotationSeconds = Number(source.rotationSeconds);
     return {
-      version: 5,
+      version: 6,
       sports,
       rotationSeconds: Number.isFinite(rotationSeconds)
-        ? Math.min(300, Math.max(10, Math.round(rotationSeconds)))
+        ? Math.min(300, Math.max(5, Math.round(rotationSeconds)))
         : DEFAULT_CONFIG.rotationSeconds,
+      rotationMode: ROTATION_MODES.has(source.rotationMode) ? source.rotationMode : DEFAULT_CONFIG.rotationMode,
+      includedGames: normalizeGameKeys(source.includedGames),
+      excludedGames: normalizeGameKeys(source.excludedGames),
+      rotationOrder: normalizeGameKeys(source.rotationOrder),
+      gameDurations: normalizeGameDurations(source.gameDurations),
+      lockedGameKey: normalizeGameKeys([source.lockedGameKey])[0] ?? null,
       fallbackMode: FALLBACK_MODES.has(source.fallbackMode) ? source.fallbackMode : DEFAULT_CONFIG.fallbackMode,
       displayMode: DISPLAY_MODES.has(source.displayMode) ? source.displayMode : DEFAULT_CONFIG.displayMode,
     };
+  }
+
+  function normalizeGameKeys(keys) {
+    if (!Array.isArray(keys)) return [];
+    const seen = new Set();
+    return keys.map(value => String(value || "").trim())
+      .filter(value => {
+        const separator = value.indexOf(":");
+        const sport = separator > 0 ? value.slice(0, separator) : "";
+        if (!findSport(sport) || !value.slice(separator + 1) || seen.has(value)) return false;
+        seen.add(value);
+        return true;
+      });
+  }
+
+  function normalizeGameDurations(durations) {
+    if (!durations || typeof durations !== "object" || Array.isArray(durations)) return {};
+    const normalized = {};
+    Object.entries(durations).forEach(([key, value]) => {
+      if (!normalizeGameKeys([key]).length) return;
+      const seconds = Number(value);
+      if (!Number.isFinite(seconds)) return;
+      normalized[key] = Math.min(300, Math.max(5, Math.round(seconds / 5) * 5));
+    });
+    return normalized;
   }
 
   function normalizeFavorites(favorites, sport) {
@@ -111,7 +183,7 @@
   }
 
   function findSport(sportKey) {
-    return SPORT_CATALOG.find(sport => sport.key === String(sportKey || "").toLowerCase()) || null;
+    return findSportMetadata(sportKey);
   }
 
   function findTeam(teamKey) {
@@ -134,7 +206,7 @@
       if (!existing.has(favorite.teamKey)) favorites.push(favorite);
     });
     const { favorites: _legacyFavorites, ...rest } = source || {};
-    return { ...rest, version: 5, sports: groupFavorites(favorites) };
+    return { ...rest, version: 6, sports: groupFavorites(favorites) };
   }
 
   function groupFavorites(favorites) {
@@ -180,6 +252,7 @@
     STORAGE_KEY,
     SPORT_CATALOG,
     TEAM_CATALOG,
+    ready,
     DEFAULT_CONFIG,
     normalizeConfig,
     loadConfig,

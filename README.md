@@ -14,15 +14,17 @@ py -m http.server 8080
 
 Then visit [http://localhost:8080](http://localhost:8080) in a browser. Stop the server with `Ctrl+C`.
 
-Open [http://localhost:8080/admin/](http://localhost:8080/admin/) for the local control room. Its Settings tab ranks sport categories first, then ranks enabled favorites independently inside each sport. Mariners, Seahawks, Nebraska, Washington, Kraken, Sounders, and Pistons are the defaults. NFL and college football remain separate categories. Existing flat favorite settings migrate automatically. The Live tab embeds the real provider-backed banner. The Demo Lab previews every supported lifecycle and orchestration state without calling live providers or changing saved settings, including scrolling-info and three-second all-sports rotation tests.
+Open [http://localhost:8080/admin/](http://localhost:8080/admin/) for the local control room. Its Settings tab adds teams from one global picker, ranks sport categories first, then ranks included watched teams independently inside each sport. Mariners, Seahawks, Nebraska, Washington, Kraken, Sounders, and Pistons are watched by default. NFL and college football remain separate categories. Existing favorite settings migrate automatically. Live Control discovers current provider games and offers automatic, hybrid, or fully curated queues with add, remove, reorder, sport filtering, team search, per-game timing, and a single-game lock that freezes rotation. Queue changes use Apply; timing and lock changes save immediately and refresh other open same-origin banner pages. The Demo Lab previews every supported lifecycle and orchestration state without calling live providers or changing saved settings, including scrolling-info and three-second all-sports rotation tests.
 
-The default rotation interval is 10 seconds. The unfiltered overlay rotates through ranked sport categories with a short slide/fade transition between games. When no enabled favorite in a sport is live, automatic and rotate modes add one league-wide live spotlight game beside that sport's favorite fallback. A live favorite suppresses the non-favorite spotlight. Top-favorite mode never adds spotlight games. Use `?sport=` to scope a preview to one sport.
+Team directories live in each `sports/<sport>/teams.json`. MLB, NFL, NHL, MLS, and NBA catalogs include every current team. Refresh those five catalogs with `node scripts/update-team-catalog.mjs`; the updater preserves the production theme overrides. College football remains a manually maintained Nebraska/Washington list. Watched-team rankings remain browser-local settings and are not overwritten by catalog refreshes.
+
+Default display times are 20 seconds for live games, 5 seconds for upcoming games, and 10 seconds for finals. Each queued game can be adjusted in five-second steps from Live Control. The unfiltered overlay rotates through ranked sport categories with a short slide/fade transition between games. When no included watched team in a sport is live, automatic and rotate modes add one league-wide live spotlight game beside that sport's watched-team fallback. A live watched team suppresses the league-wide spotlight. Top-watched-team mode never adds spotlight games. Use `?sport=` to scope a preview to one sport.
 
 Football and basketball show persistent timeout pips beneath each team, matching the compact treatment used by major broadcast scorebugs. Football uses the three-timeout-per-half rule; NBA uses seven regulation timeouts and two per overtime period. Hockey and soccer feeds do not expose a reliable comparable timeout inventory, so the banner does not invent one.
 
 ### Demo a live game
 
-On an off day, open [http://localhost:8080/?sport=baseball&demo=live](http://localhost:8080/?sport=baseball&demo=live) for a fixed baseball example. Change `sport=football` for the NFL layout or use another configured sport. Demo mode does not call a live API or start a polling timer, so the display remains stable while developing and reviewing visual changes. Remove the query string to return to the highest-ranked sport with an enabled favorite.
+On an off day, open [http://localhost:8080/?sport=baseball&demo=live](http://localhost:8080/?sport=baseball&demo=live) for a fixed baseball example. Change `sport=football` for the NFL layout or use another configured sport. Demo mode does not call a live API or start a polling timer, so the display remains stable while developing and reviewing visual changes. Remove the query string to return to the highest-ranked sport with an included watched team.
 
 For serverless testing in OBS, select `demo.html` as the Browser Source's local file. It redirects to the same fixed live-game example while preserving relative access to the overlay files.
 
@@ -91,34 +93,40 @@ sports-obs-overlay/
 │   └── registry.js
 ├── sports/
 │   ├── baseball/
+│   │   ├── teams.json
 │   │   ├── demo-data.js
 │   │   ├── layout.js
 │   │   ├── style.css
 │   │   └── providers/
 │   │       └── mlb.js
 │   ├── football/
+│   │   ├── teams.json
 │   │   ├── demo-data.js
 │   │   ├── layout.js
 │   │   ├── style.css
 │   │   └── providers/
 │   │       └── espn.js
 │   ├── college-football/
+│   │   ├── teams.json
 │   │   ├── demo-data.js
 │   │   └── providers/
 │   │       └── espn.js
 │   ├── hockey/
+│   │   ├── teams.json
 │   │   ├── demo-data.js
 │   │   ├── layout.js
 │   │   ├── style.css
 │   │   └── providers/
 │   │       └── espn.js
 │   ├── soccer/
+│   │   ├── teams.json
 │   │   ├── demo-data.js
 │   │   ├── layout.js
 │   │   ├── style.css
 │   │   └── providers/
 │   │       └── espn.js
 │   └── basketball/
+│       ├── teams.json
 │       ├── demo-data.js
 │       ├── layout.js
 │       ├── style.css
@@ -141,9 +149,11 @@ sports-obs-overlay/
 ```
 
 - `core/event-model.js`: shared event envelope, lifecycle states, and non-baseball pregame date/time formatting used by current and future sports. Baseball intentionally keeps time-only pregame formatting.
-- `core/game-selection.js`: builds the stable favorite/spotlight rotation and ranks live games using postseason importance, national broadcasts, team rankings, available spreads, score margin, and game progress.
+- `core/game-selection.js`: builds the stable watched-team/spotlight rotation and ranks live games using postseason importance, national broadcasts, team rankings, available spreads, score margin, and game progress.
 - `core/timeouts.js`: normalizes provider timeout counts and renders accessible broadcast-style timeout pips for football and basketball.
-- `core/config.js`: versioned local settings, nested sport/favorite rankings, catalogs, validation, migration, and persistence.
+- `core/config.js`: versioned local settings, nested sport/watched-team rankings, team-catalog loading, validation, migration, and persistence.
+- `sports/*/teams.json`: provider IDs, names, abbreviations, colors, and logos used by the team picker and banner themes.
+- `scripts/update-team-catalog.mjs`: refreshes the five professional-league catalogs from MLB and ESPN directories.
 - `core/registry.js`: connects named providers and sport layouts without hard-coding their implementation paths into shared logic.
 - `core/app.js`: ranked cross-sport rotation, current-event orchestration, and refresh timing.
 - `sports/baseball/providers/mlb.js`: MLB schedule/live-feed requests and normalization into the shared event envelope.

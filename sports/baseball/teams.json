@@ -1,0 +1,338 @@
+{
+  "sport": "baseball",
+  "league": "MLB",
+  "provider": "mlb",
+  "updatedAt": "2026-09-29",
+  "teams": [
+    {
+      "key": "mlb:109",
+      "teamId": 109,
+      "name": "Arizona Diamondbacks",
+      "abbreviation": "AZ",
+      "theme": {
+        "primary": "#071b2c",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/109.svg"
+    },
+    {
+      "key": "mlb:133",
+      "teamId": 133,
+      "name": "Athletics",
+      "abbreviation": "ATH",
+      "theme": {
+        "primary": "#003831",
+        "accent": "#efb21e"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/133.svg"
+    },
+    {
+      "key": "mlb:144",
+      "teamId": 144,
+      "name": "Atlanta Braves",
+      "abbreviation": "ATL",
+      "theme": {
+        "primary": "#0c2340",
+        "accent": "#ba0c2f"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/144.svg"
+    },
+    {
+      "key": "mlb:110",
+      "teamId": 110,
+      "name": "Baltimore Orioles",
+      "abbreviation": "BAL",
+      "theme": {
+        "primary": "#df4601",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/110.svg"
+    },
+    {
+      "key": "mlb:111",
+      "teamId": 111,
+      "name": "Boston Red Sox",
+      "abbreviation": "BOS",
+      "theme": {
+        "primary": "#0d2b56",
+        "accent": "#bd3039"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/111.svg"
+    },
+    {
+      "key": "mlb:112",
+      "teamId": 112,
+      "name": "Chicago Cubs",
+      "abbreviation": "CHC",
+      "theme": {
+        "primary": "#0e3386",
+        "accent": "#cc3433"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/112.svg"
+    },
+    {
+      "key": "mlb:145",
+      "teamId": 145,
+      "name": "Chicago White Sox",
+      "abbreviation": "CWS",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#c4ced4"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/145.svg"
+    },
+    {
+      "key": "mlb:113",
+      "teamId": 113,
+      "name": "Cincinnati Reds",
+      "abbreviation": "CIN",
+      "theme": {
+        "primary": "#c6011f",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/113.svg"
+    },
+    {
+      "key": "mlb:114",
+      "teamId": 114,
+      "name": "Cleveland Guardians",
+      "abbreviation": "CLE",
+      "theme": {
+        "primary": "#002b5c",
+        "accent": "#e31937"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/114.svg"
+    },
+    {
+      "key": "mlb:115",
+      "teamId": 115,
+      "name": "Colorado Rockies",
+      "abbreviation": "COL",
+      "theme": {
+        "primary": "#33006f",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/115.svg"
+    },
+    {
+      "key": "mlb:116",
+      "teamId": 116,
+      "name": "Detroit Tigers",
+      "abbreviation": "DET",
+      "theme": {
+        "primary": "#0a2240",
+        "accent": "#ff4713"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/116.svg"
+    },
+    {
+      "key": "mlb:117",
+      "teamId": 117,
+      "name": "Houston Astros",
+      "abbreviation": "HOU",
+      "theme": {
+        "primary": "#002d62",
+        "accent": "#eb6e1f"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/117.svg"
+    },
+    {
+      "key": "mlb:118",
+      "teamId": 118,
+      "name": "Kansas City Royals",
+      "abbreviation": "KC",
+      "theme": {
+        "primary": "#004687",
+        "accent": "#7ab2dd"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/118.svg"
+    },
+    {
+      "key": "mlb:108",
+      "teamId": 108,
+      "name": "Los Angeles Angels",
+      "abbreviation": "LAA",
+      "theme": {
+        "primary": "#ba0021",
+        "accent": "#c4ced4"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/108.svg"
+    },
+    {
+      "key": "mlb:119",
+      "teamId": 119,
+      "name": "Los Angeles Dodgers",
+      "abbreviation": "LAD",
+      "theme": {
+        "primary": "#005a9c",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/119.svg"
+    },
+    {
+      "key": "mlb:146",
+      "teamId": 146,
+      "name": "Miami Marlins",
+      "abbreviation": "MIA",
+      "theme": {
+        "primary": "#00a3e0",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/146.svg"
+    },
+    {
+      "key": "mlb:158",
+      "teamId": 158,
+      "name": "Milwaukee Brewers",
+      "abbreviation": "MIL",
+      "theme": {
+        "primary": "#13294b",
+        "accent": "#ffc72c"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/158.svg"
+    },
+    {
+      "key": "mlb:142",
+      "teamId": 142,
+      "name": "Minnesota Twins",
+      "abbreviation": "MIN",
+      "theme": {
+        "primary": "#031f40",
+        "accent": "#e20e32"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/142.svg"
+    },
+    {
+      "key": "mlb:121",
+      "teamId": 121,
+      "name": "New York Mets",
+      "abbreviation": "NYM",
+      "theme": {
+        "primary": "#002d72",
+        "accent": "#ff5910"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/121.svg"
+    },
+    {
+      "key": "mlb:147",
+      "teamId": 147,
+      "name": "New York Yankees",
+      "abbreviation": "NYY",
+      "theme": {
+        "primary": "#132448",
+        "accent": "#c4ced4"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/147.svg"
+    },
+    {
+      "key": "mlb:143",
+      "teamId": 143,
+      "name": "Philadelphia Phillies",
+      "abbreviation": "PHI",
+      "theme": {
+        "primary": "#e81828",
+        "accent": "#003278"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/143.svg"
+    },
+    {
+      "key": "mlb:134",
+      "teamId": 134,
+      "name": "Pittsburgh Pirates",
+      "abbreviation": "PIT",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#fdb827"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/134.svg"
+    },
+    {
+      "key": "mlb:135",
+      "teamId": 135,
+      "name": "San Diego Padres",
+      "abbreviation": "SD",
+      "theme": {
+        "primary": "#2f241d",
+        "accent": "#ffc425"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/135.svg"
+    },
+    {
+      "key": "mlb:137",
+      "teamId": 137,
+      "name": "San Francisco Giants",
+      "abbreviation": "SF",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#fd5a1e"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/137.svg"
+    },
+    {
+      "key": "mlb:136",
+      "teamId": 136,
+      "name": "Seattle Mariners",
+      "abbreviation": "SEA",
+      "theme": {
+        "primary": "#0c2c56",
+        "accent": "#005c5c"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/136.svg"
+    },
+    {
+      "key": "mlb:138",
+      "teamId": 138,
+      "name": "St. Louis Cardinals",
+      "abbreviation": "STL",
+      "theme": {
+        "primary": "#be0a14",
+        "accent": "#001541"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/138.svg"
+    },
+    {
+      "key": "mlb:139",
+      "teamId": 139,
+      "name": "Tampa Bay Rays",
+      "abbreviation": "TB",
+      "theme": {
+        "primary": "#092c5c",
+        "accent": "#8fbce6"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/139.svg"
+    },
+    {
+      "key": "mlb:140",
+      "teamId": 140,
+      "name": "Texas Rangers",
+      "abbreviation": "TEX",
+      "theme": {
+        "primary": "#003278",
+        "accent": "#c0111f"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/140.svg"
+    },
+    {
+      "key": "mlb:141",
+      "teamId": 141,
+      "name": "Toronto Blue Jays",
+      "abbreviation": "TOR",
+      "theme": {
+        "primary": "#134a8e",
+        "accent": "#6cace5"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/141.svg"
+    },
+    {
+      "key": "mlb:120",
+      "teamId": 120,
+      "name": "Washington Nationals",
+      "abbreviation": "WSH",
+      "theme": {
+        "primary": "#ab0003",
+        "accent": "#11225b"
+      },
+      "logoUrl": "https://www.mlbstatic.com/team-logos/120.svg"
+    }
+  ]
+}

@@ -40,7 +40,7 @@ body {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 9px;
-  background: linear-gradient(110deg, var(--navy) 0 26%, var(--panel) 48%, var(--panel-2) 100%);
+  background: linear-gradient(110deg, var(--team-primary-deep, var(--navy)) 0%, var(--panel) 48%, var(--team-accent-deep, var(--panel-2)) 100%);
   box-shadow: 0 5px 18px rgba(0, 0, 0, 0.38), inset 0 1px rgba(255, 255, 255, 0.05);
   transition: opacity 180ms ease;
 }
@@ -65,7 +65,7 @@ body {
 }
 
 .team:first-child { padding-left: 0; }
-.team.is-seattle { border-bottom-color: var(--teal); background: linear-gradient(180deg, transparent, var(--teal-soft)); }
+.team.is-featured { border-bottom-color: var(--team-accent-text, var(--teal)); background: linear-gradient(180deg, transparent, rgba(var(--team-accent-rgb, 0, 167, 160), 0.2)); }
 
 .team__abbr {
   color: var(--muted);
@@ -74,7 +74,7 @@ body {
   letter-spacing: 0.075em;
 }
 
-.team.is-seattle .team__abbr { color: #8de2dc; }
+.team.is-featured .team__abbr { color: var(--team-accent-text, #8de2dc); }
 
 .team__logo {
   width: 28px;

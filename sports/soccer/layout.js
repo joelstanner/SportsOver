@@ -47,6 +47,7 @@
       els.bug.classList.remove("is-loading", "is-hidden");
       els.bug.dataset.sport = event.sport;
       els.bug.dataset.state = event.state;
+      global.SportsOverlay.teamTheme.apply(els.bug, event);
       els.bug.setAttribute("aria-label", `${away.name} at ${home.name} ${event.league} match`);
       setTeam(els.awayMark, els.awayAbbr, els.awayRecord, away);
       setTeam(els.homeMark, els.homeAbbr, els.homeRecord, home);

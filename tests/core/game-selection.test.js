@@ -81,3 +81,40 @@ test("fallback mode controls whether upcoming or recent favorite games enter rot
   assert.equal(selection.buildRotationQueue({ ...base, fallbackMode: "recent-final" })[0].candidate.id, "final");
   assert.deepEqual(selection.buildRotationQueue({ ...base, fallbackMode: "hide" }), []);
 });
+
+test("hybrid rotation adds manual games, honors exclusions, and preserves explicit order", () => {
+  const first = { candidate: candidate(espnGame("first", "in", "SEA", "SF")) };
+  const second = { candidate: candidate(espnGame("second", "in", "KC", "BUF")) };
+  const third = { candidate: candidate(espnGame("third", "pre", "NYJ", "MIA")) };
+  const queue = selection.applyRotationControls({
+    automaticEntries: [first, second],
+    availableEntries: [first, second, third],
+    mode: "hybrid",
+    includedGameKeys: ["football:third"],
+    excludedGameKeys: ["football:second"],
+    rotationOrder: ["football:third", "football:first"],
+  });
+  assert.deepEqual(queue.map(entry => entry.candidate.id), ["third", "first"]);
+});
+
+test("curated rotation contains only manually included games", () => {
+  const automatic = { candidate: candidate(espnGame("automatic", "in", "SEA", "SF")) };
+  const manual = { candidate: candidate(espnGame("manual", "in", "KC", "BUF")) };
+  const queue = selection.applyRotationControls({
+    automaticEntries: [automatic],
+    availableEntries: [automatic, manual],
+    mode: "curated",
+    includedGameKeys: ["football:manual"],
+  });
+  assert.deepEqual(queue.map(entry => entry.candidate.id), ["manual"]);
+});
+
+test("game timing uses state defaults and five-second overrides", () => {
+  const live = { candidate: candidate(espnGame("live", "in", "SEA", "SF")) };
+  const upcoming = { candidate: candidate(espnGame("upcoming", "pre", "SEA", "SF")) };
+  const final = { candidate: candidate(espnGame("final", "post", "SEA", "SF")) };
+  assert.equal(selection.gameDurationSeconds(live), 20);
+  assert.equal(selection.gameDurationSeconds(upcoming), 5);
+  assert.equal(selection.gameDurationSeconds(final), 10);
+  assert.equal(selection.gameDurationSeconds(live, { "football:live": 33 }), 35);
+});

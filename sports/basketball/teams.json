@@ -1,0 +1,338 @@
+{
+  "sport": "basketball",
+  "league": "NBA",
+  "provider": "espn-nba",
+  "updatedAt": "2026-09-29",
+  "teams": [
+    {
+      "key": "nba:atl",
+      "teamId": "ATL",
+      "name": "Atlanta Hawks",
+      "abbreviation": "ATL",
+      "theme": {
+        "primary": "#c8102e",
+        "accent": "#fdb927"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/atl.png"
+    },
+    {
+      "key": "nba:bos",
+      "teamId": "BOS",
+      "name": "Boston Celtics",
+      "abbreviation": "BOS",
+      "theme": {
+        "primary": "#008348",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/bos.png"
+    },
+    {
+      "key": "nba:bkn",
+      "teamId": "BKN",
+      "name": "Brooklyn Nets",
+      "abbreviation": "BKN",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/bkn.png"
+    },
+    {
+      "key": "nba:cha",
+      "teamId": "CHA",
+      "name": "Charlotte Hornets",
+      "abbreviation": "CHA",
+      "theme": {
+        "primary": "#008ca8",
+        "accent": "#1d1060"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/cha.png"
+    },
+    {
+      "key": "nba:chi",
+      "teamId": "CHI",
+      "name": "Chicago Bulls",
+      "abbreviation": "CHI",
+      "theme": {
+        "primary": "#ce1141",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/chi.png"
+    },
+    {
+      "key": "nba:cle",
+      "teamId": "CLE",
+      "name": "Cleveland Cavaliers",
+      "abbreviation": "CLE",
+      "theme": {
+        "primary": "#860038",
+        "accent": "#bc945c"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/cle.png"
+    },
+    {
+      "key": "nba:dal",
+      "teamId": "DAL",
+      "name": "Dallas Mavericks",
+      "abbreviation": "DAL",
+      "theme": {
+        "primary": "#0064b1",
+        "accent": "#bbc4ca"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/dal.png"
+    },
+    {
+      "key": "nba:den",
+      "teamId": "DEN",
+      "name": "Denver Nuggets",
+      "abbreviation": "DEN",
+      "theme": {
+        "primary": "#0e2240",
+        "accent": "#fec524"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/den.png"
+    },
+    {
+      "key": "nba:det",
+      "teamId": "DET",
+      "name": "Detroit Pistons",
+      "abbreviation": "DET",
+      "theme": {
+        "primary": "#1d428a",
+        "accent": "#c8102e"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/det.png"
+    },
+    {
+      "key": "nba:gs",
+      "teamId": "GS",
+      "name": "Golden State Warriors",
+      "abbreviation": "GS",
+      "theme": {
+        "primary": "#fdb927",
+        "accent": "#1d428a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/gs.png"
+    },
+    {
+      "key": "nba:hou",
+      "teamId": "HOU",
+      "name": "Houston Rockets",
+      "abbreviation": "HOU",
+      "theme": {
+        "primary": "#ce0e2d",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/hou.png"
+    },
+    {
+      "key": "nba:ind",
+      "teamId": "IND",
+      "name": "Indiana Pacers",
+      "abbreviation": "IND",
+      "theme": {
+        "primary": "#0c2340",
+        "accent": "#ffd520"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/ind.png"
+    },
+    {
+      "key": "nba:lac",
+      "teamId": "LAC",
+      "name": "LA Clippers",
+      "abbreviation": "LAC",
+      "theme": {
+        "primary": "#12173f",
+        "accent": "#c8102e"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/lac.png"
+    },
+    {
+      "key": "nba:lal",
+      "teamId": "LAL",
+      "name": "Los Angeles Lakers",
+      "abbreviation": "LAL",
+      "theme": {
+        "primary": "#552583",
+        "accent": "#fdb927"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/lal.png"
+    },
+    {
+      "key": "nba:mem",
+      "teamId": "MEM",
+      "name": "Memphis Grizzlies",
+      "abbreviation": "MEM",
+      "theme": {
+        "primary": "#5d76a9",
+        "accent": "#12173f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/mem.png"
+    },
+    {
+      "key": "nba:mia",
+      "teamId": "MIA",
+      "name": "Miami Heat",
+      "abbreviation": "MIA",
+      "theme": {
+        "primary": "#98002e",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/mia.png"
+    },
+    {
+      "key": "nba:mil",
+      "teamId": "MIL",
+      "name": "Milwaukee Bucks",
+      "abbreviation": "MIL",
+      "theme": {
+        "primary": "#00471b",
+        "accent": "#eee1c6"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/mil.png"
+    },
+    {
+      "key": "nba:min",
+      "teamId": "MIN",
+      "name": "Minnesota Timberwolves",
+      "abbreviation": "MIN",
+      "theme": {
+        "primary": "#266092",
+        "accent": "#79bc43"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/min.png"
+    },
+    {
+      "key": "nba:no",
+      "teamId": "NO",
+      "name": "New Orleans Pelicans",
+      "abbreviation": "NO",
+      "theme": {
+        "primary": "#0a2240",
+        "accent": "#b4975a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/no.png"
+    },
+    {
+      "key": "nba:ny",
+      "teamId": "NY",
+      "name": "New York Knicks",
+      "abbreviation": "NY",
+      "theme": {
+        "primary": "#1d428a",
+        "accent": "#f58426"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/ny.png"
+    },
+    {
+      "key": "nba:okc",
+      "teamId": "OKC",
+      "name": "Oklahoma City Thunder",
+      "abbreviation": "OKC",
+      "theme": {
+        "primary": "#007ac1",
+        "accent": "#ef3b24"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/okc.png"
+    },
+    {
+      "key": "nba:orl",
+      "teamId": "ORL",
+      "name": "Orlando Magic",
+      "abbreviation": "ORL",
+      "theme": {
+        "primary": "#0150b5",
+        "accent": "#9ca0a3"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/orl.png"
+    },
+    {
+      "key": "nba:phi",
+      "teamId": "PHI",
+      "name": "Philadelphia 76ers",
+      "abbreviation": "PHI",
+      "theme": {
+        "primary": "#1d428a",
+        "accent": "#e01234"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/phi.png"
+    },
+    {
+      "key": "nba:phx",
+      "teamId": "PHX",
+      "name": "Phoenix Suns",
+      "abbreviation": "PHX",
+      "theme": {
+        "primary": "#29127a",
+        "accent": "#e56020"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/phx.png"
+    },
+    {
+      "key": "nba:por",
+      "teamId": "POR",
+      "name": "Portland Trail Blazers",
+      "abbreviation": "POR",
+      "theme": {
+        "primary": "#e03a3e",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/por.png"
+    },
+    {
+      "key": "nba:sac",
+      "teamId": "SAC",
+      "name": "Sacramento Kings",
+      "abbreviation": "SAC",
+      "theme": {
+        "primary": "#5a2d81",
+        "accent": "#6a7a82"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/sac.png"
+    },
+    {
+      "key": "nba:sa",
+      "teamId": "SA",
+      "name": "San Antonio Spurs",
+      "abbreviation": "SA",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#c4ced4"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/sa.png"
+    },
+    {
+      "key": "nba:tor",
+      "teamId": "TOR",
+      "name": "Toronto Raptors",
+      "abbreviation": "TOR",
+      "theme": {
+        "primary": "#d91244",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/tor.png"
+    },
+    {
+      "key": "nba:utah",
+      "teamId": "UTAH",
+      "name": "Utah Jazz",
+      "abbreviation": "UTAH",
+      "theme": {
+        "primary": "#4e008e",
+        "accent": "#79a3dc"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/utah.png"
+    },
+    {
+      "key": "nba:wsh",
+      "teamId": "WSH",
+      "name": "Washington Wizards",
+      "abbreviation": "WSH",
+      "theme": {
+        "primary": "#e31837",
+        "accent": "#002b5c"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nba/500/wsh.png"
+    }
+  ]
+}

@@ -1,0 +1,360 @@
+{
+  "sport": "hockey",
+  "league": "NHL",
+  "provider": "espn-nhl",
+  "updatedAt": "2026-09-29",
+  "teams": [
+    {
+      "key": "nhl:ana",
+      "teamId": "ANA",
+      "name": "Anaheim Ducks",
+      "abbreviation": "ANA",
+      "theme": {
+        "primary": "#fc4c02",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/ana.png"
+    },
+    {
+      "key": "nhl:bos",
+      "teamId": "BOS",
+      "name": "Boston Bruins",
+      "abbreviation": "BOS",
+      "theme": {
+        "primary": "#231f20",
+        "accent": "#fdb71a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/bos.png"
+    },
+    {
+      "key": "nhl:buf",
+      "teamId": "BUF",
+      "name": "Buffalo Sabres",
+      "abbreviation": "BUF",
+      "theme": {
+        "primary": "#00468b",
+        "accent": "#fdb71a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/buf.png"
+    },
+    {
+      "key": "nhl:cgy",
+      "teamId": "CGY",
+      "name": "Calgary Flames",
+      "abbreviation": "CGY",
+      "theme": {
+        "primary": "#dd1a32",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/cgy.png"
+    },
+    {
+      "key": "nhl:car",
+      "teamId": "CAR",
+      "name": "Carolina Hurricanes",
+      "abbreviation": "CAR",
+      "theme": {
+        "primary": "#e30426",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/car.png"
+    },
+    {
+      "key": "nhl:chi",
+      "teamId": "CHI",
+      "name": "Chicago Blackhawks",
+      "abbreviation": "CHI",
+      "theme": {
+        "primary": "#e31937",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/chi.png"
+    },
+    {
+      "key": "nhl:col",
+      "teamId": "COL",
+      "name": "Colorado Avalanche",
+      "abbreviation": "COL",
+      "theme": {
+        "primary": "#860038",
+        "accent": "#005ea3"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/col.png"
+    },
+    {
+      "key": "nhl:cbj",
+      "teamId": "CBJ",
+      "name": "Columbus Blue Jackets",
+      "abbreviation": "CBJ",
+      "theme": {
+        "primary": "#002d62",
+        "accent": "#e31937"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/cbj.png"
+    },
+    {
+      "key": "nhl:dal",
+      "teamId": "DAL",
+      "name": "Dallas Stars",
+      "abbreviation": "DAL",
+      "theme": {
+        "primary": "#20864c",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/dal.png"
+    },
+    {
+      "key": "nhl:det",
+      "teamId": "DET",
+      "name": "Detroit Red Wings",
+      "abbreviation": "DET",
+      "theme": {
+        "primary": "#e30526",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/det.png"
+    },
+    {
+      "key": "nhl:edm",
+      "teamId": "EDM",
+      "name": "Edmonton Oilers",
+      "abbreviation": "EDM",
+      "theme": {
+        "primary": "#00205b",
+        "accent": "#ff4c00"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/edm.png"
+    },
+    {
+      "key": "nhl:fla",
+      "teamId": "FLA",
+      "name": "Florida Panthers",
+      "abbreviation": "FLA",
+      "theme": {
+        "primary": "#e51937",
+        "accent": "#002d62"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/fla.png"
+    },
+    {
+      "key": "nhl:la",
+      "teamId": "LA",
+      "name": "Los Angeles Kings",
+      "abbreviation": "LA",
+      "theme": {
+        "primary": "#121212",
+        "accent": "#a2aaad"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/la.png"
+    },
+    {
+      "key": "nhl:min",
+      "teamId": "MIN",
+      "name": "Minnesota Wild",
+      "abbreviation": "MIN",
+      "theme": {
+        "primary": "#124734",
+        "accent": "#ae122a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/min.png"
+    },
+    {
+      "key": "nhl:mtl",
+      "teamId": "MTL",
+      "name": "Montreal Canadiens",
+      "abbreviation": "MTL",
+      "theme": {
+        "primary": "#c41230",
+        "accent": "#013a81"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/mtl.png"
+    },
+    {
+      "key": "nhl:nsh",
+      "teamId": "NSH",
+      "name": "Nashville Predators",
+      "abbreviation": "NSH",
+      "theme": {
+        "primary": "#fdba31",
+        "accent": "#002d62"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/nsh.png"
+    },
+    {
+      "key": "nhl:nj",
+      "teamId": "NJ",
+      "name": "New Jersey Devils",
+      "abbreviation": "NJ",
+      "theme": {
+        "primary": "#e30b2b",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/nj.png"
+    },
+    {
+      "key": "nhl:nyi",
+      "teamId": "NYI",
+      "name": "New York Islanders",
+      "abbreviation": "NYI",
+      "theme": {
+        "primary": "#00529b",
+        "accent": "#f47d31"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/nyi.png"
+    },
+    {
+      "key": "nhl:nyr",
+      "teamId": "NYR",
+      "name": "New York Rangers",
+      "abbreviation": "NYR",
+      "theme": {
+        "primary": "#0056ae",
+        "accent": "#e51937"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/nyr.png"
+    },
+    {
+      "key": "nhl:ott",
+      "teamId": "OTT",
+      "name": "Ottawa Senators",
+      "abbreviation": "OTT",
+      "theme": {
+        "primary": "#dd1a32",
+        "accent": "#b79257"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/ott.png"
+    },
+    {
+      "key": "nhl:phi",
+      "teamId": "PHI",
+      "name": "Philadelphia Flyers",
+      "abbreviation": "PHI",
+      "theme": {
+        "primary": "#fe5823",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/phi.png"
+    },
+    {
+      "key": "nhl:pit",
+      "teamId": "PIT",
+      "name": "Pittsburgh Penguins",
+      "abbreviation": "PIT",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#fdb71a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/pit.png"
+    },
+    {
+      "key": "nhl:sj",
+      "teamId": "SJ",
+      "name": "San Jose Sharks",
+      "abbreviation": "SJ",
+      "theme": {
+        "primary": "#00788a",
+        "accent": "#070707"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/sj.png"
+    },
+    {
+      "key": "nhl:sea",
+      "teamId": "SEA",
+      "name": "Seattle Kraken",
+      "abbreviation": "SEA",
+      "theme": {
+        "primary": "#001628",
+        "accent": "#99d9d9"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/sea.png"
+    },
+    {
+      "key": "nhl:stl",
+      "teamId": "STL",
+      "name": "St. Louis Blues",
+      "abbreviation": "STL",
+      "theme": {
+        "primary": "#0070b9",
+        "accent": "#fdb71a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/stl.png"
+    },
+    {
+      "key": "nhl:tb",
+      "teamId": "TB",
+      "name": "Tampa Bay Lightning",
+      "abbreviation": "TB",
+      "theme": {
+        "primary": "#003e7e",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/tb.png"
+    },
+    {
+      "key": "nhl:tor",
+      "teamId": "TOR",
+      "name": "Toronto Maple Leafs",
+      "abbreviation": "TOR",
+      "theme": {
+        "primary": "#003e7e",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/tor.png"
+    },
+    {
+      "key": "nhl:utah",
+      "teamId": "UTAH",
+      "name": "Utah Mammoth",
+      "abbreviation": "UTAH",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#7ab2e1"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/utah.png"
+    },
+    {
+      "key": "nhl:van",
+      "teamId": "VAN",
+      "name": "Vancouver Canucks",
+      "abbreviation": "VAN",
+      "theme": {
+        "primary": "#003e7e",
+        "accent": "#008752"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/van.png"
+    },
+    {
+      "key": "nhl:vgk",
+      "teamId": "VGK",
+      "name": "Vegas Golden Knights",
+      "abbreviation": "VGK",
+      "theme": {
+        "primary": "#344043",
+        "accent": "#b4975a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/vgk.png"
+    },
+    {
+      "key": "nhl:wsh",
+      "teamId": "WSH",
+      "name": "Washington Capitals",
+      "abbreviation": "WSH",
+      "theme": {
+        "primary": "#d71830",
+        "accent": "#0b1f41"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/wsh.png"
+    },
+    {
+      "key": "nhl:wpg",
+      "teamId": "WPG",
+      "name": "Winnipeg Jets",
+      "abbreviation": "WPG",
+      "theme": {
+        "primary": "#002d62",
+        "accent": "#c41230"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/nhl/500/wpg.png"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "sport": "college-football",
+  "league": "NCAAF",
+  "provider": "espn-ncaaf",
+  "updatedAt": "2026-09-29",
+  "teams": [
+    {
+      "key": "ncaaf:158",
+      "teamId": "158",
+      "name": "Nebraska Cornhuskers",
+      "abbreviation": "NEB",
+      "theme": {
+        "primary": "#050505",
+        "accent": "#e41c38"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/158.png"
+    },
+    {
+      "key": "ncaaf:264",
+      "teamId": "264",
+      "name": "Washington Huskies",
+      "abbreviation": "WASH",
+      "theme": {
+        "primary": "#4b2e83",
+        "accent": "#b7a57a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/264.png"
+    }
+  ]
+}
