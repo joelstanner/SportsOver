@@ -158,3 +158,11 @@ test("catalog reload retains the hosted script base after currentScript clears",
     assert.ok(requests.every(url => url.startsWith(`${prefix}/sports/`)));
   }
 });
+
+test("default game durations migrate and normalize", () => {
+  assert.deepEqual(configApi.normalizeConfig({}).defaultGameDurations, { live: 20, pregame: 5, final: 10 });
+  assert.deepEqual(configApi.normalizeConfig({ defaultGameDurations: { live: 33, pregame: 0, final: 999 } }).defaultGameDurations,
+    { live: 35, pregame: 5, final: 300 });
+  assert.deepEqual(configApi.normalizeConfig({ defaultGameDurations: { live: null, pregame: "bad" } }).defaultGameDurations,
+    { live: 20, pregame: 5, final: 10 });
+});

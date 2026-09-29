@@ -99,7 +99,9 @@ select, input { border: 1px solid var(--line); border-radius: 8px; padding: 10px
 .rotation-control { border: 1px solid var(--line); border-radius: 16px; padding: 18px; background: rgba(8, 16, 19, 0.72); }
 .rotation-toolbar { display: grid; grid-template-columns: minmax(240px, 1fr) auto; gap: 14px; align-items: end; }
 .timing-defaults { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0 0; color: var(--muted); font-size: 0.72rem; }
-.timing-defaults strong { color: var(--ink); font-weight: 700; }
+.timing-defaults { align-items: center; }
+.timing-defaults label { display: flex; align-items: center; gap: 6px; color: var(--ink); font-weight: 700; }
+.timing-defaults input { width: 72px; padding: 6px 8px; font-size: 0.75rem; }
 .rotation-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 20px; }
 .rotation-column { min-width: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
 .rotation-column-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); padding: 13px 14px; }
@@ -125,6 +127,7 @@ select, input { border: 1px solid var(--line); border-radius: 8px; padding: 10px
 .game-copy { display: grid; gap: 3px; min-width: 0; }
 .game-name { overflow: hidden; font-size: 0.82rem; text-overflow: ellipsis; white-space: nowrap; }
 .game-meta, .game-source { color: var(--muted); font-size: 0.68rem; }
+.game-card.is-live .game-meta { color: #ff6b6b; font-weight: 800; }
 .game-source { border: 1px solid var(--line); border-radius: 999px; padding: 4px 6px; white-space: nowrap; }
 .duration-control { display: grid; grid-template-columns: 26px 42px 26px; align-items: center; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
 .duration-control button { border: 0; padding: 5px 0; color: var(--ink); background: #101d21; font-weight: 800; }

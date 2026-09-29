@@ -29,7 +29,8 @@ async function fixture(extraFavorites = []) {
     }) }) },
     selection: { buildRotationQueue: ({ favoriteGames }) => favoriteGames.map(candidate => ({ candidate })),
       applyRotationControls: ({ automaticEntries }) => automaticEntries,
-      applyGameLocks: entries => entries, gameDurationSeconds: () => 5 },
+      retainAutoFinals: (_previous, automaticEntries) => automaticEntries,
+      applyGameLocks: entries => entries, gameDurationSeconds: (_entry, _overrides, _keyOf, defaults) => defaults?.live || 5 },
   };
   const context = vm.createContext({ console, URLSearchParams, performance: { now: () => now },
     setTimeout: (fn, delay) => { timers.set(++timerId, { fn, at: now + delay }); return timerId; },
@@ -58,6 +59,11 @@ async function fixture(extraFavorites = []) {
     now = end; await flush();
   }
   return { calls, renders, timers, advance, flush, visibility,
+    async updateDefaultDuration(seconds) {
+      config.defaultGameDurations = { live: seconds, pregame: 5, final: 10 };
+      await notify({ initialized: true, instance: "one", catalogRevision: 0, config: structuredClone(config) });
+      await flush();
+    },
     async update(seconds) {
       config.providerRefreshSeconds.baseball.live = seconds;
       await notify({ initialized: true, instance: "one", catalogRevision: 0, config: structuredClone(config) });
@@ -112,4 +118,15 @@ test("banner discovers secondary included teams and skips excluded teams", async
   assert.ok(f.calls.some(call => call.url === "schedule/second"));
   assert.ok(!f.calls.some(call => call.url.includes("disabled")));
   assert.equal(f.calls.filter(call => call.url === "schedule").length, 1);
+});
+
+test("default timing changes immediately reschedule banner rotation", async () => {
+  const app = await fixture();
+  await app.advance(1000);
+  await app.updateDefaultDuration(20);
+  const count = app.renders.length;
+  await app.advance(5000);
+  assert.equal(app.renders.length, count);
+  await app.advance(15000);
+  assert.equal(app.renders.at(-1), "game/2");
 });

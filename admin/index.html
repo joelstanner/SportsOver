@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sports Overlay Control Room</title>
-  <link rel="stylesheet" href="admin.css?v=14">
+  <link rel="stylesheet" href="admin.css?v=15">
 </head>
 <body>
   <header class="masthead">
@@ -135,7 +135,14 @@
             <button id="refresh-games" class="button button--secondary" type="button">Refresh games</button>
           </div>
         </div>
-        <p class="timing-defaults">Default timing: <strong>Live 20s</strong><span>·</span><strong>Upcoming 5s</strong><span>·</span><strong>Final 10s</strong><span>·</span><strong>Lock one to hold; lock several to rotate only those games</strong></p>
+        <div class="timing-defaults" role="group" aria-label="Default rotation timing">
+          <span>Default timing (seconds):</span>
+          <label>Live <input type="number" data-default-duration="live" min="5" max="300" step="5" required></label>
+          <label>Upcoming <input type="number" data-default-duration="pregame" min="5" max="300" step="5" required></label>
+          <label>Final <input type="number" data-default-duration="final" min="5" max="300" step="5" required></label>
+          <span>Applies immediately. Individual game timings take priority.</span>
+        </div>
+        <p class="timing-defaults">Lock one to hold; lock several to rotate only those games.</p>
 
         <div class="rotation-columns">
           <section class="rotation-column">
@@ -290,19 +297,19 @@
     </article>
   </template>
 
-  <script src="../core/config.js?v=14"></script>
+  <script src="../core/config.js?v=15"></script>
   <script src="../core/shared-state.js?v=1"></script>
   <script src="../core/provider-refresh.js?v=1"></script>
   <script src="../core/provider-discovery.js?v=1"></script>
   <script src="../core/event-model.js?v=2"></script>
   <script src="../core/registry.js?v=2"></script>
-  <script src="../core/game-selection.js?v=4"></script>
+  <script src="../core/game-selection.js?v=6"></script>
   <script src="../sports/baseball/providers/mlb.js?v=3"></script>
   <script src="../sports/football/providers/espn.js?v=4"></script>
   <script src="../sports/college-football/providers/espn.js?v=5"></script>
   <script src="../sports/hockey/providers/espn.js?v=2"></script>
   <script src="../sports/soccer/providers/espn.js?v=2"></script>
   <script src="../sports/basketball/providers/espn.js?v=3"></script>
-  <script src="admin.js?v=20"></script>
+  <script src="admin.js?v=21"></script>
 </body>
 </html>

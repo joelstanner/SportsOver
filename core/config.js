@@ -39,6 +39,7 @@
     includedGames: Object.freeze([]),
     excludedGames: Object.freeze([]),
     rotationOrder: Object.freeze([]),
+    defaultGameDurations: Object.freeze({ live: 20, pregame: 5, final: 10 }),
     gameDurations: Object.freeze({}),
     lockedGameKeys: Object.freeze([]),
     fallbackMode: "up-next",
@@ -126,6 +127,11 @@
       includedGames: normalizeGameKeys(source.includedGames),
       excludedGames: normalizeGameKeys(source.excludedGames),
       rotationOrder: normalizeGameKeys(source.rotationOrder),
+      defaultGameDurations: Object.fromEntries(Object.entries(DEFAULT_CONFIG.defaultGameDurations).map(([state, fallback]) => {
+        const value = source.defaultGameDurations?.[state];
+        return [state, typeof value === "number" && Number.isFinite(value)
+          ? Math.min(300, Math.max(5, Math.round(value / 5) * 5)) : fallback];
+      })),
       gameDurations: normalizeGameDurations(source.gameDurations),
       lockedGameKeys: normalizeGameKeys(Array.isArray(source.lockedGameKeys) ? source.lockedGameKeys : [source.lockedGameKey]),
       fallbackMode: FALLBACK_MODES.has(source.fallbackMode) ? source.fallbackMode : DEFAULT_CONFIG.fallbackMode,

@@ -116,6 +116,18 @@ test("game locks select one held game or a rotating subset", () => {
   assert.deepEqual(selection.applyGameLocks(entries, ["football:missing"]).map(entry => entry.candidate.id), ["first", "second", "third"]);
 });
 
+test("auto-added live games remain for one hour after becoming final", () => {
+  const live = { kind: "spotlight", candidate: candidate(espnGame("game", "in", "KC", "BUF")) };
+  const final = { kind: "manual", candidate: candidate(espnGame("game", "post", "KC", "BUF")) };
+  const unrelatedFinal = { kind: "manual", candidate: candidate(espnGame("other", "post", "NYJ", "MIA")) };
+  const first = selection.retainAutoFinals([live], [], [final, unrelatedFinal], { now: 1_000 });
+  assert.deepEqual(first.map(entry => entry.candidate.id), ["game"]);
+  assert.equal(first[0].candidate.state, "final");
+  assert.equal(first[0].autoRetainUntil, 3_601_000);
+  assert.deepEqual(selection.retainAutoFinals(first, [], [final], { now: 3_600_999 }).map(entry => entry.candidate.id), ["game"]);
+  assert.deepEqual(selection.retainAutoFinals(first, [], [final], { now: 3_601_000 }), []);
+});
+
 test("game timing uses state defaults and five-second overrides", () => {
   const live = { candidate: candidate(espnGame("live", "in", "SEA", "SF")) };
   const upcoming = { candidate: candidate(espnGame("upcoming", "pre", "SEA", "SF")) };
@@ -124,4 +136,13 @@ test("game timing uses state defaults and five-second overrides", () => {
   assert.equal(selection.gameDurationSeconds(upcoming), 5);
   assert.equal(selection.gameDurationSeconds(final), 10);
   assert.equal(selection.gameDurationSeconds(live, { "football:live": 33 }), 35);
+});
+
+test("custom state durations apply unless a game has an override", () => {
+  const defaults = { live: 40, pregame: 15, final: 25 };
+  for (const [state, expected] of [["live", 40], ["interrupted", 40], ["pregame", 15], ["final", 25]]) {
+    const entry = { candidate: { sport: "football", id: "1", state } };
+    assert.equal(selection.gameDurationSeconds(entry, {}, undefined, defaults), expected);
+    assert.equal(selection.gameDurationSeconds(entry, { "football:1": 60 }, undefined, defaults), 60);
+  }
 });

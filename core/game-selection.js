@@ -122,6 +122,30 @@
     return lockedEntries.length ? lockedEntries : entries;
   }
 
+  function retainAutoFinals(previousEntries = [], automaticEntries = [], availableEntries = [], {
+    keyOf = defaultEntryKey, now = Date.now(), retentionMs = 60 * 60 * 1_000,
+  } = {}) {
+    const retained = [...automaticEntries];
+    const selectedKeys = new Set(retained.map(keyOf));
+    const availableByKey = new Map(availableEntries.map(entry => [keyOf(entry), entry]));
+    previousEntries.forEach(previous => {
+      const key = keyOf(previous);
+      const current = availableByKey.get(key);
+      if (!current || current.candidate?.state !== "final" || selectedKeys.has(key)) return;
+      const wasLive = ["live", "interrupted"].includes(previous.candidate?.state);
+      const retainUntil = wasLive ? now + retentionMs : previous.autoRetainUntil;
+      if (!Number.isFinite(retainUntil) || retainUntil <= now) return;
+      retained.push({
+        ...current,
+        kind: previous.kind,
+        featuredTeamId: previous.featuredTeamId,
+        autoRetainUntil: retainUntil,
+      });
+      selectedKeys.add(key);
+    });
+    return retained;
+  }
+
   function deduplicateEntries(entries, keyOf) {
     const seen = new Set();
     return entries.filter(entry => {
@@ -136,13 +160,15 @@
     return entry?.candidate?.sport && entry?.candidate?.id ? `${entry.candidate.sport}:${entry.candidate.id}` : "";
   }
 
-  function gameDurationSeconds(entry, overrides = {}, keyOf = defaultEntryKey) {
+  function gameDurationSeconds(entry, overrides = {}, keyOf = defaultEntryKey, defaults = {}) {
     const override = Number(overrides?.[keyOf(entry)]);
     if (Number.isFinite(override)) return Math.min(300, Math.max(5, Math.round(override / 5) * 5));
     const state = entry?.candidate?.state;
-    if (state === "live" || state === "interrupted") return 20;
-    if (state === "final") return 10;
-    return 5;
+    const timingState = state === "live" || state === "interrupted" ? "live" : state === "final" ? "final" : "pregame";
+    const seconds = defaults?.[timingState];
+    return typeof seconds === "number" && Number.isFinite(seconds)
+      ? Math.min(300, Math.max(5, Math.round(seconds / 5) * 5))
+      : { live: 20, pregame: 5, final: 10 }[timingState];
   }
 
   function interestScore(candidate) {
@@ -194,6 +220,7 @@
     buildRotationQueue,
     applyRotationControls,
     applyGameLocks,
+    retainAutoFinals,
     gameDurationSeconds,
     chooseSpotlight,
     interestScore,

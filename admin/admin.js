@@ -41,7 +41,7 @@
   const refreshCatalogButton = document.querySelector("#refresh-team-catalog");
   const catalogRefreshStatus = document.querySelector("#catalog-refresh-status");
   const undoLiveButton = document.querySelector("#undo-live-change");
-  const liveConfigKeys = ["rotationMode", "includedGames", "excludedGames", "rotationOrder", "gameDurations", "lockedGameKeys"];
+  const liveConfigKeys = ["rotationMode", "includedGames", "excludedGames", "rotationOrder", "gameDurations", "defaultGameDurations", "lockedGameKeys"];
   let undoLiveConfig = null;
   let recentlyAddedTeamKey = null;
   let availableRotationEntries = [];
@@ -100,6 +100,14 @@
   });
   document.querySelector("#available-sport-filter").addEventListener("change", renderRotationControls);
   document.querySelector("#game-search").addEventListener("input", renderRotationControls);
+  document.querySelectorAll("[data-default-duration]").forEach(input => {
+    input.addEventListener("change", () => {
+      if (!input.reportValidity()) return;
+      const previousLiveConfig = savedLiveConfig();
+      workingConfig.defaultGameDurations[input.dataset.defaultDuration] = Number(input.value);
+      autoApplyLiveChange(previousLiveConfig, "Default timing applied");
+    });
+  });
   undoLiveButton.addEventListener("click", undoLastLiveChange);
   document.querySelector("#reset-rotation").addEventListener("click", resetRotation);
   document.querySelector("#refresh-production").addEventListener("click", updateProduction);
@@ -439,8 +447,14 @@
 
     const results = await Promise.allSettled(workingConfig.sports.map(discoverSportGames));
     if (revision !== gameDiscoveryRevision) return;
-    automaticRotationEntries = results.flatMap(result => result.status === "fulfilled" ? result.value.automaticEntries : []);
+    const discoveredAutomaticEntries = results.flatMap(result => result.status === "fulfilled" ? result.value.automaticEntries : []);
     availableRotationEntries = results.flatMap(result => result.status === "fulfilled" ? result.value.availableEntries : []);
+    automaticRotationEntries = selectionApi.retainAutoFinals(
+      automaticRotationEntries,
+      discoveredAutomaticEntries,
+      availableRotationEntries,
+      { keyOf: rotationEntryKey },
+    );
     const failed = results.filter(result => result.status === "rejected").length;
     const partial = results.filter(result => result.status === "fulfilled" && result.value.failures).length;
     document.querySelector("#refresh-games").disabled = false;
@@ -488,6 +502,9 @@
   }
 
   function renderRotationControls() {
+    document.querySelectorAll("[data-default-duration]").forEach(input => {
+      input.value = workingConfig.defaultGameDurations[input.dataset.defaultDuration];
+    });
     document.querySelector("#rotation-mode").value = workingConfig.rotationMode;
     const queue = currentRotationQueue();
     const queueList = document.querySelector("#rotation-queue");
@@ -531,7 +548,7 @@
     const key = rotationEntryKey(entry);
     const automaticKeys = new Set(automaticRotationEntries.map(rotationEntryKey));
     card.querySelector(".game-source").textContent = automaticKeys.has(key) ? "AUTO" : "ADDED";
-    const duration = selectionApi.gameDurationSeconds(entry, workingConfig.gameDurations, rotationEntryKey);
+    const duration = selectionApi.gameDurationSeconds(entry, workingConfig.gameDurations, rotationEntryKey, workingConfig.defaultGameDurations);
     card.querySelector(".game-time").textContent = `${duration}s`;
     card.querySelector(".game-time-down").disabled = duration <= 5;
     card.querySelector(".game-time-up").disabled = duration >= 300;
@@ -561,6 +578,7 @@
   function fillGameCard(card, entry) {
     const sport = configApi.findSport(entry.candidate.sport);
     card.dataset.gameKey = rotationEntryKey(entry);
+    card.classList.toggle("is-live", entry.candidate.state === "live");
     card.querySelector(".game-sport").textContent = sport?.league || entry.candidate.sport.toUpperCase();
     renderGameLogos(card.querySelector(".game-logos"), entry.candidate);
     card.querySelector(".game-name").textContent = gameName(entry.candidate);
@@ -697,8 +715,8 @@
   function adjustGameDuration(entry, offset) {
     const previousLiveConfig = savedLiveConfig();
     const key = rotationEntryKey(entry);
-    const defaultSeconds = selectionApi.gameDurationSeconds(entry, {}, rotationEntryKey);
-    const currentSeconds = selectionApi.gameDurationSeconds(entry, workingConfig.gameDurations, rotationEntryKey);
+    const defaultSeconds = selectionApi.gameDurationSeconds(entry, {}, rotationEntryKey, workingConfig.defaultGameDurations);
+    const currentSeconds = selectionApi.gameDurationSeconds(entry, workingConfig.gameDurations, rotationEntryKey, workingConfig.defaultGameDurations);
     const nextSeconds = Math.min(300, Math.max(5, currentSeconds + offset));
     const durations = { ...workingConfig.gameDurations };
     if (nextSeconds === defaultSeconds) delete durations[key];

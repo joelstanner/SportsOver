@@ -45,6 +45,7 @@ let transitionCleanupTimer = null;
 let renderChain = Promise.resolve();
 let discoveryGeneration = 0;
 let cachedDiscoveries = null;
+let automaticRotationEntries = [];
 
 function createSportContext(group) {
   const favoriteTeams = group.favorites
@@ -166,10 +167,17 @@ async function discoverGames(refresh = true) {
   const discoveries = !refresh && cachedDiscoveries ? cachedDiscoveries : await Promise.all(sportContexts.map(discoverSport));
   if (generation !== discoveryGeneration) return;
   cachedDiscoveries = discoveries;
+  const availableEntries = discoveries.flatMap(result => result.availableEntries);
+  automaticRotationEntries = window.SportsOverlay.selection.retainAutoFinals(
+    automaticRotationEntries,
+    discoveries.flatMap(result => result.automaticEntries),
+    availableEntries,
+    { keyOf: entryKey },
+  );
   const previousKey = entryKey(rotationQueue[currentIndex]);
   const fullRotationQueue = window.SportsOverlay.selection.applyRotationControls({
-    automaticEntries: discoveries.flatMap(result => result.automaticEntries),
-    availableEntries: discoveries.flatMap(result => result.availableEntries),
+    automaticEntries: automaticRotationEntries,
+    availableEntries,
     mode: savedConfig.rotationMode,
     includedGameKeys: savedConfig.includedGames,
     excludedGameKeys: savedConfig.excludedGames,
@@ -289,7 +297,7 @@ function scheduleRotation() {
     currentIndex = (currentIndex + 1) % rotationQueue.length;
     await renderCurrentGame({ animate: true });
     if (generation === rotationGeneration) { schedulePoll(); scheduleRotation(); }
-  }, window.SportsOverlay.selection.gameDurationSeconds(rotationQueue[currentIndex], savedConfig.gameDurations, entryKey) * 1_000);
+  }, window.SportsOverlay.selection.gameDurationSeconds(rotationQueue[currentIndex], savedConfig.gameDurations, entryKey, savedConfig.defaultGameDurations) * 1_000);
 }
 
 async function transitionOut(revision) {
@@ -339,13 +347,17 @@ function prefersReducedMotion() {
 }
 
 function scheduleDiscovery() {
-  const delay = Math.min(...sportContexts.map(context => {
+  const providerDelay = Math.min(...sportContexts.map(context => {
     const entries = cachedDiscoveries?.flatMap(result => result.availableEntries)
       .filter(entry => entry.context.sport === context.sport) || [];
     const states = entries.map(entry => entry.candidate.state);
     const state = ["live", "interrupted", "pregame", "final"].find(value => states.includes(value)) || "idle";
     return refresh.interval(context.sport, state);
   }));
+  const expiryDelay = Math.min(...automaticRotationEntries
+    .map(entry => entry.autoRetainUntil - Date.now())
+    .filter(delay => Number.isFinite(delay) && delay > 0), Infinity);
+  const delay = Math.min(providerDelay, expiryDelay);
   clearTimeout(discoveryTimer);
   discoveryTimer = setTimeout(discoverGames, delay);
 }
@@ -365,7 +377,8 @@ if (!staticPreview) {
     if (catalogChanged) await window.SportsOverlay.config.reloadTeamCatalog();
     lastCatalogRevision = snapshot.catalogRevision;
     lastInstance = snapshot.instance;
-    const timingChanged = JSON.stringify(savedConfig.gameDurations) !== JSON.stringify(snapshot.config.gameDurations);
+    const timingChanged = JSON.stringify(savedConfig.gameDurations) !== JSON.stringify(snapshot.config.gameDurations)
+      || JSON.stringify(savedConfig.defaultGameDurations) !== JSON.stringify(snapshot.config.defaultGameDurations);
     const teamsChanged = JSON.stringify(savedConfig.sports) !== JSON.stringify(snapshot.config.sports);
     const selectionChanged = savedConfig.fallbackMode !== snapshot.config.fallbackMode || savedConfig.displayMode !== snapshot.config.displayMode;
     Object.assign(savedConfig, window.SportsOverlay.config.normalizeConfig(snapshot.config));
