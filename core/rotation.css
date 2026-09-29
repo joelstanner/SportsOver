@@ -1,0 +1,39 @@
+#sports-overlay {
+  transform-origin: left center;
+  will-change: opacity, transform;
+}
+
+#sports-overlay.is-rotating-out {
+  animation: sports-rotate-out 180ms cubic-bezier(0.4, 0, 1, 1) both;
+  pointer-events: none;
+}
+
+#sports-overlay.is-rotating-in {
+  animation: sports-rotate-in 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes sports-rotate-out {
+  to {
+    opacity: 0;
+    transform: translateX(-22px) scale(0.985);
+  }
+}
+
+@keyframes sports-rotate-in {
+  from {
+    opacity: 0;
+    transform: translateX(26px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #sports-overlay.is-rotating-out,
+  #sports-overlay.is-rotating-in {
+    animation: none;
+  }
+}

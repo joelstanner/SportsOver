@@ -24,7 +24,7 @@
       </section>
       <section id="football-status" class="football-status" hidden><span id="football-matchup"></span><strong id="football-status-text"></strong></section>
       <section id="football-live-detail" class="football-live-detail" hidden>
-        <div><span>DOWN</span><strong id="football-down"></strong></div>
+        <div id="football-down-detail"><span>DOWN</span><strong id="football-down"></strong></div>
         <div id="football-field-detail"><span>FIELD</span><strong id="football-field"></strong></div>
       </section>
       <section id="football-last-play" class="football-last-play" hidden></section>`;
@@ -39,7 +39,7 @@
       awayScore: find("#football-away-score"), homeScore: find("#football-home-score"),
       clock: find("#football-clock"), quarter: find("#football-quarter"),
       status: find("#football-status"), matchup: find("#football-matchup"), statusText: find("#football-status-text"),
-      detail: find("#football-live-detail"), down: find("#football-down"), field: find("#football-field"),
+      detail: find("#football-live-detail"), downDetail: find("#football-down-detail"), down: find("#football-down"), field: find("#football-field"),
       fieldDetail: find("#football-field-detail"), lastPlay: find("#football-last-play"),
     };
 
@@ -62,13 +62,17 @@
         const details = event.details;
         els.clock.textContent = details.clock || "—";
         els.quarter.textContent = details.quarter || "—";
-        els.down.textContent = `${ordinal(details.down)} & ${details.distance}`;
-        els.field.textContent = details.yardLine;
+        const downText = formatDown(details);
+        els.down.textContent = downText;
+        els.field.textContent = details.yardLine || "";
+        els.downDetail.hidden = !downText;
+        els.fieldDetail.hidden = !details.yardLine;
+        els.detail.classList.toggle("is-single", !downText || !details.yardLine);
         const possession = String(details.possessionTeam || "").toUpperCase();
         if (possession === away.abbreviation.toUpperCase()) show(els.awayPossession);
         if (possession === home.abbreviation.toUpperCase()) show(els.homePossession);
         els.fieldDetail.classList.toggle("is-red-zone", isRedZone(event));
-        show(els.detail);
+        if (downText || details.yardLine) show(els.detail);
         if (details.lastPlay) {
           els.lastPlay.textContent = details.lastPlay;
           show(els.lastPlay);
@@ -138,10 +142,15 @@
     return value === 1 ? "1ST" : value === 2 ? "2ND" : value === 3 ? "3RD" : `${value}TH`;
   }
 
+  function formatDown(details) {
+    if (!Number.isFinite(details.down) || details.down < 1 || !Number.isFinite(details.distance)) return "";
+    return `${ordinal(details.down)} & ${details.distance}`;
+  }
+
   function show(element) { element.hidden = false; }
   function hide(element) { element.hidden = true; }
 
-  const layout = Object.freeze({ createLayout, isRedZone });
+  const layout = Object.freeze({ createLayout, isRedZone, formatDown });
   global.SportsOverlay.footballLayout = layout;
   global.SportsOverlay.registry?.registerLayout("football", layout);
   global.SportsOverlay.registry?.registerLayout("college-football", layout);

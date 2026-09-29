@@ -76,11 +76,16 @@ test("client calls Pistons schedule and NBA game-summary endpoints", async () =>
   const requests = [];
   const fetchImpl = async url => {
     requests.push(url);
-    return { ok: true, json: async () => url.includes("schedule") ? { events: [{ id: "401900008" }] } : liveSummary() };
+    const body = url.includes("schedule") ? { events: [{ id: "401900008" }] }
+      : url.includes("scoreboard") ? { events: [{ id: "league-live" }] }
+        : liveSummary();
+    return { ok: true, json: async () => body };
   };
   const client = provider.createClient({ teamId: "DET", requestTimeoutMs: 1000, fetchImpl });
   assert.equal((await client.findGames(new Date("2026-09-28T12:00:00Z")))[0].id, "401900008");
+  assert.equal((await client.findLeagueGames())[0].id, "league-live");
   assert.equal((await client.getEvent("401900008")).teams.home.abbreviation, "DET");
   assert.match(requests[0], /teams\/det\/schedule\?season=2027/);
-  assert.match(requests[1], /summary\?event=401900008/);
+  assert.match(requests[1], /basketball\/nba\/scoreboard/);
+  assert.match(requests[2], /summary\?event=401900008/);
 });

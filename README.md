@@ -16,6 +16,8 @@ Then visit [http://localhost:8080](http://localhost:8080) in a browser. Stop the
 
 Open [http://localhost:8080/admin/](http://localhost:8080/admin/) for the local control room. Its Settings tab ranks sport categories first, then ranks enabled favorites independently inside each sport. Mariners, Seahawks, Nebraska, Washington, Kraken, Sounders, and Pistons are the defaults. NFL and college football remain separate categories. Existing flat favorite settings migrate automatically. The Live tab embeds the real provider-backed banner. The Demo Lab previews every supported lifecycle and orchestration state without calling live providers or changing saved settings.
 
+The default rotation interval is 10 seconds. The unfiltered overlay rotates through ranked sport categories with a short slide/fade transition between games. When no enabled favorite in a sport is live, automatic and rotate modes add one league-wide live spotlight game beside that sport's favorite fallback. A live favorite suppresses the non-favorite spotlight. Top-favorite mode never adds spotlight games. Use `?sport=` to scope a preview to one sport.
+
 ### Demo a live game
 
 On an off day, open [http://localhost:8080/?sport=baseball&demo=live](http://localhost:8080/?sport=baseball&demo=live) for a fixed baseball example. Change `sport=football` for the NFL layout or use another configured sport. Demo mode does not call a live API or start a polling timer, so the display remains stable while developing and reviewing visual changes. Remove the query string to return to the highest-ranked sport with an enabled favorite.
@@ -83,6 +85,7 @@ sports-obs-overlay/
 │   ├── app.js
 │   ├── config.js
 │   ├── event-model.js
+│   ├── game-selection.js
 │   └── registry.js
 ├── sports/
 │   ├── baseball/
@@ -136,9 +139,10 @@ sports-obs-overlay/
 ```
 
 - `core/event-model.js`: shared event envelope, lifecycle states, and non-baseball pregame date/time formatting used by current and future sports. Baseball intentionally keeps time-only pregame formatting.
+- `core/game-selection.js`: builds the stable favorite/spotlight rotation and ranks live games using postseason importance, national broadcasts, team rankings, available spreads, score margin, and game progress.
 - `core/config.js`: versioned local settings, nested sport/favorite rankings, catalogs, validation, migration, and persistence.
 - `core/registry.js`: connects named providers and sport layouts without hard-coding their implementation paths into shared logic.
-- `core/app.js`: current single-event orchestration and refresh timing.
+- `core/app.js`: ranked cross-sport rotation, current-event orchestration, and refresh timing.
 - `sports/baseball/providers/mlb.js`: MLB schedule/live-feed requests and normalization into the shared event envelope.
 - `sports/baseball/layout.js`: creates baseball markup and renders scores, innings, counts, outs, bases, players, and last play.
 - `sports/baseball/style.css`: baseball-specific presentation.
@@ -161,6 +165,8 @@ The NBA-owned live-data CDN was evaluated for basketball. It returned HTTP 403 a
 Add future sports as sibling folders under `sports/`, using sport names for folders and league names for providers. For example, an NFL provider belongs at `sports/football/providers/nfl.js`.
 
 The shared lifecycle is `pregame`, `live`, `interrupted`, and `final`. No-game and temporary-error behavior remain orchestration concerns: no game may hide or show a message, while an error retains the last good display.
+
+League-wide spotlight discovery uses the existing public MLB and ESPN feeds without credentials. ESPN betting lines are used opportunistically when present; they are not required because coverage is inconsistent. Paid odds or betting-split feeds require a local proxy so credentials are never exposed by the static browser source.
 
 Run the dependency-free normalization tests with:
 

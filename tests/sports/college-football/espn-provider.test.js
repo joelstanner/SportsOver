@@ -41,6 +41,20 @@ test("normalizes college football separately from the NFL", () => {
   assert.equal(event.details.possessionTeam, "NEB");
 });
 
+test("derives college live situation from the latest drive", () => {
+  const payload = liveEvent();
+  delete payload.competitions[0].situation;
+  payload.drives = { current: { plays: [{
+    text: "Run for five yards.",
+    end: { down: 2, distance: 5, possessionText: "NEB 30", shortDownDistanceText: "2nd & 5", team: { id: "158" } },
+  }] } };
+  const event = provider.normalizeEvent(payload, "158");
+  assert.deepEqual(
+    { down: event.details.down, distance: event.details.distance, yardLine: event.details.yardLine, possessionTeam: event.details.possessionTeam },
+    { down: 2, distance: 5, yardLine: "NEB 30", possessionTeam: "NEB" },
+  );
+});
+
 test("selects games by ESPN college team id", () => {
   assert.equal(provider.chooseGame([liveEvent()], "264").id, "401752001");
   assert.equal(provider.chooseGame([liveEvent()], "158").id, "401752001");
@@ -51,11 +65,16 @@ test("client uses the college-football schedule and summary feeds", async () => 
   const requests = [];
   const fetchImpl = async url => {
     requests.push(url);
-    return { ok: true, json: async () => url.includes("schedule") ? { events: [liveEvent()] } : liveEvent() };
+    const body = url.includes("schedule") ? { events: [liveEvent()] }
+      : url.includes("scoreboard") ? { events: [{ id: "league-live" }] }
+        : liveEvent();
+    return { ok: true, json: async () => body };
   };
   const client = provider.createClient({ teamId: "158", requestTimeoutMs: 1000, fetchImpl });
   assert.equal((await client.findGames()).length, 1);
+  assert.equal((await client.findLeagueGames())[0].id, "league-live");
   assert.equal((await client.getEvent("401752001")).teams.home.abbreviation, "NEB");
   assert.match(requests[0], /football\/college-football\/teams\/158\/schedule\?season=/);
-  assert.match(requests[1], /football\/college-football\/summary\?event=401752001/);
+  assert.match(requests[1], /football\/college-football\/scoreboard\?groups=80&limit=1000/);
+  assert.match(requests[2], /football\/college-football\/summary\?event=401752001/);
 });

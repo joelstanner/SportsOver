@@ -26,12 +26,16 @@
       return schedule.events ?? [];
     }
 
-    async function getEvent(gameId) {
-      const summary = await fetchJson(`${API}/summary?event=${encodeURIComponent(gameId)}`);
-      return normalizeEvent(summary, featuredTeamId, gameId);
+    async function findLeagueGames() {
+      return (await fetchJson(`${API}/scoreboard?limit=100`)).events ?? [];
     }
 
-    return Object.freeze({ findGames, getEvent });
+    async function getEvent(gameId, eventFeaturedTeamId = featuredTeamId) {
+      const summary = await fetchJson(`${API}/summary?event=${encodeURIComponent(gameId)}`);
+      return normalizeEvent(summary, eventFeaturedTeamId, gameId);
+    }
+
+    return Object.freeze({ findGames, findLeagueGames, getEvent });
   }
 
   function chooseGame(events, featuredTeamId) {
@@ -150,7 +154,15 @@
     return Number.isFinite(number) ? number : null;
   }
 
-  const provider = Object.freeze({ createClient, chooseGame, normalizeEvent, normalizeState, periodLabel, seasonEndingYear });
+  const provider = Object.freeze({
+    createClient,
+    chooseGame,
+    normalizeEvent,
+    normalizeState,
+    periodLabel,
+    seasonEndingYear,
+    toCandidate: event => global.SportsOverlay.selection.espnCandidate(event, "basketball"),
+  });
   global.SportsOverlay.espnNba = provider;
   global.SportsOverlay.registry?.registerProvider("espn-nba", provider);
 })(typeof window === "undefined" ? globalThis : window);

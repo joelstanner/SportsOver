@@ -27,12 +27,16 @@
       return schedule.events ?? [];
     }
 
-    async function getEvent(gameId) {
-      const summary = await fetchJson(`${API}/summary?event=${encodeURIComponent(gameId)}`);
-      return normalizeEvent(summary, featuredTeamId, gameId);
+    async function findLeagueGames() {
+      return (await fetchJson(`${API}/scoreboard?limit=100`)).events ?? [];
     }
 
-    return Object.freeze({ findGames, getEvent });
+    async function getEvent(gameId, eventFeaturedTeamId = featuredTeamId) {
+      const summary = await fetchJson(`${API}/summary?event=${encodeURIComponent(gameId)}`);
+      return normalizeEvent(summary, eventFeaturedTeamId, gameId);
+    }
+
+    return Object.freeze({ findGames, findLeagueGames, getEvent });
   }
 
   function chooseGame(events, featuredTeamId) {
@@ -160,6 +164,7 @@
     normalizeState,
     periodLabel,
     seasonEndingYear,
+    toCandidate: event => global.SportsOverlay.selection.espnCandidate(event, "hockey"),
   });
   global.SportsOverlay.espnNhl = provider;
   global.SportsOverlay.registry?.registerProvider("espn-nhl", provider);

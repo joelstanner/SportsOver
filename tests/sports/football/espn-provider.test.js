@@ -58,6 +58,21 @@ test("normalizes ESPN live football details", () => {
   assert.equal(event.details.lastPlay, "Pass complete for 12 yards.");
 });
 
+test("derives live situation from the latest drive when ESPN omits situation", () => {
+  const payload = liveEvent({
+    competition: { situation: undefined },
+    event: { drives: { current: { plays: [{
+      text: "Official Timeout.",
+      end: { down: 1, distance: 10, possessionText: "SEA 32", shortDownDistanceText: "1st & 10", team: { id: "26" } },
+    }] } } },
+  });
+  const event = provider.normalizeEvent(payload, "SEA");
+  assert.deepEqual(
+    { down: event.details.down, distance: event.details.distance, yardLine: event.details.yardLine, possessionTeam: event.details.possessionTeam },
+    { down: 1, distance: 10, yardLine: "SEA 32", possessionTeam: "SEA" },
+  );
+});
+
 test("normalizes scheduled, halftime, and final states", () => {
   assert.equal(provider.normalizeState("pre", false, "Scheduled"), EVENT_STATES.PREGAME);
   assert.equal(provider.normalizeState("in", false, "Halftime"), EVENT_STATES.INTERRUPTED);
@@ -91,9 +106,11 @@ test("client uses the scoreboard and summary feeds", async () => {
   };
   const client = provider.createClient({ teamId: "SEA", requestTimeoutMs: 1000, fetchImpl });
   assert.equal((await client.findGames()).length, 1);
+  assert.equal((await client.findLeagueGames()).length, 1);
   assert.equal((await client.getEvent("401000001")).teams.home.abbreviation, "SEA");
   assert.match(requests[0], /scoreboard/);
-  assert.match(requests[1], /summary\?event=401000001/);
+  assert.match(requests[1], /scoreboard/);
+  assert.match(requests[2], /summary\?event=401000001/);
 });
 
 test("client expands today's scoreboard to the current week when Seahawks are absent", async () => {

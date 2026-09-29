@@ -50,3 +50,8 @@ test("detects red zone only inside the opponent's 20-yard line", () => {
     details: { ...event.details, yardLine: "DET 21" },
   }), false);
 });
+
+test("never formats missing down data as null text", () => {
+  assert.equal(global.SportsOverlay.footballLayout.formatDown({ down: null, distance: null }), "");
+  assert.equal(global.SportsOverlay.footballLayout.formatDown({ down: 1, distance: 10 }), "1ST & 10");
+});

@@ -76,3 +76,16 @@ test("chooses live before preview and final games", () => {
 
   assert.equal(chooseGame(games).gamePk, 3);
 });
+
+test("client discovers favorite and league-wide MLB games", async () => {
+  const requests = [];
+  const fetchImpl = async url => {
+    requests.push(url);
+    return { ok: true, json: async () => ({ dates: [{ games: [{ gamePk: 10 }] }] }) };
+  };
+  const client = global.SportsOverlay.mlb.createClient({ teamId: 136, requestTimeoutMs: 1000, fetchImpl });
+  assert.equal((await client.findGames(new Date("2026-09-28T12:00:00")))[0].gamePk, 10);
+  assert.equal((await client.findLeagueGames(new Date("2026-09-28T12:00:00")))[0].gamePk, 10);
+  assert.match(requests[0], /teamId=136&startDate=2026-09-27&endDate=2026-10-05/);
+  assert.match(requests[1], /sportId=1&date=2026-09-28&hydrate=broadcasts,linescore/);
+});

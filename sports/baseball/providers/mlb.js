@@ -18,13 +18,14 @@
   function createClient(options) {
     const teamId = Number(options.teamId);
     const requestTimeoutMs = Number(options.requestTimeoutMs);
+    const fetchImpl = options.fetchImpl || global.fetch.bind(global);
     const scheduleUrl = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&teamId=${teamId}`;
 
     async function fetchJson(url) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
       try {
-        const response = await fetch(url, { cache: "no-store", signal: controller.signal });
+        const response = await fetchImpl(url, { cache: "no-store", signal: controller.signal });
         if (!response.ok) throw new Error(`MLB API returned HTTP ${response.status}`);
         return await response.json();
       } finally {
@@ -33,16 +34,21 @@
     }
 
     async function findGames(date = new Date()) {
-      const schedule = await fetchJson(`${scheduleUrl}&date=${formatLocalDate(date)}`);
+      const schedule = await fetchJson(`${scheduleUrl}&startDate=${formatLocalDate(addDays(date, -1))}&endDate=${formatLocalDate(addDays(date, 7))}`);
       return schedule.dates?.flatMap(entry => entry.games ?? []) ?? [];
     }
 
-    async function getEvent(gameId) {
-      const feed = await fetchJson(`https://statsapi.mlb.com/api/v1.1/game/${gameId}/feed/live`);
-      return normalizeFeed(feed, teamId, gameId);
+    async function findLeagueGames(date = new Date()) {
+      const schedule = await fetchJson(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${formatLocalDate(date)}&hydrate=broadcasts,linescore`);
+      return schedule.dates?.flatMap(entry => entry.games ?? []) ?? [];
     }
 
-    return Object.freeze({ findGames, getEvent });
+    async function getEvent(gameId, eventFeaturedTeamId = teamId) {
+      const feed = await fetchJson(`https://statsapi.mlb.com/api/v1.1/game/${gameId}/feed/live`);
+      return normalizeFeed(feed, eventFeaturedTeamId, gameId);
+    }
+
+    return Object.freeze({ findGames, findLeagueGames, getEvent });
   }
 
   function chooseGame(games) {
@@ -164,7 +170,19 @@
     return `${year}-${month}-${day}`;
   }
 
-  const provider = Object.freeze({ createClient, chooseGame, normalizeFeed, normalizeState });
+  function addDays(date, amount) {
+    const result = new Date(date);
+    result.setDate(result.getDate() + amount);
+    return result;
+  }
+
+  const provider = Object.freeze({
+    createClient,
+    chooseGame,
+    normalizeFeed,
+    normalizeState,
+    toCandidate: game => global.SportsOverlay.selection.mlbCandidate(game),
+  });
   global.SportsOverlay.mlb = provider;
   global.SportsOverlay.registry?.registerProvider("mlb", provider);
 })(typeof window === "undefined" ? globalThis : window);

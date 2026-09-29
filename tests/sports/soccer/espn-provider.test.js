@@ -78,11 +78,16 @@ test("client calls Sounders schedule and MLS match-summary endpoints", async () 
   const requests = [];
   const fetchImpl = async url => {
     requests.push(url);
-    return { ok: true, json: async () => url.includes("schedule") ? { events: [{ id: "761837" }] } : liveSummary() };
+    const body = url.includes("schedule") ? { events: [{ id: "761837" }] }
+      : url.includes("scoreboard") ? { events: [{ id: "league-live" }] }
+        : liveSummary();
+    return { ok: true, json: async () => body };
   };
   const client = provider.createClient({ teamId: 9726, requestTimeoutMs: 1000, fetchImpl });
   assert.equal((await client.findGames(new Date("2026-09-28T12:00:00Z")))[0].id, "761837");
+  assert.equal((await client.findLeagueGames())[0].id, "league-live");
   assert.equal((await client.getEvent("761837")).teams.home.abbreviation, "SEA");
   assert.match(requests[0], /teams\/9726\/schedule\?season=2026/);
-  assert.match(requests[1], /summary\?event=761837/);
+  assert.match(requests[1], /soccer\/usa\.1\/scoreboard/);
+  assert.match(requests[2], /summary\?event=761837/);
 });

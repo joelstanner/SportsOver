@@ -75,11 +75,16 @@ test("client calls Kraken schedule and game summary endpoints", async () => {
   const requests = [];
   const fetchImpl = async url => {
     requests.push(url);
-    return { ok: true, json: async () => url.includes("schedule") ? { events: [{ id: "401900001" }] } : liveSummary() };
+    const body = url.includes("schedule") ? { events: [{ id: "401900001" }] }
+      : url.includes("scoreboard") ? { events: [{ id: "league-live" }] }
+        : liveSummary();
+    return { ok: true, json: async () => body };
   };
   const client = provider.createClient({ teamId: "SEA", requestTimeoutMs: 1000, fetchImpl });
   assert.equal((await client.findGames(new Date("2026-09-28T12:00:00Z")))[0].id, "401900001");
+  assert.equal((await client.findLeagueGames())[0].id, "league-live");
   assert.equal((await client.getEvent("401900001")).teams.home.abbreviation, "SEA");
   assert.match(requests[0], /teams\/sea\/schedule\?season=2027/);
-  assert.match(requests[1], /summary\?event=401900001/);
+  assert.match(requests[1], /hockey\/nhl\/scoreboard/);
+  assert.match(requests[2], /summary\?event=401900001/);
 });

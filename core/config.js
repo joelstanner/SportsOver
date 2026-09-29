@@ -11,13 +11,13 @@
     Object.freeze({ key: "basketball", name: "Basketball", league: "NBA" }),
   ]);
   const TEAM_CATALOG = Object.freeze([
-    Object.freeze({ key: "mlb:136", sport: "baseball", league: "MLB", teamId: 136, name: "Seattle Mariners", abbreviation: "SEA", provider: "mlb", providerStatus: "live" }),
-    Object.freeze({ key: "nfl:sea", sport: "football", league: "NFL", teamId: "SEA", name: "Seattle Seahawks", abbreviation: "SEA", provider: "espn-nfl", providerStatus: "live" }),
+    Object.freeze({ key: "mlb:136", sport: "baseball", league: "MLB", teamId: 136, name: "Seattle Mariners", abbreviation: "SEA", logoUrl: "https://www.mlbstatic.com/team-logos/136.svg", provider: "mlb", providerStatus: "live" }),
+    Object.freeze({ key: "nfl:sea", sport: "football", league: "NFL", teamId: "SEA", name: "Seattle Seahawks", abbreviation: "SEA", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/sea.png", provider: "espn-nfl", providerStatus: "live" }),
     Object.freeze({ key: "ncaaf:158", sport: "college-football", league: "NCAAF", teamId: "158", name: "Nebraska Cornhuskers", abbreviation: "NEB", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/158.png", provider: "espn-ncaaf", providerStatus: "live" }),
     Object.freeze({ key: "ncaaf:264", sport: "college-football", league: "NCAAF", teamId: "264", name: "Washington Huskies", abbreviation: "WASH", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/264.png", provider: "espn-ncaaf", providerStatus: "live" }),
-    Object.freeze({ key: "nhl:sea", sport: "hockey", league: "NHL", teamId: "SEA", name: "Seattle Kraken", abbreviation: "SEA", provider: "espn-nhl", providerStatus: "live" }),
-    Object.freeze({ key: "mls:9726", sport: "soccer", league: "MLS", teamId: 9726, name: "Seattle Sounders FC", abbreviation: "SEA", provider: "espn-mls", providerStatus: "live" }),
-    Object.freeze({ key: "nba:det", sport: "basketball", league: "NBA", teamId: "DET", name: "Detroit Pistons", abbreviation: "DET", provider: "espn-nba", providerStatus: "live" }),
+    Object.freeze({ key: "nhl:sea", sport: "hockey", league: "NHL", teamId: "SEA", name: "Seattle Kraken", abbreviation: "SEA", logoUrl: "https://a.espncdn.com/i/teamlogos/nhl/500/sea.png", provider: "espn-nhl", providerStatus: "live" }),
+    Object.freeze({ key: "mls:9726", sport: "soccer", league: "MLS", teamId: 9726, name: "Seattle Sounders FC", abbreviation: "SEA", logoUrl: "https://a.espncdn.com/i/teamlogos/soccer/500/9726.png", provider: "espn-mls", providerStatus: "live" }),
+    Object.freeze({ key: "nba:det", sport: "basketball", league: "NBA", teamId: "DET", name: "Detroit Pistons", abbreviation: "DET", logoUrl: "https://a.espncdn.com/i/teamlogos/nba/500/det.png", provider: "espn-nba", providerStatus: "live" }),
   ]);
   const DEFAULT_CONFIG = Object.freeze({
     version: 5,
@@ -29,7 +29,7 @@
       frozenSport("soccer", ["mls:9726"]),
       frozenSport("basketball", ["nba:det"]),
     ]),
-    rotationSeconds: 30,
+    rotationSeconds: 10,
     fallbackMode: "up-next",
     displayMode: "automatic",
   });

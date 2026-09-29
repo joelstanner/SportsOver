@@ -35,12 +35,16 @@
       return (await fetchJson(weeklyUrl)).events ?? visibleEvents;
     }
 
-    async function getEvent(gameId) {
-      const summary = await fetchJson(`${SUMMARY_URL}${encodeURIComponent(gameId)}`);
-      return normalizeEvent(summary, featuredTeamId, gameId);
+    async function findLeagueGames() {
+      return (await fetchJson(SCOREBOARD_URL)).events ?? [];
     }
 
-    return Object.freeze({ findGames, getEvent });
+    async function getEvent(gameId, eventFeaturedTeamId = featuredTeamId) {
+      const summary = await fetchJson(`${SUMMARY_URL}${encodeURIComponent(gameId)}`);
+      return normalizeEvent(summary, eventFeaturedTeamId, gameId);
+    }
+
+    return Object.freeze({ findGames, findLeagueGames, getEvent });
   }
 
   function chooseGame(events, featuredTeamId) {
@@ -71,7 +75,7 @@
     const competition = payload.header?.competitions?.[0] ?? payload.competitions?.[0] ?? payload;
     const status = competition.status ?? payload.status ?? {};
     const statusType = status.type ?? {};
-    const situation = competition.situation ?? payload.situation ?? {};
+    const situation = resolveSituation(payload, competition);
     const awaySource = competitors(competition).find(team => team.homeAway === "away") ?? {};
     const homeSource = competitors(competition).find(team => team.homeAway === "home") ?? {};
     const away = normalizeTeam(awaySource, featuredTeamId);
@@ -153,12 +157,34 @@
     return plays?.at(-1)?.text || "";
   }
 
+  function resolveSituation(payload, competition) {
+    const direct = competition.situation ?? payload.situation ?? {};
+    const latestPlay = payload.drives?.current?.plays?.at(-1);
+    const playSituation = latestPlay?.end ?? latestPlay?.start ?? {};
+    return {
+      ...playSituation,
+      ...direct,
+      possession: direct.possession ?? playSituation.team?.id,
+      possessionText: direct.possessionText ?? playSituation.possessionText,
+      shortDownDistanceText: direct.shortDownDistanceText ?? playSituation.shortDownDistanceText,
+      lastPlay: direct.lastPlay ?? latestPlay,
+    };
+  }
+
   function finiteNumberOrNull(value) {
+    if (value === null || value === undefined || value === "") return null;
     const number = Number(value);
     return Number.isFinite(number) ? number : null;
   }
 
-  const provider = Object.freeze({ createClient, chooseGame, normalizeEvent, normalizeState, periodLabel });
+  const provider = Object.freeze({
+    createClient,
+    chooseGame,
+    normalizeEvent,
+    normalizeState,
+    periodLabel,
+    toCandidate: event => global.SportsOverlay.selection.espnCandidate(event, "football"),
+  });
   global.SportsOverlay.espnNfl = provider;
   global.SportsOverlay.registry?.registerProvider("espn-nfl", provider);
 })(typeof window === "undefined" ? globalThis : window);
