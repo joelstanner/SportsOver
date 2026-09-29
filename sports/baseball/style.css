@@ -40,7 +40,7 @@ body {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 9px;
-  background: linear-gradient(110deg, var(--team-primary-deep, var(--navy)) 0%, var(--panel) 48%, var(--team-accent-deep, var(--panel-2)) 100%);
+  background: var(--panel);
   box-shadow: 0 5px 18px rgba(0, 0, 0, 0.38), inset 0 1px rgba(255, 255, 255, 0.05);
   transition: opacity 180ms ease;
 }
@@ -65,7 +65,7 @@ body {
 }
 
 .team:first-child { padding-left: 0; }
-.team.is-featured { border-bottom-color: var(--team-accent-text, var(--teal)); background: linear-gradient(180deg, transparent, rgba(var(--team-accent-rgb, 0, 167, 160), 0.2)); }
+.team.is-featured { border-bottom-color: var(--team-accent-text, var(--teal)); background: rgba(var(--team-accent-rgb, 0, 167, 160), 0.1); }
 
 .team__abbr {
   color: var(--muted);

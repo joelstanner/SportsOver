@@ -9,6 +9,7 @@
     textElement.dataset.scrollValue = text;
     textElement.dataset.scrollViewportWidth = String(viewportWidth);
     textElement.textContent = text;
+    textElement.style.setProperty("--scroll-duration", `${Math.max(20, text.length / 3.5)}s`);
     textElement.classList.remove("is-scrolling");
     if (!text) return;
     requestAnimationFrame(() => {
