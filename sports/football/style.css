@@ -30,6 +30,7 @@
 .football-abbr { display: block; font-size: 0.84em; font-weight: 800; letter-spacing: 0.075em; }
 .football-possession { font-size: 0.65em; line-height: 1; }
 .football-record { display: block; margin-top: 2px; color: var(--football-muted); font-size: 0.62em; }
+.football-timeouts { color: #a9d9ad; }
 .football-score { min-width: 23px; font-size: 1.2em; line-height: 1; }
 .football-center { display: grid; justify-items: center; gap: 2px; padding: 0 7px; border-right: 1px solid var(--football-line); border-left: 1px solid var(--football-line); }
 .football-clock { font-size: 1.05em; font-weight: 800; }

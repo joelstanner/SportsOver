@@ -1,0 +1,28 @@
+.timeout-markers {
+  display: flex;
+  min-height: 3px;
+  gap: 2px;
+  align-items: center;
+  margin-top: 3px;
+}
+
+.timeout-markers--home {
+  justify-content: flex-end;
+}
+
+.timeout-marker {
+  width: 7px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+.timeout-marker.is-remaining {
+  opacity: 1;
+  box-shadow: 0 0 3px currentColor;
+}
+
+.timeout-marker.is-used {
+  opacity: 0.2;
+  box-shadow: none;
+}

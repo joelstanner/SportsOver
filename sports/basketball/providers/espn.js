@@ -61,6 +61,7 @@
     const homeSource = competitors(competition).find(team => team.homeAway === "home") ?? {};
     const awayStats = findTeamStats(payload.boxscore, awaySource);
     const homeStats = findTeamStats(payload.boxscore, homeSource);
+    const period = Number(status.period);
     const detailedState = statusType.description || statusType.detail || "Scheduled";
 
     return createEvent({
@@ -71,8 +72,8 @@
       detailedState,
       startTime: competition.date ?? payload.date ?? null,
       teams: {
-        away: normalizeTeam(awaySource, awayStats?.team, featuredTeamId),
-        home: normalizeTeam(homeSource, homeStats?.team, featuredTeamId),
+        away: normalizeTeam(awaySource, awayStats?.team, featuredTeamId, basketballTimeoutsRemaining(payload, awaySource, period)),
+        home: normalizeTeam(homeSource, homeStats?.team, featuredTeamId, basketballTimeoutsRemaining(payload, homeSource, period)),
       },
       details: {
         period: periodLabel(status.period),
@@ -93,7 +94,7 @@
     return EVENT_STATES.PREGAME;
   }
 
-  function normalizeTeam(competitor = {}, boxscoreTeam = {}, featuredTeamId) {
+  function normalizeTeam(competitor = {}, boxscoreTeam = {}, featuredTeamId, timeoutsRemaining = null) {
     const team = competitor.team ?? {};
     const abbreviation = String(team.abbreviation || boxscoreTeam.abbreviation || "TEAM").toUpperCase();
     const totalRecord = [...(competitor.records ?? competitor.record ?? [])]
@@ -104,6 +105,7 @@
       abbreviation,
       record: totalRecord?.summary || totalRecord?.displayValue || "",
       score: finiteNumberOrNull(competitor.score?.value ?? competitor.score),
+      timeoutsRemaining,
       featured: teamMatches(competitor, featuredTeamId),
       logoUrl: team.logo || team.logos?.[0]?.href || boxscoreTeam.logo || "",
     };
@@ -136,6 +138,22 @@
 
   function latestScoringPlay(plays) {
     return [...(plays ?? [])].reverse().find(play => play.scoringPlay && play.text)?.text || "";
+  }
+
+  function basketballTimeoutsRemaining(payload, competitor, period) {
+    const maximum = period > 4 ? 2 : 7;
+    const direct = global.SportsOverlay.timeouts.remaining(competitor, maximum);
+    if (direct !== null) return direct;
+    if (!Array.isArray(payload.plays)) return null;
+    const teamId = String(competitor.team?.id ?? competitor.id ?? "");
+    const used = payload.plays.filter(play => {
+      const playPeriod = Number(play.period?.number);
+      const relevantPeriod = period > 4 ? playPeriod === period : playPeriod <= 4;
+      return relevantPeriod
+        && String(play.team?.id ?? "") === teamId
+        && /timeout/i.test(play.type?.text || "");
+    }).length;
+    return Math.max(0, maximum - used);
   }
 
   function periodLabel(period) {

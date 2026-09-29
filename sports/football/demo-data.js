@@ -3,8 +3,8 @@
 (function initializeFootballDemos(global) {
   const { createEvent, EVENT_STATES } = global.SportsOverlay.model;
   const teams = {
-    away: { id: "det", name: "Detroit Lions", abbreviation: "DET", record: "3–1", score: 17, featured: false, logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/det.png" },
-    home: { id: "sea", name: "Seattle Seahawks", abbreviation: "SEA", record: "2–2", score: 21, featured: true, logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/sea.png" },
+    away: { id: "det", name: "Detroit Lions", abbreviation: "DET", record: "3–1", score: 17, timeoutsRemaining: 2, featured: false, logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/det.png" },
+    home: { id: "sea", name: "Seattle Seahawks", abbreviation: "SEA", record: "2–2", score: 21, timeoutsRemaining: 1, featured: true, logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/sea.png" },
   };
   const base = {
     sport: "football",

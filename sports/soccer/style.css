@@ -14,7 +14,7 @@
 .soccer-scorebug [hidden] { display: none; }
 .soccer-main { display: grid; grid-template-columns: 1fr 72px 1fr; align-items: center; min-height: 42px; padding: 0 13px; }
 .soccer-team { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.soccer-team--home { justify-content: flex-end; text-align: right; }
+.soccer-team--away { justify-content: flex-end; text-align: right; }
 .soccer-mark { display: grid; place-items: center; width: 27px; height: 27px; flex: 0 0 27px; border-radius: 50%; background: rgba(45, 200, 77, 0.16); color: #88efa1; font-size: 8px; font-weight: 900; }
 .soccer-mark img { width: 26px; height: 26px; object-fit: contain; }
 .soccer-mark img:not([hidden]) + span { display: none; }

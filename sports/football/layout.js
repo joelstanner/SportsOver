@@ -12,13 +12,13 @@
       <section class="football-main">
         <div class="football-team">
           <span id="football-away-mark" class="football-mark"><img alt="" hidden><span>DET</span></span>
-          <div><span class="football-team-name"><span id="football-away-abbr" class="football-abbr">DET</span><span id="football-away-possession" class="football-possession" aria-label="Possession" hidden>🏈</span></span><span id="football-away-record" class="football-record"></span></div>
+          <div><span class="football-team-name"><span id="football-away-abbr" class="football-abbr">DET</span><span id="football-away-possession" class="football-possession" aria-label="Possession" hidden>🏈</span></span><span id="football-away-record" class="football-record"></span><span id="football-away-timeouts" class="timeout-markers football-timeouts" hidden></span></div>
           <strong id="football-away-score" class="football-score">—</strong>
         </div>
         <div class="football-center"><span id="football-clock" class="football-clock">—</span><span id="football-quarter" class="football-quarter">—</span></div>
         <div class="football-team football-team--home">
           <strong id="football-home-score" class="football-score">—</strong>
-          <div><span class="football-team-name"><span id="football-home-abbr" class="football-abbr">SEA</span><span id="football-home-possession" class="football-possession" aria-label="Possession" hidden>🏈</span></span><span id="football-home-record" class="football-record"></span></div>
+          <div><span class="football-team-name"><span id="football-home-abbr" class="football-abbr">SEA</span><span id="football-home-possession" class="football-possession" aria-label="Possession" hidden>🏈</span></span><span id="football-home-record" class="football-record"></span><span id="football-home-timeouts" class="timeout-markers timeout-markers--home football-timeouts" hidden></span></div>
           <span id="football-home-mark" class="football-mark football-mark--home"><img alt="" hidden><span>SEA</span></span>
         </div>
       </section>
@@ -27,7 +27,7 @@
         <div id="football-down-detail"><span>DOWN</span><strong id="football-down"></strong></div>
         <div id="football-field-detail"><span>FIELD</span><strong id="football-field"></strong></div>
       </section>
-      <section id="football-last-play" class="football-last-play" hidden></section>`;
+      <section id="football-last-play" class="football-last-play" hidden><span class="scorebug-scroll-viewport"><span id="football-last-play-text" class="scorebug-scroll-text"></span></span></section>`;
 
     const find = selector => mount.querySelector(selector);
     const els = {
@@ -35,12 +35,13 @@
       awayMark: find("#football-away-mark"), homeMark: find("#football-home-mark"),
       awayAbbr: find("#football-away-abbr"), homeAbbr: find("#football-home-abbr"),
       awayRecord: find("#football-away-record"), homeRecord: find("#football-home-record"),
+      awayTimeouts: find("#football-away-timeouts"), homeTimeouts: find("#football-home-timeouts"),
       awayPossession: find("#football-away-possession"), homePossession: find("#football-home-possession"),
       awayScore: find("#football-away-score"), homeScore: find("#football-home-score"),
       clock: find("#football-clock"), quarter: find("#football-quarter"),
       status: find("#football-status"), matchup: find("#football-matchup"), statusText: find("#football-status-text"),
       detail: find("#football-live-detail"), downDetail: find("#football-down-detail"), down: find("#football-down"), field: find("#football-field"),
-      fieldDetail: find("#football-field-detail"), lastPlay: find("#football-last-play"),
+      fieldDetail: find("#football-field-detail"), lastPlay: find("#football-last-play"), lastPlayText: find("#football-last-play-text"), lastPlayViewport: find("#football-last-play .scorebug-scroll-viewport"),
     };
 
     function render(event) {
@@ -51,6 +52,9 @@
       els.bug.setAttribute("aria-label", `${away.name} at ${home.name} ${event.league} game`);
       setTeam(els.awayMark, els.awayAbbr, els.awayRecord, away);
       setTeam(els.homeMark, els.homeAbbr, els.homeRecord, home);
+      const showTimeouts = event.state === EVENT_STATES.LIVE || event.state === EVENT_STATES.INTERRUPTED;
+      global.SportsOverlay.timeouts.renderMarkers(els.awayTimeouts, showTimeouts ? away.timeoutsRemaining : null, 3, away.name);
+      global.SportsOverlay.timeouts.renderMarkers(els.homeTimeouts, showTimeouts ? home.timeoutsRemaining : null, 3, home.name);
       const showScore = event.state !== EVENT_STATES.PREGAME;
       els.awayScore.textContent = showScore ? away.score ?? 0 : "";
       els.homeScore.textContent = showScore ? home.score ?? 0 : "";
@@ -74,8 +78,8 @@
         els.fieldDetail.classList.toggle("is-red-zone", isRedZone(event));
         if (downText || details.yardLine) show(els.detail);
         if (details.lastPlay) {
-          els.lastPlay.textContent = details.lastPlay;
           show(els.lastPlay);
+          global.SportsOverlay.scrolling.render(els.lastPlayViewport, els.lastPlayText, details.lastPlay);
         }
       } else {
         els.clock.textContent = "";

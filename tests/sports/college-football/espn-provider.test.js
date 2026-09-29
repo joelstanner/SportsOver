@@ -6,6 +6,7 @@ const assert = require("node:assert/strict");
 global.window = globalThis;
 require("../../../core/event-model.js");
 require("../../../core/registry.js");
+require("../../../core/timeouts.js");
 require("../../../sports/college-football/providers/espn.js");
 
 const provider = global.SportsOverlay.espnNcaaf;
@@ -20,8 +21,8 @@ function liveEvent() {
       id: "401752001",
       date: "2026-10-31T19:30:00Z",
       competitors: [
-        { id: "264", homeAway: "away", score: "17", records: [{ name: "overall", summary: "5-1" }], team: { id: "264", abbreviation: "WASH", displayName: "Washington Huskies", logos: [{ href: "wash.png" }] } },
-        { id: "158", homeAway: "home", score: "21", records: [{ name: "overall", summary: "4-2" }], team: { id: "158", abbreviation: "NEB", displayName: "Nebraska Cornhuskers", logos: [{ href: "neb.png" }] } },
+        { id: "264", homeAway: "away", score: "17", timeoutsUsed: 2, records: [{ name: "overall", summary: "5-1" }], team: { id: "264", abbreviation: "WASH", displayName: "Washington Huskies", logos: [{ href: "wash.png" }] } },
+        { id: "158", homeAway: "home", score: "21", timeoutsUsed: 0, records: [{ name: "overall", summary: "4-2" }], team: { id: "158", abbreviation: "NEB", displayName: "Nebraska Cornhuskers", logos: [{ href: "neb.png" }] } },
       ],
       situation: { down: 3, distance: 4, possession: "158", possessionText: "WASH 18", isRedZone: true, lastPlay: { text: "Pass complete for 12 yards." } },
     }],
@@ -38,6 +39,7 @@ test("normalizes college football separately from the NFL", () => {
   assert.equal(event.teams.home.logoUrl, "neb.png");
   assert.equal(event.teams.away.name, "Washington Huskies");
   assert.equal(event.teams.away.logoUrl, "wash.png");
+  assert.deepEqual([event.teams.away.timeoutsRemaining, event.teams.home.timeoutsRemaining], [1, 3]);
   assert.equal(event.details.possessionTeam, "NEB");
 });
 

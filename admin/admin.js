@@ -198,9 +198,12 @@
   }
 
   function updateDemo() {
-    const sport = document.querySelector("#demo-sport").value;
+    const sportPicker = document.querySelector("#demo-sport");
+    const sport = sportPicker.value;
     const state = document.querySelector("#demo-state").value;
-    const params = new URLSearchParams({ sport });
+    const isRotation = state === "rotation";
+    sportPicker.disabled = isRotation;
+    const params = new URLSearchParams(isRotation ? {} : { sport });
     if (["pregame", "live", "interrupted", "final"].includes(state)) params.set("demo", state);
     else params.set("scenario", state);
     document.querySelector("#demo-preview").src = `../index.html?${params}`;

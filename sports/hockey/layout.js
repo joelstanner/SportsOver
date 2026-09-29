@@ -27,7 +27,7 @@
         <div><span>SHOTS</span><strong id="hockey-shots"></strong></div>
         <div><span>POWER PLAY</span><strong id="hockey-power-play"></strong></div>
       </section>
-      <section id="hockey-last-play" class="hockey-last-play" hidden></section>`;
+      <section id="hockey-last-play" class="hockey-last-play" hidden><span class="scorebug-scroll-viewport"><span id="hockey-last-play-text" class="scorebug-scroll-text"></span></span></section>`;
 
     const find = selector => mount.querySelector(selector);
     const els = {
@@ -39,7 +39,7 @@
       clock: find("#hockey-clock"), period: find("#hockey-period"),
       status: find("#hockey-status"), matchup: find("#hockey-matchup"), statusText: find("#hockey-status-text"),
       detail: find("#hockey-live-detail"), shots: find("#hockey-shots"), powerPlay: find("#hockey-power-play"),
-      lastPlay: find("#hockey-last-play"),
+      lastPlay: find("#hockey-last-play"), lastPlayText: find("#hockey-last-play-text"), lastPlayViewport: find("#hockey-last-play .scorebug-scroll-viewport"),
     };
 
     function render(event) {
@@ -63,8 +63,8 @@
         els.powerPlay.textContent = `${away.abbreviation} ${details.awayPowerPlay || "—"} · ${home.abbreviation} ${details.homePowerPlay || "—"}`;
         show(els.detail);
         if (details.lastPlay) {
-          els.lastPlay.textContent = details.lastPlay;
           show(els.lastPlay);
+          global.SportsOverlay.scrolling.render(els.lastPlayViewport, els.lastPlayText, details.lastPlay);
         }
       } else {
         els.clock.textContent = "";

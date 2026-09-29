@@ -6,6 +6,7 @@ const assert = require("node:assert/strict");
 global.window = globalThis;
 require("../../../core/event-model.js");
 require("../../../core/registry.js");
+require("../../../core/timeouts.js");
 require("../../../sports/football/providers/espn.js");
 
 const provider = global.SportsOverlay.espnNfl;
@@ -24,8 +25,8 @@ function liveEvent(overrides = {}) {
       id: "401000001",
       date: "2026-10-04T20:05:00Z",
       competitors: [
-        { id: "8", homeAway: "away", score: "17", records: [{ name: "overall", summary: "3-1" }], team: { id: "8", abbreviation: "DET", displayName: "Detroit Lions", logo: "det.png" } },
-        { id: "26", homeAway: "home", score: "21", records: [{ name: "overall", summary: "2-2" }], team: { id: "26", abbreviation: "SEA", displayName: "Seattle Seahawks", logo: "sea.png" } },
+        { id: "8", homeAway: "away", score: "17", timeoutsUsed: 1, records: [{ name: "overall", summary: "3-1" }], team: { id: "8", abbreviation: "DET", displayName: "Detroit Lions", logo: "det.png" } },
+        { id: "26", homeAway: "home", score: "21", timeoutsUsed: 2, records: [{ name: "overall", summary: "2-2" }], team: { id: "26", abbreviation: "SEA", displayName: "Seattle Seahawks", logo: "sea.png" } },
       ],
       situation: {
         down: 3,
@@ -48,6 +49,7 @@ test("normalizes ESPN live football details", () => {
   assert.equal(event.teams.home.featured, true);
   assert.equal(event.teams.home.score, 21);
   assert.equal(event.teams.home.logoUrl, "sea.png");
+  assert.deepEqual([event.teams.away.timeoutsRemaining, event.teams.home.timeoutsRemaining], [2, 1]);
   assert.equal(event.details.quarter, "3RD");
   assert.equal(event.details.clock, "08:42");
   assert.equal(event.details.down, 3);

@@ -3,8 +3,8 @@
 (function initializeBasketballDemos(global) {
   const { createEvent, EVENT_STATES } = global.SportsOverlay.model;
   const teams = {
-    away: { id: "4", name: "Chicago Bulls", abbreviation: "CHI", record: "2–1", score: 84, featured: false, logoUrl: "https://a.espncdn.com/i/teamlogos/nba/500/chi.png" },
-    home: { id: "8", name: "Detroit Pistons", abbreviation: "DET", record: "3–0", score: 91, featured: true, logoUrl: "https://a.espncdn.com/i/teamlogos/nba/500/det.png" },
+    away: { id: "4", name: "Chicago Bulls", abbreviation: "CHI", record: "2–1", score: 84, timeoutsRemaining: 4, featured: false, logoUrl: "https://a.espncdn.com/i/teamlogos/nba/500/chi.png" },
+    home: { id: "8", name: "Detroit Pistons", abbreviation: "DET", record: "3–0", score: 91, timeoutsRemaining: 2, featured: true, logoUrl: "https://a.espncdn.com/i/teamlogos/nba/500/det.png" },
   };
   const base = { sport: "basketball", league: "NBA", startTime: "2026-10-10T23:00:00Z", teams };
   const demos = {

@@ -20,6 +20,7 @@
 .basketball-mark img:not([hidden]) + span { display: none; }
 .basketball-team strong { display: block; font-size: 0.82em; letter-spacing: 0.075em; }
 .basketball-record { display: block; margin-top: 2px; color: #aebbc6; font-size: 0.6em; }
+.basketball-timeouts { color: #ff9aab; }
 .basketball-score { min-width: 28px; font-size: 1.22em !important; letter-spacing: 0 !important; }
 .basketball-center { display: grid; justify-items: center; gap: 2px; padding: 0 7px; border-right: 1px solid var(--basketball-line); border-left: 1px solid var(--basketball-line); }
 .basketball-center strong { font-size: 1em; }

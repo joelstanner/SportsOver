@@ -11,15 +11,15 @@
     mount.innerHTML = `
       <section class="soccer-main">
         <div class="soccer-team">
-          <span id="soccer-away-mark" class="soccer-mark"><img alt="" hidden><span>AWY</span></span>
-          <div><strong id="soccer-away-abbr">AWY</strong><span id="soccer-away-record" class="soccer-record"></span></div>
-          <strong id="soccer-away-score" class="soccer-score">—</strong>
+          <span id="soccer-home-mark" class="soccer-mark"><img alt="" hidden><span>HME</span></span>
+          <div><strong id="soccer-home-abbr">HME</strong><span id="soccer-home-record" class="soccer-record"></span></div>
+          <strong id="soccer-home-score" class="soccer-score">—</strong>
         </div>
         <div class="soccer-center"><strong id="soccer-clock">—</strong><span id="soccer-period">—</span></div>
-        <div class="soccer-team soccer-team--home">
-          <strong id="soccer-home-score" class="soccer-score">—</strong>
-          <div><strong id="soccer-home-abbr">HME</strong><span id="soccer-home-record" class="soccer-record"></span></div>
-          <span id="soccer-home-mark" class="soccer-mark"><img alt="" hidden><span>HME</span></span>
+        <div class="soccer-team soccer-team--away">
+          <strong id="soccer-away-score" class="soccer-score">—</strong>
+          <div><strong id="soccer-away-abbr">AWY</strong><span id="soccer-away-record" class="soccer-record"></span></div>
+          <span id="soccer-away-mark" class="soccer-mark"><img alt="" hidden><span>AWY</span></span>
         </div>
       </section>
       <section id="soccer-status" class="soccer-status" hidden><span id="soccer-matchup"></span><strong id="soccer-status-text"></strong></section>
@@ -27,7 +27,7 @@
         <div><span>POSSESSION</span><strong id="soccer-possession"></strong></div>
         <div><span>SHOTS ON TARGET</span><strong id="soccer-shots"></strong></div>
       </section>
-      <section id="soccer-last-event" class="soccer-last-event" hidden></section>`;
+      <section id="soccer-last-event" class="soccer-last-event" hidden><span class="scorebug-scroll-viewport"><span id="soccer-last-event-text" class="scorebug-scroll-text"></span></span></section>`;
 
     const find = selector => mount.querySelector(selector);
     const els = {
@@ -39,7 +39,7 @@
       clock: find("#soccer-clock"), period: find("#soccer-period"),
       status: find("#soccer-status"), matchup: find("#soccer-matchup"), statusText: find("#soccer-status-text"),
       detail: find("#soccer-live-detail"), possession: find("#soccer-possession"), shots: find("#soccer-shots"),
-      lastEvent: find("#soccer-last-event"),
+      lastEvent: find("#soccer-last-event"), lastEventText: find("#soccer-last-event-text"), lastEventViewport: find("#soccer-last-event .scorebug-scroll-viewport"),
     };
 
     function render(event) {
@@ -63,8 +63,8 @@
         els.shots.textContent = `${away.abbreviation} ${details.awayShotsOnTarget ?? "—"} · ${home.abbreviation} ${details.homeShotsOnTarget ?? "—"}`;
         show(els.detail);
         if (details.lastEvent) {
-          els.lastEvent.textContent = details.lastEvent;
           show(els.lastEvent);
+          global.SportsOverlay.scrolling.render(els.lastEventViewport, els.lastEventText, details.lastEvent);
         }
       } else {
         els.clock.textContent = "";

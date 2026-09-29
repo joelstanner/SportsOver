@@ -6,6 +6,7 @@ const assert = require("node:assert/strict");
 global.window = globalThis;
 require("../../../core/event-model.js");
 require("../../../core/registry.js");
+require("../../../core/timeouts.js");
 require("../../../sports/basketball/providers/espn.js");
 require("../../../sports/basketball/layout.js");
 require("../../../sports/basketball/demo-data.js");
@@ -23,8 +24,8 @@ function liveSummary() {
         date: "2026-10-10T23:00:00Z",
         status: { period: 4, displayClock: "6:42", type: { state: "in", completed: false, description: "In Progress" } },
         competitors: [
-          { id: "4", homeAway: "away", score: "84", record: [{ type: "total", summary: "2-1" }], team: { id: "4", abbreviation: "CHI", displayName: "Chicago Bulls", logos: [{ href: "chi.png" }] } },
-          { id: "8", homeAway: "home", score: "91", record: [{ type: "total", summary: "3-0" }], team: { id: "8", abbreviation: "DET", displayName: "Detroit Pistons", logos: [{ href: "det.png" }] } },
+          { id: "4", homeAway: "away", score: "84", timeoutsUsed: 3, record: [{ type: "total", summary: "2-1" }], team: { id: "4", abbreviation: "CHI", displayName: "Chicago Bulls", logos: [{ href: "chi.png" }] } },
+          { id: "8", homeAway: "home", score: "91", timeoutsUsed: 5, record: [{ type: "total", summary: "3-0" }], team: { id: "8", abbreviation: "DET", displayName: "Detroit Pistons", logos: [{ href: "det.png" }] } },
         ],
       }],
     },
@@ -47,6 +48,7 @@ test("normalizes ESPN NBA scores, details, and logos", () => {
   assert.equal(event.teams.home.name, "Detroit Pistons");
   assert.equal(event.teams.home.featured, true);
   assert.equal(event.teams.home.logoUrl, "det.png");
+  assert.deepEqual([event.teams.away.timeoutsRemaining, event.teams.home.timeoutsRemaining], [4, 2]);
   assert.equal(event.details.period, "Q4");
   assert.equal(event.details.clock, "6:42");
   assert.deepEqual([event.details.awayFieldGoalPct, event.details.homeFieldGoalPct], [44.1, 49.3]);

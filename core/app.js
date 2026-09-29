@@ -12,6 +12,7 @@ const CONFIG = Object.freeze({
   requestTimeoutMs: 8_000,
   transitionOutMs: 180,
   transitionInMs: 260,
+  demoRotationIntervalMs: 3_000,
 });
 
 const sportContexts = savedConfig.sports
@@ -76,6 +77,10 @@ function renderDemoFromUrl() {
 function renderScenarioFromUrl() {
   const scenario = query.get("scenario");
   if (!scenario) return false;
+  if (scenario === "rotation") {
+    startDemoRotation();
+    return true;
+  }
   const messages = {
     "no-event": `No selected ${initialSport} game`,
     offline: "Sports data offline",
@@ -84,6 +89,33 @@ function renderScenarioFromUrl() {
   if (!messages[scenario]) return false;
   layout.renderNoEvent(messages[scenario], true);
   return true;
+}
+
+async function startDemoRotation() {
+  const demos = savedConfig.sports
+    .map(group => window.SportsOverlay.registry.getDemo(group.sport, "live"))
+    .filter(Boolean);
+  if (!demos.length) {
+    layout.renderNoEvent("No rotation demos registered", true);
+    return;
+  }
+
+  let demoIndex = 0;
+  await renderDemoEvent(demos[demoIndex]);
+  const advance = async () => {
+    demoIndex = (demoIndex + 1) % demos.length;
+    await renderDemoEvent(demos[demoIndex], true);
+    rotationTimer = setTimeout(advance, CONFIG.demoRotationIntervalMs);
+  };
+  rotationTimer = setTimeout(advance, CONFIG.demoRotationIntervalMs);
+}
+
+async function renderDemoEvent(event, animate = false) {
+  const revision = ++requestRevision;
+  if (animate && !await transitionOut(revision)) return;
+  const currentLayout = activateLayout(event.sport);
+  currentLayout.render(event);
+  if (animate) transitionIn();
 }
 
 async function discoverGames() {
@@ -244,8 +276,10 @@ function entryKey(entry) {
   return entry ? `${entry.context.sport}:${entry.candidate.id}` : "";
 }
 
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) discoverGames();
-});
-
-if (!renderDemoFromUrl() && !renderScenarioFromUrl()) discoverGames();
+const staticPreview = renderDemoFromUrl() || renderScenarioFromUrl();
+if (!staticPreview) {
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) discoverGames();
+  });
+  discoverGames();
+}

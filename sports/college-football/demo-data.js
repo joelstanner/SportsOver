@@ -3,8 +3,8 @@
 (function initializeCollegeFootballDemos(global) {
   const { EVENT_STATES, createEvent } = global.SportsOverlay.model;
   const teams = {
-    away: { id: "264", name: "Washington Huskies", abbreviation: "WASH", record: "5–1", score: 17, featured: false, logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/264.png" },
-    home: { id: "158", name: "Nebraska Cornhuskers", abbreviation: "NEB", record: "6–0", score: 31, featured: true, logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/158.png" },
+    away: { id: "264", name: "Washington Huskies", abbreviation: "WASH", record: "5–1", score: 17, timeoutsRemaining: 1, featured: false, logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/264.png" },
+    home: { id: "158", name: "Nebraska Cornhuskers", abbreviation: "NEB", record: "6–0", score: 31, timeoutsRemaining: 3, featured: true, logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/158.png" },
   };
   const base = { sport: "college-football", league: "NCAAF", startTime: "2026-10-31T19:30:00Z", teams };
   const demos = {

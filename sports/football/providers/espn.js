@@ -123,6 +123,7 @@
       abbreviation,
       record: totalRecord?.summary || totalRecord?.displayValue || "",
       score: finiteNumberOrNull(competitor.score?.value ?? competitor.score),
+      timeoutsRemaining: global.SportsOverlay.timeouts.remaining(competitor, 3),
       featured: abbreviation === String(featuredTeamId || "").toUpperCase(),
       logoUrl: team.logo || team.logos?.find(logo => logo.rel?.includes("scoreboard") && !logo.rel?.includes("dark"))?.href || "",
     };
