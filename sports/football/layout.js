@@ -151,4 +151,5 @@
   const layout = Object.freeze({ createLayout, isRedZone });
   global.SportsOverlay.footballLayout = layout;
   global.SportsOverlay.registry?.registerLayout("football", layout);
+  global.SportsOverlay.registry?.registerLayout("college-football", layout);
 })(typeof window === "undefined" ? globalThis : window);

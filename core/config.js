@@ -5,15 +5,19 @@
   const TEAM_CATALOG = Object.freeze([
     Object.freeze({ key: "mlb:136", sport: "baseball", league: "MLB", teamId: 136, name: "Seattle Mariners", abbreviation: "SEA", provider: "mlb", providerStatus: "live" }),
     Object.freeze({ key: "nfl:sea", sport: "football", league: "NFL", teamId: "SEA", name: "Seattle Seahawks", abbreviation: "SEA", provider: "espn-nfl", providerStatus: "live" }),
+    Object.freeze({ key: "ncaaf:158", sport: "college-football", league: "NCAAF", teamId: "158", name: "Nebraska Cornhuskers", abbreviation: "NEB", provider: "espn-ncaaf", providerStatus: "live" }),
+    Object.freeze({ key: "ncaaf:264", sport: "college-football", league: "NCAAF", teamId: "264", name: "Washington Huskies", abbreviation: "WASH", provider: "espn-ncaaf", providerStatus: "live" }),
     Object.freeze({ key: "nhl:sea", sport: "hockey", league: "NHL", teamId: "SEA", name: "Seattle Kraken", abbreviation: "SEA", provider: "espn-nhl", providerStatus: "live" }),
     Object.freeze({ key: "mls:9726", sport: "soccer", league: "MLS", teamId: 9726, name: "Seattle Sounders FC", abbreviation: "SEA", provider: "espn-mls", providerStatus: "live" }),
     Object.freeze({ key: "nba:det", sport: "basketball", league: "NBA", teamId: "DET", name: "Detroit Pistons", abbreviation: "DET", provider: "espn-nba", providerStatus: "live" }),
   ]);
   const DEFAULT_CONFIG = Object.freeze({
-    version: 3,
+    version: 4,
     favorites: Object.freeze([
       Object.freeze({ teamKey: "mlb:136", enabled: true }),
       Object.freeze({ teamKey: "nfl:sea", enabled: true }),
+      Object.freeze({ teamKey: "ncaaf:158", enabled: true }),
+      Object.freeze({ teamKey: "ncaaf:264", enabled: true }),
       Object.freeze({ teamKey: "nhl:sea", enabled: true }),
       Object.freeze({ teamKey: "mls:9726", enabled: true }),
       Object.freeze({ teamKey: "nba:det", enabled: true }),
@@ -40,7 +44,7 @@
 
     const rotationSeconds = Number(source.rotationSeconds);
     return {
-      version: 3,
+      version: 4,
       favorites,
       rotationSeconds: Number.isFinite(rotationSeconds)
         ? Math.min(300, Math.max(10, Math.round(rotationSeconds)))
@@ -79,14 +83,18 @@
 
   function migrateConfig(source) {
     const version = Number(source?.version || 1);
-    if (version >= 3) return source;
+    if (version >= 4) return source;
     const favorites = Array.isArray(source?.favorites) ? [...source.favorites] : [];
     const existing = new Set(favorites.map(favorite => String(favorite?.teamKey || "").toLowerCase()));
-    const additions = version < 2 ? ["nhl:sea", "mls:9726", "nba:det"] : ["nba:det"];
+    const additions = version < 2
+      ? ["nhl:sea", "mls:9726", "nba:det", "ncaaf:158", "ncaaf:264"]
+      : version < 3
+        ? ["nba:det", "ncaaf:158", "ncaaf:264"]
+        : ["ncaaf:158", "ncaaf:264"];
     DEFAULT_CONFIG.favorites.filter(favorite => additions.includes(favorite.teamKey)).forEach(favorite => {
       if (!existing.has(favorite.teamKey)) favorites.push(favorite);
     });
-    return { ...source, version: 3, favorites };
+    return { ...source, version: 4, favorites };
   }
 
   function enabledTeams(config) {
