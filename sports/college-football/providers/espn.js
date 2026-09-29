@@ -103,7 +103,10 @@
       record: totalRecord?.summary || totalRecord?.displayValue || "",
       score: finiteNumberOrNull(competitor.score?.value ?? competitor.score),
       featured: teamMatches(competitor, featuredTeamId),
-      logoUrl: team.logo || team.logos?.find(logo => logo.rel?.includes("scoreboard") && !logo.rel?.includes("dark"))?.href || "",
+      logoUrl: team.logo
+        || team.logos?.find(logo => logo.rel?.includes("scoreboard") && !logo.rel?.includes("dark"))?.href
+        || team.logos?.[0]?.href
+        || "",
     };
   }
 

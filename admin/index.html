@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sports Overlay Control Room</title>
-  <link rel="stylesheet" href="admin.css?v=1">
+  <link rel="stylesheet" href="admin.css?v=3">
 </head>
 <body>
   <header class="masthead">
@@ -25,15 +25,10 @@
   <main>
     <section id="settings-panel" class="panel" data-panel="settings">
       <div class="panel-heading">
-        <div><p class="section-kicker">SELECTION ORDER</p><h2>Favorite teams</h2></div>
-        <p>Enabled teams are considered from top to bottom.</p>
+        <div><p class="section-kicker">SELECTION ORDER</p><h2>Sports and favorites</h2></div>
+        <p>Rank sports first, then rank favorite teams within each sport.</p>
       </div>
-      <div id="favorites-list" class="favorites-list" aria-live="polite"></div>
-      <div class="add-favorite">
-        <label for="team-picker">Add favorite</label>
-        <select id="team-picker"></select>
-        <button id="add-team" class="button button--secondary" type="button">Add team</button>
-      </div>
+      <div id="sports-list" class="sports-list" aria-live="polite"></div>
 
       <div class="settings-grid">
         <label class="field">Display mode
@@ -114,6 +109,24 @@
     </section>
   </main>
 
+  <template id="sport-template">
+    <section class="sport-card">
+      <header class="sport-heading">
+        <div><span class="sport-rank"></span><h3 class="sport-name"></h3><span class="sport-league"></span></div>
+        <div class="order-buttons">
+          <button class="icon-button move-sport-up" type="button" aria-label="Move sport up">↑</button>
+          <button class="icon-button move-sport-down" type="button" aria-label="Move sport down">↓</button>
+        </div>
+      </header>
+      <div class="sport-favorites"></div>
+      <div class="add-favorite">
+        <label>Add favorite</label>
+        <select class="team-picker" aria-label="Team to add"></select>
+        <button class="button button--secondary add-team" type="button">Add team</button>
+      </div>
+    </section>
+  </template>
+
   <template id="favorite-template">
     <article class="favorite-card">
       <span class="team-mark"></span>
@@ -128,7 +141,7 @@
     </article>
   </template>
 
-  <script src="../core/config.js?v=3"></script>
-  <script src="admin.js?v=1"></script>
+  <script src="../core/config.js?v=6"></script>
+  <script src="admin.js?v=3"></script>
 </body>
 </html>

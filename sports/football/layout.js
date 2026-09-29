@@ -1,7 +1,7 @@
 "use strict";
 
 (function initializeFootballLayout(global) {
-  const { EVENT_STATES } = global.SportsOverlay.model;
+  const { EVENT_STATES, formatPregameStart } = global.SportsOverlay.model;
 
   function createLayout(root = document) {
     const mount = root.querySelector("#sports-overlay");
@@ -124,7 +124,7 @@
   function statusText(event) {
     if (event.state === EVENT_STATES.FINAL) return "FINAL";
     if (event.state === EVENT_STATES.INTERRUPTED) return event.detailedState;
-    return formatStart(event.startTime) || event.detailedState;
+    return formatPregameStart(event.startTime) || event.detailedState;
   }
 
   function isRedZone(event) {
@@ -136,13 +136,6 @@
 
   function ordinal(value) {
     return value === 1 ? "1ST" : value === 2 ? "2ND" : value === 3 ? "3RD" : `${value}TH`;
-  }
-
-  function formatStart(isoDate) {
-    if (!isoDate) return "";
-    const date = new Date(isoDate);
-    if (Number.isNaN(date.getTime())) return "";
-    return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(date);
   }
 
   function show(element) { element.hidden = false; }

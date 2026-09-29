@@ -14,11 +14,11 @@ py -m http.server 8080
 
 Then visit [http://localhost:8080](http://localhost:8080) in a browser. Stop the server with `Ctrl+C`.
 
-Open [http://localhost:8080/admin/](http://localhost:8080/admin/) for the local control room. Its Settings tab stores favorite-team order and banner behavior in this browser. Mariners, Seahawks, Nebraska, Washington, Kraken, Sounders, and Pistons are the defaults. NFL and college football remain separate categories. The Live tab embeds the real provider-backed banner. The Demo Lab previews every supported lifecycle and orchestration state without calling live providers or changing saved settings.
+Open [http://localhost:8080/admin/](http://localhost:8080/admin/) for the local control room. Its Settings tab ranks sport categories first, then ranks enabled favorites independently inside each sport. Mariners, Seahawks, Nebraska, Washington, Kraken, Sounders, and Pistons are the defaults. NFL and college football remain separate categories. Existing flat favorite settings migrate automatically. The Live tab embeds the real provider-backed banner. The Demo Lab previews every supported lifecycle and orchestration state without calling live providers or changing saved settings.
 
 ### Demo a live game
 
-On an off day, open [http://localhost:8080/?demo=live](http://localhost:8080/?demo=live) for a fixed baseball example. Add `sport=football` for the football layout, such as [http://localhost:8080/?sport=football&demo=live](http://localhost:8080/?sport=football&demo=live). Both sports provide `pregame`, `live`, `interrupted`, and `final` demos. Demo mode does not call a live API or start a polling timer, so the display remains stable while developing and reviewing visual changes. Remove the query string to return to real MLB data.
+On an off day, open [http://localhost:8080/?sport=baseball&demo=live](http://localhost:8080/?sport=baseball&demo=live) for a fixed baseball example. Change `sport=football` for the NFL layout or use another configured sport. Demo mode does not call a live API or start a polling timer, so the display remains stable while developing and reviewing visual changes. Remove the query string to return to the highest-ranked sport with an enabled favorite.
 
 For serverless testing in OBS, select `demo.html` as the Browser Source's local file. It redirects to the same fixed live-game example while preserving relative access to the overlay files.
 
@@ -135,8 +135,8 @@ sports-obs-overlay/
             └── espn-provider.test.js
 ```
 
-- `core/event-model.js`: shared event envelope and lifecycle states used by selection and rotation.
-- `core/config.js`: versioned local settings, favorite-team catalog, validation, and persistence.
+- `core/event-model.js`: shared event envelope, lifecycle states, and non-baseball pregame date/time formatting used by current and future sports. Baseball intentionally keeps time-only pregame formatting.
+- `core/config.js`: versioned local settings, nested sport/favorite rankings, catalogs, validation, migration, and persistence.
 - `core/registry.js`: connects named providers and sport layouts without hard-coding their implementation paths into shared logic.
 - `core/app.js`: current single-event orchestration and refresh timing.
 - `sports/baseball/providers/mlb.js`: MLB schedule/live-feed requests and normalization into the shared event envelope.

@@ -2,8 +2,9 @@
 
 const savedConfig = window.SportsOverlay.config.loadConfig();
 const query = new URLSearchParams(window.location.search);
-const selectedSport = query.get("sport") || "baseball";
-const selectedTeam = window.SportsOverlay.config.enabledTeams(savedConfig)
+const enabledTeams = window.SportsOverlay.config.enabledTeams(savedConfig);
+const selectedSport = query.get("sport") || enabledTeams[0]?.sport || savedConfig.sports[0]?.sport || "baseball";
+const selectedTeam = enabledTeams
   .find(team => team.sport === selectedSport);
 const CONFIG = Object.freeze({
   teamId: selectedTeam?.teamId ?? null,

@@ -37,6 +37,19 @@
     return event;
   }
 
+  function formatPregameStart(isoDate, now = new Date()) {
+    if (!isoDate) return "";
+    const date = new Date(isoDate);
+    if (Number.isNaN(date.getTime())) return "";
+    const time = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(date);
+    const isToday = date.getFullYear() === now.getFullYear()
+      && date.getMonth() === now.getMonth()
+      && date.getDate() === now.getDate();
+    if (isToday) return time;
+    const day = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" }).format(date);
+    return `${day} · ${time}`;
+  }
+
   global.SportsOverlay = global.SportsOverlay || {};
-  global.SportsOverlay.model = Object.freeze({ EVENT_STATES, createEvent, validateEvent });
+  global.SportsOverlay.model = Object.freeze({ EVENT_STATES, createEvent, validateEvent, formatPregameStart });
 })(typeof window === "undefined" ? globalThis : window);

@@ -15,5 +15,7 @@ test("Nebraska always leads Washington and has the better demo record", () => {
     assert.ok(event.teams.home.score > event.teams.away.score);
     assert.equal(event.teams.home.record, "6–0");
     assert.equal(event.teams.away.record, "5–1");
+    assert.match(event.teams.home.logoUrl, /\/158\.png$/);
+    assert.match(event.teams.away.logoUrl, /\/264\.png$/);
   });
 });

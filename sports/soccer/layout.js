@@ -1,7 +1,7 @@
 "use strict";
 
 (function initializeSoccerLayout(global) {
-  const { EVENT_STATES } = global.SportsOverlay.model;
+  const { EVENT_STATES, formatPregameStart } = global.SportsOverlay.model;
 
   function createLayout(root = document) {
     const mount = root.querySelector("#sports-overlay");
@@ -112,14 +112,7 @@
   function statusText(event) {
     if (event.state === EVENT_STATES.FINAL) return "FULL TIME";
     if (event.state === EVENT_STATES.INTERRUPTED) return event.detailedState;
-    return formatStart(event.startTime) || event.detailedState;
-  }
-
-  function formatStart(isoDate) {
-    if (!isoDate) return "";
-    const date = new Date(isoDate);
-    if (Number.isNaN(date.getTime())) return "";
-    return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(date);
+    return formatPregameStart(event.startTime) || event.detailedState;
   }
 
   function percent(value) { return value === null || value === undefined ? "—" : `${value}%`; }

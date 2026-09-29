@@ -17,55 +17,85 @@ function memoryStorage() {
   };
 }
 
-test("defaults include NFL and separate college-football favorites", () => {
+function sportKeys(config) {
+  return config.sports.map(group => group.sport);
+}
+
+function favoriteKeys(config, sport) {
+  return config.sports.find(group => group.sport === sport).favorites.map(favorite => favorite.teamKey);
+}
+
+test("defaults rank sports first and favorites within each sport", () => {
   const config = configApi.loadConfig(memoryStorage());
-  assert.deepEqual(config.favorites.map(favorite => favorite.teamKey), ["mlb:136", "nfl:sea", "ncaaf:158", "ncaaf:264", "nhl:sea", "mls:9726", "nba:det"]);
+  assert.deepEqual(sportKeys(config), ["baseball", "football", "college-football", "hockey", "soccer", "basketball"]);
+  assert.deepEqual(favoriteKeys(config, "college-football"), ["ncaaf:158", "ncaaf:264"]);
+  assert.match(configApi.findTeam("ncaaf:158").logoUrl, /\/158\.png$/);
+  assert.match(configApi.findTeam("ncaaf:264").logoUrl, /\/264\.png$/);
   assert.deepEqual(configApi.enabledTeams(config).map(team => team.name), ["Seattle Mariners", "Seattle Seahawks", "Nebraska Cornhuskers", "Washington Huskies", "Seattle Kraken", "Seattle Sounders FC", "Detroit Pistons"]);
 });
 
-test("normalizes favorite order and behavior settings", () => {
+test("normalizes independent sport and favorite rankings", () => {
   const config = configApi.normalizeConfig({
-    favorites: [
-      { teamKey: "NFL:SEA", enabled: true },
-      { teamKey: "mlb:136", enabled: false },
-      { teamKey: "nfl:sea", enabled: true },
-      { teamKey: "missing", enabled: true },
+    sports: [
+      { sport: "COLLEGE-FOOTBALL", favorites: [
+        { teamKey: "NCAAF:264", enabled: true },
+        { teamKey: "ncaaf:158", enabled: false },
+        { teamKey: "ncaaf:264", enabled: true },
+        { teamKey: "nfl:sea", enabled: true },
+      ] },
+      { sport: "football", favorites: [{ teamKey: "nfl:sea", enabled: true }] },
+      { sport: "college-football", favorites: [] },
+      { sport: "missing", favorites: [] },
     ],
     rotationSeconds: 999,
     fallbackMode: "hide",
     displayMode: "rotate",
   });
-  assert.deepEqual(config.favorites, [
-    { teamKey: "nfl:sea", enabled: true },
-    { teamKey: "mlb:136", enabled: false },
+  assert.deepEqual(sportKeys(config), ["college-football", "football", "baseball", "hockey", "soccer", "basketball"]);
+  assert.deepEqual(config.sports[0].favorites, [
+    { teamKey: "ncaaf:264", enabled: true },
+    { teamKey: "ncaaf:158", enabled: false },
   ]);
   assert.equal(config.rotationSeconds, 300);
   assert.equal(config.fallbackMode, "hide");
   assert.equal(config.displayMode, "rotate");
 });
 
-test("migrates older saved settings to include new default teams", () => {
+test("migrates flat version four favorites into ranked sport groups", () => {
   const storage = memoryStorage();
-  storage.setItem(configApi.STORAGE_KEY, JSON.stringify({ version: 1, favorites: [{ teamKey: "nfl:sea", enabled: true }] }));
-  assert.deepEqual(configApi.loadConfig(storage).favorites.map(favorite => favorite.teamKey), ["nfl:sea", "ncaaf:158", "ncaaf:264", "nhl:sea", "mls:9726", "nba:det"]);
+  storage.setItem(configApi.STORAGE_KEY, JSON.stringify({
+    version: 4,
+    favorites: [
+      { teamKey: "ncaaf:264", enabled: true },
+      { teamKey: "ncaaf:158", enabled: true },
+      { teamKey: "nfl:sea", enabled: true },
+      { teamKey: "mlb:136", enabled: false },
+    ],
+  }));
+  const config = configApi.loadConfig(storage);
+  assert.deepEqual(sportKeys(config), ["college-football", "football", "baseball", "hockey", "soccer", "basketball"]);
+  assert.deepEqual(favoriteKeys(config, "college-football"), ["ncaaf:264", "ncaaf:158"]);
+  assert.equal(config.sports.find(group => group.sport === "baseball").favorites[0].enabled, false);
 });
 
-test("adds Pistons and college-football favorites when migrating version two settings", () => {
+test("older settings gain later default teams before grouped migration", () => {
   const storage = memoryStorage();
   storage.setItem(configApi.STORAGE_KEY, JSON.stringify({ version: 2, favorites: [{ teamKey: "mls:9726", enabled: true }] }));
-  assert.deepEqual(configApi.loadConfig(storage).favorites.map(favorite => favorite.teamKey), ["mls:9726", "ncaaf:158", "ncaaf:264", "nba:det"]);
+  const config = configApi.loadConfig(storage);
+  assert.deepEqual(sportKeys(config), ["soccer", "college-football", "basketball", "baseball", "football", "hockey"]);
+  assert.deepEqual(favoriteKeys(config, "college-football"), ["ncaaf:158", "ncaaf:264"]);
+  assert.deepEqual(favoriteKeys(config, "basketball"), ["nba:det"]);
 });
 
-test("migrates version three settings to include both college-football favorites", () => {
+test("saves, loads, and resets nested configuration", () => {
   const storage = memoryStorage();
-  storage.setItem(configApi.STORAGE_KEY, JSON.stringify({ version: 3, favorites: [{ teamKey: "nfl:sea", enabled: true }] }));
-  assert.deepEqual(configApi.loadConfig(storage).favorites.map(favorite => favorite.teamKey), ["nfl:sea", "ncaaf:158", "ncaaf:264"]);
-});
-
-test("saves, loads, and resets configuration", () => {
-  const storage = memoryStorage();
-  configApi.saveConfig({ favorites: [{ teamKey: "nfl:sea", enabled: true }], rotationSeconds: 45 }, storage);
-  assert.deepEqual(configApi.loadConfig(storage).favorites, [{ teamKey: "nfl:sea", enabled: true }]);
+  const sports = [
+    { sport: "football", favorites: [{ teamKey: "nfl:sea", enabled: true }] },
+    { sport: "baseball", favorites: [] },
+  ];
+  configApi.saveConfig({ sports, rotationSeconds: 45 }, storage);
+  assert.deepEqual(sportKeys(configApi.loadConfig(storage)).slice(0, 2), ["football", "baseball"]);
+  assert.deepEqual(favoriteKeys(configApi.loadConfig(storage), "football"), ["nfl:sea"]);
   assert.equal(configApi.loadConfig(storage).rotationSeconds, 45);
-  assert.deepEqual(configApi.resetConfig(storage).favorites.map(favorite => favorite.teamKey), ["mlb:136", "nfl:sea", "ncaaf:158", "ncaaf:264", "nhl:sea", "mls:9726", "nba:det"]);
+  assert.deepEqual(sportKeys(configApi.resetConfig(storage)), ["baseball", "football", "college-football", "hockey", "soccer", "basketball"]);
 });
