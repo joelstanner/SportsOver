@@ -37,19 +37,42 @@
     return event;
   }
 
-  function formatPregameStart(isoDate, now = new Date()) {
-    if (!isoDate) return "";
-    const date = new Date(isoDate);
+  function selectedTimeZone() {
+    const configured = global.SportsOverlay?.config?.loadConfig()?.timeZone;
+    return !configured || configured === "local"
+      ? new Intl.DateTimeFormat().resolvedOptions().timeZone : configured;
+  }
+
+  function formatGameTime(isoDate, timeZone = selectedTimeZone()) {
+    const date = new Date(isoDate || "invalid");
     if (Number.isNaN(date.getTime())) return "";
-    const time = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(date);
-    const isToday = date.getFullYear() === now.getFullYear()
-      && date.getMonth() === now.getMonth()
-      && date.getDate() === now.getDate();
-    if (isToday) return time;
-    const day = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" }).format(date);
+    const time = new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", minute: "2-digit" }).format(date);
+    const offset = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "shortOffset" })
+      .formatToParts(date).find(part => part.type === "timeZoneName").value;
+    // Explicit US labels avoid OBS/Chrome differences in ICU abbreviation data.
+    const usLabels = {
+      "America/Los_Angeles": { "GMT-8": "PST", "GMT-7": "PDT" },
+      "America/Denver": { "GMT-7": "MST", "GMT-6": "MDT" },
+      "America/Phoenix": { "GMT-7": "MST" },
+      "America/Chicago": { "GMT-6": "CST", "GMT-5": "CDT" },
+      "America/New_York": { "GMT-5": "EST", "GMT-4": "EDT" },
+      "America/Anchorage": { "GMT-9": "AKST", "GMT-8": "AKDT" },
+      "Pacific/Honolulu": { "GMT-10": "HST" },
+    };
+    const label = usLabels[timeZone]?.[offset] || offset.replace("GMT", "UTC");
+    return `${time} ${label}`;
+  }
+
+  function formatPregameStart(isoDate, now = new Date(), timeZone = selectedTimeZone()) {
+    const date = new Date(isoDate || "invalid");
+    if (Number.isNaN(date.getTime())) return "";
+    const time = formatGameTime(isoDate, timeZone);
+    const dayKey = new Intl.DateTimeFormat("en-US", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" });
+    if (dayKey.format(date) === dayKey.format(now)) return time;
+    const day = new Intl.DateTimeFormat("en-US", { timeZone, weekday: "short", month: "short", day: "numeric" }).format(date);
     return `${day} · ${time}`;
   }
 
   global.SportsOverlay = global.SportsOverlay || {};
-  global.SportsOverlay.model = Object.freeze({ EVENT_STATES, createEvent, validateEvent, formatPregameStart });
+  global.SportsOverlay.model = Object.freeze({ EVENT_STATES, createEvent, validateEvent, formatPregameStart, formatGameTime });
 })(typeof window === "undefined" ? globalThis : window);

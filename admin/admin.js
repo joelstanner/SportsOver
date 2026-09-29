@@ -6,6 +6,33 @@
   const selectionApi = global.SportsOverlay.selection;
   const registryApi = global.SportsOverlay.registry;
   let workingConfig = configApi.loadConfig();
+  const shared = global.SportsOverlay.shared;
+  let baseline = structuredClone(workingConfig);
+  let baseRevision = shared?.snapshot()?.revision;
+  let baseInstance = shared?.snapshot()?.instance;
+  let saving = false;
+  function acknowledge() {
+    baseline = structuredClone(configApi.loadConfig());
+    baseRevision = shared?.snapshot()?.revision;
+    baseInstance = shared?.snapshot()?.instance;
+  }
+  async function persist(config, fields) {
+    if (saving) throw new Error("A save is already in progress.");
+    saving = true;
+    try {
+      const result = await configApi.saveConfig(config, {
+        fields, revision: baseRevision, instance: baseInstance,
+      });
+      acknowledge();
+      return result;
+    } catch (error) {
+      if (error.conflict) {
+        baseRevision = shared.snapshot().revision;
+        baseInstance = shared.snapshot().instance;
+      }
+      throw error;
+    } finally { saving = false; }
+  }
   const sportsList = document.querySelector("#sports-list");
   const status = document.querySelector("#save-status");
   const teamPicker = document.querySelector("#team-picker");
@@ -28,6 +55,26 @@
   teamPicker.addEventListener("change", updateAddTeamButton);
   addTeamButton.addEventListener("click", addTeam);
   refreshCatalogButton.addEventListener("click", refreshTeamCatalog);
+  const timeZonePicker = document.querySelector("#time-zone");
+  const commonZones = {
+    local: "Device time zone (automatic)",
+    "America/Los_Angeles": "Pacific — Los Angeles (PST/PDT)",
+    "America/Denver": "Mountain — Denver (MST/MDT)",
+    "America/Phoenix": "Arizona — Phoenix (MST)",
+    "America/Chicago": "Central — Chicago (CST/CDT)",
+    "America/New_York": "Eastern — New York (EST/EDT)",
+    "America/Anchorage": "Alaska — Anchorage (AKST/AKDT)",
+    "Pacific/Honolulu": "Hawaii — Honolulu (HST)",
+    UTC: "UTC",
+  };
+  const zones = new Set([...Object.keys(commonZones), workingConfig.timeZone,
+    ...(Intl.supportedValuesOf ? Intl.supportedValuesOf("timeZone") : ["Europe/London", "Europe/Paris", "Asia/Tokyo", "Australia/Sydney"])]);
+  for (const zone of zones) {
+    const option = document.createElement("option");
+    option.value = zone; option.textContent = commonZones[zone] || zone.replaceAll("_", " ");
+    timeZonePicker.append(option);
+  }
+  timeZonePicker.addEventListener("change", readBehaviorFields);
   document.querySelector("#display-mode").addEventListener("change", readBehaviorFields);
   document.querySelector("#fallback-mode").addEventListener("change", readBehaviorFields);
   document.querySelector("#rotation-mode").addEventListener("change", updateRotationControls);
@@ -43,6 +90,79 @@
   document.querySelector("#demo-state").addEventListener("change", updateDemo);
   document.querySelector("#refresh-demo").addEventListener("click", updateDemo);
 
+  const connection = document.createElement("p");
+  connection.setAttribute("role", "status");
+  status.before(connection);
+  const migration = document.createElement("div");
+  const exportButton = document.createElement("button");
+  exportButton.textContent = "Export settings";
+  exportButton.className = "button button--secondary";
+  exportButton.onclick = () => {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(workingConfig, null, 2)], { type: "application/json" }));
+    const link = document.createElement("a");
+    link.href = url; link.download = "sports-settings.json"; link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  migration.append(exportButton);
+  if (shared) {
+    const importLabel = document.createElement("label");
+    importLabel.textContent = "Import exported settings ";
+    const input = document.createElement("input");
+    input.type = "file"; input.accept = "application/json,.json";
+    const defaults = document.createElement("button");
+    defaults.textContent = "Start with defaults";
+    defaults.className = "button button--secondary";
+    async function initialize(config) {
+      try {
+        workingConfig = await configApi.saveConfig(config, { initialize: true });
+        acknowledge(); renderSettings();
+        status.textContent = "Shared settings initialized.";
+        refreshConnection();
+      } catch (error) { status.textContent = error.message; }
+    }
+    input.onchange = async () => {
+      try {
+        const file = input.files[0];
+        if (!file || file.size > 262144) throw new Error("Select a settings JSON file smaller than 256 KB.");
+        const imported = JSON.parse(await file.text());
+        if (!imported || (!Array.isArray(imported.sports) && !Array.isArray(imported.favorites))) throw new Error("This file is not an exported sports configuration.");
+        await initialize(imported);
+      } catch (error) { status.textContent = error.message; }
+    };
+    defaults.onclick = () => initialize(configApi.DEFAULT_CONFIG);
+    importLabel.append(input); migration.append(importLabel, defaults);
+    function refreshConnection() {
+      const snapshot = shared.snapshot();
+      const initialized = snapshot?.initialized;
+      const connected = shared.connected();
+      connection.textContent = !connected ? "Disconnected — changes cannot be saved."
+        : !initialized ? "Import your previous settings or start with defaults."
+        : "Connected — controlling the OBS banner.";
+      if (snapshot?.recovery) connection.textContent += ` ${snapshot.recovery}`;
+      input.disabled = defaults.disabled = !connected || initialized;
+      document.querySelector("#save-settings").disabled = !connected || !initialized;
+      document.querySelector("#reset-settings").disabled = !connected || !initialized;
+    }
+    let catalogRevision = shared.snapshot()?.catalogRevision;
+    shared.subscribe(async snapshot => {
+      refreshConnection();
+      if (snapshot && catalogRevision !== snapshot.catalogRevision) {
+        catalogRevision = snapshot.catalogRevision;
+        try { await configApi.reloadTeamCatalog(); renderSettings(); }
+        catch (_) { connection.textContent = "Team catalog reload failed; retry refresh."; }
+      }
+      if (!snapshot?.initialized || saving) return;
+      if (snapshot.revision === baseRevision && snapshot.instance === baseInstance) return;
+      const dirty = JSON.stringify(workingConfig) !== JSON.stringify(baseline);
+      if (dirty) {
+        status.textContent = "Settings changed elsewhere. Your unsaved draft is preserved.";
+        return;
+      }
+      workingConfig = configApi.loadConfig(); acknowledge(); renderSettings();
+    });
+    refreshConnection();
+  } else connection.textContent = "Local preview — settings here do not control OBS. Export them to import into shared control.";
+  status.before(migration);
   renderSettings();
   updateProduction();
   updateDemo();
@@ -90,6 +210,7 @@
       sportsList.append(section);
     });
     renderTeamPicker();
+    timeZonePicker.value = workingConfig.timeZone;
     document.querySelector("#display-mode").value = workingConfig.displayMode;
     document.querySelector("#rotation-mode").value = workingConfig.rotationMode;
     document.querySelector("#fallback-mode").value = workingConfig.fallbackMode;
@@ -253,6 +374,7 @@
   }
 
   function readBehaviorFields() {
+    workingConfig.timeZone = timeZonePicker.value;
     workingConfig.displayMode = document.querySelector("#display-mode").value;
     workingConfig.rotationMode = document.querySelector("#rotation-mode").value;
     workingConfig.fallbackMode = document.querySelector("#fallback-mode").value;
@@ -467,7 +589,7 @@
   function gameMeta(candidate) {
     const state = candidate.state === "live" ? "Live now" : candidate.state === "final" ? "Final" : "Upcoming";
     if (candidate.state === "live" || !candidate.startTime) return state;
-    return `${state} · ${new Intl.DateTimeFormat([], { weekday: "short", hour: "numeric", minute: "2-digit" }).format(new Date(candidate.startTime))}`;
+    return `${state} · ${global.SportsOverlay.model.formatPregameStart(candidate.startTime, new Date(), workingConfig.timeZone === "local" ? undefined : workingConfig.timeZone)}`;
   }
 
   function addRotationGame(entry) {
@@ -543,7 +665,7 @@
     autoApplyLiveChange(previousLiveConfig, `${gameName(entry.candidate)} timing applied`);
   }
 
-  function autoApplyLiveChange(previousLiveConfig, message) {
+  async function autoApplyLiveChange(previousLiveConfig, message) {
     if (JSON.stringify(previousLiveConfig) === JSON.stringify(cloneLiveConfig(workingConfig))) {
       renderRotationControls();
       return;
@@ -551,17 +673,17 @@
     try {
       const savedConfig = configApi.loadConfig();
       copyLiveConfig(savedConfig, workingConfig);
-      const normalizedConfig = configApi.saveConfig(savedConfig);
+      const normalizedConfig = await persist(savedConfig, liveConfigKeys);
       copyLiveConfig(workingConfig, normalizedConfig);
       undoLiveConfig = previousLiveConfig;
       undoLiveButton.hidden = false;
       renderSettings();
-      updateProduction();
+      if (!shared) updateProduction();
       const rotationStatus = document.querySelector("#rotation-status");
       rotationStatus.textContent = message;
       rotationStatus.className = "save-status is-saved";
     } catch (error) {
-      copyLiveConfig(workingConfig, previousLiveConfig);
+      if (!error.conflict) copyLiveConfig(workingConfig, previousLiveConfig);
       renderSettings();
       const rotationStatus = document.querySelector("#rotation-status");
       rotationStatus.textContent = error.message;
@@ -569,17 +691,17 @@
     }
   }
 
-  function undoLastLiveChange() {
+  async function undoLastLiveChange() {
     if (!undoLiveConfig) return;
     try {
       const savedConfig = configApi.loadConfig();
       copyLiveConfig(savedConfig, undoLiveConfig);
-      const normalizedConfig = configApi.saveConfig(savedConfig);
+      const normalizedConfig = await persist(savedConfig, liveConfigKeys);
       copyLiveConfig(workingConfig, normalizedConfig);
       undoLiveConfig = null;
       undoLiveButton.hidden = true;
       renderSettings();
-      updateProduction();
+      if (!shared) updateProduction();
       const rotationStatus = document.querySelector("#rotation-status");
       rotationStatus.textContent = "Last live change undone";
       rotationStatus.className = "save-status is-saved";
@@ -630,12 +752,13 @@
     return age >= -2 * 60 * 60 * 1_000 && age <= 7 * 24 * 60 * 60 * 1_000;
   }
 
-  function saveSettings() {
+  async function saveSettings() {
     readBehaviorFields();
     try {
-      workingConfig = configApi.saveConfig(workingConfig);
+      const fields = Object.keys(workingConfig).filter(key => JSON.stringify(workingConfig[key]) !== JSON.stringify(baseline[key]));
+      workingConfig = await persist(workingConfig, fields);
       renderSettings();
-      status.textContent = "Saved locally.";
+      status.textContent = shared ? "Saved. Banner updates automatically." : "Saved locally (preview only).";
       status.className = "save-status is-saved";
     } catch (error) {
       status.textContent = error.message;
@@ -643,13 +766,18 @@
     }
   }
 
-  function resetSettings() {
-    workingConfig = configApi.resetConfig();
-    undoLiveConfig = null;
-    undoLiveButton.hidden = true;
-    renderSettings();
-    status.textContent = "Defaults restored.";
-    status.className = "save-status is-saved";
+  async function resetSettings() {
+    try {
+      workingConfig = await persist(configApi.DEFAULT_CONFIG);
+      undoLiveConfig = null;
+      undoLiveButton.hidden = true;
+      renderSettings();
+      status.textContent = "Defaults restored.";
+      status.className = "save-status is-saved";
+    } catch (error) {
+      status.textContent = error.message;
+      status.className = "save-status is-error";
+    }
   }
 
   function markUnsaved() {

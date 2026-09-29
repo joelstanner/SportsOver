@@ -1,6 +1,9 @@
 "use strict";
 
 (function initializeSportsConfig(global) {
+  // currentScript is only available while this script is executing.
+  const configScriptUrl = typeof document === "undefined" ? null
+    : document.currentScript?.src || `${global.location?.origin || ""}/core/config.js`;
   const STORAGE_KEY = "sports-overlay.config.v1";
   const SPORT_CATALOG = Object.freeze([
     Object.freeze({ key: "baseball", name: "Baseball", league: "MLB" }),
@@ -29,6 +32,7 @@
       frozenSport("basketball", ["nba:det"]),
     ]),
     rotationSeconds: 10,
+    timeZone: "local",
     rotationMode: "automatic",
     includedGames: Object.freeze([]),
     excludedGames: Object.freeze([]),
@@ -48,9 +52,8 @@
   }
 
   async function loadTeamCatalog() {
-    const scriptUrl = document.currentScript?.src || `${global.location?.origin || ""}/core/config.js`;
     const catalogs = await Promise.all(CATALOG_SPORTS.map(async sport => {
-      const url = new URL(`../sports/${sport}/teams.json`, scriptUrl);
+      const url = new URL(`../sports/${sport}/teams.json`, configScriptUrl);
       const response = await fetch(url);
       if (!response.ok) throw new Error(`Team catalog ${sport} returned HTTP ${response.status}`);
       return response.json();
@@ -111,6 +114,7 @@
     const rotationSeconds = Number(source.rotationSeconds);
     return {
       version: 7,
+      timeZone: normalizeTimeZone(source.timeZone),
       sports,
       rotationSeconds: Number.isFinite(rotationSeconds)
         ? Math.min(300, Math.max(5, Math.round(rotationSeconds)))
@@ -124,6 +128,12 @@
       fallbackMode: FALLBACK_MODES.has(source.fallbackMode) ? source.fallbackMode : DEFAULT_CONFIG.fallbackMode,
       displayMode: DISPLAY_MODES.has(source.displayMode) ? source.displayMode : DEFAULT_CONFIG.displayMode,
     };
+  }
+
+  function normalizeTimeZone(value) {
+    if (typeof value !== "string" || value === "local") return "local";
+    try { new Intl.DateTimeFormat("en-US", { timeZone: value }); return value; }
+    catch (_) { return "local"; }
   }
 
   function normalizeGameKeys(keys) {

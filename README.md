@@ -188,3 +188,35 @@ Run the dependency-free normalization tests with:
 ```powershell
 node --test tests/core/*.test.js tests/sports/baseball/*.test.js tests/sports/football/*.test.js tests/sports/college-football/*.test.js tests/sports/hockey/*.test.js tests/sports/soccer/*.test.js tests/sports/basketball/*.test.js
 ```
+
+## Shared control with Twitchbot
+
+For Chrome controls that affect OBS, use Twitchbot's existing HTTP server:
+
+- Control room: `http://127.0.0.1:8000/sports/admin/`
+- OBS banner: `http://127.0.0.1:8000/sports/`
+
+Twitchbot serves this checkout directly using `SPORTS_OVERLAY_DIR`. Import an
+export from the old control room, or choose **Start with defaults** on first use.
+Settings are persisted by Twitchbot and checked once per second. Changes apply
+without a banner page reload. The browser retains the last acknowledged settings
+through outages, and conflicting edits are reported for review/reapply.
+
+The Node server and local files remain standalone previews: their local settings
+are not shared with OBS. Demo Lab is isolated from production settings. Exact
+rotation position and score polling remain per banner. Hosted catalog refresh
+runs the existing Node updater through Twitchbot; it does not need a Node server.
+
+The browser integration test uses isolated profiles and mocked network responses:
+`node tests/browser/shared-state.cjs` (requires Playwright and its Chromium).
+Set `PLAYWRIGHT_CHANNEL=chrome` to use installed Chrome; optionally set
+`PLAYWRIGHT_MODULE` to an existing Playwright module path. Ordinary unit tests
+remain dependency-free.
+
+The Settings tab includes a shared **Time zone** selector. Choose a region such
+as **Pacific — Los Angeles (PST/PDT)** to make control-room game times and all
+banner layouts agree across computers and browser locales. Daylight saving is
+automatic. Existing configurations default to the device time zone. US regions
+use consistent standard/daylight abbreviations; other regions use UTC offsets.
+This setting formats displayed times and dates; provider schedule discovery
+retains its existing date/season logic.

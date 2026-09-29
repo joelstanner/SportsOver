@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Export previous sports settings</title>
+  <style>
+    body { font: 17px system-ui, sans-serif; max-width: 640px; margin: 64px auto; padding: 24px; background: #142126; color: #edf5f4; }
+    button, a { font: inherit; color: #8ae0cd; }
+    button { padding: 12px 18px; background: #243a40; border: 1px solid #8ae0cd; border-radius: 6px; cursor: pointer; }
+    button:disabled { opacity: .5; cursor: default; }
+  </style>
+</head>
+<body>
+  <h1>Export previous sports settings</h1>
+  <p>Open this page in the same Chrome profile you used for the old control room.</p>
+  <p id="status" role="status"></p>
+  <button id="export" disabled>Export settings</button>
+  <p>Then <a href="./">open the shared control room</a> and choose “Import exported settings.”</p>
+  <script>
+    const status = document.querySelector('#status');
+    const button = document.querySelector('#export');
+    try {
+      const raw = localStorage.getItem('sports-overlay.config.v1');
+      if (!raw) {
+        status.textContent = 'No previous settings found at ' + location.origin + '. Check the original browser profile and address. localhost and 127.0.0.1 have separate browser storage.';
+      } else {
+        const config = JSON.parse(raw);
+        if (!config || (!Array.isArray(config.sports) && !Array.isArray(config.favorites))) throw new Error('Unrecognized settings format.');
+        status.textContent = 'Previous settings found. Exporting keeps the original settings intact.';
+        button.disabled = false;
+        button.onclick = () => {
+          const url = URL.createObjectURL(new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' }));
+          const link = document.createElement('a');
+          link.href = url; link.download = 'sports-settings.json'; link.click();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+        };
+      }
+    } catch (_) {
+      status.textContent = 'Previous settings could not be read. They have not been changed.';
+    }
+  </script>
+</body>
+</html>

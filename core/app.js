@@ -3,6 +3,7 @@
 (async function initializeSportsOverlay() {
 
 await window.SportsOverlay.config.ready;
+if (window.SportsOverlay.shared) await window.SportsOverlay.shared.waitForConfig();
 
 const savedConfig = window.SportsOverlay.config.loadConfig();
 const query = new URLSearchParams(window.location.search);
@@ -11,7 +12,7 @@ if (query.get("surface") === "admin") {
   document.body.style.background = "#26373b";
 }
 const requestedSport = query.get("sport");
-const CONFIG = Object.freeze({
+const CONFIG = {
   pollIntervalMs: 12_000,
   scheduleRetryMs: 5 * 60_000,
   includeSpotlight: savedConfig.displayMode !== "top-favorite",
@@ -20,10 +21,10 @@ const CONFIG = Object.freeze({
   transitionOutMs: 180,
   transitionInMs: 260,
   demoRotationIntervalMs: 3_000,
-});
+};
 const SCROLLING_DEMO_TEXT = "Scrolling demo: a deliberately long game update continues well beyond the right edge so the complete marquee animation can be observed before it repeats.";
 
-const sportContexts = savedConfig.sports
+let sportContexts = savedConfig.sports
   .filter(group => !requestedSport || group.sport === requestedSport)
   .map(group => createSportContext(group))
   .filter(Boolean);
@@ -39,6 +40,8 @@ let rotationTimer = null;
 let discoveryTimer = null;
 let transitionCleanupTimer = null;
 let renderChain = Promise.resolve();
+let discoveryGeneration = 0;
+let cachedDiscoveries = null;
 
 function createSportContext(group) {
   const favoriteTeams = group.favorites
@@ -144,7 +147,8 @@ async function renderDemoEvent(event, animate = false) {
   if (animate) transitionIn();
 }
 
-async function discoverGames() {
+async function discoverGames(refresh = true) {
+  const generation = ++discoveryGeneration;
   clearTimeout(discoveryTimer);
   clearTimeout(pollTimer);
   clearTimeout(rotationTimer);
@@ -153,7 +157,9 @@ async function discoverGames() {
     return;
   }
 
-  const discoveries = await Promise.all(sportContexts.map(discoverSport));
+  const discoveries = !refresh && cachedDiscoveries ? cachedDiscoveries : await Promise.all(sportContexts.map(discoverSport));
+  if (generation !== discoveryGeneration) return;
+  cachedDiscoveries = discoveries;
   const previousKey = entryKey(rotationQueue[currentIndex]);
   const fullRotationQueue = window.SportsOverlay.selection.applyRotationControls({
     automaticEntries: discoveries.flatMap(result => result.automaticEntries),
@@ -330,6 +336,26 @@ function entryKey(entry) {
 
 const staticPreview = renderDemoFromUrl() || renderScenarioFromUrl();
 if (!staticPreview) {
+  let lastCatalogRevision = window.SportsOverlay.shared?.snapshot()?.catalogRevision;
+  let lastInstance = window.SportsOverlay.shared?.snapshot()?.instance;
+  window.SportsOverlay.shared?.subscribe(async snapshot => {
+    if (!snapshot?.initialized) return;
+    const catalogChanged = lastCatalogRevision !== snapshot.catalogRevision || lastInstance !== snapshot.instance;
+    if (JSON.stringify(savedConfig) === JSON.stringify(window.SportsOverlay.config.normalizeConfig(snapshot.config)) && !catalogChanged) return;
+    if (catalogChanged) await window.SportsOverlay.config.reloadTeamCatalog();
+    lastCatalogRevision = snapshot.catalogRevision;
+    lastInstance = snapshot.instance;
+    const teamsChanged = JSON.stringify(savedConfig.sports) !== JSON.stringify(snapshot.config.sports);
+    const selectionChanged = savedConfig.fallbackMode !== snapshot.config.fallbackMode || savedConfig.displayMode !== snapshot.config.displayMode;
+    Object.assign(savedConfig, window.SportsOverlay.config.normalizeConfig(snapshot.config));
+    CONFIG.includeSpotlight = savedConfig.displayMode !== "top-favorite";
+    CONFIG.showNoGameMessage = savedConfig.fallbackMode !== "hide";
+    if (teamsChanged || catalogChanged) sportContexts = savedConfig.sports
+      .filter(group => !requestedSport || group.sport === requestedSport)
+      .map(createSportContext).filter(Boolean);
+    requestRevision += 1;
+    discoverGames(teamsChanged || catalogChanged || selectionChanged);
+  });
   window.addEventListener("storage", event => {
     if (event.key === window.SportsOverlay.config.STORAGE_KEY) window.location.reload();
   });

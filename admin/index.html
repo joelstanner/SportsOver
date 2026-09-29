@@ -81,6 +81,10 @@
       <div id="sports-list" class="sports-list" aria-live="polite"></div>
 
       <div class="settings-grid">
+        <label class="field">Time zone
+          <select id="time-zone"></select>
+          <small>Choose a region to keep Chrome and OBS times consistent.</small>
+        </label>
         <label class="field">Display mode
           <select id="display-mode">
             <option value="automatic">Automatic priority</option>
@@ -271,6 +275,7 @@
   </template>
 
   <script src="../core/config.js?v=13"></script>
+  <script src="../core/shared-state.js?v=1"></script>
   <script src="../core/event-model.js?v=2"></script>
   <script src="../core/registry.js?v=2"></script>
   <script src="../core/game-selection.js?v=4"></script>

@@ -250,14 +250,7 @@
   }
 
   function formatLocalTime(isoDate) {
-    if (!isoDate) return "";
-    const date = new Date(isoDate);
-    if (Number.isNaN(date.getTime())) return "";
-    return new Intl.DateTimeFormat(undefined, {
-      hour: "numeric",
-      minute: "2-digit",
-      timeZoneName: "short",
-    }).format(date);
+    return window.SportsOverlay.model.formatGameTime(isoDate);
   }
 
   function showElement(element, visible) {

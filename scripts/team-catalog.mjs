@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, rename } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -46,7 +46,8 @@ function theme(key, primary, accent) {
 async function writeCatalog(sport, value) {
   const path = resolve(root, "sports", sport, "teams.json");
   await mkdir(dirname(path), { recursive: true });
-  await writeFile(path, `${JSON.stringify(value, null, 2)}\n`);
+  await writeFile(`${path}.${process.pid}.tmp`, `${JSON.stringify(value, null, 2)}\n`);
+  await rename(`${path}.${process.pid}.tmp`, path);
   return { sport, count: value.teams.length, updatedAt: value.updatedAt };
 }
 

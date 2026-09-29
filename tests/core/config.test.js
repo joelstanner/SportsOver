@@ -132,3 +132,29 @@ test("migrates the legacy single-game lock into the multi-lock list", () => {
   const config = configApi.normalizeConfig({ lockedGameKey: "football:401" });
   assert.deepEqual(config.lockedGameKeys, ["football:401"]);
 });
+
+test("catalog reload retains the hosted script base after currentScript clears", async () => {
+  const vm = require("node:vm");
+  const fs = require("node:fs");
+  const path = require("node:path");
+  for (const prefix of ["/sports", ""]) {
+    const requests = [];
+    const document = { currentScript: { src: `http://localhost:8000${prefix}/core/config.js?v=13` } };
+    const window = { location: { origin: "http://localhost:8000" } };
+    vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../../core/config.js"), "utf8"), {
+      window, document, URL, console,
+      fetch: async url => {
+        requests.push(url.pathname);
+        return { ok: true, json: async () => ({ teams: [] }) };
+      },
+    });
+    await window.SportsOverlay.config.ready;
+    const initialRequests = [...requests];
+    requests.length = 0;
+    document.currentScript = null;
+    await window.SportsOverlay.config.reloadTeamCatalog();
+    assert.equal(requests.length, 6);
+    assert.deepEqual(requests, initialRequests);
+    assert.ok(requests.every(url => url.startsWith(`${prefix}/sports/`)));
+  }
+});
