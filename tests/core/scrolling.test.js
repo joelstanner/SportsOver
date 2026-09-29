@@ -19,7 +19,6 @@ test("unchanged live polling does not restart an active scroll", () => {
       remove(name) { removals += 1; classes.delete(name); },
       toggle(name, enabled) { if (enabled) classes.add(name); else classes.delete(name); },
     },
-    style: { removeProperty() {}, setProperty() {} },
   };
   const viewport = { clientWidth: 100 };
 

@@ -10,14 +10,12 @@
     textElement.dataset.scrollViewportWidth = String(viewportWidth);
     textElement.textContent = text;
     textElement.classList.remove("is-scrolling");
-    textElement.style.removeProperty("--scroll-distance");
     if (!text) return;
     requestAnimationFrame(() => {
       const overflow = textElement.scrollWidth - viewport.clientWidth;
       const shouldScroll = overflow > 1;
       textElement.dataset.scrollViewportWidth = String(viewport.clientWidth);
       textElement.classList.toggle("is-scrolling", shouldScroll);
-      if (shouldScroll) textElement.style.setProperty("--scroll-distance", `${textElement.scrollWidth}px`);
     });
   }
   global.SportsOverlay = global.SportsOverlay || {};

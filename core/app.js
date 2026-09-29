@@ -14,6 +14,7 @@ const CONFIG = Object.freeze({
   transitionInMs: 260,
   demoRotationIntervalMs: 3_000,
 });
+const SCROLLING_DEMO_TEXT = "Scrolling demo: a deliberately long game update continues well beyond the right edge so the complete marquee animation can be observed before it repeats.";
 
 const sportContexts = savedConfig.sports
   .filter(group => !requestedSport || group.sport === requestedSport)
@@ -81,6 +82,10 @@ function renderScenarioFromUrl() {
     startDemoRotation();
     return true;
   }
+  if (scenario === "scrolling") {
+    renderScrollingDemo();
+    return true;
+  }
   const messages = {
     "no-event": `No selected ${initialSport} game`,
     offline: "Sports data offline",
@@ -89,6 +94,19 @@ function renderScenarioFromUrl() {
   if (!messages[scenario]) return false;
   layout.renderNoEvent(messages[scenario], true);
   return true;
+}
+
+function renderScrollingDemo() {
+  const event = window.SportsOverlay.registry.getDemo(initialSport, "live");
+  if (!event) {
+    layout.renderNoEvent("No scrolling demo registered", true);
+    return;
+  }
+  const detailName = initialSport === "soccer" ? "lastEvent" : "lastPlay";
+  layout.render({
+    ...event,
+    details: { ...event.details, [detailName]: SCROLLING_DEMO_TEXT },
+  });
 }
 
 async function startDemoRotation() {

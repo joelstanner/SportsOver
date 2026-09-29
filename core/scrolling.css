@@ -1,9 +1,9 @@
 .scorebug-scroll-viewport { display: block; width: 100%; min-width: 0; overflow: hidden; white-space: nowrap; }
 .scorebug-scroll-text { display: inline-block; min-width: 100%; white-space: nowrap; }
-.scorebug-scroll-text.is-scrolling { padding-right: 36px; animation: scorebug-scroll 15.4s linear infinite; }
+.scorebug-scroll-text.is-scrolling { padding-right: 36px; animation: scorebug-scroll 20.3s linear infinite; }
 @keyframes scorebug-scroll {
-  0%, 12% { transform: translateX(0); }
-  88%, 100% { transform: translateX(calc(-1 * var(--scroll-distance))); }
+  0%, 24.6% { transform: translateX(0); }
+  88%, 100% { transform: translateX(-100%); }
 }
 @media (prefers-reduced-motion: reduce) {
   .scorebug-scroll-text.is-scrolling { animation: none; text-overflow: ellipsis; overflow: hidden; }
