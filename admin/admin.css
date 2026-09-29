@@ -108,15 +108,20 @@ select, input { border: 1px solid var(--line); border-radius: 8px; padding: 10px
 .game-list { display: grid; gap: 8px; max-height: 390px; overflow-y: auto; padding: 10px; }
 .game-filters { display: grid; grid-template-columns: 120px minmax(140px, 1fr); gap: 8px; border-bottom: 1px solid var(--line); padding: 10px; }
 .game-filters select, .game-filters input { width: 100%; padding: 8px 9px; font-size: 0.74rem; }
-.game-card { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto auto; gap: 8px 9px; align-items: center; border: 1px solid var(--line); border-radius: 9px; padding: 10px; background: #0b1518; }
-.game-card:not(.game-card--available) .game-sport { grid-column: 1; grid-row: 1 / span 2; }
+.game-card { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto auto; gap: 8px 9px; align-items: center; border: 1px solid var(--line); border-radius: 9px; padding: 10px; background: #0b1518; }
+.game-card:not(.game-card--available) .game-identity { grid-column: 1; grid-row: 1 / span 2; }
 .game-card:not(.game-card--available) .game-copy { grid-column: 2; grid-row: 1; }
 .game-card:not(.game-card--available) .game-source { grid-column: 3; grid-row: 1; }
 .game-card:not(.game-card--available) .duration-control { grid-column: 2; grid-row: 2; justify-self: start; }
 .game-card:not(.game-card--available) .order-buttons { grid-column: 3; grid-row: 2; }
 .game-card:not(.game-card--available) .game-actions { grid-column: 4; grid-row: 1 / span 2; }
-.game-card--available { grid-template-columns: 48px minmax(0, 1fr) auto; }
+.game-card--available { grid-template-columns: 58px minmax(0, 1fr) auto; }
+.game-identity { display: grid; gap: 5px; justify-items: center; }
 .game-sport { color: var(--teal); font-size: 0.64rem; font-weight: 900; letter-spacing: 0.08em; }
+.game-logos { display: flex; justify-content: center; }
+.game-logo { display: grid; width: 25px; height: 25px; place-items: center; overflow: hidden; border: 1px solid var(--line); border-radius: 50%; color: var(--muted); background: #101d21; font-size: 0.48rem; font-weight: 900; }
+.game-logo + .game-logo { margin-left: -5px; }
+.game-logo img { width: 21px; height: 21px; object-fit: contain; }
 .game-copy { display: grid; gap: 3px; min-width: 0; }
 .game-name { overflow: hidden; font-size: 0.82rem; text-overflow: ellipsis; white-space: nowrap; }
 .game-meta, .game-source { color: var(--muted); font-size: 0.68rem; }
@@ -154,13 +159,13 @@ iframe { max-width: 100%; border: 0; background: transparent; }
   .remove-team { grid-column: 3; }
   .watch-team-panel, .settings-grid, .demo-controls, .live-controls, .rotation-toolbar, .rotation-columns { grid-template-columns: 1fr; }
   .watch-team-inputs { grid-template-columns: 1fr; }
-  .game-card { grid-template-columns: 44px minmax(0, 1fr) auto; }
-  .game-card:not(.game-card--available) .game-sport { grid-row: 1 / span 4; }
+  .game-card { grid-template-columns: 58px minmax(0, 1fr) auto; }
+  .game-card:not(.game-card--available) .game-identity { grid-row: 1 / span 4; }
   .game-card:not(.game-card--available) .game-source { grid-column: 2; grid-row: 2; justify-self: start; }
   .game-card:not(.game-card--available) .duration-control { grid-column: 2; grid-row: 3; justify-self: start; }
   .game-card:not(.game-card--available) .order-buttons { grid-column: 2; grid-row: 4; }
   .game-card:not(.game-card--available) .game-actions { grid-column: 3; grid-row: 1 / span 4; }
-  .game-card--available { grid-template-columns: 44px minmax(0, 1fr) auto; }
+  .game-card--available { grid-template-columns: 58px minmax(0, 1fr) auto; }
   .game-filters { grid-template-columns: 1fr; }
   .live-preview-heading { align-items: start; flex-direction: column; }
   .preview-actions { width: 100%; flex-wrap: wrap; }

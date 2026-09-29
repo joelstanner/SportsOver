@@ -155,7 +155,7 @@ async function discoverGames() {
 
   const discoveries = await Promise.all(sportContexts.map(discoverSport));
   const previousKey = entryKey(rotationQueue[currentIndex]);
-  rotationQueue = window.SportsOverlay.selection.applyRotationControls({
+  const fullRotationQueue = window.SportsOverlay.selection.applyRotationControls({
     automaticEntries: discoveries.flatMap(result => result.automaticEntries),
     availableEntries: discoveries.flatMap(result => result.availableEntries),
     mode: savedConfig.rotationMode,
@@ -164,10 +164,8 @@ async function discoverGames() {
     rotationOrder: savedConfig.rotationOrder,
     keyOf: entryKey,
   });
-  const lockedIndex = rotationQueue.findIndex(entry => entryKey(entry) === savedConfig.lockedGameKey);
-  currentIndex = lockedIndex >= 0
-    ? lockedIndex
-    : Math.max(0, rotationQueue.findIndex(entry => entryKey(entry) === previousKey));
+  rotationQueue = window.SportsOverlay.selection.applyGameLocks(fullRotationQueue, savedConfig.lockedGameKeys, entryKey);
+  currentIndex = Math.max(0, rotationQueue.findIndex(entry => entryKey(entry) === previousKey));
   const changedGame = Boolean(previousKey && entryKey(rotationQueue[currentIndex]) !== previousKey);
 
   if (!rotationQueue.length) {
@@ -263,7 +261,6 @@ function schedulePoll() {
 function scheduleRotation() {
   clearTimeout(rotationTimer);
   if (rotationQueue.length < 2) return;
-  if (entryKey(rotationQueue[currentIndex]) === savedConfig.lockedGameKey) return;
   rotationTimer = setTimeout(async () => {
     currentIndex = (currentIndex + 1) % rotationQueue.length;
     await renderCurrentGame({ animate: true });

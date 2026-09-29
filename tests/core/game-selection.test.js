@@ -109,6 +109,13 @@ test("curated rotation contains only manually included games", () => {
   assert.deepEqual(queue.map(entry => entry.candidate.id), ["manual"]);
 });
 
+test("game locks select one held game or a rotating subset", () => {
+  const entries = ["first", "second", "third"].map(id => ({ candidate: candidate(espnGame(id, "in", "SEA", "SF")) }));
+  assert.deepEqual(selection.applyGameLocks(entries, ["football:second"]).map(entry => entry.candidate.id), ["second"]);
+  assert.deepEqual(selection.applyGameLocks(entries, ["football:first", "football:third"]).map(entry => entry.candidate.id), ["first", "third"]);
+  assert.deepEqual(selection.applyGameLocks(entries, ["football:missing"]).map(entry => entry.candidate.id), ["first", "second", "third"]);
+});
+
 test("game timing uses state defaults and five-second overrides", () => {
   const live = { candidate: candidate(espnGame("live", "in", "SEA", "SF")) };
   const upcoming = { candidate: candidate(espnGame("upcoming", "pre", "SEA", "SF")) };

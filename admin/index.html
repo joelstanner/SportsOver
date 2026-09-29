@@ -124,7 +124,7 @@
             <button id="refresh-games" class="button button--secondary" type="button">Refresh games</button>
           </div>
         </div>
-        <p class="timing-defaults">Default timing: <strong>Live 20s</strong><span>·</span><strong>Upcoming 5s</strong><span>·</span><strong>Final 10s</strong></p>
+        <p class="timing-defaults">Default timing: <strong>Live 20s</strong><span>·</span><strong>Upcoming 5s</strong><span>·</span><strong>Final 10s</strong><span>·</span><strong>Lock one to hold; lock several to rotate only those games</strong></p>
 
         <div class="rotation-columns">
           <section class="rotation-column">
@@ -243,7 +243,7 @@
 
   <template id="queue-game-template">
     <article class="game-card">
-      <span class="game-sport"></span>
+      <div class="game-identity"><span class="game-sport"></span><span class="game-logos" aria-hidden="true"></span></div>
       <div class="game-copy"><strong class="game-name"></strong><span class="game-meta"></span></div>
       <span class="game-source"></span>
       <div class="duration-control" aria-label="Time on banner">
@@ -264,22 +264,22 @@
 
   <template id="available-game-template">
     <article class="game-card game-card--available">
-      <span class="game-sport"></span>
+      <div class="game-identity"><span class="game-sport"></span><span class="game-logos" aria-hidden="true"></span></div>
       <div class="game-copy"><strong class="game-name"></strong><span class="game-meta"></span></div>
       <button class="button button--secondary add-game" type="button">Add</button>
     </article>
   </template>
 
-  <script src="../core/config.js?v=12"></script>
+  <script src="../core/config.js?v=13"></script>
   <script src="../core/event-model.js?v=2"></script>
   <script src="../core/registry.js?v=2"></script>
-  <script src="../core/game-selection.js?v=3"></script>
+  <script src="../core/game-selection.js?v=4"></script>
   <script src="../sports/baseball/providers/mlb.js?v=2"></script>
   <script src="../sports/football/providers/espn.js?v=4"></script>
   <script src="../sports/college-football/providers/espn.js?v=5"></script>
   <script src="../sports/hockey/providers/espn.js?v=2"></script>
   <script src="../sports/soccer/providers/espn.js?v=2"></script>
   <script src="../sports/basketball/providers/espn.js?v=3"></script>
-  <script src="admin.js?v=15"></script>
+  <script src="admin.js?v=17"></script>
 </body>
 </html>

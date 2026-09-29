@@ -116,6 +116,12 @@
       .map(item => item.entry);
   }
 
+  function applyGameLocks(entries = [], lockedGameKeys = [], keyOf = defaultEntryKey) {
+    const locked = new Set(lockedGameKeys);
+    const lockedEntries = entries.filter(entry => locked.has(keyOf(entry)));
+    return lockedEntries.length ? lockedEntries : entries;
+  }
+
   function deduplicateEntries(entries, keyOf) {
     const seen = new Set();
     return entries.filter(entry => {
@@ -187,6 +193,7 @@
     mlbCandidate,
     buildRotationQueue,
     applyRotationControls,
+    applyGameLocks,
     gameDurationSeconds,
     chooseSpotlight,
     interestScore,

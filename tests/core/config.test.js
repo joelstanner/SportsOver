@@ -56,7 +56,7 @@ test("normalizes independent sport and favorite rankings", () => {
     excludedGames: ["baseball:777"],
     rotationOrder: ["baseball:777", "football:401"],
     gameDurations: { "football:401": 23, "baseball:777": 302, "missing:2": 15, "football:": 10 },
-    lockedGameKey: "football:401",
+    lockedGameKeys: ["football:401", "baseball:777", "football:401"],
     fallbackMode: "hide",
     displayMode: "rotate",
   });
@@ -71,7 +71,7 @@ test("normalizes independent sport and favorite rankings", () => {
   assert.deepEqual(config.excludedGames, ["baseball:777"]);
   assert.deepEqual(config.rotationOrder, ["baseball:777", "football:401"]);
   assert.deepEqual(config.gameDurations, { "football:401": 25, "baseball:777": 300 });
-  assert.equal(config.lockedGameKey, "football:401");
+  assert.deepEqual(config.lockedGameKeys, ["football:401", "baseball:777"]);
   assert.equal(config.fallbackMode, "hide");
   assert.equal(config.displayMode, "rotate");
 });
@@ -125,5 +125,10 @@ test("rotation timing allows five seconds and invalid queue controls fall back s
   assert.equal(config.rotationMode, "automatic");
   assert.deepEqual(config.includedGames, ["football:401"]);
   assert.deepEqual(config.gameDurations, {});
-  assert.equal(config.lockedGameKey, null);
+  assert.deepEqual(config.lockedGameKeys, []);
+});
+
+test("migrates the legacy single-game lock into the multi-lock list", () => {
+  const config = configApi.normalizeConfig({ lockedGameKey: "football:401" });
+  assert.deepEqual(config.lockedGameKeys, ["football:401"]);
 });

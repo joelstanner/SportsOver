@@ -13,7 +13,7 @@
   const refreshCatalogButton = document.querySelector("#refresh-team-catalog");
   const catalogRefreshStatus = document.querySelector("#catalog-refresh-status");
   const undoLiveButton = document.querySelector("#undo-live-change");
-  const liveConfigKeys = ["rotationMode", "includedGames", "excludedGames", "rotationOrder", "gameDurations", "lockedGameKey"];
+  const liveConfigKeys = ["rotationMode", "includedGames", "excludedGames", "rotationOrder", "gameDurations", "lockedGameKeys"];
   let undoLiveConfig = null;
   let recentlyAddedTeamKey = null;
   let availableRotationEntries = [];
@@ -377,7 +377,7 @@
     card.querySelector(".game-up").addEventListener("click", () => moveRotationGame(queue, index, -1));
     card.querySelector(".game-down").addEventListener("click", () => moveRotationGame(queue, index, 1));
     const lockButton = card.querySelector(".lock-game");
-    const locked = workingConfig.lockedGameKey === key;
+    const locked = workingConfig.lockedGameKeys.includes(key);
     lockButton.textContent = locked ? "Locked" : "Lock";
     lockButton.classList.toggle("is-locked", locked);
     lockButton.setAttribute("aria-pressed", String(locked));
@@ -397,8 +397,58 @@
     const sport = configApi.findSport(entry.candidate.sport);
     card.dataset.gameKey = rotationEntryKey(entry);
     card.querySelector(".game-sport").textContent = sport?.league || entry.candidate.sport.toUpperCase();
+    renderGameLogos(card.querySelector(".game-logos"), entry.candidate);
     card.querySelector(".game-name").textContent = gameName(entry.candidate);
     card.querySelector(".game-meta").textContent = gameMeta(entry.candidate);
+  }
+
+  function renderGameLogos(container, candidate) {
+    gameTeams(candidate).forEach(team => {
+      const mark = document.createElement("span");
+      mark.className = "game-logo";
+      const logoUrl = team.logoUrl || catalogTeam(candidate.sport, team)?.logoUrl;
+      if (logoUrl) {
+        const logo = document.createElement("img");
+        logo.src = logoUrl;
+        logo.alt = "";
+        logo.addEventListener("error", () => {
+          mark.textContent = team.abbreviation || "—";
+          logo.remove();
+        }, { once: true });
+        mark.append(logo);
+      } else {
+        mark.textContent = team.abbreviation || "—";
+      }
+      container.append(mark);
+    });
+  }
+
+  function gameTeams(candidate) {
+    if (candidate.sport === "baseball") {
+      const teams = candidate.raw?.teams || {};
+      return [teams.away?.team, teams.home?.team].filter(Boolean).map(team => ({
+        id: team.id,
+        name: team.name,
+        abbreviation: team.abbreviation,
+        logoUrl: team.logoUrl,
+      }));
+    }
+    const competitors = candidate.raw?.competitions?.[0]?.competitors ?? [];
+    const away = competitors.find(competitor => competitor.homeAway === "away");
+    const home = competitors.find(competitor => competitor.homeAway === "home");
+    return (away && home ? [away, home] : competitors).map(competitor => ({
+      id: competitor.team?.id ?? competitor.id,
+      name: competitor.team?.displayName || competitor.team?.name,
+      abbreviation: competitor.team?.abbreviation,
+      logoUrl: competitor.team?.logo || competitor.team?.logos?.[0]?.href,
+    }));
+  }
+
+  function catalogTeam(sport, team) {
+    const values = [team.id, team.abbreviation, team.name].map(value => String(value || "").toUpperCase());
+    return configApi.TEAM_CATALOG.find(candidate => candidate.sport === sport
+      && [candidate.teamId, candidate.abbreviation, candidate.name]
+        .some(value => values.includes(String(value || "").toUpperCase())));
   }
 
   function gameName(candidate) {
@@ -440,7 +490,7 @@
       ? [...new Set([...workingConfig.excludedGames, key])]
       : workingConfig.excludedGames.filter(item => item !== key);
     workingConfig.rotationOrder = workingConfig.rotationOrder.filter(item => item !== key);
-    if (workingConfig.lockedGameKey === key) workingConfig.lockedGameKey = null;
+    workingConfig.lockedGameKeys = workingConfig.lockedGameKeys.filter(item => item !== key);
     if (workingConfig.rotationMode === "hybrid" && !workingConfig.includedGames.length && !workingConfig.excludedGames.length) {
       workingConfig.rotationMode = "automatic";
     }
@@ -462,16 +512,21 @@
     workingConfig.excludedGames = [];
     workingConfig.rotationOrder = [];
     workingConfig.gameDurations = {};
-    workingConfig.lockedGameKey = null;
+    workingConfig.lockedGameKeys = [];
     autoApplyLiveChange(previousLiveConfig, "Automatic rotation restored");
   }
 
   function toggleGameLock(entry) {
     const previousLiveConfig = savedLiveConfig();
     const key = rotationEntryKey(entry);
-    const locking = workingConfig.lockedGameKey !== key;
-    workingConfig.lockedGameKey = locking ? key : null;
-    autoApplyLiveChange(previousLiveConfig, locking ? `${gameName(entry.candidate)} locked on banner` : "Rotation resumed");
+    const locking = !workingConfig.lockedGameKeys.includes(key);
+    workingConfig.lockedGameKeys = locking
+      ? [...workingConfig.lockedGameKeys, key]
+      : workingConfig.lockedGameKeys.filter(item => item !== key);
+    const lockCount = workingConfig.lockedGameKeys.length;
+    autoApplyLiveChange(previousLiveConfig, locking
+      ? `${gameName(entry.candidate)} locked · ${lockCount} selected`
+      : `${gameName(entry.candidate)} unlocked${lockCount ? ` · ${lockCount} selected` : " · full rotation resumed"}`);
   }
 
   function adjustGameDuration(entry, offset) {

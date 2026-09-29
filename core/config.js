@@ -19,7 +19,7 @@
       return TEAM_CATALOG;
     });
   const DEFAULT_CONFIG = Object.freeze({
-    version: 6,
+    version: 7,
     sports: Object.freeze([
       frozenSport("baseball", ["mlb:136"]),
       frozenSport("football", ["nfl:sea"]),
@@ -34,7 +34,7 @@
     excludedGames: Object.freeze([]),
     rotationOrder: Object.freeze([]),
     gameDurations: Object.freeze({}),
-    lockedGameKey: null,
+    lockedGameKeys: Object.freeze([]),
     fallbackMode: "up-next",
     displayMode: "automatic",
   });
@@ -110,7 +110,7 @@
 
     const rotationSeconds = Number(source.rotationSeconds);
     return {
-      version: 6,
+      version: 7,
       sports,
       rotationSeconds: Number.isFinite(rotationSeconds)
         ? Math.min(300, Math.max(5, Math.round(rotationSeconds)))
@@ -120,7 +120,7 @@
       excludedGames: normalizeGameKeys(source.excludedGames),
       rotationOrder: normalizeGameKeys(source.rotationOrder),
       gameDurations: normalizeGameDurations(source.gameDurations),
-      lockedGameKey: normalizeGameKeys([source.lockedGameKey])[0] ?? null,
+      lockedGameKeys: normalizeGameKeys(Array.isArray(source.lockedGameKeys) ? source.lockedGameKeys : [source.lockedGameKey]),
       fallbackMode: FALLBACK_MODES.has(source.fallbackMode) ? source.fallbackMode : DEFAULT_CONFIG.fallbackMode,
       displayMode: DISPLAY_MODES.has(source.displayMode) ? source.displayMode : DEFAULT_CONFIG.displayMode,
     };
@@ -212,7 +212,7 @@
       if (!existing.has(favorite.teamKey)) favorites.push(favorite);
     });
     const { favorites: _legacyFavorites, ...rest } = source || {};
-    return { ...rest, version: 6, sports: groupFavorites(favorites) };
+    return { ...rest, version: 7, sports: groupFavorites(favorites) };
   }
 
   function groupFavorites(favorites) {
