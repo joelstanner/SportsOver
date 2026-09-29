@@ -31,6 +31,8 @@
       frozenSport("soccer", ["mls:9726"]),
       frozenSport("basketball", ["nba:det"]),
     ]),
+    providerRefreshSeconds: Object.freeze(Object.fromEntries(CATALOG_SPORTS.map(sport =>
+      [sport, Object.freeze({ live: 12, pregame: 60, idle: 300, final: 300 })]))),
     rotationSeconds: 10,
     timeZone: "local",
     rotationMode: "automatic",
@@ -115,6 +117,7 @@
     return {
       version: 7,
       timeZone: normalizeTimeZone(source.timeZone),
+      providerRefreshSeconds: normalizeProviderRefresh(source.providerRefreshSeconds),
       sports,
       rotationSeconds: Number.isFinite(rotationSeconds)
         ? Math.min(300, Math.max(5, Math.round(rotationSeconds)))
@@ -128,6 +131,15 @@
       fallbackMode: FALLBACK_MODES.has(source.fallbackMode) ? source.fallbackMode : DEFAULT_CONFIG.fallbackMode,
       displayMode: DISPLAY_MODES.has(source.displayMode) ? source.displayMode : DEFAULT_CONFIG.displayMode,
     };
+  }
+
+  function normalizeProviderRefresh(value) {
+    return Object.fromEntries(CATALOG_SPORTS.map(sport => [sport, Object.fromEntries(
+      Object.entries(DEFAULT_CONFIG.providerRefreshSeconds[sport]).map(([state, fallback]) => {
+        const seconds = value?.[sport]?.[state];
+        return [state, Number.isInteger(seconds) && seconds >= 5 && seconds <= 3600 ? seconds : fallback];
+      })
+    )]));
   }
 
   function normalizeTimeZone(value) {

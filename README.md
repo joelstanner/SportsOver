@@ -220,3 +220,39 @@ automatic. Existing configurations default to the device time zone. US regions
 use consistent standard/daylight abbreviations; other regions use UTC offsets.
 This setting formats displayed times and dates; provider schedule discovery
 retains its existing date/season logic.
+
+
+### Configurable score refresh
+
+Control room → Settings → Score refresh intervals configures each sport's live,
+pregame, idle/no-game, and final intervals. Values are whole seconds, 5–3600.
+Defaults: live 12, pregame 60, idle 300, final 300. Old settings gain these defaults.
+Save settings applies changes to open shared-state banners without reloading.
+The local settings check remains once per second.
+
+Intervals are minimum waits after completion for each distinct provider URL,
+not a total sport-wide request budget. Each game summary and schedule is cached
+independently. Rotation, discovery, visibility changes, and client recreation
+reuse that cache; concurrent requests for the same URL share one request.
+Interrupted games use live timing. Schedule feeds use the highest-priority state
+present (live/interrupted, pregame, final, otherwise idle). Errors retain the last
+state's wait, including idle on an initial failure, while the banner retains its
+last successful display. New games or schedule URLs can fetch immediately.
+
+A longer interval may delay discovery of a new game or state transition. Hidden
+pages may update later because of browser throttling. Each banner, control-room
+game list, and preview has its own cache; extra pages and page reloads make
+additional requests. Centralized provider polling remains separate future work.
+"Refresh games" respects the cache. Preview Refresh reloads that preview.
+
+Mocked timer/request checks: `node --test tests/core/*.test.js tests/sports/**/*.test.js`.
+The browser integration also checks refresh bounds and live shared-setting updates.
+
+
+Discovery combines one league scoreboard per sport with schedules for every
+included watched team. Add teams under Settings → Watch another team, keep
+Included checked, and save. Ranking affects banner priority, not which schedules
+are fetched. With no included teams, only the league scoreboard is queried.
+Duplicate games are merged; a failed team schedule does not discard successful
+feeds. Discovery allows four concurrent operations per sport and retains the
+per-feed refresh cache. More included teams can mean more distinct requests.

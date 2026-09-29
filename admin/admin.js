@@ -7,6 +7,7 @@
   const registryApi = global.SportsOverlay.registry;
   let workingConfig = configApi.loadConfig();
   const shared = global.SportsOverlay.shared;
+  const providerRefresh = global.SportsOverlay.providerRefresh.create({ config: () => configApi.loadConfig() });
   let baseline = structuredClone(workingConfig);
   let baseRevision = shared?.snapshot()?.revision;
   let baseInstance = shared?.snapshot()?.instance;
@@ -79,6 +80,24 @@
   document.querySelector("#fallback-mode").addEventListener("change", readBehaviorFields);
   document.querySelector("#rotation-mode").addEventListener("change", updateRotationControls);
   document.querySelector("#refresh-games").addEventListener("click", discoverRotationGames);
+  const discoveryInfo = document.querySelector(".discovery-info");
+  const discoveryInfoButton = document.querySelector("#discovery-info-button");
+  const discoveryInfoTooltip = document.querySelector("#discovery-info-tooltip");
+  function showDiscoveryInfo(show) {
+    discoveryInfoTooltip.hidden = !show;
+    discoveryInfoButton.setAttribute("aria-expanded", String(show));
+  }
+  discoveryInfo.addEventListener("mouseenter", () => showDiscoveryInfo(true));
+  discoveryInfo.addEventListener("mouseleave", () => showDiscoveryInfo(false));
+  discoveryInfoButton.addEventListener("focus", () => showDiscoveryInfo(true));
+  discoveryInfoButton.addEventListener("click", () => showDiscoveryInfo(true));
+  discoveryInfo.addEventListener("focusout", () => showDiscoveryInfo(false));
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") showDiscoveryInfo(false);
+  });
+  document.addEventListener("click", event => {
+    if (!discoveryInfo.contains(event.target)) showDiscoveryInfo(false);
+  });
   document.querySelector("#available-sport-filter").addEventListener("change", renderRotationControls);
   document.querySelector("#game-search").addEventListener("input", renderRotationControls);
   undoLiveButton.addEventListener("click", undoLastLiveChange);
@@ -185,6 +204,30 @@
   }
 
   function renderSettings() {
+    const refreshFields = document.querySelector("#provider-refresh-fields");
+    refreshFields.replaceChildren();
+    for (const sport of configApi.SPORT_CATALOG) {
+      const row = document.createElement("fieldset");
+      row.className = "provider-refresh-row";
+      const legend = document.createElement("legend");
+      legend.textContent = sport.league;
+      row.append(legend);
+      for (const [state, seconds] of Object.entries(workingConfig.providerRefreshSeconds[sport.key])) {
+        const label = document.createElement("label");
+        label.className = "field";
+        label.textContent = state === "idle" ? "Idle / no game" : state[0].toUpperCase() + state.slice(1);
+        const input = document.createElement("input");
+        input.type = "number"; input.min = "5"; input.max = "3600"; input.step = "1";
+        input.required = true; input.value = seconds;
+        input.dataset.sport = sport.key; input.dataset.state = state;
+        input.addEventListener("input", () => {
+          if (input.checkValidity()) workingConfig.providerRefreshSeconds[sport.key][state] = Number(input.value);
+          markUnsaved();
+        });
+        label.append(input); row.append(label);
+      }
+      refreshFields.append(row);
+    }
     sportsList.replaceChildren();
     workingConfig.sports.forEach((group, sportIndex) => {
       const sport = configApi.findSport(group.sport);
@@ -399,9 +442,11 @@
     automaticRotationEntries = results.flatMap(result => result.status === "fulfilled" ? result.value.automaticEntries : []);
     availableRotationEntries = results.flatMap(result => result.status === "fulfilled" ? result.value.availableEntries : []);
     const failed = results.filter(result => result.status === "rejected").length;
+    const partial = results.filter(result => result.status === "fulfilled" && result.value.failures).length;
     document.querySelector("#refresh-games").disabled = false;
-    rotationStatus.textContent = failed ? `${failed} sport${failed === 1 ? "" : "s"} unavailable` : "Games refreshed";
-    rotationStatus.className = failed ? "save-status is-error" : "save-status is-saved";
+    rotationStatus.textContent = failed || partial
+      ? `${failed} sports unavailable · ${partial} sports partially loaded. Refresh to retry.` : "Games refreshed";
+    rotationStatus.className = failed || partial ? "save-status is-error" : "save-status is-saved";
     renderRotationControls();
   }
 
@@ -413,14 +458,12 @@
     const bootstrapTeam = watchedTeams[0] || configApi.TEAM_CATALOG.find(team => team.sport === group.sport);
     if (!bootstrapTeam) return { automaticEntries: [], availableEntries: [] };
     const providerModule = registryApi.getProvider(bootstrapTeam.provider);
-    const provider = providerModule.createClient({ teamId: bootstrapTeam.teamId, requestTimeoutMs: 8_000 });
-    const [watchedResult, leagueResult] = await Promise.allSettled([
-      provider.findGames(),
-      provider.findLeagueGames?.() ?? Promise.resolve([]),
-    ]);
-    if (watchedResult.status === "rejected" && leagueResult.status === "rejected") throw watchedResult.reason;
-    const watchedGames = watchedResult.status === "fulfilled" ? watchedResult.value : [];
-    const leagueGames = leagueResult.status === "fulfilled" ? leagueResult.value : [];
+    const createClient = team => providerModule.createClient({ teamId: team.teamId, requestTimeoutMs: 8_000,
+      fetchImpl: providerRefresh.fetchFor(group.sport, providerModule) });
+    const { favoriteGames: watchedGames, leagueGames, failures } = await global.SportsOverlay.providerDiscovery.discover({
+      teams: watchedTeams, provider: createClient(bootstrapTeam), createClient,
+      toCandidate: providerModule.toCandidate,
+    });
     const favoriteTeamIds = watchedTeams.map(team => team.teamId);
     const automaticEntries = watchedTeams.length ? selectionApi.buildRotationQueue({
       favoriteGames: watchedGames,
@@ -441,7 +484,7 @@
         return true;
       })
       .map(candidate => ({ kind: "manual", candidate }));
-    return { automaticEntries, availableEntries };
+    return { automaticEntries, availableEntries, failures };
   }
 
   function renderRotationControls() {
@@ -753,6 +796,9 @@
   }
 
   async function saveSettings() {
+    for (const input of document.querySelectorAll("#provider-refresh-fields input")) {
+      if (!input.reportValidity()) return;
+    }
     readBehaviorFields();
     try {
       const fields = Object.keys(workingConfig).filter(key => JSON.stringify(workingConfig[key]) !== JSON.stringify(baseline[key]));

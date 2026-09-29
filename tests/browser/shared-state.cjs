@@ -10,11 +10,15 @@ const root = path.resolve(__dirname, '../..');
     let state = { initialized: false, config: null, revision: 0, instance: 'test', catalogRevision: 0 };
     const contexts = await Promise.all([browser.newContext(), browser.newContext()]);
     const errors = [];
+    const adminSchedules = new Set();
     for (const context of contexts) {
       context.on('page', page => page.on('pageerror', error => errors.push(error.message)));
       await context.route('**/*', async route => {
         const url = new URL(route.request().url());
-        if (url.hostname !== '127.0.0.1') return route.fulfill({ json: { dates: [], events: [] } });
+        if (url.hostname !== '127.0.0.1') {
+          if (route.request().frame().url().endsWith('/sports/admin/')) adminSchedules.add(url.pathname);
+          return route.fulfill({ json: { dates: [], events: [] } });
+        }
         if (url.pathname.startsWith('/api/sports/state')) {
           if (route.request().method() !== 'GET') {
             const body = route.request().postDataJSON();
@@ -64,6 +68,19 @@ const root = path.resolve(__dirname, '../..');
     assert.equal(await obs.evaluate(() => window.SportsOverlay.model.formatGameTime('2026-07-01T19:00:00Z')), '12:00 PM PDT');
     assert.equal(await obs.evaluate(() => window.SportsOverlay.model.formatGameTime('2026-12-01T20:00:00Z')), '12:00 PM PST');
     assert.equal(await obs.evaluate(() => window.testMarker), marker);
+    const intervalInput = chrome.locator('#provider-refresh-fields input[data-sport="baseball"][data-state="live"]');
+    await intervalInput.fill('4');
+    const beforeInvalid = state.revision;
+    await chrome.locator('#save-settings').click();
+    assert.equal(state.revision, beforeInvalid);
+    await intervalInput.fill('25');
+    await chrome.locator('#save-settings').click();
+    await obs.waitForFunction(() => window.SportsOverlay.config.loadConfig().providerRefreshSeconds.baseball.live === 25);
+    assert.equal(await obs.evaluate(() => window.testMarker), marker);
+    await chrome.getByRole('button', { name: 'Live control', exact: true }).click();
+    await chrome.getByText('Games refreshed', { exact: true }).waitFor();
+    assert.ok([...adminSchedules].some(path => path.includes('/teams/158/schedule')));
+    assert.ok([...adminSchedules].some(path => path.includes('/teams/264/schedule')));
     assert.deepEqual(errors, []);
     console.log('Browser integration passed: isolated profiles, no reload, draft preservation, conflict/reapply.');
   } finally { await browser.close(); }

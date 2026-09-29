@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sports Overlay Control Room</title>
-  <link rel="stylesheet" href="admin.css?v=13">
+  <link rel="stylesheet" href="admin.css?v=14">
 </head>
 <body>
   <header class="masthead">
@@ -101,6 +101,13 @@
         </label>
       </div>
 
+      <section aria-labelledby="provider-refresh-heading">
+        <h3 id="provider-refresh-heading">Score refresh intervals</h3>
+        <p>Seconds between requests for each score or schedule feed (5–3600). Live includes interruptions. Idle means no games found. Save to apply to open banners.</p>
+        <p>Rotation reuses cached scores. Each open banner or preview makes its own requests.</p>
+        <div id="provider-refresh-fields"></div>
+      </section>
+
       <div class="actions">
         <button id="save-settings" class="button button--primary" type="button">Save settings</button>
         <button id="reset-settings" class="button button--quiet" type="button">Restore defaults</button>
@@ -141,6 +148,15 @@
           <section class="rotation-column">
             <div class="rotation-column-heading">
               <div><p class="section-kicker">DISCOVERED</p><h3>Available games</h3></div>
+              <div class="discovery-info">
+                <button id="discovery-info-button" class="info-button" type="button" aria-label="How available games are discovered" aria-describedby="discovery-info-tooltip" aria-expanded="false">i</button>
+                <div id="discovery-info-tooltip" class="info-tooltip" role="tooltip" hidden>
+                  <p>MLB/ESPN league scoreboards plus every included watched team’s schedule. Games already on the banner are excluded; sport/search filters also apply.</p>
+                  <p>Includes live games, starts from 2 hours ago through 7 days ahead, and finals started within 24 hours, subject to provider coverage.</p>
+                  <p>Add teams in Settings → Watch another team → Watch team. Keep Included checked and Save settings. All included teams contribute schedules; ranking only affects banner priority.</p>
+                  <p>Then use Live control → Refresh games (respects refresh intervals).</p>
+                </div>
+              </div>
             </div>
             <div class="game-filters">
               <select id="available-sport-filter" aria-label="Filter available games by sport">
@@ -274,8 +290,10 @@
     </article>
   </template>
 
-  <script src="../core/config.js?v=13"></script>
+  <script src="../core/config.js?v=14"></script>
   <script src="../core/shared-state.js?v=1"></script>
+  <script src="../core/provider-refresh.js?v=1"></script>
+  <script src="../core/provider-discovery.js?v=1"></script>
   <script src="../core/event-model.js?v=2"></script>
   <script src="../core/registry.js?v=2"></script>
   <script src="../core/game-selection.js?v=4"></script>
@@ -285,6 +303,6 @@
   <script src="../sports/hockey/providers/espn.js?v=2"></script>
   <script src="../sports/soccer/providers/espn.js?v=2"></script>
   <script src="../sports/basketball/providers/espn.js?v=3"></script>
-  <script src="admin.js?v=17"></script>
+  <script src="admin.js?v=20"></script>
 </body>
 </html>
