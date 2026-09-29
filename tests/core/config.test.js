@@ -31,7 +31,8 @@ test("defaults rank sports first and favorites within each sport", () => {
   assert.deepEqual(favoriteKeys(config, "college-football"), ["ncaaf:158", "ncaaf:264"]);
   assert.equal(config.rotationSeconds, 10);
   configApi.TEAM_CATALOG.forEach(team => assert.match(team.logoUrl, /^https:\/\//));
-  assert.equal(configApi.TEAM_CATALOG.length, 156);
+  assert.equal(configApi.TEAM_CATALOG.length, 916);
+  assert.equal(configApi.TEAM_CATALOG.filter(team => team.sport === "college-football").length, 762);
   assert.equal(configApi.findTeam("nba:lal").name, "Los Angeles Lakers");
   assert.deepEqual(configApi.enabledTeams(config).map(team => team.name), ["Seattle Mariners", "Seattle Seahawks", "Nebraska Cornhuskers", "Washington Huskies", "Seattle Kraken", "Seattle Sounders FC", "Detroit Pistons"]);
 });
