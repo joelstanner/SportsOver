@@ -20,6 +20,8 @@ button, select, input { font: inherit; }
 button, select { cursor: pointer; }
 .masthead { padding-bottom: 30px; }
 .masthead-copy { min-width: 0; }
+.app-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; }
+.app-version { color: var(--muted); font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
 .undo-live-button { border: 1px solid #ffd47a; border-radius: 7px; padding: 6px 10px; color: #241500; background: var(--amber); box-shadow: 0 0 20px rgba(243, 185, 79, 0.55); font-size: 0.62rem; font-weight: 900; letter-spacing: 0.04em; }
 .undo-live-button:hover { filter: brightness(1.1); }
 .undo-live-button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }

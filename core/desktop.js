@@ -57,8 +57,12 @@
   output.className = 'watch-team-panel'; output.style.margin = '20px 28px';
   output.innerHTML = `<div><h2>OBS and integrations</h2><p>The desktop and OBS display the same SportsOver engine. Hiding the desktop does not hide OBS.</p><p id="obs-address"></p><p id="override-status" role="status"></p></div><div class="actions"><button class="button button--secondary" data-desktop="copy-obs">Copy OBS URL</button><button class="button button--secondary" data-desktop="copy-token">Copy integration token</button><button class="button button--secondary" data-desktop="clear-override">End temporary override</button></div>`;
   section.after(output);
+  output.querySelector('[data-desktop="clear-override"]').title = 'Integrations can temporarily show a requested game, such as a game requested through a connected Twitch channel-points reward. End the override early to resume normal rotation, or let its timer expire. Your saved queue and settings stay unchanged.';
   const status = section.querySelector('#desktop-status');
   function render(value) {
+    const version = document.querySelector('#app-version');
+    version.textContent = value.version ? `v${value.version}` : '';
+    version.hidden = !value.version;
     status.textContent = `${value.visible ? 'Visible' : 'Hidden'} · ${value.locked ? 'Locked / click-through' : 'Unlocked / draggable'}. ${value.shortcut ? 'Recovery shortcut: Ctrl/Cmd+Shift+U.' : 'Recovery shortcut unavailable; use Unlock here or the tray menu.'} ${value.warning}`;
     output.querySelector('#obs-address').textContent = value.obsUrl || 'Local output server unavailable; see the status above.';
     output.querySelector('#override-status').textContent = value.override ? `Temporary game: ${value.override.gameKey} · ends ${new Date(value.override.expiresAt).toLocaleTimeString()}` : 'Normal rotation · no temporary override';

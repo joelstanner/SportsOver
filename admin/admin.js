@@ -37,6 +37,7 @@
   const sportsList = document.querySelector("#sports-list");
   const status = document.querySelector("#save-status");
   const teamPicker = document.querySelector("#team-picker");
+  const teamSportPicker = document.querySelector("#team-sport-picker");
   const addTeamButton = document.querySelector("#add-team");
   const refreshCatalogButton = document.querySelector("#refresh-team-catalog");
   const catalogRefreshStatus = document.querySelector("#catalog-refresh-status");
@@ -55,6 +56,13 @@
   document.querySelector("#save-settings").addEventListener("click", saveSettings);
   document.querySelector("#reset-settings").addEventListener("click", resetSettings);
   teamPicker.addEventListener("change", updateAddTeamButton);
+  for (const sport of configApi.SPORT_CATALOG) {
+    const option = document.createElement("option");
+    option.value = sport.key;
+    option.textContent = `${sport.name} · ${sport.league}`;
+    teamSportPicker.append(option);
+  }
+  teamSportPicker.addEventListener("change", renderTeamPicker);
   addTeamButton.addEventListener("click", addTeam);
   refreshCatalogButton.addEventListener("click", refreshTeamCatalog);
   const timeZonePicker = document.querySelector("#time-zone");
@@ -287,25 +295,20 @@
     const previousValue = teamPicker.value;
     teamPicker.replaceChildren();
 
-    const availableTeams = configApi.TEAM_CATALOG.filter(team => !selected.has(team.key));
+    const sportTeams = configApi.TEAM_CATALOG.filter(team => team.sport === teamSportPicker.value);
+    const availableTeams = sportTeams.filter(team => !selected.has(team.key));
     const placeholder = document.createElement("option");
     placeholder.value = "";
-    placeholder.textContent = availableTeams.length ? "Select a team…" : "All supported teams are watched";
+    placeholder.textContent = !teamSportPicker.value ? "Choose a sport first…"
+      : availableTeams.length ? "Select a team…"
+      : sportTeams.length ? "All teams in this sport are watched" : "No teams available for this sport";
     teamPicker.append(placeholder);
 
-    workingConfig.sports.forEach(group => {
-      const teams = availableTeams.filter(team => team.sport === group.sport);
-      if (!teams.length) return;
-      const sport = configApi.findSport(group.sport);
-      const optionGroup = document.createElement("optgroup");
-      optionGroup.label = `${sport.name} · ${sport.league}`;
-      teams.forEach(team => {
-        const option = document.createElement("option");
-        option.value = team.key;
-        option.textContent = team.name;
-        optionGroup.append(option);
-      });
-      teamPicker.append(optionGroup);
+    availableTeams.forEach(team => {
+      const option = document.createElement("option");
+      option.value = team.key;
+      option.textContent = team.name;
+      teamPicker.append(option);
     });
 
     if (availableTeams.some(team => team.key === previousValue)) teamPicker.value = previousValue;

@@ -39,6 +39,21 @@ const root = path.resolve(__dirname, '../..');
     await chrome.goto('http://127.0.0.1:8000/sports/admin/');
     await chrome.getByRole('button', { name: 'Start with defaults' }).click();
     await chrome.getByText('Shared settings initialized.', { exact: true }).waitFor();
+    const teamPicker = chrome.locator('#team-picker');
+    assert.equal(await teamPicker.isDisabled(), true);
+    for (const sport of ['baseball', 'football', 'college-football', 'hockey', 'soccer', 'basketball']) {
+      await chrome.locator('#team-sport-picker').selectOption(sport);
+      assert.equal(await teamPicker.inputValue(), '', 'changing sports clears the prior team');
+      assert.equal(await chrome.locator('#add-team').isDisabled(), true);
+      const available = await chrome.evaluate(sport => {
+        const api = window.SportsOverlay.config;
+        const watched = new Set(api.loadConfig().sports.flatMap(group => group.favorites.map(team => team.teamKey)));
+        return api.TEAM_CATALOG.filter(team => team.sport === sport && !watched.has(team.key)).map(team => team.key);
+      }, sport);
+      assert.deepEqual(await teamPicker.locator('option').evaluateAll(options => options.map(option => option.value).filter(Boolean)), available);
+      await teamPicker.selectOption(available[0]);
+      assert.equal(await chrome.locator('#add-team').isDisabled(), false);
+    }
     await obs.goto('http://127.0.0.1:8000/sports/');
     await obs.waitForFunction(() => window.SportsOverlay.shared?.snapshot()?.initialized);
     const marker = await obs.evaluate(() => { window.testMarker = 'same-document'; return window.testMarker; });

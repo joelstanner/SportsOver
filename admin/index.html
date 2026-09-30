@@ -10,7 +10,7 @@
   <header class="masthead">
     <div class="masthead-copy">
       <p class="eyebrow">DESKTOP SPORTS BANNER</p>
-      <h1>SportsOver</h1>
+      <div class="app-heading"><h1>SportsOver</h1><span id="app-version" class="app-version" hidden></span></div>
       <p class="subtitle">Choose teams to watch and inspect every banner state.</p>
     </div>
   </header>
@@ -32,9 +32,11 @@
         <div>
           <p class="section-kicker">TEAM TRACKING</p>
           <h3 id="watch-team-heading">Watch another team</h3>
-          <p>Add any supported team. It will appear under its sport, ready to rank.</p>
+          <p>Choose a sport, then a team to watch. It will appear under its sport, ready to rank.</p>
         </div>
         <div class="watch-team-controls">
+          <label class="field" for="team-sport-picker">Sport</label>
+          <select id="team-sport-picker"><option value="">Select a sport…</option></select>
           <label class="field" for="team-picker">Team</label>
           <div class="watch-team-inputs">
             <select id="team-picker" aria-describedby="watch-team-heading"></select>
