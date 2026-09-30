@@ -115,6 +115,7 @@ const root = path.resolve(__dirname, '../..');
     await hourlyAdmin.close();
     await postseason.clock.install();
     await postseason.goto('http://127.0.0.1:8000/sports/?sport=baseball&demo=live');
+    await postseason.locator('#sports-overlay[data-state="live"]').waitFor();
     await postseason.evaluate(() => {
       const api = window.SportsOverlay;
       const event = api.registry.getDemo('baseball', 'live');
@@ -124,18 +125,93 @@ const root = path.resolve(__dirname, '../..');
         seriesStatus: { wins: 0, losses: 0, result: 'Series tied 0-0' },
       });
       window.postseasonLayout = api.baseballLayout.createLayout();
+      window.postseasonEvent.details.lastPlay = 'A long last play description that must keep scrolling while the postseason information rotates below it.';
       window.postseasonLayout.render(window.postseasonEvent);
     });
     assert.match(await postseason.locator('#series-text').innerText(), /AL WILD CARD · GAME 1 · BEST OF 3/);
     const box = await postseason.locator('#sports-overlay').boundingBox();
     assert.ok(box.width <= 460 && box.height <= 88, JSON.stringify(box));
     await postseason.screenshot({ path: '/tmp/sports-postseason-footer.png' });
+    // Desktop and OBS consume HTML snapshots from the engine. An unrelated
+    // footer or score change must preserve the actual CSS animation instance.
+    const output = await contexts[1].newPage();
+    let outputFrame = { instance: 'scroll-test', sequence: 0, ready: true, gameKey: 'baseball:1', html: '' };
+    await output.route('**/api/output', route => route.fulfill({ json: outputFrame }));
+    async function publishOutput() {
+      outputFrame = { ...outputFrame, sequence: outputFrame.sequence + 1,
+        html: await postseason.locator('#sports-overlay').evaluate(node => node.outerHTML) };
+      await output.waitForFunction(sequence => document.body.dataset.sequence === String(sequence), outputFrame.sequence);
+    }
+    outputFrame.html = await postseason.locator('#sports-overlay').evaluate(node => node.outerHTML);
+    await output.goto('http://127.0.0.1:8000/sports/display.html');
+    await output.waitForFunction(() => document.querySelector('#last-play-text')?.getAnimations().length === 1);
+    await output.evaluate(() => {
+      window.transitions = [];
+      document.addEventListener('animationstart', event => {
+        if (event.animationName.startsWith('sports-rotate-')) window.transitions.push(event.animationName);
+      });
+      window.originalPlay = document.querySelector('#last-play-text');
+      window.originalScroll = window.originalPlay.getAnimations()[0];
+      window.originalScroll.pause();
+      window.originalScroll.currentTime = 5000;
+    });
+    async function assertScrollContinues() {
+      assert.equal(await output.evaluate(() => {
+        const text = document.querySelector('#last-play-text');
+        return text === window.originalPlay && text.getAnimations()[0] === window.originalScroll
+          && window.originalScroll.currentTime === 5000;
+      }), true, 'unchanged last play retains its scroll position and animation');
+    }
     await postseason.clock.runFor(8000);
     assert.equal(await postseason.locator('#series-text').innerText(), 'SERIES TIED 0-0');
+    await publishOutput();
+    assert.equal(await output.locator('#series-text').innerText(), 'SERIES TIED 0-0');
+    await assertScrollContinues();
     await postseason.evaluate(() => window.postseasonLayout.render(window.postseasonEvent));
     await postseason.clock.runFor(8000);
     assert.equal(await postseason.locator('#player-details').isVisible(), true);
     assert.equal(await postseason.locator('#series-details').isVisible(), false);
+    await publishOutput();
+    assert.equal(await output.locator('#player-details').isVisible(), true);
+    assert.equal(await output.locator('#series-details').isVisible(), false);
+    await assertScrollContinues();
+    await postseason.evaluate(() => {
+      window.postseasonEvent.teams.home.score = 7;
+      window.postseasonLayout.render(window.postseasonEvent);
+    });
+    await publishOutput();
+    assert.equal(await output.locator('#home-score').innerText(), '7');
+    await assertScrollContinues();
+    await postseason.evaluate(() => {
+      window.postseasonEvent.details.lastPlay = 'A different long play description should start a new scroll so the next play can be read from the beginning.';
+      window.postseasonLayout.render(window.postseasonEvent);
+    });
+    await postseason.clock.runFor(32);
+    await publishOutput();
+    assert.equal(await output.locator('#last-play-text').evaluate(node =>
+      node !== window.originalPlay && node.getAnimations().length === 1
+      && node.getAnimations()[0] !== window.originalScroll), true);
+    assert.deepEqual(await output.evaluate(() => window.transitions), [], 'footer, score, and play updates do not transition the game');
+    outputFrame.gameKey = 'baseball:2';
+    await publishOutput();
+    assert.deepEqual(await output.evaluate(() => window.transitions), ['sports-rotate-out', 'sports-rotate-in']);
+    assert.equal(await output.locator('#sports-overlay').evaluate(node =>
+      node.classList.contains('is-rotating-in') || node.classList.contains('is-rotating-out')), false);
+    await output.emulateMedia({ reducedMotion: 'reduce' });
+    outputFrame.gameKey = 'baseball:3';
+    await publishOutput();
+    assert.deepEqual(await output.evaluate(() => window.transitions), ['sports-rotate-out', 'sports-rotate-in'], 'reduced motion skips transitions');
+    await output.emulateMedia({ reducedMotion: 'no-preference' });
+    outputFrame.instance = 'restarted-engine';
+    outputFrame.gameKey = 'baseball:4';
+    await publishOutput();
+    assert.deepEqual(await output.evaluate(() => window.transitions), ['sports-rotate-out', 'sports-rotate-in'], 'engine reconnection does not animate stale content');
+    await postseason.evaluate(() => window.postseasonLayout.renderNoEvent());
+    outputFrame.gameKey = null;
+    await publishOutput();
+    assert.equal(await output.locator('#game-view').isVisible(), false);
+    assert.equal(await output.locator('#no-game').isVisible(), true);
+    await output.close();
     await postseason.close();
     assert.deepEqual(errors, []);
     console.log('Browser integration passed: isolated profiles, no reload, draft preservation, conflict/reapply.');

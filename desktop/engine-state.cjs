@@ -10,7 +10,10 @@ class EngineState extends EventEmitter {
   }
   publish(frame) {
     this.ready = true; this.lastSeen = this.now();
-    if (frame.html !== this.frame.html) this.frame = { sequence: this.frame.sequence + 1, html: frame.html, updatedAt: this.now() };
+    const gameKey = frame.metadata.renderedGameKey || null;
+    if (frame.html !== this.frame.html || gameKey !== this.frame.gameKey) {
+      this.frame = { sequence: this.frame.sequence + 1, html: frame.html, gameKey, updatedAt: this.now() };
+    }
     this.metadata = frame.metadata;
     this.emit('frame', this.output());
   }

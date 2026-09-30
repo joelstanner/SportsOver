@@ -45,6 +45,7 @@ let transitionCleanupTimer = null;
 let renderChain = Promise.resolve();
 let discoveryGeneration = 0;
 let cachedDiscoveries = null;
+let renderedGameKey = null;
 let automaticRotationEntries = [];
 let overrideEntry = null;
 let discoveryPending = null;
@@ -57,6 +58,7 @@ window.SportsOverlay.engine = {
     automaticEntries: automaticRotationEntries.map(publicEntry),
     queue: rotationQueue.map(publicEntry),
     currentGameKey: entryKey(overrideEntry || rotationQueue[currentIndex]) || null,
+    renderedGameKey,
     overrideGameKey: entryKey(overrideEntry) || null,
   }),
   refresh: () => discoverGames(),
@@ -179,6 +181,7 @@ async function renderDemoEvent(event, animate = false) {
   if (animate && !await transitionOut(revision)) return;
   const currentLayout = activateLayout(event.sport);
   currentLayout.render(event);
+  renderedGameKey = `${event.sport}:${event.id}`;
   if (animate) transitionIn();
 }
 
@@ -197,6 +200,7 @@ async function discoverGamesOnce(refresh = true) {
   clearTimeout(pollTimer);
   pollGeneration += 1;
   if (!sportContexts.length) {
+    renderedGameKey = null;
     layout.renderNoEvent(`No included ${initialSport} team configured`, CONFIG.showNoGameMessage);
     return;
   }
@@ -230,6 +234,7 @@ async function discoverGamesOnce(refresh = true) {
     clearTimeout(rotationTimer);
     rotationTimer = null;
     rotationGeneration += 1;
+    renderedGameKey = null;
     layout.renderNoEvent("No watched or live spotlight games found", CONFIG.showNoGameMessage);
     scheduleDiscovery();
     return;
@@ -304,6 +309,8 @@ async function renderGame(entry, revision, { animate = false } = {}) {
     if (!animate) clearTransitionClasses();
     const currentLayout = activateLayout(entry.context.sport);
     currentLayout.render(event);
+    // Publish the displayed game, not the next queue entry while it is loading.
+    renderedGameKey = entryKey(entry);
     if (animate) transitionIn();
     lastEventState = event.state;
   } catch (error) {

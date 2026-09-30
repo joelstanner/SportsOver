@@ -4,6 +4,20 @@ const { EngineState } = require('../../desktop/engine-state.cjs');
 const { startServer } = require('../../desktop/server.cjs');
 const path = require('node:path');
 const availableEntries = [{ candidate: { sport: 'baseball', id: '1' } }, { candidate: { sport: 'baseball', id: '2' } }];
+test('output game identity follows rendered content, including changes with identical HTML', () => {
+  const engine = new EngineState();
+  const html = '<main id="sports-overlay">same score</main>';
+  engine.publish({ html, metadata: { currentGameKey: 'baseball:1', renderedGameKey: 'baseball:1' } });
+  const first = engine.output();
+  engine.publish({ html, metadata: { currentGameKey: 'baseball:2', renderedGameKey: 'baseball:1' } });
+  assert.equal(engine.output().gameKey, 'baseball:1');
+  assert.equal(engine.output().sequence, first.sequence, 'loading the next game does not transition the old frame');
+  engine.publish({ html, metadata: { currentGameKey: 'baseball:2', renderedGameKey: 'baseball:2' } });
+  assert.equal(engine.output().gameKey, 'baseball:2');
+  assert.equal(engine.output().sequence, first.sequence + 1);
+  engine.publish({ html, metadata: { renderedGameKey: null } });
+  assert.equal(engine.output().gameKey, null);
+});
 test('temporary overrides expire, retries do not extend them, conflicts and unknown games are rejected', () => {
   let time = 100, callback;
   const engine = new EngineState({ now: () => time, setTimer: fn => { callback = fn; return 1; }, clearTimer: () => {} });

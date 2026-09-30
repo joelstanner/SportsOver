@@ -75,6 +75,13 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     }, obsUrl);
     const obs = await obsPromise;
     await obs.locator('.scorebug').waitFor();
+    await obs.emulateMedia({ reducedMotion: 'no-preference' });
+    await obs.evaluate(() => {
+      window.gameTransitions = [];
+      document.addEventListener('animationstart', event => {
+        if (event.animationName.startsWith('sports-rotate-')) window.gameTransitions.push(event.animationName);
+      });
+    });
     assert.equal(await obs.evaluate(() => typeof window.SportsOverlay), 'undefined', 'OBS loads no providers or rotation engine');
     const before = await (await fetch(`${base}/api/v1/state`, { headers })).json();
     const overrideKey = before.currentGameKey === 'baseball:1' ? 'baseball:2' : 'baseball:1';
@@ -94,6 +101,9 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     const sharedFrame = await (await fetch(`${base}/api/output`)).json();
     await banner.waitForFunction(sequence => Number(document.body.dataset.sequence) >= sequence, sharedFrame.sequence);
     await obs.waitForFunction(sequence => Number(document.body.dataset.sequence) >= sequence, sharedFrame.sequence);
+    assert.deepEqual(await obs.evaluate(() => window.gameTransitions), [
+      'sports-rotate-out', 'sports-rotate-in', 'sports-rotate-out', 'sports-rotate-in',
+    ], 'Electron output animates both the override and return to the automatic game');
     assert.equal(await banner.locator('#sports-overlay').innerText(), await obs.locator('#sports-overlay').innerText());
     const native = await application.evaluate(({ BrowserWindow }) => {
       const windows = BrowserWindow.getAllWindows();

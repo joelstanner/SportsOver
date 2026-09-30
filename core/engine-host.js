@@ -6,6 +6,8 @@
     const mount = document.querySelector('#sports-overlay');
     if (!mount || !window.SportsOverlay.engine) return;
     const copy = mount.cloneNode(true);
+    // Outputs run their own complete transitions when the rendered game changes;
+    // short-lived engine animation classes can be missed by output polling.
     copy.classList.remove('is-rotating-in', 'is-rotating-out');
     const frame = { html: copy.outerHTML, metadata: window.SportsOverlay.engine.describe() };
     const serialized = JSON.stringify(frame);
