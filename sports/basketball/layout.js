@@ -54,9 +54,15 @@
       setTeam(els.awayMark, els.awayAbbr, els.awayRecord, away);
       setTeam(els.homeMark, els.homeAbbr, els.homeRecord, home);
       const showTimeouts = event.state === EVENT_STATES.LIVE || event.state === EVENT_STATES.INTERRUPTED;
-      const maximumTimeouts = Number(event.details.period?.replace(/\D/g, "")) > 4 || /^OT/.test(event.details.period || "") ? 2 : 7;
-      global.SportsOverlay.timeouts.renderMarkers(els.awayTimeouts, showTimeouts ? away.timeoutsRemaining : null, maximumTimeouts, away.name);
-      global.SportsOverlay.timeouts.renderMarkers(els.homeTimeouts, showTimeouts ? home.timeoutsRemaining : null, maximumTimeouts, home.name);
+      if (event.sport === "college-basketball") {
+        // NCAA carryover and overtime allocations are not a fixed NBA-style row.
+        renderCollegeTimeouts(els.awayTimeouts, showTimeouts ? away.timeoutsRemaining : null, away.name);
+        renderCollegeTimeouts(els.homeTimeouts, showTimeouts ? home.timeoutsRemaining : null, home.name);
+      } else {
+        const maximumTimeouts = Number(event.details.period?.replace(/\D/g, "")) > 4 || /^OT/.test(event.details.period || "") ? 2 : 7;
+        global.SportsOverlay.timeouts.renderMarkers(els.awayTimeouts, showTimeouts ? away.timeoutsRemaining : null, maximumTimeouts, away.name);
+        global.SportsOverlay.timeouts.renderMarkers(els.homeTimeouts, showTimeouts ? home.timeoutsRemaining : null, maximumTimeouts, home.name);
+      }
       const showScore = event.state !== EVENT_STATES.PREGAME;
       els.awayScore.textContent = showScore ? away.score ?? 0 : "";
       els.homeScore.textContent = showScore ? home.score ?? 0 : "";
@@ -118,16 +124,27 @@
   }
 
   function statusText(event) {
-    if (event.state === EVENT_STATES.FINAL) return "FINAL";
+    if (event.state === EVENT_STATES.FINAL) {
+      return event.sport === "college-basketball" && /^OT/.test(event.details.period || "")
+        ? `FINAL / ${event.details.period}` : "FINAL";
+    }
     if (event.state === EVENT_STATES.INTERRUPTED) return event.detailedState;
     return formatPregameStart(event.startTime) || event.detailedState;
   }
 
   function percent(value) { return value === null || value === undefined ? "—" : `${value}%`; }
+  function renderCollegeTimeouts(element, count, teamName) {
+    const visible = Number.isInteger(count) && count >= 0;
+    element.hidden = !visible;
+    element.textContent = visible ? `TO ${count}` : "";
+    if (visible) element.setAttribute("aria-label", `${teamName}: ${count} timeouts remaining`);
+    else element.removeAttribute("aria-label");
+  }
   function show(element) { element.hidden = false; }
   function hide(element) { element.hidden = true; }
 
   const layout = Object.freeze({ createLayout });
   global.SportsOverlay.basketballLayout = layout;
   global.SportsOverlay.registry?.registerLayout("basketball", layout);
+  global.SportsOverlay.registry?.registerLayout("college-basketball", layout);
 })(typeof window === "undefined" ? globalThis : window);

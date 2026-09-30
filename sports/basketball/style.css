@@ -13,6 +13,8 @@
 .basketball-scorebug.is-hidden { display: none; }
 .basketball-scorebug [hidden] { display: none; }
 .basketball-main { display: grid; grid-template-columns: 1fr 72px 1fr; align-items: center; min-height: 42px; padding: 0 13px; }
+.basketball-scorebug[data-sport="college-basketball"] .basketball-main { grid-template-columns: 1fr 88px 1fr; }
+.basketball-scorebug[data-sport="college-basketball"] .basketball-center span { white-space: nowrap; }
 .basketball-team { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .basketball-team--home { justify-content: flex-end; text-align: right; }
 .basketball-mark { display: grid; place-items: center; width: 27px; height: 27px; flex: 0 0 27px; border-radius: 50%; background: rgba(var(--team-accent-rgb, 200, 16, 46), 0.2); color: var(--team-accent-text, #ff9aab); font-size: 8px; font-weight: 900; }
@@ -21,6 +23,7 @@
 .basketball-team strong { display: block; font-size: 0.82em; letter-spacing: 0.075em; }
 .basketball-record { display: block; margin-top: 2px; color: #aebbc6; font-size: 0.6em; }
 .basketball-timeouts { color: #ff9aab; }
+.basketball-scorebug[data-sport="college-basketball"] .basketball-timeouts { font-size: 0.52em; font-weight: 700; }
 .basketball-score { min-width: 28px; font-size: 1.22em !important; letter-spacing: 0 !important; }
 .basketball-center { display: grid; justify-items: center; gap: 2px; padding: 0 7px; border-right: 1px solid var(--basketball-line); border-left: 1px solid var(--basketball-line); }
 .basketball-center strong { font-size: 1em; }

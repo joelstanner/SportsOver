@@ -1,5 +1,7 @@
 # SportsOver
 
+See [CHANGELOG.md](CHANGELOG.md) for version history.
+
 A standalone Electron sports banner for your desktop. Transparent, borderless, draggable, and always on top of ordinary application windows, with separate settings and tray/menu-bar controls. SportsOver owns one sports engine and serves two outputs: the floating desktop banner and an optional local OBS browser source. OBS and Twitchbot are not required to run the app.
 
 ## Install Node.js and npm (first-time setup)
@@ -68,7 +70,9 @@ This repository distributes source only. Installers, signing/notarization, autom
 
 ## Sports settings
 
-MLB, NFL, college football, NHL, MLS, and NBA use the existing MLB/ESPN providers and team directories. Rank sports and watched teams, enable/disable favorites, select time zone and fallback behavior, and configure provider polling. **Save settings** applies changes to the banner without reloading it.
+MLB, NFL, college football, NHL, MLS, NBA, and NCAA men's basketball use MLB/ESPN providers and team directories. Rank sports and watched teams, enable/disable favorites, select time zone and fallback behavior, and configure provider polling. **Save settings** applies changes to the banner without reloading it.
+
+To follow NCAA men's basketball, choose **NCAA men’s basketball · NCAAM** in Team tracking, select a team, and save. No college basketball teams are added to your watched list automatically. The ESPN directory, scoreboard, schedules, and game summaries power this sport; these are public endpoints without a supported developer API contract. Refresh team data to update the bundled directory. The banner displays halves and overtime, including overtime finals. College timeouts appear as `TO n` only when ESPN reports a remaining count; missing counts stay hidden. It does not infer timeouts from NBA rules or partial play logs. See the [NCAA provider notes](sports/college-basketball/README.md).
 
 **Live control** reads discovered games from that same engine and manages automatic, hybrid, or curated game rotation, game order and durations, and game locks. A game lock chooses what plays; the desktop click-through lock controls mouse input. **Demo lab** previews deterministic sport/lifecycle examples without changing the live banner. Use the Electron overlay window to view the live output while changing Settings. Demo lab uses fixed data only.
 

@@ -17,6 +17,7 @@ const ESPN_SPORTS = Object.freeze([
   { sport: "hockey", league: "NHL", provider: "espn-nhl", keyPrefix: "nhl", apiSport: "hockey", apiLeague: "nhl", logoLeague: "nhl", identity: "abbreviation", limit: 100 },
   { sport: "soccer", league: "MLS", provider: "espn-mls", keyPrefix: "mls", apiSport: "soccer", apiLeague: "usa.1", logoLeague: "soccer", identity: "number-id", limit: 100 },
   { sport: "basketball", league: "NBA", provider: "espn-nba", keyPrefix: "nba", apiSport: "basketball", apiLeague: "nba", logoLeague: "nba", identity: "abbreviation", limit: 100 },
+  { sport: "college-basketball", league: "NCAAM", provider: "espn-ncaam", keyPrefix: "ncaam", apiSport: "basketball", apiLeague: "mens-college-basketball", logoLeague: "ncaa", identity: "string-id", limit: 2000 },
 ]);
 
 export const SUPPORTED_SPORTS = Object.freeze(["baseball", ...ESPN_SPORTS.map(item => item.sport)]);

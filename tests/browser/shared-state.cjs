@@ -41,7 +41,7 @@ const root = path.resolve(__dirname, '../..');
     await chrome.getByText('Shared settings initialized.', { exact: true }).waitFor();
     const teamPicker = chrome.locator('#team-picker');
     assert.equal(await teamPicker.isDisabled(), true);
-    for (const sport of ['baseball', 'football', 'college-football', 'hockey', 'soccer', 'basketball']) {
+    for (const sport of ['baseball', 'football', 'college-football', 'hockey', 'soccer', 'basketball', 'college-basketball']) {
       await chrome.locator('#team-sport-picker').selectOption(sport);
       assert.equal(await teamPicker.inputValue(), '', 'changing sports clears the prior team');
       assert.equal(await chrome.locator('#add-team').isDisabled(), true);
@@ -54,8 +54,16 @@ const root = path.resolve(__dirname, '../..');
       await teamPicker.selectOption(available[0]);
       assert.equal(await chrome.locator('#add-team').isDisabled(), false);
     }
+    await teamPicker.selectOption('ncaam:264');
+    await chrome.locator('#add-team').click();
+    await chrome.locator('[data-sport="college-basketball"] .favorite-card[data-team-key="ncaam:264"]').waitFor();
+    assert.equal(await chrome.locator('#team-sport-picker').inputValue(), 'college-basketball');
+    assert.equal(await teamPicker.locator('option[value="ncaam:264"]').count(), 0);
+    await chrome.locator('#save-settings').click();
+    await chrome.getByText('Saved. Banner updates automatically.', { exact: true }).waitFor();
     await obs.goto('http://127.0.0.1:8000/sports/');
     await obs.waitForFunction(() => window.SportsOverlay.shared?.snapshot()?.initialized);
+    assert.deepEqual(await obs.evaluate(() => window.SportsOverlay.config.loadConfig().sports.find(group => group.sport === 'college-basketball').favorites), [{ teamKey: 'ncaam:264', enabled: true }]);
     const marker = await obs.evaluate(() => { window.testMarker = 'same-document'; return window.testMarker; });
     const initialRevision = state.revision;
     await chrome.locator('#display-mode').selectOption('top-favorite');

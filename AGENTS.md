@@ -11,4 +11,15 @@ agreed stable 1.0 release. Explicitly identify when a minor or major bump is war
 Do not increment automatically. An explicit user instruction to bump the version
 is authorization; do not ask again for that same bump. Group related changes into
 one proposed bump rather than bumping for each edit or test build. On approval,
-update package.json and package-lock.json together and rebuild dist/SportsOver.app.
+update package.json and package-lock.json together, update CHANGELOG.md for that
+version, and rebuild dist/SportsOver.app.
+
+## Changelog
+
+Update CHANGELOG.md with every version bump, in the same change as the package
+version updates. Add a dated entry at the top of the version history using the
+exact new version and the date of the bump. Summarize user-visible additions,
+changes, and fixes since the previous version; include migration steps or breaking
+changes when applicable. Keep entries concise and grounded in completed work.
+Group related work under its approved version and do not invent publication dates
+or claim that a local version bump was a published release.

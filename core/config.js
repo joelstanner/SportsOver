@@ -12,8 +12,9 @@
     Object.freeze({ key: "hockey", name: "Hockey", league: "NHL" }),
     Object.freeze({ key: "soccer", name: "Soccer", league: "MLS" }),
     Object.freeze({ key: "basketball", name: "Basketball", league: "NBA" }),
+    Object.freeze({ key: "college-basketball", name: "NCAA men’s basketball", league: "NCAAM" }),
   ]);
-  const CATALOG_SPORTS = Object.freeze(["baseball", "football", "college-football", "hockey", "soccer", "basketball"]);
+  const CATALOG_SPORTS = Object.freeze(["baseball", "football", "college-football", "hockey", "soccer", "basketball", "college-basketball"]);
   const TEAM_CATALOG = loadTeamCatalogSync();
   const ready = TEAM_CATALOG.length
     ? Promise.resolve(TEAM_CATALOG)
@@ -30,6 +31,7 @@
       frozenSport("hockey", ["nhl:sea"]),
       frozenSport("soccer", ["mls:9726"]),
       frozenSport("basketball", ["nba:det"]),
+      frozenSport("college-basketball", []),
     ]),
     providerRefreshSeconds: Object.freeze(Object.fromEntries(CATALOG_SPORTS.map(sport =>
       [sport, Object.freeze({ live: 12, pregame: 60, idle: 300, final: 300 })]))),

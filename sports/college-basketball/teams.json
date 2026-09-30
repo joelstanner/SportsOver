@@ -1,0 +1,3990 @@
+{
+  "sport": "college-basketball",
+  "league": "NCAAM",
+  "provider": "espn-ncaam",
+  "updatedAt": "2026-09-30",
+  "teams": [
+    {
+      "key": "ncaam:2000",
+      "teamId": "2000",
+      "name": "Abilene Christian Wildcats",
+      "abbreviation": "ACU",
+      "theme": {
+        "primary": "#592d82",
+        "accent": "#b1b3b3"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2000.png"
+    },
+    {
+      "key": "ncaam:2005",
+      "teamId": "2005",
+      "name": "Air Force Falcons",
+      "abbreviation": "AF",
+      "theme": {
+        "primary": "#003594",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2005.png"
+    },
+    {
+      "key": "ncaam:2006",
+      "teamId": "2006",
+      "name": "Akron Zips",
+      "abbreviation": "AKR",
+      "theme": {
+        "primary": "#041e42",
+        "accent": "#c5b783"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2006.png"
+    },
+    {
+      "key": "ncaam:2010",
+      "teamId": "2010",
+      "name": "Alabama A&M Bulldogs",
+      "abbreviation": "AAMU",
+      "theme": {
+        "primary": "#790000",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2010.png"
+    },
+    {
+      "key": "ncaam:333",
+      "teamId": "333",
+      "name": "Alabama Crimson Tide",
+      "abbreviation": "ALA",
+      "theme": {
+        "primary": "#9e1b32",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png"
+    },
+    {
+      "key": "ncaam:2011",
+      "teamId": "2011",
+      "name": "Alabama State Hornets",
+      "abbreviation": "ALST",
+      "theme": {
+        "primary": "#e9a900",
+        "accent": "#0a0a0a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2011.png"
+    },
+    {
+      "key": "ncaam:2016",
+      "teamId": "2016",
+      "name": "Alcorn State Braves",
+      "abbreviation": "ALCN",
+      "theme": {
+        "primary": "#4b0058",
+        "accent": "#46166a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2016.png"
+    },
+    {
+      "key": "ncaam:44",
+      "teamId": "44",
+      "name": "American University Eagles",
+      "abbreviation": "AMER",
+      "theme": {
+        "primary": "#c41130",
+        "accent": "#c8102e"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/44.png"
+    },
+    {
+      "key": "ncaam:2026",
+      "teamId": "2026",
+      "name": "App State Mountaineers",
+      "abbreviation": "APP",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#ffcd00"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2026.png"
+    },
+    {
+      "key": "ncaam:9",
+      "teamId": "9",
+      "name": "Arizona State Sun Devils",
+      "abbreviation": "ASU",
+      "theme": {
+        "primary": "#ffc627",
+        "accent": "#8c1d40"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/9.png"
+    },
+    {
+      "key": "ncaam:12",
+      "teamId": "12",
+      "name": "Arizona Wildcats",
+      "abbreviation": "ARIZ",
+      "theme": {
+        "primary": "#cc0033",
+        "accent": "#003366"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/12.png"
+    },
+    {
+      "key": "ncaam:8",
+      "teamId": "8",
+      "name": "Arkansas Razorbacks",
+      "abbreviation": "ARK",
+      "theme": {
+        "primary": "#a32136",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/8.png"
+    },
+    {
+      "key": "ncaam:2032",
+      "teamId": "2032",
+      "name": "Arkansas State Red Wolves",
+      "abbreviation": "ARST",
+      "theme": {
+        "primary": "#cc092f",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2032.png"
+    },
+    {
+      "key": "ncaam:2029",
+      "teamId": "2029",
+      "name": "Arkansas-Pine Bluff Golden Lions",
+      "abbreviation": "UAPB",
+      "theme": {
+        "primary": "#e0aa0f",
+        "accent": "#eaaa00"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2029.png"
+    },
+    {
+      "key": "ncaam:349",
+      "teamId": "349",
+      "name": "Army Black Knights",
+      "abbreviation": "ARMY",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#d3bc8d"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/349.png"
+    },
+    {
+      "key": "ncaam:2",
+      "teamId": "2",
+      "name": "Auburn Tigers",
+      "abbreviation": "AUB",
+      "theme": {
+        "primary": "#002b5c",
+        "accent": "#f26522"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2.png"
+    },
+    {
+      "key": "ncaam:2046",
+      "teamId": "2046",
+      "name": "Austin Peay Governors",
+      "abbreviation": "APSU",
+      "theme": {
+        "primary": "#8e0b0b",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2046.png"
+    },
+    {
+      "key": "ncaam:252",
+      "teamId": "252",
+      "name": "BYU Cougars",
+      "abbreviation": "BYU",
+      "theme": {
+        "primary": "#0047ba",
+        "accent": "#002e5d"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/252.png"
+    },
+    {
+      "key": "ncaam:2050",
+      "teamId": "2050",
+      "name": "Ball State Cardinals",
+      "abbreviation": "BALL",
+      "theme": {
+        "primary": "#ba0c2f",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2050.png"
+    },
+    {
+      "key": "ncaam:239",
+      "teamId": "239",
+      "name": "Baylor Bears",
+      "abbreviation": "BAY",
+      "theme": {
+        "primary": "#154734",
+        "accent": "#ffb81c"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/239.png"
+    },
+    {
+      "key": "ncaam:91",
+      "teamId": "91",
+      "name": "Bellarmine Knights",
+      "abbreviation": "BELL",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/91.png"
+    },
+    {
+      "key": "ncaam:2057",
+      "teamId": "2057",
+      "name": "Belmont Bruins",
+      "abbreviation": "BEL",
+      "theme": {
+        "primary": "#182142",
+        "accent": "#c9262d"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2057.png"
+    },
+    {
+      "key": "ncaam:2065",
+      "teamId": "2065",
+      "name": "Bethune-Cookman Wildcats",
+      "abbreviation": "BCU",
+      "theme": {
+        "primary": "#7b1831",
+        "accent": "#e9aa12"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2065.png"
+    },
+    {
+      "key": "ncaam:2066",
+      "teamId": "2066",
+      "name": "Binghamton Bearcats",
+      "abbreviation": "BING",
+      "theme": {
+        "primary": "#00614a",
+        "accent": "#f0f0f0"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2066.png"
+    },
+    {
+      "key": "ncaam:68",
+      "teamId": "68",
+      "name": "Boise State Broncos",
+      "abbreviation": "BOIS",
+      "theme": {
+        "primary": "#0033a0",
+        "accent": "#d64309"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/68.png"
+    },
+    {
+      "key": "ncaam:103",
+      "teamId": "103",
+      "name": "Boston College Eagles",
+      "abbreviation": "BC",
+      "theme": {
+        "primary": "#8c2232",
+        "accent": "#dbcca6"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/103.png"
+    },
+    {
+      "key": "ncaam:104",
+      "teamId": "104",
+      "name": "Boston University Terriers",
+      "abbreviation": "BU",
+      "theme": {
+        "primary": "#cc0000",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/104.png"
+    },
+    {
+      "key": "ncaam:189",
+      "teamId": "189",
+      "name": "Bowling Green Falcons",
+      "abbreviation": "BGSU",
+      "theme": {
+        "primary": "#fd5000",
+        "accent": "#4f2c1d"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/189.png"
+    },
+    {
+      "key": "ncaam:71",
+      "teamId": "71",
+      "name": "Bradley Braves",
+      "abbreviation": "BRAD",
+      "theme": {
+        "primary": "#b70002",
+        "accent": "#c0c0c0"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/71.png"
+    },
+    {
+      "key": "ncaam:225",
+      "teamId": "225",
+      "name": "Brown Bears",
+      "abbreviation": "BRWN",
+      "theme": {
+        "primary": "#411e09",
+        "accent": "#949300"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/225.png"
+    },
+    {
+      "key": "ncaam:2803",
+      "teamId": "2803",
+      "name": "Bryant Bulldogs",
+      "abbreviation": "BRY",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#9f8343"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2803.png"
+    },
+    {
+      "key": "ncaam:2083",
+      "teamId": "2083",
+      "name": "Bucknell Bison",
+      "abbreviation": "BUCK",
+      "theme": {
+        "primary": "#000060",
+        "accent": "#00316e"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2083.png"
+    },
+    {
+      "key": "ncaam:2084",
+      "teamId": "2084",
+      "name": "Buffalo Bulls",
+      "abbreviation": "BUF",
+      "theme": {
+        "primary": "#005bbb",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2084.png"
+    },
+    {
+      "key": "ncaam:2086",
+      "teamId": "2086",
+      "name": "Butler Bulldogs",
+      "abbreviation": "BTLR",
+      "theme": {
+        "primary": "#0d1361",
+        "accent": "#00a3e0"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2086.png"
+    },
+    {
+      "key": "ncaam:13",
+      "teamId": "13",
+      "name": "Cal Poly Mustangs",
+      "abbreviation": "CP",
+      "theme": {
+        "primary": "#1e4d2b",
+        "accent": "#eed897"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/13.png"
+    },
+    {
+      "key": "ncaam:2934",
+      "teamId": "2934",
+      "name": "Cal State Bakersfield Roadrunners",
+      "abbreviation": "CSUB",
+      "theme": {
+        "primary": "#003bab",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2934.png"
+    },
+    {
+      "key": "ncaam:2239",
+      "teamId": "2239",
+      "name": "Cal State Fullerton Titans",
+      "abbreviation": "CSUF",
+      "theme": {
+        "primary": "#003767",
+        "accent": "#ff8300"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2239.png"
+    },
+    {
+      "key": "ncaam:2463",
+      "teamId": "2463",
+      "name": "Cal State Northridge Matadors",
+      "abbreviation": "CSUN",
+      "theme": {
+        "primary": "#b50000",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2463.png"
+    },
+    {
+      "key": "ncaam:2856",
+      "teamId": "2856",
+      "name": "California Baptist Lancers",
+      "abbreviation": "CBU",
+      "theme": {
+        "primary": "#000080",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2856.png"
+    },
+    {
+      "key": "ncaam:25",
+      "teamId": "25",
+      "name": "California Golden Bears",
+      "abbreviation": "CAL",
+      "theme": {
+        "primary": "#041e42",
+        "accent": "#ffc72c"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/25.png"
+    },
+    {
+      "key": "ncaam:2097",
+      "teamId": "2097",
+      "name": "Campbell Fighting Camels",
+      "abbreviation": "CAM",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2097.png"
+    },
+    {
+      "key": "ncaam:2099",
+      "teamId": "2099",
+      "name": "Canisius Golden Griffins",
+      "abbreviation": "CAN",
+      "theme": {
+        "primary": "#004a81",
+        "accent": "#dda50f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2099.png"
+    },
+    {
+      "key": "ncaam:2110",
+      "teamId": "2110",
+      "name": "Central Arkansas Bears",
+      "abbreviation": "CARK",
+      "theme": {
+        "primary": "#a7a9ac",
+        "accent": "#8e959a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2110.png"
+    },
+    {
+      "key": "ncaam:2115",
+      "teamId": "2115",
+      "name": "Central Connecticut Blue Devils",
+      "abbreviation": "CCSU",
+      "theme": {
+        "primary": "#1b49a2",
+        "accent": "#d1d5d8"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2115.png"
+    },
+    {
+      "key": "ncaam:2117",
+      "teamId": "2117",
+      "name": "Central Michigan Chippewas",
+      "abbreviation": "CMU",
+      "theme": {
+        "primary": "#4c0027",
+        "accent": "#fbab18"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2117.png"
+    },
+    {
+      "key": "ncaam:232",
+      "teamId": "232",
+      "name": "Charleston Cougars",
+      "abbreviation": "COFC",
+      "theme": {
+        "primary": "#7a2531",
+        "accent": "#9e8959"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/232.png"
+    },
+    {
+      "key": "ncaam:2127",
+      "teamId": "2127",
+      "name": "Charleston Southern Buccaneers",
+      "abbreviation": "CHSO",
+      "theme": {
+        "primary": "#2e3192",
+        "accent": "#ded090"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2127.png"
+    },
+    {
+      "key": "ncaam:2429",
+      "teamId": "2429",
+      "name": "Charlotte 49ers",
+      "abbreviation": "CLT",
+      "theme": {
+        "primary": "#005035",
+        "accent": "#a49665"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2429.png"
+    },
+    {
+      "key": "ncaam:236",
+      "teamId": "236",
+      "name": "Chattanooga Mocs",
+      "abbreviation": "UTC",
+      "theme": {
+        "primary": "#00386b",
+        "accent": "#dca71d"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/236.png"
+    },
+    {
+      "key": "ncaam:2130",
+      "teamId": "2130",
+      "name": "Chicago State Cougars",
+      "abbreviation": "CHST",
+      "theme": {
+        "primary": "#006700",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2130.png"
+    },
+    {
+      "key": "ncaam:2132",
+      "teamId": "2132",
+      "name": "Cincinnati Bearcats",
+      "abbreviation": "CIN",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#e00122"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2132.png"
+    },
+    {
+      "key": "ncaam:228",
+      "teamId": "228",
+      "name": "Clemson Tigers",
+      "abbreviation": "CLEM",
+      "theme": {
+        "primary": "#f56600",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/228.png"
+    },
+    {
+      "key": "ncaam:325",
+      "teamId": "325",
+      "name": "Cleveland State Vikings",
+      "abbreviation": "CLE",
+      "theme": {
+        "primary": "#006633",
+        "accent": "#231f20"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/325.png"
+    },
+    {
+      "key": "ncaam:324",
+      "teamId": "324",
+      "name": "Coastal Carolina Chanticleers",
+      "abbreviation": "CCU",
+      "theme": {
+        "primary": "#006f71",
+        "accent": "#a27752"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/324.png"
+    },
+    {
+      "key": "ncaam:2142",
+      "teamId": "2142",
+      "name": "Colgate Raiders",
+      "abbreviation": "COLG",
+      "theme": {
+        "primary": "#821019",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2142.png"
+    },
+    {
+      "key": "ncaam:38",
+      "teamId": "38",
+      "name": "Colorado Buffaloes",
+      "abbreviation": "COLO",
+      "theme": {
+        "primary": "#cfb87c",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/38.png"
+    },
+    {
+      "key": "ncaam:36",
+      "teamId": "36",
+      "name": "Colorado State Rams",
+      "abbreviation": "CSU",
+      "theme": {
+        "primary": "#004c23",
+        "accent": "#c8c372"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/36.png"
+    },
+    {
+      "key": "ncaam:171",
+      "teamId": "171",
+      "name": "Columbia Lions",
+      "abbreviation": "COLU",
+      "theme": {
+        "primary": "#7ba4db",
+        "accent": "#183863"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/171.png"
+    },
+    {
+      "key": "ncaam:2154",
+      "teamId": "2154",
+      "name": "Coppin State Eagles",
+      "abbreviation": "COPP",
+      "theme": {
+        "primary": "#2e3192",
+        "accent": "#ffd204"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2154.png"
+    },
+    {
+      "key": "ncaam:172",
+      "teamId": "172",
+      "name": "Cornell Big Red",
+      "abbreviation": "COR",
+      "theme": {
+        "primary": "#b31b1b",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/172.png"
+    },
+    {
+      "key": "ncaam:156",
+      "teamId": "156",
+      "name": "Creighton Bluejays",
+      "abbreviation": "CREI",
+      "theme": {
+        "primary": "#005ca9",
+        "accent": "#6cadde"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/156.png"
+    },
+    {
+      "key": "ncaam:159",
+      "teamId": "159",
+      "name": "Dartmouth Big Green",
+      "abbreviation": "DART",
+      "theme": {
+        "primary": "#005730",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/159.png"
+    },
+    {
+      "key": "ncaam:2166",
+      "teamId": "2166",
+      "name": "Davidson Wildcats",
+      "abbreviation": "DAV",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#e51837"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2166.png"
+    },
+    {
+      "key": "ncaam:2168",
+      "teamId": "2168",
+      "name": "Dayton Flyers",
+      "abbreviation": "DAY",
+      "theme": {
+        "primary": "#004b8d",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2168.png"
+    },
+    {
+      "key": "ncaam:305",
+      "teamId": "305",
+      "name": "DePaul Blue Demons",
+      "abbreviation": "DEP",
+      "theme": {
+        "primary": "#2d649c",
+        "accent": "#ce1125"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/305.png"
+    },
+    {
+      "key": "ncaam:48",
+      "teamId": "48",
+      "name": "Delaware Blue Hens",
+      "abbreviation": "DEL",
+      "theme": {
+        "primary": "#00539f",
+        "accent": "#ffd200"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/48.png"
+    },
+    {
+      "key": "ncaam:2169",
+      "teamId": "2169",
+      "name": "Delaware State Hornets",
+      "abbreviation": "DSU",
+      "theme": {
+        "primary": "#009cdb",
+        "accent": "#d51c28"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2169.png"
+    },
+    {
+      "key": "ncaam:2172",
+      "teamId": "2172",
+      "name": "Denver Pioneers",
+      "abbreviation": "DEN",
+      "theme": {
+        "primary": "#98002e",
+        "accent": "#a8996e"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2172.png"
+    },
+    {
+      "key": "ncaam:2174",
+      "teamId": "2174",
+      "name": "Detroit Mercy Titans",
+      "abbreviation": "DETM",
+      "theme": {
+        "primary": "#165b9e",
+        "accent": "#d31733"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2174.png"
+    },
+    {
+      "key": "ncaam:2181",
+      "teamId": "2181",
+      "name": "Drake Bulldogs",
+      "abbreviation": "DRKE",
+      "theme": {
+        "primary": "#005596",
+        "accent": "#bec0c2"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2181.png"
+    },
+    {
+      "key": "ncaam:2182",
+      "teamId": "2182",
+      "name": "Drexel Dragons",
+      "abbreviation": "DREX",
+      "theme": {
+        "primary": "#020260",
+        "accent": "#ffd65a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2182.png"
+    },
+    {
+      "key": "ncaam:150",
+      "teamId": "150",
+      "name": "Duke Blue Devils",
+      "abbreviation": "DUKE",
+      "theme": {
+        "primary": "#00539b",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/150.png"
+    },
+    {
+      "key": "ncaam:2184",
+      "teamId": "2184",
+      "name": "Duquesne Dukes",
+      "abbreviation": "DUQ",
+      "theme": {
+        "primary": "#002d62",
+        "accent": "#b90b2e"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2184.png"
+    },
+    {
+      "key": "ncaam:151",
+      "teamId": "151",
+      "name": "East Carolina Pirates",
+      "abbreviation": "ECU",
+      "theme": {
+        "primary": "#582c83",
+        "accent": "#ffc72c"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/151.png"
+    },
+    {
+      "key": "ncaam:2193",
+      "teamId": "2193",
+      "name": "East Tennessee State Buccaneers",
+      "abbreviation": "ETSU",
+      "theme": {
+        "primary": "#002d61",
+        "accent": "#ffc423"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2193.png"
+    },
+    {
+      "key": "ncaam:2837",
+      "teamId": "2837",
+      "name": "East Texas A&M Lions",
+      "abbreviation": "ETAM",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2837.png"
+    },
+    {
+      "key": "ncaam:2197",
+      "teamId": "2197",
+      "name": "Eastern Illinois Panthers",
+      "abbreviation": "EIU",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#bebab9"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2197.png"
+    },
+    {
+      "key": "ncaam:2198",
+      "teamId": "2198",
+      "name": "Eastern Kentucky Colonels",
+      "abbreviation": "EKU",
+      "theme": {
+        "primary": "#660819",
+        "accent": "#f0f0f0"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2198.png"
+    },
+    {
+      "key": "ncaam:2199",
+      "teamId": "2199",
+      "name": "Eastern Michigan Eagles",
+      "abbreviation": "EMU",
+      "theme": {
+        "primary": "#006938",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2199.png"
+    },
+    {
+      "key": "ncaam:331",
+      "teamId": "331",
+      "name": "Eastern Washington Eagles",
+      "abbreviation": "EWU",
+      "theme": {
+        "primary": "#a10022",
+        "accent": "#abb4bc"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/331.png"
+    },
+    {
+      "key": "ncaam:2210",
+      "teamId": "2210",
+      "name": "Elon Phoenix",
+      "abbreviation": "ELON",
+      "theme": {
+        "primary": "#020303",
+        "accent": "#b59a57"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2210.png"
+    },
+    {
+      "key": "ncaam:339",
+      "teamId": "339",
+      "name": "Evansville Purple Aces",
+      "abbreviation": "EVAN",
+      "theme": {
+        "primary": "#663399",
+        "accent": "#ef6f00"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/339.png"
+    },
+    {
+      "key": "ncaam:2217",
+      "teamId": "2217",
+      "name": "Fairfield Stags",
+      "abbreviation": "FAIR",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#ebebeb"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2217.png"
+    },
+    {
+      "key": "ncaam:161",
+      "teamId": "161",
+      "name": "Fairleigh Dickinson Knights",
+      "abbreviation": "FDU",
+      "theme": {
+        "primary": "#72293c",
+        "accent": "#28334a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/161.png"
+    },
+    {
+      "key": "ncaam:50",
+      "teamId": "50",
+      "name": "Florida A&M Rattlers",
+      "abbreviation": "FAMU",
+      "theme": {
+        "primary": "#f89728",
+        "accent": "#00843d"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/50.png"
+    },
+    {
+      "key": "ncaam:2226",
+      "teamId": "2226",
+      "name": "Florida Atlantic Owls",
+      "abbreviation": "FAU",
+      "theme": {
+        "primary": "#003366",
+        "accent": "#cc0000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2226.png"
+    },
+    {
+      "key": "ncaam:57",
+      "teamId": "57",
+      "name": "Florida Gators",
+      "abbreviation": "FLA",
+      "theme": {
+        "primary": "#0021a5",
+        "accent": "#fa4616"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/57.png"
+    },
+    {
+      "key": "ncaam:526",
+      "teamId": "526",
+      "name": "Florida Gulf Coast Eagles",
+      "abbreviation": "FGCU",
+      "theme": {
+        "primary": "#00885a",
+        "accent": "#076c3b"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/526.png"
+    },
+    {
+      "key": "ncaam:2229",
+      "teamId": "2229",
+      "name": "Florida International Panthers",
+      "abbreviation": "FIU",
+      "theme": {
+        "primary": "#091f3f",
+        "accent": "#c3993f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2229.png"
+    },
+    {
+      "key": "ncaam:52",
+      "teamId": "52",
+      "name": "Florida State Seminoles",
+      "abbreviation": "FSU",
+      "theme": {
+        "primary": "#782f40",
+        "accent": "#ceb888"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/52.png"
+    },
+    {
+      "key": "ncaam:2230",
+      "teamId": "2230",
+      "name": "Fordham Rams",
+      "abbreviation": "FOR",
+      "theme": {
+        "primary": "#830032",
+        "accent": "#909090"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2230.png"
+    },
+    {
+      "key": "ncaam:278",
+      "teamId": "278",
+      "name": "Fresno State Bulldogs",
+      "abbreviation": "FRES",
+      "theme": {
+        "primary": "#b1102b",
+        "accent": "#13284c"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/278.png"
+    },
+    {
+      "key": "ncaam:231",
+      "teamId": "231",
+      "name": "Furman Paladins",
+      "abbreviation": "FUR",
+      "theme": {
+        "primary": "#582c83",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/231.png"
+    },
+    {
+      "key": "ncaam:2241",
+      "teamId": "2241",
+      "name": "Gardner-Webb Runnin' Bulldogs",
+      "abbreviation": "GWEB",
+      "theme": {
+        "primary": "#c12535",
+        "accent": "#909090"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2241.png"
+    },
+    {
+      "key": "ncaam:2244",
+      "teamId": "2244",
+      "name": "George Mason Patriots",
+      "abbreviation": "GMU",
+      "theme": {
+        "primary": "#016600",
+        "accent": "#ecb010"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2244.png"
+    },
+    {
+      "key": "ncaam:45",
+      "teamId": "45",
+      "name": "George Washington Revolutionaries",
+      "abbreviation": "GW",
+      "theme": {
+        "primary": "#002843",
+        "accent": "#e8d2a1"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/45.png"
+    },
+    {
+      "key": "ncaam:46",
+      "teamId": "46",
+      "name": "Georgetown Hoyas",
+      "abbreviation": "GTWN",
+      "theme": {
+        "primary": "#110e42",
+        "accent": "#001c58"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/46.png"
+    },
+    {
+      "key": "ncaam:61",
+      "teamId": "61",
+      "name": "Georgia Bulldogs",
+      "abbreviation": "UGA",
+      "theme": {
+        "primary": "#ba0c2f",
+        "accent": "#2c2a29"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png"
+    },
+    {
+      "key": "ncaam:290",
+      "teamId": "290",
+      "name": "Georgia Southern Eagles",
+      "abbreviation": "GASO",
+      "theme": {
+        "primary": "#041e42",
+        "accent": "#a3aaae"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/290.png"
+    },
+    {
+      "key": "ncaam:2247",
+      "teamId": "2247",
+      "name": "Georgia State Panthers",
+      "abbreviation": "GAST",
+      "theme": {
+        "primary": "#0039a6",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2247.png"
+    },
+    {
+      "key": "ncaam:59",
+      "teamId": "59",
+      "name": "Georgia Tech Yellow Jackets",
+      "abbreviation": "GT",
+      "theme": {
+        "primary": "#b3a369",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/59.png"
+    },
+    {
+      "key": "ncaam:2250",
+      "teamId": "2250",
+      "name": "Gonzaga Bulldogs",
+      "abbreviation": "GONZ",
+      "theme": {
+        "primary": "#041e42",
+        "accent": "#c8102e"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2250.png"
+    },
+    {
+      "key": "ncaam:2755",
+      "teamId": "2755",
+      "name": "Grambling Tigers",
+      "abbreviation": "GRAM",
+      "theme": {
+        "primary": "#ee8601",
+        "accent": "#ffd10a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2755.png"
+    },
+    {
+      "key": "ncaam:2253",
+      "teamId": "2253",
+      "name": "Grand Canyon Lopes",
+      "abbreviation": "GCU",
+      "theme": {
+        "primary": "#522398",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2253.png"
+    },
+    {
+      "key": "ncaam:2739",
+      "teamId": "2739",
+      "name": "Green Bay Phoenix",
+      "abbreviation": "GB",
+      "theme": {
+        "primary": "#006633",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2739.png"
+    },
+    {
+      "key": "ncaam:2261",
+      "teamId": "2261",
+      "name": "Hampton Pirates",
+      "abbreviation": "HAMP",
+      "theme": {
+        "primary": "#0067ac",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2261.png"
+    },
+    {
+      "key": "ncaam:108",
+      "teamId": "108",
+      "name": "Harvard Crimson",
+      "abbreviation": "HARV",
+      "theme": {
+        "primary": "#990000",
+        "accent": "#dbdbdb"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/108.png"
+    },
+    {
+      "key": "ncaam:62",
+      "teamId": "62",
+      "name": "Hawai'i Rainbow Warriors",
+      "abbreviation": "HAW",
+      "theme": {
+        "primary": "#005737",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/62.png"
+    },
+    {
+      "key": "ncaam:2272",
+      "teamId": "2272",
+      "name": "High Point Panthers",
+      "abbreviation": "HPU",
+      "theme": {
+        "primary": "#330072",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2272.png"
+    },
+    {
+      "key": "ncaam:2275",
+      "teamId": "2275",
+      "name": "Hofstra Pride",
+      "abbreviation": "HOF",
+      "theme": {
+        "primary": "#003594",
+        "accent": "#ffc72c"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2275.png"
+    },
+    {
+      "key": "ncaam:107",
+      "teamId": "107",
+      "name": "Holy Cross Crusaders",
+      "abbreviation": "HC",
+      "theme": {
+        "primary": "#582c83",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/107.png"
+    },
+    {
+      "key": "ncaam:2277",
+      "teamId": "2277",
+      "name": "Houston Christian Huskies",
+      "abbreviation": "HCU",
+      "theme": {
+        "primary": "#00539c",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2277.png"
+    },
+    {
+      "key": "ncaam:248",
+      "teamId": "248",
+      "name": "Houston Cougars",
+      "abbreviation": "HOU",
+      "theme": {
+        "primary": "#c8102e",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/248.png"
+    },
+    {
+      "key": "ncaam:47",
+      "teamId": "47",
+      "name": "Howard Bison",
+      "abbreviation": "HOW",
+      "theme": {
+        "primary": "#003a63",
+        "accent": "#e51937"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/47.png"
+    },
+    {
+      "key": "ncaam:85",
+      "teamId": "85",
+      "name": "IU Indianapolis Jaguars",
+      "abbreviation": "IUIN",
+      "theme": {
+        "primary": "#a81f30",
+        "accent": "#d59f0f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/85.png"
+    },
+    {
+      "key": "ncaam:304",
+      "teamId": "304",
+      "name": "Idaho State Bengals",
+      "abbreviation": "IDST",
+      "theme": {
+        "primary": "#ef8c00",
+        "accent": "#e9a126"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/304.png"
+    },
+    {
+      "key": "ncaam:70",
+      "teamId": "70",
+      "name": "Idaho Vandals",
+      "abbreviation": "IDHO",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#8c6e4a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/70.png"
+    },
+    {
+      "key": "ncaam:356",
+      "teamId": "356",
+      "name": "Illinois Fighting Illini",
+      "abbreviation": "ILL",
+      "theme": {
+        "primary": "#ff5f05",
+        "accent": "#13294b"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/356.png"
+    },
+    {
+      "key": "ncaam:2287",
+      "teamId": "2287",
+      "name": "Illinois State Redbirds",
+      "abbreviation": "ILST",
+      "theme": {
+        "primary": "#ce1126",
+        "accent": "#ffe716"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2287.png"
+    },
+    {
+      "key": "ncaam:2916",
+      "teamId": "2916",
+      "name": "Incarnate Word Cardinals",
+      "abbreviation": "UIW",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#080808"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2916.png"
+    },
+    {
+      "key": "ncaam:84",
+      "teamId": "84",
+      "name": "Indiana Hoosiers",
+      "abbreviation": "IU",
+      "theme": {
+        "primary": "#970310",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/84.png"
+    },
+    {
+      "key": "ncaam:282",
+      "teamId": "282",
+      "name": "Indiana State Sycamores",
+      "abbreviation": "INST",
+      "theme": {
+        "primary": "#00669a",
+        "accent": "#f0f0f0"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/282.png"
+    },
+    {
+      "key": "ncaam:314",
+      "teamId": "314",
+      "name": "Iona Gaels",
+      "abbreviation": "IONA",
+      "theme": {
+        "primary": "#6f2c3e",
+        "accent": "#f0ab00"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/314.png"
+    },
+    {
+      "key": "ncaam:2294",
+      "teamId": "2294",
+      "name": "Iowa Hawkeyes",
+      "abbreviation": "IOWA",
+      "theme": {
+        "primary": "#231f20",
+        "accent": "#fcd116"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2294.png"
+    },
+    {
+      "key": "ncaam:66",
+      "teamId": "66",
+      "name": "Iowa State Cyclones",
+      "abbreviation": "ISU",
+      "theme": {
+        "primary": "#ae192d",
+        "accent": "#ffc72a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/66.png"
+    },
+    {
+      "key": "ncaam:2296",
+      "teamId": "2296",
+      "name": "Jackson State Tigers",
+      "abbreviation": "JKST",
+      "theme": {
+        "primary": "#123297",
+        "accent": "#b5b7ba"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2296.png"
+    },
+    {
+      "key": "ncaam:294",
+      "teamId": "294",
+      "name": "Jacksonville Dolphins",
+      "abbreviation": "JAX",
+      "theme": {
+        "primary": "#00523e",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/294.png"
+    },
+    {
+      "key": "ncaam:55",
+      "teamId": "55",
+      "name": "Jacksonville State Gamecocks",
+      "abbreviation": "JXST",
+      "theme": {
+        "primary": "#cc0000",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/55.png"
+    },
+    {
+      "key": "ncaam:256",
+      "teamId": "256",
+      "name": "James Madison Dukes",
+      "abbreviation": "JMU",
+      "theme": {
+        "primary": "#450084",
+        "accent": "#cbb677"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/256.png"
+    },
+    {
+      "key": "ncaam:140",
+      "teamId": "140",
+      "name": "Kansas City Roos",
+      "abbreviation": "KC",
+      "theme": {
+        "primary": "#004b87",
+        "accent": "#ffc72c"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/140.png"
+    },
+    {
+      "key": "ncaam:2305",
+      "teamId": "2305",
+      "name": "Kansas Jayhawks",
+      "abbreviation": "KU",
+      "theme": {
+        "primary": "#0051ba",
+        "accent": "#e8000d"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2305.png"
+    },
+    {
+      "key": "ncaam:2306",
+      "teamId": "2306",
+      "name": "Kansas State Wildcats",
+      "abbreviation": "KSU",
+      "theme": {
+        "primary": "#330a57",
+        "accent": "#e2e3e4"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2306.png"
+    },
+    {
+      "key": "ncaam:338",
+      "teamId": "338",
+      "name": "Kennesaw State Owls",
+      "abbreviation": "KENN",
+      "theme": {
+        "primary": "#fdbb30",
+        "accent": "#0b1315"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/338.png"
+    },
+    {
+      "key": "ncaam:2309",
+      "teamId": "2309",
+      "name": "Kent State Golden Flashes",
+      "abbreviation": "KENT",
+      "theme": {
+        "primary": "#002664",
+        "accent": "#eaab00"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2309.png"
+    },
+    {
+      "key": "ncaam:96",
+      "teamId": "96",
+      "name": "Kentucky Wildcats",
+      "abbreviation": "UK",
+      "theme": {
+        "primary": "#0033a0",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/96.png"
+    },
+    {
+      "key": "ncaam:2443",
+      "teamId": "2443",
+      "name": "LSU New Orleans Privateers",
+      "abbreviation": "NOLA",
+      "theme": {
+        "primary": "#461d7c",
+        "accent": "#fdd023"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2443.png"
+    },
+    {
+      "key": "ncaam:99",
+      "teamId": "99",
+      "name": "LSU Tigers",
+      "abbreviation": "LSU",
+      "theme": {
+        "primary": "#461d76",
+        "accent": "#fdd023"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/99.png"
+    },
+    {
+      "key": "ncaam:2325",
+      "teamId": "2325",
+      "name": "La Salle Explorers",
+      "abbreviation": "LAS",
+      "theme": {
+        "primary": "#003356",
+        "accent": "#ffce00"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2325.png"
+    },
+    {
+      "key": "ncaam:322",
+      "teamId": "322",
+      "name": "Lafayette Leopards",
+      "abbreviation": "LAF",
+      "theme": {
+        "primary": "#790000",
+        "accent": "#a59474"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/322.png"
+    },
+    {
+      "key": "ncaam:2320",
+      "teamId": "2320",
+      "name": "Lamar Cardinals",
+      "abbreviation": "LAM",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#ebebeb"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2320.png"
+    },
+    {
+      "key": "ncaam:2330",
+      "teamId": "2330",
+      "name": "Le Moyne Dolphins",
+      "abbreviation": "LEM",
+      "theme": {
+        "primary": "#071b2c",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2330.png"
+    },
+    {
+      "key": "ncaam:2329",
+      "teamId": "2329",
+      "name": "Lehigh Mountain Hawks",
+      "abbreviation": "LEH",
+      "theme": {
+        "primary": "#6c2b2a",
+        "accent": "#b69e70"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2329.png"
+    },
+    {
+      "key": "ncaam:2335",
+      "teamId": "2335",
+      "name": "Liberty Flames",
+      "abbreviation": "LIB",
+      "theme": {
+        "primary": "#0a254e",
+        "accent": "#b72025"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2335.png"
+    },
+    {
+      "key": "ncaam:288",
+      "teamId": "288",
+      "name": "Lipscomb Bisons",
+      "abbreviation": "LIP",
+      "theme": {
+        "primary": "#20366c",
+        "accent": "#f6b734"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/288.png"
+    },
+    {
+      "key": "ncaam:2031",
+      "teamId": "2031",
+      "name": "Little Rock Trojans",
+      "abbreviation": "LR",
+      "theme": {
+        "primary": "#ad0000",
+        "accent": "#898d8f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2031.png"
+    },
+    {
+      "key": "ncaam:299",
+      "teamId": "299",
+      "name": "Long Beach State Beach",
+      "abbreviation": "LBSU",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#f1f2f3"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/299.png"
+    },
+    {
+      "key": "ncaam:112358",
+      "teamId": "112358",
+      "name": "Long Island University Sharks",
+      "abbreviation": "LIU",
+      "theme": {
+        "primary": "#50c9f7",
+        "accent": "#ffbf00"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/112358.png"
+    },
+    {
+      "key": "ncaam:2344",
+      "teamId": "2344",
+      "name": "Longwood Lancers",
+      "abbreviation": "LONG",
+      "theme": {
+        "primary": "#003273",
+        "accent": "#9ea2a3"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2344.png"
+    },
+    {
+      "key": "ncaam:309",
+      "teamId": "309",
+      "name": "Louisiana Ragin' Cajuns",
+      "abbreviation": "UL",
+      "theme": {
+        "primary": "#ce181e",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/309.png"
+    },
+    {
+      "key": "ncaam:2348",
+      "teamId": "2348",
+      "name": "Louisiana Tech Bulldogs",
+      "abbreviation": "LT",
+      "theme": {
+        "primary": "#003087",
+        "accent": "#cb333b"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2348.png"
+    },
+    {
+      "key": "ncaam:97",
+      "teamId": "97",
+      "name": "Louisville Cardinals",
+      "abbreviation": "LOU",
+      "theme": {
+        "primary": "#c9001f",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/97.png"
+    },
+    {
+      "key": "ncaam:2350",
+      "teamId": "2350",
+      "name": "Loyola Chicago Ramblers",
+      "abbreviation": "LUC",
+      "theme": {
+        "primary": "#9d1244",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2350.png"
+    },
+    {
+      "key": "ncaam:2352",
+      "teamId": "2352",
+      "name": "Loyola Maryland Greyhounds",
+      "abbreviation": "L-MD",
+      "theme": {
+        "primary": "#76a7a0",
+        "accent": "#c9cbca"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2352.png"
+    },
+    {
+      "key": "ncaam:2351",
+      "teamId": "2351",
+      "name": "Loyola Marymount Lions",
+      "abbreviation": "LMU",
+      "theme": {
+        "primary": "#880029",
+        "accent": "#00345b"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2351.png"
+    },
+    {
+      "key": "ncaam:311",
+      "teamId": "311",
+      "name": "Maine Black Bears",
+      "abbreviation": "ME",
+      "theme": {
+        "primary": "#127dbe",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/311.png"
+    },
+    {
+      "key": "ncaam:2363",
+      "teamId": "2363",
+      "name": "Manhattan Jaspers",
+      "abbreviation": "MAN",
+      "theme": {
+        "primary": "#4f8537",
+        "accent": "#b5b7ba"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2363.png"
+    },
+    {
+      "key": "ncaam:2368",
+      "teamId": "2368",
+      "name": "Marist Red Foxes",
+      "abbreviation": "MRST",
+      "theme": {
+        "primary": "#e53730",
+        "accent": "#f0f0f0"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2368.png"
+    },
+    {
+      "key": "ncaam:269",
+      "teamId": "269",
+      "name": "Marquette Golden Eagles",
+      "abbreviation": "MARQ",
+      "theme": {
+        "primary": "#003366",
+        "accent": "#ffcc00"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/269.png"
+    },
+    {
+      "key": "ncaam:276",
+      "teamId": "276",
+      "name": "Marshall Thundering Herd",
+      "abbreviation": "MRSH",
+      "theme": {
+        "primary": "#00b140",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/276.png"
+    },
+    {
+      "key": "ncaam:2379",
+      "teamId": "2379",
+      "name": "Maryland Eastern Shore Hawks",
+      "abbreviation": "UMES",
+      "theme": {
+        "primary": "#5c2301",
+        "accent": "#b5b7ba"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2379.png"
+    },
+    {
+      "key": "ncaam:120",
+      "teamId": "120",
+      "name": "Maryland Terrapins",
+      "abbreviation": "MD",
+      "theme": {
+        "primary": "#ce1126",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/120.png"
+    },
+    {
+      "key": "ncaam:113",
+      "teamId": "113",
+      "name": "Massachusetts Minutemen",
+      "abbreviation": "MASS",
+      "theme": {
+        "primary": "#881c1c",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/113.png"
+    },
+    {
+      "key": "ncaam:2377",
+      "teamId": "2377",
+      "name": "McNeese Cowboys",
+      "abbreviation": "MCN",
+      "theme": {
+        "primary": "#00529c",
+        "accent": "#ffd204"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2377.png"
+    },
+    {
+      "key": "ncaam:235",
+      "teamId": "235",
+      "name": "Memphis Tigers",
+      "abbreviation": "MEM",
+      "theme": {
+        "primary": "#004991",
+        "accent": "#8e908f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/235.png"
+    },
+    {
+      "key": "ncaam:2382",
+      "teamId": "2382",
+      "name": "Mercer Bears",
+      "abbreviation": "MER",
+      "theme": {
+        "primary": "#ff7f29",
+        "accent": "#080808"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2382.png"
+    },
+    {
+      "key": "ncaam:2385",
+      "teamId": "2385",
+      "name": "Mercyhurst Lakers",
+      "abbreviation": "MERC",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2385.png"
+    },
+    {
+      "key": "ncaam:2771",
+      "teamId": "2771",
+      "name": "Merrimack Warriors",
+      "abbreviation": "MRMK",
+      "theme": {
+        "primary": "#2f4f93",
+        "accent": "#e8c535"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2771.png"
+    },
+    {
+      "key": "ncaam:193",
+      "teamId": "193",
+      "name": "Miami (OH) RedHawks",
+      "abbreviation": "M-OH",
+      "theme": {
+        "primary": "#c41230",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/193.png"
+    },
+    {
+      "key": "ncaam:2390",
+      "teamId": "2390",
+      "name": "Miami Hurricanes",
+      "abbreviation": "MIA",
+      "theme": {
+        "primary": "#f47423",
+        "accent": "#035131"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2390.png"
+    },
+    {
+      "key": "ncaam:127",
+      "teamId": "127",
+      "name": "Michigan State Spartans",
+      "abbreviation": "MSU",
+      "theme": {
+        "primary": "#173f35",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/127.png"
+    },
+    {
+      "key": "ncaam:130",
+      "teamId": "130",
+      "name": "Michigan Wolverines",
+      "abbreviation": "MICH",
+      "theme": {
+        "primary": "#00274c",
+        "accent": "#ffcb05"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/130.png"
+    },
+    {
+      "key": "ncaam:2393",
+      "teamId": "2393",
+      "name": "Middle Tennessee Blue Raiders",
+      "abbreviation": "MTSU",
+      "theme": {
+        "primary": "#036eb7",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2393.png"
+    },
+    {
+      "key": "ncaam:270",
+      "teamId": "270",
+      "name": "Milwaukee Panthers",
+      "abbreviation": "MILW",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#ffc20e"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/270.png"
+    },
+    {
+      "key": "ncaam:135",
+      "teamId": "135",
+      "name": "Minnesota Golden Gophers",
+      "abbreviation": "MINN",
+      "theme": {
+        "primary": "#5e0a2f",
+        "accent": "#fab41c"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/135.png"
+    },
+    {
+      "key": "ncaam:344",
+      "teamId": "344",
+      "name": "Mississippi State Bulldogs",
+      "abbreviation": "MSST",
+      "theme": {
+        "primary": "#5d1725",
+        "accent": "#c1c6c8"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/344.png"
+    },
+    {
+      "key": "ncaam:2400",
+      "teamId": "2400",
+      "name": "Mississippi Valley State Delta Devils",
+      "abbreviation": "MVSU",
+      "theme": {
+        "primary": "#005328",
+        "accent": "#cf2d34"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2400.png"
+    },
+    {
+      "key": "ncaam:2623",
+      "teamId": "2623",
+      "name": "Missouri State Bears",
+      "abbreviation": "MOST",
+      "theme": {
+        "primary": "#5e0009",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2623.png"
+    },
+    {
+      "key": "ncaam:142",
+      "teamId": "142",
+      "name": "Missouri Tigers",
+      "abbreviation": "MIZ",
+      "theme": {
+        "primary": "#f1b82d",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/142.png"
+    },
+    {
+      "key": "ncaam:2405",
+      "teamId": "2405",
+      "name": "Monmouth Hawks",
+      "abbreviation": "MONM",
+      "theme": {
+        "primary": "#051844",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2405.png"
+    },
+    {
+      "key": "ncaam:149",
+      "teamId": "149",
+      "name": "Montana Grizzlies",
+      "abbreviation": "MONT",
+      "theme": {
+        "primary": "#751d4a",
+        "accent": "#666666"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/149.png"
+    },
+    {
+      "key": "ncaam:147",
+      "teamId": "147",
+      "name": "Montana State Bobcats",
+      "abbreviation": "MTST",
+      "theme": {
+        "primary": "#00205c",
+        "accent": "#bc955c"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/147.png"
+    },
+    {
+      "key": "ncaam:2413",
+      "teamId": "2413",
+      "name": "Morehead State Eagles",
+      "abbreviation": "MORE",
+      "theme": {
+        "primary": "#094fa3",
+        "accent": "#fed91a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2413.png"
+    },
+    {
+      "key": "ncaam:2415",
+      "teamId": "2415",
+      "name": "Morgan State Bears",
+      "abbreviation": "MORG",
+      "theme": {
+        "primary": "#014786",
+        "accent": "#f47937"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2415.png"
+    },
+    {
+      "key": "ncaam:116",
+      "teamId": "116",
+      "name": "Mount St. Mary's Mountaineers",
+      "abbreviation": "MSM",
+      "theme": {
+        "primary": "#005596",
+        "accent": "#ebebeb"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/116.png"
+    },
+    {
+      "key": "ncaam:93",
+      "teamId": "93",
+      "name": "Murray State Racers",
+      "abbreviation": "MUR",
+      "theme": {
+        "primary": "#002148",
+        "accent": "#000e00"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/93.png"
+    },
+    {
+      "key": "ncaam:152",
+      "teamId": "152",
+      "name": "NC State Wolfpack",
+      "abbreviation": "NCSU",
+      "theme": {
+        "primary": "#cc0000",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/152.png"
+    },
+    {
+      "key": "ncaam:2885",
+      "teamId": "2885",
+      "name": "NJIT Highlanders",
+      "abbreviation": "NJIT",
+      "theme": {
+        "primary": "#ee3024",
+        "accent": "#df3e2e"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2885.png"
+    },
+    {
+      "key": "ncaam:2426",
+      "teamId": "2426",
+      "name": "Navy Midshipmen",
+      "abbreviation": "NAVY",
+      "theme": {
+        "primary": "#00225b",
+        "accent": "#b5a67c"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2426.png"
+    },
+    {
+      "key": "ncaam:158",
+      "teamId": "158",
+      "name": "Nebraska Cornhuskers",
+      "abbreviation": "NEB",
+      "theme": {
+        "primary": "#e31937",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/158.png"
+    },
+    {
+      "key": "ncaam:2440",
+      "teamId": "2440",
+      "name": "Nevada Wolf Pack",
+      "abbreviation": "NEV",
+      "theme": {
+        "primary": "#041e42",
+        "accent": "#8a8d8f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2440.png"
+    },
+    {
+      "key": "ncaam:160",
+      "teamId": "160",
+      "name": "New Hampshire Wildcats",
+      "abbreviation": "UNH",
+      "theme": {
+        "primary": "#004990",
+        "accent": "#c3c4c6"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/160.png"
+    },
+    {
+      "key": "ncaam:2441",
+      "teamId": "2441",
+      "name": "New Haven Chargers",
+      "abbreviation": "NHVN",
+      "theme": {
+        "primary": "#041e42",
+        "accent": "#ffc425"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2441.png"
+    },
+    {
+      "key": "ncaam:167",
+      "teamId": "167",
+      "name": "New Mexico Lobos",
+      "abbreviation": "UNM",
+      "theme": {
+        "primary": "#ba0c2f",
+        "accent": "#a7a8aa"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/167.png"
+    },
+    {
+      "key": "ncaam:166",
+      "teamId": "166",
+      "name": "New Mexico State Aggies",
+      "abbreviation": "NMSU",
+      "theme": {
+        "primary": "#7e141b",
+        "accent": "#231f20"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/166.png"
+    },
+    {
+      "key": "ncaam:315",
+      "teamId": "315",
+      "name": "Niagara Purple Eagles",
+      "abbreviation": "NIA",
+      "theme": {
+        "primary": "#69207e",
+        "accent": "#f0f0f0"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/315.png"
+    },
+    {
+      "key": "ncaam:2447",
+      "teamId": "2447",
+      "name": "Nicholls Colonels",
+      "abbreviation": "NICH",
+      "theme": {
+        "primary": "#c41230",
+        "accent": "#f0f0f0"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2447.png"
+    },
+    {
+      "key": "ncaam:2450",
+      "teamId": "2450",
+      "name": "Norfolk State Spartans",
+      "abbreviation": "NORF",
+      "theme": {
+        "primary": "#0c8968",
+        "accent": "#fdb813"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2450.png"
+    },
+    {
+      "key": "ncaam:2453",
+      "teamId": "2453",
+      "name": "North Alabama Lions",
+      "abbreviation": "UNA",
+      "theme": {
+        "primary": "#663399",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2453.png"
+    },
+    {
+      "key": "ncaam:2448",
+      "teamId": "2448",
+      "name": "North Carolina A&T Aggies",
+      "abbreviation": "NCAT",
+      "theme": {
+        "primary": "#0505aa",
+        "accent": "#004684"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2448.png"
+    },
+    {
+      "key": "ncaam:2428",
+      "teamId": "2428",
+      "name": "North Carolina Central Eagles",
+      "abbreviation": "NCCU",
+      "theme": {
+        "primary": "#880023",
+        "accent": "#c2c3c0"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2428.png"
+    },
+    {
+      "key": "ncaam:153",
+      "teamId": "153",
+      "name": "North Carolina Tar Heels",
+      "abbreviation": "UNC",
+      "theme": {
+        "primary": "#7bafd4",
+        "accent": "#13294b"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/153.png"
+    },
+    {
+      "key": "ncaam:155",
+      "teamId": "155",
+      "name": "North Dakota Fighting Hawks",
+      "abbreviation": "UND",
+      "theme": {
+        "primary": "#00a26b",
+        "accent": "#c2c3c0"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/155.png"
+    },
+    {
+      "key": "ncaam:2449",
+      "teamId": "2449",
+      "name": "North Dakota State Bison",
+      "abbreviation": "NDSU",
+      "theme": {
+        "primary": "#01402a",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2449.png"
+    },
+    {
+      "key": "ncaam:2454",
+      "teamId": "2454",
+      "name": "North Florida Ospreys",
+      "abbreviation": "UNF",
+      "theme": {
+        "primary": "#004b8d",
+        "accent": "#babcbe"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2454.png"
+    },
+    {
+      "key": "ncaam:249",
+      "teamId": "249",
+      "name": "North Texas Mean Green",
+      "abbreviation": "UNT",
+      "theme": {
+        "primary": "#068f33",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/249.png"
+    },
+    {
+      "key": "ncaam:111",
+      "teamId": "111",
+      "name": "Northeastern Huskies",
+      "abbreviation": "NE",
+      "theme": {
+        "primary": "#cc0001",
+        "accent": "#c2c3c0"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/111.png"
+    },
+    {
+      "key": "ncaam:2464",
+      "teamId": "2464",
+      "name": "Northern Arizona Lumberjacks",
+      "abbreviation": "NAU",
+      "theme": {
+        "primary": "#003976",
+        "accent": "#1b3069"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2464.png"
+    },
+    {
+      "key": "ncaam:2458",
+      "teamId": "2458",
+      "name": "Northern Colorado Bears",
+      "abbreviation": "UNCO",
+      "theme": {
+        "primary": "#13558d",
+        "accent": "#ffc533"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2458.png"
+    },
+    {
+      "key": "ncaam:2459",
+      "teamId": "2459",
+      "name": "Northern Illinois Huskies",
+      "abbreviation": "NIU",
+      "theme": {
+        "primary": "#c8102e",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2459.png"
+    },
+    {
+      "key": "ncaam:2460",
+      "teamId": "2460",
+      "name": "Northern Iowa Panthers",
+      "abbreviation": "UNI",
+      "theme": {
+        "primary": "#473282",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2460.png"
+    },
+    {
+      "key": "ncaam:94",
+      "teamId": "94",
+      "name": "Northern Kentucky Norse",
+      "abbreviation": "NKU",
+      "theme": {
+        "primary": "#ffc82e",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/94.png"
+    },
+    {
+      "key": "ncaam:2466",
+      "teamId": "2466",
+      "name": "Northwestern State Demons",
+      "abbreviation": "NWST",
+      "theme": {
+        "primary": "#492f91",
+        "accent": "#ed6118"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2466.png"
+    },
+    {
+      "key": "ncaam:77",
+      "teamId": "77",
+      "name": "Northwestern Wildcats",
+      "abbreviation": "NU",
+      "theme": {
+        "primary": "#492f92",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/77.png"
+    },
+    {
+      "key": "ncaam:87",
+      "teamId": "87",
+      "name": "Notre Dame Fighting Irish",
+      "abbreviation": "ND",
+      "theme": {
+        "primary": "#062340",
+        "accent": "#c99700"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/87.png"
+    },
+    {
+      "key": "ncaam:2473",
+      "teamId": "2473",
+      "name": "Oakland Golden Grizzlies",
+      "abbreviation": "OAK",
+      "theme": {
+        "primary": "#04091c",
+        "accent": "#bc955c"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2473.png"
+    },
+    {
+      "key": "ncaam:195",
+      "teamId": "195",
+      "name": "Ohio Bobcats",
+      "abbreviation": "OHIO",
+      "theme": {
+        "primary": "#154734",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/195.png"
+    },
+    {
+      "key": "ncaam:194",
+      "teamId": "194",
+      "name": "Ohio State Buckeyes",
+      "abbreviation": "OSU",
+      "theme": {
+        "primary": "#ba0c2f",
+        "accent": "#a8adb4"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/194.png"
+    },
+    {
+      "key": "ncaam:201",
+      "teamId": "201",
+      "name": "Oklahoma Sooners",
+      "abbreviation": "OU",
+      "theme": {
+        "primary": "#990000",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/201.png"
+    },
+    {
+      "key": "ncaam:197",
+      "teamId": "197",
+      "name": "Oklahoma State Cowboys",
+      "abbreviation": "OKST",
+      "theme": {
+        "primary": "#fe5c00",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/197.png"
+    },
+    {
+      "key": "ncaam:295",
+      "teamId": "295",
+      "name": "Old Dominion Monarchs",
+      "abbreviation": "ODU",
+      "theme": {
+        "primary": "#003768",
+        "accent": "#a1d2f1"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/295.png"
+    },
+    {
+      "key": "ncaam:145",
+      "teamId": "145",
+      "name": "Ole Miss Rebels",
+      "abbreviation": "MISS",
+      "theme": {
+        "primary": "#13294b",
+        "accent": "#cf142b"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/145.png"
+    },
+    {
+      "key": "ncaam:2437",
+      "teamId": "2437",
+      "name": "Omaha Mavericks",
+      "abbreviation": "OMA",
+      "theme": {
+        "primary": "#e3193e",
+        "accent": "#474648"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2437.png"
+    },
+    {
+      "key": "ncaam:198",
+      "teamId": "198",
+      "name": "Oral Roberts Golden Eagles",
+      "abbreviation": "ORU",
+      "theme": {
+        "primary": "#002462",
+        "accent": "#dac792"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/198.png"
+    },
+    {
+      "key": "ncaam:2483",
+      "teamId": "2483",
+      "name": "Oregon Ducks",
+      "abbreviation": "ORE",
+      "theme": {
+        "primary": "#00934b",
+        "accent": "#fff41b"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2483.png"
+    },
+    {
+      "key": "ncaam:204",
+      "teamId": "204",
+      "name": "Oregon State Beavers",
+      "abbreviation": "ORST",
+      "theme": {
+        "primary": "#dc4405",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/204.png"
+    },
+    {
+      "key": "ncaam:279",
+      "teamId": "279",
+      "name": "Pacific Tigers",
+      "abbreviation": "PAC",
+      "theme": {
+        "primary": "#f47820",
+        "accent": "#c2c3c0"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/279.png"
+    },
+    {
+      "key": "ncaam:213",
+      "teamId": "213",
+      "name": "Penn State Nittany Lions",
+      "abbreviation": "PSU",
+      "theme": {
+        "primary": "#061440",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/213.png"
+    },
+    {
+      "key": "ncaam:219",
+      "teamId": "219",
+      "name": "Pennsylvania Quakers",
+      "abbreviation": "PENN",
+      "theme": {
+        "primary": "#082a74",
+        "accent": "#a6163d"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/219.png"
+    },
+    {
+      "key": "ncaam:2492",
+      "teamId": "2492",
+      "name": "Pepperdine Waves",
+      "abbreviation": "PEPP",
+      "theme": {
+        "primary": "#003a72",
+        "accent": "#dc762f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2492.png"
+    },
+    {
+      "key": "ncaam:221",
+      "teamId": "221",
+      "name": "Pittsburgh Panthers",
+      "abbreviation": "PITT",
+      "theme": {
+        "primary": "#003594",
+        "accent": "#ffb81c"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/221.png"
+    },
+    {
+      "key": "ncaam:2501",
+      "teamId": "2501",
+      "name": "Portland Pilots",
+      "abbreviation": "PORT",
+      "theme": {
+        "primary": "#330072",
+        "accent": "#a8b3ba"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2501.png"
+    },
+    {
+      "key": "ncaam:2502",
+      "teamId": "2502",
+      "name": "Portland State Vikings",
+      "abbreviation": "PRST",
+      "theme": {
+        "primary": "#00311e",
+        "accent": "#ebebeb"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2502.png"
+    },
+    {
+      "key": "ncaam:2504",
+      "teamId": "2504",
+      "name": "Prairie View A&M Panthers",
+      "abbreviation": "PV",
+      "theme": {
+        "primary": "#582c83",
+        "accent": "#eaaa00"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2504.png"
+    },
+    {
+      "key": "ncaam:2506",
+      "teamId": "2506",
+      "name": "Presbyterian Blue Hose",
+      "abbreviation": "PRES",
+      "theme": {
+        "primary": "#194896",
+        "accent": "#990134"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2506.png"
+    },
+    {
+      "key": "ncaam:163",
+      "teamId": "163",
+      "name": "Princeton Tigers",
+      "abbreviation": "PRIN",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#ff6000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/163.png"
+    },
+    {
+      "key": "ncaam:2507",
+      "teamId": "2507",
+      "name": "Providence Friars",
+      "abbreviation": "PROV",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#a3a19e"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2507.png"
+    },
+    {
+      "key": "ncaam:2509",
+      "teamId": "2509",
+      "name": "Purdue Boilermakers",
+      "abbreviation": "PUR",
+      "theme": {
+        "primary": "#ceb888",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2509.png"
+    },
+    {
+      "key": "ncaam:2870",
+      "teamId": "2870",
+      "name": "Purdue Fort Wayne Mastodons",
+      "abbreviation": "PFW",
+      "theme": {
+        "primary": "#cfb991",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2870.png"
+    },
+    {
+      "key": "ncaam:2514",
+      "teamId": "2514",
+      "name": "Quinnipiac Bobcats",
+      "abbreviation": "QUIN",
+      "theme": {
+        "primary": "#041b43",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2514.png"
+    },
+    {
+      "key": "ncaam:2515",
+      "teamId": "2515",
+      "name": "Radford Highlanders",
+      "abbreviation": "RAD",
+      "theme": {
+        "primary": "#bc1515",
+        "accent": "#c2c3c0"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2515.png"
+    },
+    {
+      "key": "ncaam:227",
+      "teamId": "227",
+      "name": "Rhode Island Rams",
+      "abbreviation": "URI",
+      "theme": {
+        "primary": "#091f3f",
+        "accent": "#5ab3e8"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/227.png"
+    },
+    {
+      "key": "ncaam:242",
+      "teamId": "242",
+      "name": "Rice Owls",
+      "abbreviation": "RICE",
+      "theme": {
+        "primary": "#00205b",
+        "accent": "#c1c6c8"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/242.png"
+    },
+    {
+      "key": "ncaam:257",
+      "teamId": "257",
+      "name": "Richmond Spiders",
+      "abbreviation": "RICH",
+      "theme": {
+        "primary": "#9e0712",
+        "accent": "#b90b2e"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/257.png"
+    },
+    {
+      "key": "ncaam:2520",
+      "teamId": "2520",
+      "name": "Rider Broncs",
+      "abbreviation": "RID",
+      "theme": {
+        "primary": "#a80532",
+        "accent": "#ebebeb"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2520.png"
+    },
+    {
+      "key": "ncaam:2523",
+      "teamId": "2523",
+      "name": "Robert Morris Colonials",
+      "abbreviation": "RMU",
+      "theme": {
+        "primary": "#00214d",
+        "accent": "#a21d2b"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2523.png"
+    },
+    {
+      "key": "ncaam:164",
+      "teamId": "164",
+      "name": "Rutgers Scarlet Knights",
+      "abbreviation": "RUTG",
+      "theme": {
+        "primary": "#ce0e2d",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/164.png"
+    },
+    {
+      "key": "ncaam:2545",
+      "teamId": "2545",
+      "name": "SE Louisiana Lions",
+      "abbreviation": "SELA",
+      "theme": {
+        "primary": "#215732",
+        "accent": "#ffc72c"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2545.png"
+    },
+    {
+      "key": "ncaam:2565",
+      "teamId": "2565",
+      "name": "SIU Edwardsville Cougars",
+      "abbreviation": "SIUE",
+      "theme": {
+        "primary": "#eb1c23",
+        "accent": "#080808"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2565.png"
+    },
+    {
+      "key": "ncaam:2567",
+      "teamId": "2567",
+      "name": "SMU Mustangs",
+      "abbreviation": "SMU",
+      "theme": {
+        "primary": "#a80000",
+        "accent": "#0033a1"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2567.png"
+    },
+    {
+      "key": "ncaam:16",
+      "teamId": "16",
+      "name": "Sacramento State Hornets",
+      "abbreviation": "SAC",
+      "theme": {
+        "primary": "#00573c",
+        "accent": "#cdb97d"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/16.png"
+    },
+    {
+      "key": "ncaam:2529",
+      "teamId": "2529",
+      "name": "Sacred Heart Pioneers",
+      "abbreviation": "SHU",
+      "theme": {
+        "primary": "#a40012",
+        "accent": "#c29472"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2529.png"
+    },
+    {
+      "key": "ncaam:2603",
+      "teamId": "2603",
+      "name": "Saint Joseph's Hawks",
+      "abbreviation": "JOES",
+      "theme": {
+        "primary": "#9e1b32",
+        "accent": "#6c6f70"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2603.png"
+    },
+    {
+      "key": "ncaam:139",
+      "teamId": "139",
+      "name": "Saint Louis Billikens",
+      "abbreviation": "SLU",
+      "theme": {
+        "primary": "#00539c",
+        "accent": "#ebebeb"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/139.png"
+    },
+    {
+      "key": "ncaam:2608",
+      "teamId": "2608",
+      "name": "Saint Mary's Gaels",
+      "abbreviation": "SMC",
+      "theme": {
+        "primary": "#d80024",
+        "accent": "#003057"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2608.png"
+    },
+    {
+      "key": "ncaam:2612",
+      "teamId": "2612",
+      "name": "Saint Peter's Peacocks",
+      "abbreviation": "SPU",
+      "theme": {
+        "primary": "#004cc2",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2612.png"
+    },
+    {
+      "key": "ncaam:2534",
+      "teamId": "2534",
+      "name": "Sam Houston Bearkats",
+      "abbreviation": "SHSU",
+      "theme": {
+        "primary": "#f56423",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2534.png"
+    },
+    {
+      "key": "ncaam:2535",
+      "teamId": "2535",
+      "name": "Samford Bulldogs",
+      "abbreviation": "SAM",
+      "theme": {
+        "primary": "#005485",
+        "accent": "#bc0023"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2535.png"
+    },
+    {
+      "key": "ncaam:21",
+      "teamId": "21",
+      "name": "San Diego State Aztecs",
+      "abbreviation": "SDSU",
+      "theme": {
+        "primary": "#a6192e",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/21.png"
+    },
+    {
+      "key": "ncaam:301",
+      "teamId": "301",
+      "name": "San Diego Toreros",
+      "abbreviation": "USD",
+      "theme": {
+        "primary": "#2f99d4",
+        "accent": "#2f99d4"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/301.png"
+    },
+    {
+      "key": "ncaam:2539",
+      "teamId": "2539",
+      "name": "San Francisco Dons",
+      "abbreviation": "SF",
+      "theme": {
+        "primary": "#005a36",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2539.png"
+    },
+    {
+      "key": "ncaam:23",
+      "teamId": "23",
+      "name": "San José State Spartans",
+      "abbreviation": "SJSU",
+      "theme": {
+        "primary": "#0038a8",
+        "accent": "#ffb81a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/23.png"
+    },
+    {
+      "key": "ncaam:2541",
+      "teamId": "2541",
+      "name": "Santa Clara Broncos",
+      "abbreviation": "SCU",
+      "theme": {
+        "primary": "#690b0b",
+        "accent": "#101010"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2541.png"
+    },
+    {
+      "key": "ncaam:2547",
+      "teamId": "2547",
+      "name": "Seattle U Redhawks",
+      "abbreviation": "SEA",
+      "theme": {
+        "primary": "#bf2e1a",
+        "accent": "#c2c3c0"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2547.png"
+    },
+    {
+      "key": "ncaam:2550",
+      "teamId": "2550",
+      "name": "Seton Hall Pirates",
+      "abbreviation": "HALL",
+      "theme": {
+        "primary": "#0857b1",
+        "accent": "#8a8d8f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2550.png"
+    },
+    {
+      "key": "ncaam:2561",
+      "teamId": "2561",
+      "name": "Siena Saints",
+      "abbreviation": "SIE",
+      "theme": {
+        "primary": "#037961",
+        "accent": "#eea60f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2561.png"
+    },
+    {
+      "key": "ncaam:6",
+      "teamId": "6",
+      "name": "South Alabama Jaguars",
+      "abbreviation": "USA",
+      "theme": {
+        "primary": "#00205b",
+        "accent": "#bf0d3e"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/6.png"
+    },
+    {
+      "key": "ncaam:2579",
+      "teamId": "2579",
+      "name": "South Carolina Gamecocks",
+      "abbreviation": "SC",
+      "theme": {
+        "primary": "#73000a",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2579.png"
+    },
+    {
+      "key": "ncaam:2569",
+      "teamId": "2569",
+      "name": "South Carolina State Bulldogs",
+      "abbreviation": "SCST",
+      "theme": {
+        "primary": "#7d1315",
+        "accent": "#104897"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2569.png"
+    },
+    {
+      "key": "ncaam:2908",
+      "teamId": "2908",
+      "name": "South Carolina Upstate Spartans",
+      "abbreviation": "UPST",
+      "theme": {
+        "primary": "#008545",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2908.png"
+    },
+    {
+      "key": "ncaam:233",
+      "teamId": "233",
+      "name": "South Dakota Coyotes",
+      "abbreviation": "SDAK",
+      "theme": {
+        "primary": "#cd1241",
+        "accent": "#f0f0f0"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/233.png"
+    },
+    {
+      "key": "ncaam:2571",
+      "teamId": "2571",
+      "name": "South Dakota State Jackrabbits",
+      "abbreviation": "SDST",
+      "theme": {
+        "primary": "#0033a0",
+        "accent": "#ffd100"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2571.png"
+    },
+    {
+      "key": "ncaam:58",
+      "teamId": "58",
+      "name": "South Florida Bulls",
+      "abbreviation": "USF",
+      "theme": {
+        "primary": "#006747",
+        "accent": "#cfc493"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/58.png"
+    },
+    {
+      "key": "ncaam:2546",
+      "teamId": "2546",
+      "name": "Southeast Missouri State Redhawks",
+      "abbreviation": "SEMO",
+      "theme": {
+        "primary": "#c8102e",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2546.png"
+    },
+    {
+      "key": "ncaam:79",
+      "teamId": "79",
+      "name": "Southern Illinois Salukis",
+      "abbreviation": "SIU",
+      "theme": {
+        "primary": "#85283d",
+        "accent": "#c2c3c0"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/79.png"
+    },
+    {
+      "key": "ncaam:2582",
+      "teamId": "2582",
+      "name": "Southern Jaguars",
+      "abbreviation": "SOU",
+      "theme": {
+        "primary": "#004b97",
+        "accent": "#ffc82d"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2582.png"
+    },
+    {
+      "key": "ncaam:2572",
+      "teamId": "2572",
+      "name": "Southern Miss Golden Eagles",
+      "abbreviation": "USM",
+      "theme": {
+        "primary": "#ffc72c",
+        "accent": "#231f20"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2572.png"
+    },
+    {
+      "key": "ncaam:253",
+      "teamId": "253",
+      "name": "Southern Utah Thunderbirds",
+      "abbreviation": "SUU",
+      "theme": {
+        "primary": "#c72026",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/253.png"
+    },
+    {
+      "key": "ncaam:179",
+      "teamId": "179",
+      "name": "St. Bonaventure Bonnies",
+      "abbreviation": "SBU",
+      "theme": {
+        "primary": "#70261d",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/179.png"
+    },
+    {
+      "key": "ncaam:2599",
+      "teamId": "2599",
+      "name": "St. John's Red Storm",
+      "abbreviation": "SJU",
+      "theme": {
+        "primary": "#d10000",
+        "accent": "#101010"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2599.png"
+    },
+    {
+      "key": "ncaam:2900",
+      "teamId": "2900",
+      "name": "St. Thomas Tommies",
+      "abbreviation": "STMN",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2900.png"
+    },
+    {
+      "key": "ncaam:24",
+      "teamId": "24",
+      "name": "Stanford Cardinal",
+      "abbreviation": "STAN",
+      "theme": {
+        "primary": "#8c1515",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/24.png"
+    },
+    {
+      "key": "ncaam:2617",
+      "teamId": "2617",
+      "name": "Stephen F. Austin Lumberjacks",
+      "abbreviation": "SFA",
+      "theme": {
+        "primary": "#393996",
+        "accent": "#bec0c2"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2617.png"
+    },
+    {
+      "key": "ncaam:56",
+      "teamId": "56",
+      "name": "Stetson Hatters",
+      "abbreviation": "STET",
+      "theme": {
+        "primary": "#0a5640",
+        "accent": "#56854e"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/56.png"
+    },
+    {
+      "key": "ncaam:284",
+      "teamId": "284",
+      "name": "Stonehill Skyhawks",
+      "abbreviation": "STO",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/284.png"
+    },
+    {
+      "key": "ncaam:2619",
+      "teamId": "2619",
+      "name": "Stony Brook Seawolves",
+      "abbreviation": "STBK",
+      "theme": {
+        "primary": "#990000",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2619.png"
+    },
+    {
+      "key": "ncaam:183",
+      "teamId": "183",
+      "name": "Syracuse Orange",
+      "abbreviation": "SYR",
+      "theme": {
+        "primary": "#000e54",
+        "accent": "#ff431b"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/183.png"
+    },
+    {
+      "key": "ncaam:2628",
+      "teamId": "2628",
+      "name": "TCU Horned Frogs",
+      "abbreviation": "TCU",
+      "theme": {
+        "primary": "#4d1979",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2628.png"
+    },
+    {
+      "key": "ncaam:2627",
+      "teamId": "2627",
+      "name": "Tarleton State Texans",
+      "abbreviation": "TAR",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2627.png"
+    },
+    {
+      "key": "ncaam:218",
+      "teamId": "218",
+      "name": "Temple Owls",
+      "abbreviation": "TEM",
+      "theme": {
+        "primary": "#a41e35",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/218.png"
+    },
+    {
+      "key": "ncaam:2634",
+      "teamId": "2634",
+      "name": "Tennessee State Tigers",
+      "abbreviation": "TNST",
+      "theme": {
+        "primary": "#171796",
+        "accent": "#f0f0f0"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2634.png"
+    },
+    {
+      "key": "ncaam:2635",
+      "teamId": "2635",
+      "name": "Tennessee Tech Golden Eagles",
+      "abbreviation": "TNTC",
+      "theme": {
+        "primary": "#5a4099",
+        "accent": "#ffde00"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2635.png"
+    },
+    {
+      "key": "ncaam:2633",
+      "teamId": "2633",
+      "name": "Tennessee Volunteers",
+      "abbreviation": "TENN",
+      "theme": {
+        "primary": "#ff8200",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2633.png"
+    },
+    {
+      "key": "ncaam:245",
+      "teamId": "245",
+      "name": "Texas A&M Aggies",
+      "abbreviation": "TA&M",
+      "theme": {
+        "primary": "#500000",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/245.png"
+    },
+    {
+      "key": "ncaam:357",
+      "teamId": "357",
+      "name": "Texas A&M-Corpus Christi Islanders",
+      "abbreviation": "AMCC",
+      "theme": {
+        "primary": "#0067c5",
+        "accent": "#007f3e"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/357.png"
+    },
+    {
+      "key": "ncaam:251",
+      "teamId": "251",
+      "name": "Texas Longhorns",
+      "abbreviation": "TEX",
+      "theme": {
+        "primary": "#af5c37",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png"
+    },
+    {
+      "key": "ncaam:2640",
+      "teamId": "2640",
+      "name": "Texas Southern Tigers",
+      "abbreviation": "TXSO",
+      "theme": {
+        "primary": "#860038",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2640.png"
+    },
+    {
+      "key": "ncaam:326",
+      "teamId": "326",
+      "name": "Texas State Bobcats",
+      "abbreviation": "TXST",
+      "theme": {
+        "primary": "#501214",
+        "accent": "#6a5638"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/326.png"
+    },
+    {
+      "key": "ncaam:2641",
+      "teamId": "2641",
+      "name": "Texas Tech Red Raiders",
+      "abbreviation": "TTU",
+      "theme": {
+        "primary": "#da291c",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2641.png"
+    },
+    {
+      "key": "ncaam:2643",
+      "teamId": "2643",
+      "name": "The Citadel Bulldogs",
+      "abbreviation": "CIT",
+      "theme": {
+        "primary": "#7badd3",
+        "accent": "#002856"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2643.png"
+    },
+    {
+      "key": "ncaam:2649",
+      "teamId": "2649",
+      "name": "Toledo Rockets",
+      "abbreviation": "TOL",
+      "theme": {
+        "primary": "#0b2240",
+        "accent": "#ffcd00"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2649.png"
+    },
+    {
+      "key": "ncaam:119",
+      "teamId": "119",
+      "name": "Towson Tigers",
+      "abbreviation": "TOW",
+      "theme": {
+        "primary": "#ffc229",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/119.png"
+    },
+    {
+      "key": "ncaam:2653",
+      "teamId": "2653",
+      "name": "Troy Trojans",
+      "abbreviation": "TROY",
+      "theme": {
+        "primary": "#862633",
+        "accent": "#b1b1b1"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2653.png"
+    },
+    {
+      "key": "ncaam:2655",
+      "teamId": "2655",
+      "name": "Tulane Green Wave",
+      "abbreviation": "TULN",
+      "theme": {
+        "primary": "#006747",
+        "accent": "#418fde"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2655.png"
+    },
+    {
+      "key": "ncaam:202",
+      "teamId": "202",
+      "name": "Tulsa Golden Hurricane",
+      "abbreviation": "TLSA",
+      "theme": {
+        "primary": "#003595",
+        "accent": "#d0b787"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/202.png"
+    },
+    {
+      "key": "ncaam:5",
+      "teamId": "5",
+      "name": "UAB Blazers",
+      "abbreviation": "UAB",
+      "theme": {
+        "primary": "#1a5632",
+        "accent": "#fdb913"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/5.png"
+    },
+    {
+      "key": "ncaam:399",
+      "teamId": "399",
+      "name": "UAlbany Great Danes",
+      "abbreviation": "UALB",
+      "theme": {
+        "primary": "#3d2777",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/399.png"
+    },
+    {
+      "key": "ncaam:302",
+      "teamId": "302",
+      "name": "UC Davis Aggies",
+      "abbreviation": "UCD",
+      "theme": {
+        "primary": "#002855",
+        "accent": "#c3c4c6"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/302.png"
+    },
+    {
+      "key": "ncaam:300",
+      "teamId": "300",
+      "name": "UC Irvine Anteaters",
+      "abbreviation": "UCI",
+      "theme": {
+        "primary": "#002b5c",
+        "accent": "#fec52e"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/300.png"
+    },
+    {
+      "key": "ncaam:27",
+      "teamId": "27",
+      "name": "UC Riverside Highlanders",
+      "abbreviation": "UCR",
+      "theme": {
+        "primary": "#14234f",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/27.png"
+    },
+    {
+      "key": "ncaam:28",
+      "teamId": "28",
+      "name": "UC San Diego Tritons",
+      "abbreviation": "UCSD",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#ffcd00"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/28.png"
+    },
+    {
+      "key": "ncaam:2540",
+      "teamId": "2540",
+      "name": "UC Santa Barbara Gauchos",
+      "abbreviation": "UCSB",
+      "theme": {
+        "primary": "#1e1840",
+        "accent": "#febc11"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2540.png"
+    },
+    {
+      "key": "ncaam:2116",
+      "teamId": "2116",
+      "name": "UCF Knights",
+      "abbreviation": "UCF",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#b4a169"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2116.png"
+    },
+    {
+      "key": "ncaam:26",
+      "teamId": "26",
+      "name": "UCLA Bruins",
+      "abbreviation": "UCLA",
+      "theme": {
+        "primary": "#2774ae",
+        "accent": "#f2a900"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/26.png"
+    },
+    {
+      "key": "ncaam:41",
+      "teamId": "41",
+      "name": "UConn Huskies",
+      "abbreviation": "CONN",
+      "theme": {
+        "primary": "#0c2340",
+        "accent": "#a2aaad"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/41.png"
+    },
+    {
+      "key": "ncaam:82",
+      "teamId": "82",
+      "name": "UIC Flames",
+      "abbreviation": "UIC",
+      "theme": {
+        "primary": "#001e62",
+        "accent": "#d50032"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/82.png"
+    },
+    {
+      "key": "ncaam:2433",
+      "teamId": "2433",
+      "name": "UL Monroe Warhawks",
+      "abbreviation": "ULM",
+      "theme": {
+        "primary": "#840029",
+        "accent": "#fdb913"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2433.png"
+    },
+    {
+      "key": "ncaam:2378",
+      "teamId": "2378",
+      "name": "UMBC Retrievers",
+      "abbreviation": "UMBC",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#ad860a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2378.png"
+    },
+    {
+      "key": "ncaam:2349",
+      "teamId": "2349",
+      "name": "UMass Lowell River Hawks",
+      "abbreviation": "UML",
+      "theme": {
+        "primary": "#00529c",
+        "accent": "#cf1f2f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2349.png"
+    },
+    {
+      "key": "ncaam:2427",
+      "teamId": "2427",
+      "name": "UNC Asheville Bulldogs",
+      "abbreviation": "UNCA",
+      "theme": {
+        "primary": "#003da5",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2427.png"
+    },
+    {
+      "key": "ncaam:2430",
+      "teamId": "2430",
+      "name": "UNC Greensboro Spartans",
+      "abbreviation": "UNCG",
+      "theme": {
+        "primary": "#003559",
+        "accent": "#ffd90a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2430.png"
+    },
+    {
+      "key": "ncaam:350",
+      "teamId": "350",
+      "name": "UNC Wilmington Seahawks",
+      "abbreviation": "UNCW",
+      "theme": {
+        "primary": "#00665e",
+        "accent": "#ffda00"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/350.png"
+    },
+    {
+      "key": "ncaam:2439",
+      "teamId": "2439",
+      "name": "UNLV Rebels",
+      "abbreviation": "UNLV",
+      "theme": {
+        "primary": "#cf0a2c",
+        "accent": "#cac8c8"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2439.png"
+    },
+    {
+      "key": "ncaam:30",
+      "teamId": "30",
+      "name": "USC Trojans",
+      "abbreviation": "USC",
+      "theme": {
+        "primary": "#9d2235",
+        "accent": "#ffc72c"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/30.png"
+    },
+    {
+      "key": "ncaam:250",
+      "teamId": "250",
+      "name": "UT Arlington Mavericks",
+      "abbreviation": "UTA",
+      "theme": {
+        "primary": "#004b7c",
+        "accent": "#f58024"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/250.png"
+    },
+    {
+      "key": "ncaam:2630",
+      "teamId": "2630",
+      "name": "UT Martin Skyhawks",
+      "abbreviation": "UTM",
+      "theme": {
+        "primary": "#ff6700",
+        "accent": "#102a5c"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2630.png"
+    },
+    {
+      "key": "ncaam:292",
+      "teamId": "292",
+      "name": "UT Rio Grande Valley Vaqueros",
+      "abbreviation": "RGV",
+      "theme": {
+        "primary": "#dc6000",
+        "accent": "#e1732d"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/292.png"
+    },
+    {
+      "key": "ncaam:2638",
+      "teamId": "2638",
+      "name": "UTEP Miners",
+      "abbreviation": "UTEP",
+      "theme": {
+        "primary": "#ff8200",
+        "accent": "#041e42"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2638.png"
+    },
+    {
+      "key": "ncaam:2636",
+      "teamId": "2636",
+      "name": "UTSA Roadrunners",
+      "abbreviation": "UTSA",
+      "theme": {
+        "primary": "#0c2340",
+        "accent": "#f15a22"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2636.png"
+    },
+    {
+      "key": "ncaam:328",
+      "teamId": "328",
+      "name": "Utah State Aggies",
+      "abbreviation": "USU",
+      "theme": {
+        "primary": "#0f2439",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/328.png"
+    },
+    {
+      "key": "ncaam:3101",
+      "teamId": "3101",
+      "name": "Utah Tech Trailblazers",
+      "abbreviation": "UTU",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/3101.png"
+    },
+    {
+      "key": "ncaam:254",
+      "teamId": "254",
+      "name": "Utah Utes",
+      "abbreviation": "UTAH",
+      "theme": {
+        "primary": "#be0000",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/254.png"
+    },
+    {
+      "key": "ncaam:3084",
+      "teamId": "3084",
+      "name": "Utah Valley Wolverines",
+      "abbreviation": "UVU",
+      "theme": {
+        "primary": "#004812",
+        "accent": "#e1c736"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/3084.png"
+    },
+    {
+      "key": "ncaam:2670",
+      "teamId": "2670",
+      "name": "VCU Rams",
+      "abbreviation": "VCU",
+      "theme": {
+        "primary": "#ffaf00",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2670.png"
+    },
+    {
+      "key": "ncaam:2678",
+      "teamId": "2678",
+      "name": "VMI Keydets",
+      "abbreviation": "VMI",
+      "theme": {
+        "primary": "#ae122a",
+        "accent": "#000000"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2678.png"
+    },
+    {
+      "key": "ncaam:2674",
+      "teamId": "2674",
+      "name": "Valparaiso Beacons",
+      "abbreviation": "VAL",
+      "theme": {
+        "primary": "#794500",
+        "accent": "#31556f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2674.png"
+    },
+    {
+      "key": "ncaam:238",
+      "teamId": "238",
+      "name": "Vanderbilt Commodores",
+      "abbreviation": "VAN",
+      "theme": {
+        "primary": "#000000",
+        "accent": "#cfae70"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/238.png"
+    },
+    {
+      "key": "ncaam:261",
+      "teamId": "261",
+      "name": "Vermont Catamounts",
+      "abbreviation": "UVM",
+      "theme": {
+        "primary": "#154734",
+        "accent": "#ffc72c"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/261.png"
+    },
+    {
+      "key": "ncaam:222",
+      "teamId": "222",
+      "name": "Villanova Wildcats",
+      "abbreviation": "VILL",
+      "theme": {
+        "primary": "#00205b",
+        "accent": "#13b5ea"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/222.png"
+    },
+    {
+      "key": "ncaam:258",
+      "teamId": "258",
+      "name": "Virginia Cavaliers",
+      "abbreviation": "UVA",
+      "theme": {
+        "primary": "#232d4b",
+        "accent": "#f84c1e"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/258.png"
+    },
+    {
+      "key": "ncaam:259",
+      "teamId": "259",
+      "name": "Virginia Tech Hokies",
+      "abbreviation": "VT",
+      "theme": {
+        "primary": "#6a2c3e",
+        "accent": "#cf4520"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/259.png"
+    },
+    {
+      "key": "ncaam:2681",
+      "teamId": "2681",
+      "name": "Wagner Seahawks",
+      "abbreviation": "WAG",
+      "theme": {
+        "primary": "#00483a",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2681.png"
+    },
+    {
+      "key": "ncaam:154",
+      "teamId": "154",
+      "name": "Wake Forest Demon Deacons",
+      "abbreviation": "WAKE",
+      "theme": {
+        "primary": "#ceb888",
+        "accent": "#2c2a29"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/154.png"
+    },
+    {
+      "key": "ncaam:264",
+      "teamId": "264",
+      "name": "Washington Huskies",
+      "abbreviation": "WASH",
+      "theme": {
+        "primary": "#33006f",
+        "accent": "#e8d3a2"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/264.png"
+    },
+    {
+      "key": "ncaam:265",
+      "teamId": "265",
+      "name": "Washington State Cougars",
+      "abbreviation": "WSU",
+      "theme": {
+        "primary": "#a60f2d",
+        "accent": "#4d4d4d"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/265.png"
+    },
+    {
+      "key": "ncaam:2692",
+      "teamId": "2692",
+      "name": "Weber State Wildcats",
+      "abbreviation": "WEB",
+      "theme": {
+        "primary": "#18005a",
+        "accent": "#ebebeb"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2692.png"
+    },
+    {
+      "key": "ncaam:2697",
+      "teamId": "2697",
+      "name": "West Florida Argonauts",
+      "abbreviation": "UWF",
+      "theme": {
+        "primary": "#087dc2",
+        "accent": "#03b186"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2697.png"
+    },
+    {
+      "key": "ncaam:2698",
+      "teamId": "2698",
+      "name": "West Georgia Wolves",
+      "abbreviation": "WGA",
+      "theme": {
+        "primary": "#0033a1",
+        "accent": "#db1a21"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2698.png"
+    },
+    {
+      "key": "ncaam:277",
+      "teamId": "277",
+      "name": "West Virginia Mountaineers",
+      "abbreviation": "WVU",
+      "theme": {
+        "primary": "#eaaa00",
+        "accent": "#002855"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/277.png"
+    },
+    {
+      "key": "ncaam:2717",
+      "teamId": "2717",
+      "name": "Western Carolina Catamounts",
+      "abbreviation": "WCU",
+      "theme": {
+        "primary": "#492f91",
+        "accent": "#bf9e70"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2717.png"
+    },
+    {
+      "key": "ncaam:2710",
+      "teamId": "2710",
+      "name": "Western Illinois Leathernecks",
+      "abbreviation": "WIU",
+      "theme": {
+        "primary": "#4e1e8a",
+        "accent": "#ffc90a"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2710.png"
+    },
+    {
+      "key": "ncaam:98",
+      "teamId": "98",
+      "name": "Western Kentucky Hilltoppers",
+      "abbreviation": "WKU",
+      "theme": {
+        "primary": "#e13a3e",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/98.png"
+    },
+    {
+      "key": "ncaam:2711",
+      "teamId": "2711",
+      "name": "Western Michigan Broncos",
+      "abbreviation": "WMU",
+      "theme": {
+        "primary": "#532e1f",
+        "accent": "#f1c500"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2711.png"
+    },
+    {
+      "key": "ncaam:2724",
+      "teamId": "2724",
+      "name": "Wichita State Shockers",
+      "abbreviation": "WICH",
+      "theme": {
+        "primary": "#ffcd00",
+        "accent": "#27251f"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2724.png"
+    },
+    {
+      "key": "ncaam:2729",
+      "teamId": "2729",
+      "name": "William & Mary Tribe",
+      "abbreviation": "W&M",
+      "theme": {
+        "primary": "#115740",
+        "accent": "#f0b323"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2729.png"
+    },
+    {
+      "key": "ncaam:2737",
+      "teamId": "2737",
+      "name": "Winthrop Eagles",
+      "abbreviation": "WIN",
+      "theme": {
+        "primary": "#9e0b0e",
+        "accent": "#fdb41e"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2737.png"
+    },
+    {
+      "key": "ncaam:275",
+      "teamId": "275",
+      "name": "Wisconsin Badgers",
+      "abbreviation": "WIS",
+      "theme": {
+        "primary": "#a00000",
+        "accent": "#ffffff"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/275.png"
+    },
+    {
+      "key": "ncaam:2747",
+      "teamId": "2747",
+      "name": "Wofford Terriers",
+      "abbreviation": "WOF",
+      "theme": {
+        "primary": "#533b22",
+        "accent": "#f0f0f0"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2747.png"
+    },
+    {
+      "key": "ncaam:2750",
+      "teamId": "2750",
+      "name": "Wright State Raiders",
+      "abbreviation": "WRST",
+      "theme": {
+        "primary": "#cba052",
+        "accent": "#cba052"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2750.png"
+    },
+    {
+      "key": "ncaam:2751",
+      "teamId": "2751",
+      "name": "Wyoming Cowboys",
+      "abbreviation": "WYO",
+      "theme": {
+        "primary": "#492f24",
+        "accent": "#ffc425"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2751.png"
+    },
+    {
+      "key": "ncaam:2752",
+      "teamId": "2752",
+      "name": "Xavier Musketeers",
+      "abbreviation": "XAV",
+      "theme": {
+        "primary": "#21304e",
+        "accent": "#a5a7a8"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2752.png"
+    },
+    {
+      "key": "ncaam:43",
+      "teamId": "43",
+      "name": "Yale Bulldogs",
+      "abbreviation": "YALE",
+      "theme": {
+        "primary": "#004a81",
+        "accent": "#286dc0"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/43.png"
+    },
+    {
+      "key": "ncaam:2754",
+      "teamId": "2754",
+      "name": "Youngstown State Penguins",
+      "abbreviation": "YSU",
+      "theme": {
+        "primary": "#e51935",
+        "accent": "#690717"
+      },
+      "logoUrl": "https://a.espncdn.com/i/teamlogos/ncaa/500/2754.png"
+    }
+  ]
+}

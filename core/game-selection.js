@@ -179,7 +179,7 @@
     if (candidate.rankings.length >= 2) score += 20;
     if (candidate.spread !== null) score += Math.max(0, 25 - Math.abs(candidate.spread) * 3);
     if (candidate.scoreMargin !== null) {
-      const scale = { baseball: 6, hockey: 7, soccer: 8, football: 1.5, "college-football": 1.5, basketball: 0.75 }[candidate.sport] ?? 2;
+      const scale = { baseball: 6, hockey: 7, soccer: 8, football: 1.5, "college-football": 1.5, basketball: 0.75, "college-basketball": 0.75 }[candidate.sport] ?? 2;
       score += Math.max(0, 20 - candidate.scoreMargin * scale);
       score += Math.min(10, Math.max(0, Number(candidate.period || 0)));
     }

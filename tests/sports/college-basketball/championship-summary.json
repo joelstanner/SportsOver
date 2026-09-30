@@ -1,0 +1,219 @@
+{
+  "header": {
+    "id": "401746082",
+    "season": {
+      "year": 2025,
+      "current": false,
+      "type": 3
+    },
+    "competitions": [
+      {
+        "id": "401746082",
+        "date": "2025-04-08T00:50Z",
+        "competitors": [
+          {
+            "id": "248",
+            "homeAway": "home",
+            "team": {
+              "id": "248",
+              "abbreviation": "HOU",
+              "displayName": "Houston Cougars",
+              "logos": [
+                {
+                  "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/248.png",
+                  "width": 500,
+                  "height": 500,
+                  "alt": "",
+                  "rel": [
+                    "full",
+                    "default"
+                  ],
+                  "lastUpdated": "2025-12-23T01:44Z"
+                }
+              ]
+            },
+            "score": "63",
+            "record": [
+              {
+                "type": "total",
+                "summary": "35-5",
+                "displayValue": "35-5"
+              },
+              {
+                "type": "home",
+                "summary": "16-1",
+                "displayValue": "16-1"
+              },
+              {
+                "type": "vsconf",
+                "summary": "19-1",
+                "displayValue": "19-1"
+              }
+            ]
+          },
+          {
+            "id": "57",
+            "homeAway": "away",
+            "team": {
+              "id": "57",
+              "abbreviation": "FLA",
+              "displayName": "Florida Gators",
+              "logos": [
+                {
+                  "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/57.png",
+                  "width": 500,
+                  "height": 500,
+                  "alt": "",
+                  "rel": [
+                    "full",
+                    "default"
+                  ],
+                  "lastUpdated": "2025-12-19T23:48Z"
+                }
+              ]
+            },
+            "score": "65",
+            "record": [
+              {
+                "type": "total",
+                "summary": "36-4",
+                "displayValue": "36-4"
+              },
+              {
+                "type": "road",
+                "summary": "7-3",
+                "displayValue": "7-3"
+              },
+              {
+                "type": "vsconf",
+                "summary": "14-4",
+                "displayValue": "14-4"
+              }
+            ]
+          }
+        ],
+        "status": {
+          "type": {
+            "id": "3",
+            "name": "STATUS_FINAL",
+            "state": "post",
+            "completed": true,
+            "description": "Final",
+            "detail": "Final",
+            "shortDetail": "Final"
+          }
+        }
+      }
+    ]
+  },
+  "boxscore": {
+    "teams": [
+      {
+        "team": {
+          "id": "57"
+        },
+        "statistics": [
+          {
+            "name": "fieldGoalPct",
+            "displayValue": "40",
+            "abbreviation": "FG%",
+            "label": "Field Goal %"
+          },
+          {
+            "name": "totalRebounds",
+            "displayValue": "40",
+            "abbreviation": "REB",
+            "label": "Rebounds"
+          }
+        ]
+      },
+      {
+        "team": {
+          "id": "248"
+        },
+        "statistics": [
+          {
+            "name": "fieldGoalPct",
+            "displayValue": "35",
+            "abbreviation": "FG%",
+            "label": "Field Goal %"
+          },
+          {
+            "name": "totalRebounds",
+            "displayValue": "39",
+            "abbreviation": "REB",
+            "label": "Rebounds"
+          }
+        ]
+      }
+    ]
+  },
+  "plays": [
+    {
+      "id": "401746082113523265",
+      "sequenceNumber": "113523265",
+      "type": {
+        "id": "540",
+        "text": "MadeFreeThrow"
+      },
+      "text": "Denzel Aberdeen made Free Throw.",
+      "awayScore": 65,
+      "homeScore": 63,
+      "period": {
+        "number": 2,
+        "displayValue": "2nd Half"
+      },
+      "clock": {
+        "displayValue": "0:19"
+      },
+      "scoringPlay": true,
+      "scoreValue": 1,
+      "team": {
+        "id": "57"
+      },
+      "participants": [
+        {
+          "athlete": {
+            "id": "5105527"
+          }
+        }
+      ],
+      "wallclock": "2025-04-08T03:07:25Z",
+      "shootingPlay": true,
+      "coordinate": {
+        "x": 25,
+        "y": 0
+      },
+      "pointsAttempted": 1,
+      "shortDescription": "+1 Point"
+    },
+    {
+      "id": "401746082113523352",
+      "sequenceNumber": "113523352",
+      "type": {
+        "id": "402",
+        "text": "End Game"
+      },
+      "text": "End of Game",
+      "awayScore": 65,
+      "homeScore": 63,
+      "period": {
+        "number": 2,
+        "displayValue": "2nd Half"
+      },
+      "clock": {
+        "displayValue": "0:00"
+      },
+      "scoringPlay": false,
+      "scoreValue": 0,
+      "wallclock": "2025-04-08T03:10:04Z",
+      "shootingPlay": false,
+      "coordinate": {
+        "x": 25,
+        "y": 0
+      },
+      "pointsAttempted": 0,
+      "shortDescription": "End of Game"
+    }
+  ]
+}

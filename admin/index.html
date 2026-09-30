@@ -62,6 +62,7 @@
               <option value="hockey">Hockey · NHL</option>
               <option value="soccer">Soccer · MLS</option>
               <option value="basketball">Basketball · NBA</option>
+              <option value="college-basketball">NCAA men’s basketball · NCAAM</option>
             </select>
             <button id="refresh-team-catalog" class="button button--secondary" type="button">Refresh teams</button>
           </div>
@@ -164,6 +165,7 @@
                 <option value="hockey">NHL</option>
                 <option value="soccer">MLS</option>
                 <option value="basketball">NBA</option>
+                <option value="college-basketball">NCAAM</option>
               </select>
               <input id="game-search" type="search" placeholder="Find a team" aria-label="Find an available team">
             </div>
@@ -184,7 +186,7 @@
         </div>
         <div class="live-controls">
           <label class="field">Sport
-            <select id="live-sport"><option value="football">Football · Seahawks</option><option value="college-football">College football · top watched team</option><option value="hockey">Hockey · Kraken</option><option value="soccer">Soccer · Sounders</option><option value="basketball">Basketball · Pistons</option><option value="baseball">Baseball · Mariners</option></select>
+            <select id="live-sport"><option value="football">Football · Seahawks</option><option value="college-football">College football · top watched team</option><option value="hockey">Hockey · Kraken</option><option value="soccer">Soccer · Sounders</option><option value="basketball">Basketball · Pistons</option><option value="college-basketball">NCAA men’s basketball · top watched team</option><option value="baseball">Baseball · Mariners</option></select>
           </label>
           <button id="refresh-live" class="button button--secondary" type="button">Refresh now</button>
           <a id="open-live" class="button button--quiet-link" href="../index.html?sport=football" target="_blank" rel="noopener">Open full preview</a>
@@ -206,7 +208,7 @@
       </div>
       <div class="demo-controls">
         <label class="field">Sport
-          <select id="demo-sport"><option value="baseball">Baseball · MLB</option><option value="football">Football · NFL</option><option value="college-football">College football · NCAAF</option><option value="hockey">Hockey · NHL</option><option value="soccer">Soccer · MLS</option><option value="basketball">Basketball · NBA</option></select>
+          <select id="demo-sport"><option value="baseball">Baseball · MLB</option><option value="football">Football · NFL</option><option value="college-football">College football · NCAAF</option><option value="hockey">Hockey · NHL</option><option value="soccer">Soccer · MLS</option><option value="basketball">Basketball · NBA</option><option value="college-basketball">NCAA men’s basketball · NCAAM</option></select>
         </label>
         <label class="field">State
           <select id="demo-state">
@@ -288,19 +290,20 @@
     </article>
   </template>
 
-  <script src="../core/config.js?v=15"></script>
+  <script src="../core/config.js?v=16"></script>
   <script src="../core/shared-state.js?v=1"></script>
   <script src="../core/provider-refresh.js?v=1"></script>
   <script src="../core/provider-discovery.js?v=1"></script>
   <script src="../core/event-model.js?v=4"></script>
   <script src="../core/registry.js?v=2"></script>
-  <script src="../core/game-selection.js?v=6"></script>
+  <script src="../core/game-selection.js?v=7"></script>
   <script src="../sports/baseball/providers/mlb.js?v=4"></script>
   <script src="../sports/football/providers/espn.js?v=5"></script>
   <script src="../sports/college-football/providers/espn.js?v=6"></script>
   <script src="../sports/hockey/providers/espn.js?v=3"></script>
   <script src="../sports/soccer/providers/espn.js?v=3"></script>
   <script src="../sports/basketball/providers/espn.js?v=4"></script>
+  <script src="../sports/college-basketball/providers/espn.js?v=1"></script>
   <script src="admin.js?v=22"></script>
   <script src="../core/desktop.js"></script>
 </body>

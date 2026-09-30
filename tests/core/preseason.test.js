@@ -4,13 +4,13 @@ const assert = require("node:assert/strict");
 require("../../core/event-model.js");
 require("../../core/registry.js");
 require("../../core/timeouts.js");
-for (const sport of ["basketball", "football", "college-football", "hockey", "soccer"]) {
+for (const sport of ["basketball", "football", "college-football", "hockey", "soccer", "college-basketball"]) {
   require(`../../sports/${sport}/providers/espn.js`);
 }
 require("../../sports/baseball/providers/mlb.js");
 const { registry, model } = global.SportsOverlay;
 
-for (const providerName of ["espn-nba", "espn-nfl", "espn-ncaaf", "espn-nhl", "espn-mls"]) {
+for (const providerName of ["espn-nba", "espn-nfl", "espn-ncaaf", "espn-nhl", "espn-mls", "espn-ncaam"]) {
   test(`${providerName}: game-level preseason only; no regular-season label`, () => {
     const provider = registry.getProvider(providerName);
     const payload = { id: "test", header: { season: { type: 1, slug: "preseason" }, competitions: [] } };

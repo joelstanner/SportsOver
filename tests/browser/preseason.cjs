@@ -26,7 +26,7 @@ const root = path.resolve(__dirname, '../..');
       try { await route.fulfill({ body: await fs.readFile(path.join(root, relative)), contentType: types[path.extname(relative)] }); }
       catch (_) { await route.fulfill({ status: 404, body: '' }); }
     });
-    for (const sport of ['baseball', 'basketball', 'football', 'college-football', 'hockey', 'soccer']) {
+    for (const sport of ['baseball', 'basketball', 'football', 'college-football', 'hockey', 'soccer', 'college-basketball']) {
       const page = await context.newPage();
       page.on('pageerror', error => errors.push(error.message));
       await page.clock.install();
@@ -51,6 +51,27 @@ const root = path.resolve(__dirname, '../..');
         assert.equal(await page.locator('#sports-overlay').evaluate(el => getComputedStyle(el, '::before').content), 'none');
         await page.evaluate(() => { window.testEvent.details.preseason = true; window.testLayout.render(window.testEvent); window.testLayout.renderNoEvent(); });
         assert.equal(await page.locator('#sports-overlay').getAttribute('data-preseason'), null);
+      }
+      if (sport === 'college-basketball') {
+        await page.evaluate(() => {
+          const api = window.SportsOverlay;
+          window.testEvent = api.registry.getDemo('college-basketball', 'live');
+          window.testLayout.render(window.testEvent);
+        });
+        assert.equal(await page.locator('#basketball-period').innerText(), '2ND HALF');
+        assert.equal(await page.locator('#basketball-away-timeouts').innerText(), 'TO 2');
+        assert.equal(await page.locator('.timeout-marker').count(), 0, 'NCAA does not show NBA timeout slots');
+        await page.screenshot({ path: '/tmp/sportsover-ncaam-live.png', omitBackground: true });
+        await page.evaluate(() => {
+          window.testEvent.details.period = 'OT2';
+          window.testEvent.teams.away.timeoutsRemaining = 5;
+          window.testEvent.teams.home.timeoutsRemaining = null;
+          window.testLayout.render(window.testEvent);
+        });
+        assert.equal(await page.locator('#basketball-away-timeouts').innerText(), 'TO 5', 'overtime counts are not capped at the NBA limit');
+        assert.equal(await page.locator('#basketball-home-timeouts').isHidden(), true);
+        await page.evaluate(() => { window.testEvent.state = 'final'; window.testLayout.render(window.testEvent); });
+        assert.equal(await page.locator('#basketball-status-text').innerText(), 'FINAL / OT2');
       }
       await page.close();
     }
@@ -77,7 +98,7 @@ const root = path.resolve(__dirname, '../..');
     await admin.getByText('Games refreshed', { exact: true }).waitFor();
     await admin.locator('#rotation-mode').selectOption('curated');
     await admin.getByText('Queue mode applied', { exact: true }).waitFor();
-    for (const sport of ['baseball', 'basketball', 'football', 'college-football', 'hockey', 'soccer']) {
+    for (const sport of ['baseball', 'basketball', 'football', 'college-football', 'hockey', 'soccer', 'college-basketball']) {
       const available = admin.locator(`#available-games [data-game-key="${sport}:900001"]`);
       assert.match(await available.locator('.game-meta').innerText(), /^PRESEASON · Upcoming/);
       for (const id of ['900002', '900003']) {
@@ -92,6 +113,6 @@ const root = path.resolve(__dirname, '../..');
     await admin.screenshot({ path: '/tmp/sports-preseason-dashboard.png' });
     await admin.close();
     assert.deepEqual(errors, []);
-    console.log('Preseason browser checks passed: all six sports, all game states, regular-season and empty-state transitions.');
+    console.log('Preseason browser checks passed: all seven sports, all game states, regular-season and empty-state transitions.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
