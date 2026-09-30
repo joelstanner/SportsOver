@@ -63,7 +63,7 @@ const root = path.resolve(__dirname, '../..');
       const games = ['preseason', 'regular-season', 'unknown', 'preseason'].map((slug, index) => ({
         id: String(900001 + index), gamePk: 900001 + index,
         date: new Date().toISOString(), gameDate: new Date().toISOString(),
-        ...(slug !== 'unknown' ? { season: { type: index + 1, slug }, gameType: slug === 'preseason' ? 'S' : 'R' } : {}),
+        ...(slug !== 'unknown' ? { season: { year: 2027, displayName: '2026-27' }, seasonType: { id: slug === 'preseason' ? '1' : '2', name: slug === 'preseason' ? 'Preseason' : 'Regular Season' }, gameType: slug === 'preseason' ? 'S' : 'R' } : {}),
         status: { abstractGameState: index === 3 ? 'Final' : 'Preview' },
         teams: { away: { team: { id: 99991, name: 'Away' } }, home: { team: { id: 99992, name: 'Home' } } },
         competitions: [{ status: { type: { state: index === 3 ? 'post' : 'pre' } }, competitors: [

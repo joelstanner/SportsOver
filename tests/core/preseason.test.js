@@ -41,3 +41,19 @@ test("MLB marks spring training/exhibition but not regular, postseason, or unkno
     assert.equal(event.details.preseason, ["S", "E"].includes(type));
   }
 });
+
+// ESPN team schedules separate season identity from the event's season type.
+test("Suns–Pistons schedule seasonType identifies preseason despite season lacking type", () => {
+  const game = {
+    id: "401908947", name: "Phoenix Suns at Detroit Pistons", date: "2026-10-05T23:00Z",
+    season: { year: 2027, displayName: "2026-27" },
+    seasonType: { id: "1", type: 1, name: "Preseason", abbreviation: "pre" },
+  };
+  assert.equal(model.espnPreseason(game), true);
+  assert.equal(registry.getProvider("espn-nba").normalizeEvent(game).details.preseason, true);
+  for (const type of [2, 3]) {
+    assert.equal(model.espnPreseason({ ...game, seasonType: { id: String(type), type } }), false);
+  }
+  const { seasonType, ...unknown } = game;
+  assert.equal(model.espnPreseason(unknown), false);
+});

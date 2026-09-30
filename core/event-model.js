@@ -41,7 +41,8 @@
   function espnPreseason(payload, numericType = true) {
     const season = payload.header?.season ?? payload.season
       ?? payload.header?.competitions?.[0]?.season ?? payload.competitions?.[0]?.season;
-    const type = season?.type;
+    const type = season?.type ?? payload.header?.seasonType ?? payload.seasonType
+      ?? payload.header?.competitions?.[0]?.seasonType ?? payload.competitions?.[0]?.seasonType;
     const name = typeof type === "object" ? type?.name : "";
     const slug = season?.slug || name || season?.name || "";
     if (/^pre[ -]?season$/i.test(slug)) return true;
