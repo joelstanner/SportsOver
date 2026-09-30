@@ -14,8 +14,8 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'sportsover-smoke-'));
   let application;
   const errors = [];
-  async function launch() {
-    application = await electron.launch({ ...(process.env.SPORTSOVER_TEST_EXECUTABLE ? { executablePath: process.env.SPORTSOVER_TEST_EXECUTABLE, args: [] } : { args: [path.resolve(__dirname, '..')] }), env: { ...process.env, SPORTSOVER_TEST_DATA: directory } });
+  async function launch(background = false) {
+    application = await electron.launch({ ...(process.env.SPORTSOVER_TEST_EXECUTABLE ? { executablePath: process.env.SPORTSOVER_TEST_EXECUTABLE, args: background ? ['--background'] : [] } : { args: [path.resolve(__dirname, '..'), ...(background ? ['--background'] : [])] }), env: { ...process.env, SPORTSOVER_TEST_DATA: directory } });
     application.on('window', page => page.on('pageerror', error => errors.push(error.message)));
     await application.evaluate(async ({ session }, fixture) => {
       globalThis.sportsTestRequests = [];
@@ -37,7 +37,44 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
         return new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } });
       });
     }, feed);
-    await application.waitForEvent('window', { predicate: page => page.url().includes('/admin/') });
+    if (background) {
+      const first = await application.firstWindow();
+      await first.waitForFunction(async () => {
+        try { return (await window.sportsDesktop.status()).engineReady; } catch { return false; }
+      });
+      let startupReady = false;
+      for (let attempt = 0; attempt < 100; attempt++) {
+        startupReady = await application.evaluate(({ BrowserWindow, Menu }) =>
+          !!Menu.getApplicationMenu()?.getMenuItemById('toggle-banner') &&
+          BrowserWindow.getAllWindows().every(win => !!win.webContents.getURL() && !win.webContents.isLoading()));
+        if (startupReady) break;
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      assert.ok(startupReady, 'background startup finished');
+      const before = await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().map(win => ({ id: win.id, visible: win.isVisible(), url: win.webContents.getURL() })));
+      assert.equal(before.length, 2, 'background launch creates only engine and passive banner');
+      assert.ok(before.every(win => !win.visible), 'background launch shows no windows');
+      const backgroundStatus = await first.evaluate(() => window.sportsDesktop.status());
+      assert.equal(backgroundStatus.trayAvailable, true);
+      let hiddenFrame;
+      for (let attempt = 0; attempt < 100; attempt++) {
+        hiddenFrame = await (await fetch(backgroundStatus.obsUrl.replace('/output', '/api/output'))).json();
+        if (hiddenFrame.ready) break;
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      assert.ok(hiddenFrame.ready, 'OBS output runs while hidden');
+      assert.equal(JSON.parse(await fs.readFile(path.join(directory, 'settings.json'), 'utf8')).desktop.visible, true, 'background launch preserves saved visibility');
+      await application.evaluate(({ app }) => {
+        app.emit('second-instance', {}, ['SportsOver', '--background']);
+        app.emit('activate');
+      });
+      const after = await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().map(win => ({ id: win.id, visible: win.isVisible(), url: win.webContents.getURL() })));
+      assert.deepEqual(after, before, 'repeated background launch and initial activation leave windows alone');
+      await application.evaluate(({ Menu }) => Menu.getApplicationMenu().getMenuItemById('settings').click());
+    }
+    if (!application.windows().some(page => page.url().includes('/admin/'))) {
+      await application.waitForEvent('window', { predicate: page => page.url().includes('/admin/') });
+    }
     const pages = application.windows();
     const admin = pages.find(page => page.url().includes('/admin/'));
     const banner = pages.find(page => page.url().includes('display.html?desktop'));
@@ -184,6 +221,11 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     assert.equal(restored.scale, 1.25); assert.equal(restored.locked, true); assert.equal(restored.visible, false);
     assert.equal(restored.override, null);
     await admin.locator('[data-desktop="recover"]').click();
+    await application.close();
+    ({ admin, banner, engine } = await launch(true));
+    assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).visible), false);
+    await application.evaluate(({ app }) => app.emit('second-instance', {}, ['SportsOver']));
+    assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).visible), true, 'normal second launch still recovers banner');
     assert.deepEqual(errors, []);
     console.log(`Desktop/shared-engine smoke passed. Screenshots and isolated data: ${directory}`);
   } finally { if (application) await application.close(); }

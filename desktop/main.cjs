@@ -7,6 +7,7 @@ const { Store, applyCatalog } = require('./store.cjs');
 const { fitBounds } = require('./bounds.cjs');
 const { createBannerGesture } = require('./banner-gesture.cjs');
 const { createHandler, ORIGIN } = require('./protocol.cjs');
+let backgroundStartup = process.argv.includes('--background');
 app.setName('SportsOver');
 if (process.env.SPORTSOVER_TEST_DATA) app.setPath('userData', process.env.SPORTSOVER_TEST_DATA);
 protocol.registerSchemesAsPrivileged([{ scheme: 'sportsover', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
@@ -38,7 +39,7 @@ function lock(value) {
   persist({ locked });
   menus();
 }
-function showBanner() { banner.showInactive(); persist({ visible: true }); menus(); }
+function showBanner() { backgroundStartup = false; banner.showInactive(); persist({ visible: true }); menus(); }
 function recover() {
   if (banner.webContents.isCrashed()) banner.webContents.reload();
   lock(false);
@@ -47,6 +48,7 @@ function recover() {
   openSettings();
 }
 function openSettings() {
+  backgroundStartup = false;
   if (settings && !settings.isDestroyed()) { if (settings.webContents.isCrashed()) settings.webContents.reload(); settings.show(); settings.focus(); return; }
   settings = new BrowserWindow({ icon: appIcon, title: 'SportsOver Settings', width: 1120, height: 820, minWidth: 700, minHeight: 500, backgroundColor: '#0b1620', webPreferences: preferences() });
   secure(settings);
@@ -87,7 +89,9 @@ function resize(scale) {
 function status() { return { version: app.getVersion(), trayAvailable: !!tray && !tray.isDestroyed(), trayBounds: tray && !tray.isDestroyed() ? tray.getBounds() : null, appIconAvailable: !!appIcon, obsUrl, engineReady: engineState.ready, override: engineState.override, locked, visible: banner.isVisible(), scale: banner.getBounds().width / 472, shortcut, warning: store.warning }; }
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
-  app.on('second-instance', () => { if (banner) recover(); });
+  app.on('second-instance', (_event, argv) => {
+    if (!argv.includes('--background') && banner) recover();
+  });
   app.whenReady().then(async () => {
     store = new Store(app.getPath('userData'));
     // Source launches have no bundle icon. Load custom artwork when supplied.
@@ -218,15 +222,15 @@ else {
     await banner.loadURL(`${ORIGIN}/sports/display.html?desktop=1`);
     locked = !!store.value.desktop.locked;
     banner.setIgnoreMouseEvents(locked, { forward: true });
-    if (store.value.desktop.visible !== false) banner.showInactive();
+    if (!backgroundStartup && store.value.desktop.visible !== false) banner.showInactive();
     menus();
-    openSettings();
+    if (!backgroundStartup) openSettings();
   }).catch(error => { dialog.showErrorBox('SportsOver could not start', error.stack || error.message); app.quit(); });
 }
 function authorize(event) {
   if (event.senderFrame !== event.sender.mainFrame || !trusted(event.senderFrame.url)) throw Error('Untrusted sender');
 }
-app.on('activate', () => { if (banner) openSettings(); });
+app.on('activate', () => { if (banner && !backgroundStartup) openSettings(); });
 app.on('window-all-closed', () => { /* Tray owns the application lifetime. */ });
 app.on('before-quit', () => { quitting = true; clearTimeout(saveTimer); if (banner && store) persist({ bounds: banner.getBounds() }); });
 app.on('will-quit', () => { globalShortcut.unregisterAll(); tray?.destroy(); engineState.stop(); outputServer?.close(); });

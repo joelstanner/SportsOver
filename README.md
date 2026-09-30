@@ -78,6 +78,17 @@ To follow NCAA men's basketball, choose **NCAA men’s basketball · NCAAM** in 
 
 **Refresh teams** saves current provider catalogs in app data, leaving the source checkout unchanged. A failed sport refresh retains its previous directory; other successful sports may still update. Live feeds can be unavailable or delayed. Existing provider fallback/error states apply; this app does not guarantee real-time scores.
 
+## Background startup
+
+Run `npm start -- --background` to start the engine, local OBS server, and tray
+without showing the banner or Settings. For a packaged app, pass `--background`
+to its executable. Open Settings or show the banner from the tray when needed.
+The flag overrides visibility for this launch without changing the saved banner
+visibility preference. Normal startup still restores that preference and opens
+Settings. A second launch with `--background` leaves the existing instance alone;
+a normal second launch still recovers its windows. On macOS, use the tray to
+open a background-started app initially.
+
 ## OBS browser source
 
 With SportsOver running, copy the OBS URL from Settings (normally `http://127.0.0.1:17843/output`) into an OBS Browser Source. Set width **472** and height **100**, then scale it in OBS as needed. The page has a transparent background. SportsOver must stay running; hiding or locking its desktop window has no effect on OBS. Closing OBS does not stop SportsOver.

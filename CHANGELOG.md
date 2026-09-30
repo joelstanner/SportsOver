@@ -3,6 +3,16 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.5.0 — 2026-09-30
+
+### Added
+
+- `--background` startup runs the sports engine, OBS output server, and tray
+  without opening the desktop banner or Settings. Saved banner visibility is
+  preserved for normal startup.
+- Repeated background launches leave an existing instance alone; normal launches
+  retain window recovery. Use the tray to open a background-started app.
+
 ## 0.4.0 — 2026-09-30
 
 ### Added
