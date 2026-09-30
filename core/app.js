@@ -46,6 +46,34 @@ let renderChain = Promise.resolve();
 let discoveryGeneration = 0;
 let cachedDiscoveries = null;
 let automaticRotationEntries = [];
+let overrideEntry = null;
+let discoveryPending = null;
+let rediscover = false;
+
+// The desktop host is the sole live engine. Outputs receive rendered snapshots.
+window.SportsOverlay.engine = {
+  describe: () => ({
+    availableEntries: (cachedDiscoveries || []).flatMap(result => result.availableEntries).map(publicEntry),
+    automaticEntries: automaticRotationEntries.map(publicEntry),
+    queue: rotationQueue.map(publicEntry),
+    currentGameKey: entryKey(overrideEntry || rotationQueue[currentIndex]) || null,
+    overrideGameKey: entryKey(overrideEntry) || null,
+  }),
+  refresh: () => discoverGames(),
+  override(value) {
+    overrideEntry = value ? (cachedDiscoveries || []).flatMap(result => result.availableEntries)
+      .find(entry => entryKey(entry) === value.gameKey) || null : null;
+    requestRevision++;
+    clearTimeout(rotationTimer); rotationTimer = null; rotationGeneration++;
+    clearTimeout(pollTimer); pollGeneration++;
+    if (overrideEntry || rotationQueue.length) renderCurrentGame().then(() => { schedulePoll(); scheduleRotation(); });
+    else discoverGames(false);
+  },
+};
+function publicEntry(entry) {
+  const { context, ...value } = entry;
+  return value;
+}
 
 function createSportContext(group) {
   const favoriteTeams = group.favorites
@@ -154,7 +182,16 @@ async function renderDemoEvent(event, animate = false) {
   if (animate) transitionIn();
 }
 
-async function discoverGames(refresh = true) {
+function discoverGames(refresh = true) {
+  // Coalesce requests from timers, settings, and integration commands.
+  if (discoveryPending) { rediscover = true; return discoveryPending; }
+  discoveryPending = discoverGamesOnce(refresh).finally(() => {
+    discoveryPending = null;
+    if (rediscover) { rediscover = false; discoverGames(); }
+  });
+  return discoveryPending;
+}
+async function discoverGamesOnce(refresh = true) {
   const generation = ++discoveryGeneration;
   clearTimeout(discoveryTimer);
   clearTimeout(pollTimer);
@@ -188,7 +225,7 @@ async function discoverGames(refresh = true) {
   currentIndex = Math.max(0, rotationQueue.findIndex(entry => entryKey(entry) === previousKey));
   const changedGame = Boolean(previousKey && entryKey(rotationQueue[currentIndex]) !== previousKey);
 
-  if (!rotationQueue.length) {
+  if (!rotationQueue.length && !overrideEntry) {
     requestRevision += 1;
     clearTimeout(rotationTimer);
     rotationTimer = null;
@@ -245,7 +282,7 @@ async function discoverSport(context) {
 }
 
 function renderCurrentGame(options = {}) {
-  const entry = rotationQueue[currentIndex];
+  const entry = overrideEntry || rotationQueue[currentIndex];
   if (!entry) return Promise.resolve();
   const revision = ++requestRevision;
   const render = () => renderGame(entry, revision, options);
@@ -280,7 +317,7 @@ async function renderGame(entry, revision, { animate = false } = {}) {
 function schedulePoll() {
   clearTimeout(pollTimer);
   const generation = ++pollGeneration;
-  const sport = rotationQueue[currentIndex]?.context.sport;
+  const sport = (overrideEntry || rotationQueue[currentIndex])?.context.sport;
   if (!sport) return;
   pollTimer = setTimeout(async () => {
     await renderCurrentGame();
@@ -292,7 +329,7 @@ function scheduleRotation() {
   clearTimeout(rotationTimer);
   rotationTimer = null;
   const generation = ++rotationGeneration;
-  if (rotationQueue.length < 2) return;
+  if (overrideEntry || rotationQueue.length < 2) return;
   rotationTimer = setTimeout(async () => {
     currentIndex = (currentIndex + 1) % rotationQueue.length;
     await renderCurrentGame({ animate: true });
@@ -387,6 +424,10 @@ if (!staticPreview) {
     if (teamsChanged || catalogChanged) sportContexts = savedConfig.sports
       .filter(group => !requestedSport || group.sport === requestedSport)
       .map(createSportContext).filter(Boolean);
+    if (overrideEntry) {
+      const context = sportContexts.find(context => context.sport === overrideEntry.context.sport);
+      if (context) overrideEntry = { ...overrideEntry, context };
+    }
     requestRevision += 1;
     if (timingChanged) scheduleRotation();
     discoverGames(teamsChanged || catalogChanged || selectionChanged);

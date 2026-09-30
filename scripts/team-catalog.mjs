@@ -22,7 +22,7 @@ const ESPN_SPORTS = Object.freeze([
 export const SUPPORTED_SPORTS = Object.freeze(["baseball", ...ESPN_SPORTS.map(item => item.sport)]);
 
 async function fetchJson(url) {
-  const response = await fetch(url);
+  const response = await fetch(url, { signal: AbortSignal.timeout(20000) });
   if (!response.ok) throw new Error(`${url} returned HTTP ${response.status}`);
   return response.json();
 }
@@ -43,15 +43,16 @@ function theme(key, primary, accent) {
   return BRAND_OVERRIDES.get(key) || { primary: color(primary, "071b2c"), accent: color(accent, "31556f") };
 }
 
-async function writeCatalog(sport, value) {
-  const path = resolve(root, "sports", sport, "teams.json");
+async function writeCatalog(sport, value, outputRoot = root) {
+  if (!value.teams.length) throw new Error(`Empty team directory for ${sport}; previous data retained`);
+  const path = resolve(outputRoot, "sports", sport, "teams.json");
   await mkdir(dirname(path), { recursive: true });
   await writeFile(`${path}.${process.pid}.tmp`, `${JSON.stringify(value, null, 2)}\n`);
   await rename(`${path}.${process.pid}.tmp`, path);
   return { sport, count: value.teams.length, updatedAt: value.updatedAt };
 }
 
-async function updateMlb() {
+async function updateMlb(outputRoot) {
   const [mlb, espn] = await Promise.all([
     fetchJson("https://statsapi.mlb.com/api/v1/teams?sportId=1"),
     fetchJson("https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams?limit=100"),
@@ -71,7 +72,7 @@ async function updateMlb() {
       logoUrl: `https://www.mlbstatic.com/team-logos/${team.id}.svg`,
     };
   });
-  return writeCatalog("baseball", catalog({ sport: "baseball", league: "MLB", provider: "mlb" }, teams));
+  return writeCatalog("baseball", catalog({ sport: "baseball", league: "MLB", provider: "mlb" }, teams), outputRoot);
 }
 
 function espnIdentity(team, metadata) {
@@ -81,7 +82,7 @@ function espnIdentity(team, metadata) {
   return { teamId: team.abbreviation, keyId: abbreviation, logoId: abbreviation };
 }
 
-async function updateEspnSport(metadata) {
+async function updateEspnSport(metadata, outputRoot) {
   const url = `https://site.api.espn.com/apis/site/v2/sports/${metadata.apiSport}/${metadata.apiLeague}/teams?limit=${metadata.limit}`;
   const payload = await fetchJson(url);
   const sourceTeams = payload.sports?.[0]?.leagues?.[0]?.teams?.map(entry => entry.team) ?? [];
@@ -97,13 +98,16 @@ async function updateEspnSport(metadata) {
       logoUrl: `https://a.espncdn.com/i/teamlogos/${metadata.logoLeague}/500/${identity.logoId}.png`,
     };
   });
-  return writeCatalog(metadata.sport, catalog({ sport: metadata.sport, league: metadata.league, provider: metadata.provider }, teams));
+  return writeCatalog(metadata.sport, catalog({ sport: metadata.sport, league: metadata.league, provider: metadata.provider }, teams), outputRoot);
 }
 
-export async function updateCatalogs(selection = "all") {
+export async function updateCatalogs(selection = "all", outputRoot = root) {
   const sports = selection === "all" ? SUPPORTED_SPORTS : [selection];
   if (sports.some(sport => !SUPPORTED_SPORTS.includes(sport))) throw new Error(`Unsupported sport: ${selection}`);
-  return Promise.all(sports.map(sport => sport === "baseball"
-    ? updateMlb()
-    : updateEspnSport(ESPN_SPORTS.find(item => item.sport === sport))));
+  const results = await Promise.allSettled(sports.map(sport => sport === "baseball"
+    ? updateMlb(outputRoot)
+    : updateEspnSport(ESPN_SPORTS.find(item => item.sport === sport), outputRoot)));
+  const failures = results.filter(result => result.status === "rejected");
+  if (failures.length) throw new Error(failures.map(result => result.reason.message).join("; "));
+  return results.map(result => result.value);
 }

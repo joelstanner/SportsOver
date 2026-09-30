@@ -1,275 +1,116 @@
-# Universal Sports OBS Overlay
+# SportsOver
 
-A compact, dependency-free OBS Browser Source overlay with sport-specific layouts. The MLB provider finds the current Mariners game, while separate ESPN adapters find Seahawks, Nebraska, Washington, Kraken, Sounders, and Pistons games. All providers normalize live data into the same event lifecycle before their sport-specific layouts render it.
+A standalone Electron sports banner for your desktop. Transparent, borderless, draggable, and always on top of ordinary application windows, with separate settings and tray/menu-bar controls. SportsOver owns one sports engine and serves two outputs: the floating desktop banner and an optional local OBS browser source. OBS and Twitchbot are not required to run the app.
 
-The current refactor preserves the production Mariners appearance and behavior while separating shared event state, MLB data normalization, baseball rendering, and polling orchestration. Future sports can use different layouts without forcing their details into baseball-shaped UI.
+## Install Node.js and npm (first-time setup)
 
-## Run and test locally
+**npm** is the tool that downloads SportsOver's dependencies and starts the app. It comes with **Node.js**, so you install Node.js once and then use npm in your terminal. Running `npm install` later installs this project's dependencies, not npm itself. See the [official npm installation guide](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm/).
 
-Serve this folder with the included local control server:
+1. Open the [official Node.js download page](https://nodejs.org/en/download/) and choose the **LTS (Long-Term Support)** release. SportsOver requires Node.js **22 or newer**.
+2. Download the installer for your computer: **macOS Installer (.pkg)** on a Mac or **Windows Installer (.msi)** on Windows. Run it and follow the prompts, keeping npm and the default PATH options enabled.
+3. Close and reopen your terminal after installation so it can find the new commands. On macOS, open **Terminal** (Applications → Utilities) or **iTerm** if you already use it. On Windows, open **Command Prompt** from the Start menu.
+4. Type each command below and press Enter after each line:
 
-```text
-node scripts/serve.mjs
+```sh
+node --version
+npm --version
 ```
 
-Then visit [http://localhost:8080](http://localhost:8080) in a browser. Stop the server with `Ctrl+C`.
+Both should print a version number. The Node.js version should start with `v22` or a higher major number. If either command says “command not found” or “not recognized,” confirm the installer finished and reopen the terminal; if necessary, restart your computer. If your existing Node.js version is below 22, install the current LTS release before continuing.
 
-Open [http://localhost:8080/admin/](http://localhost:8080/admin/) for the local control room. Its Settings tab adds teams from one global picker, ranks sport categories first, then ranks included watched teams independently inside each sport. Mariners, Seahawks, Nebraska, Washington, Kraken, Sounders, and Pistons are watched by default. NFL and college football remain separate categories. Existing favorite settings migrate automatically. Live Control discovers current provider games and offers automatic, hybrid, or fully curated queues with add, remove, reorder, sport filtering, team search, per-game timing, and multi-select game locks. One locked game holds the banner; several locked games rotate as a selected subset. Queue changes use Apply; timing and lock changes save immediately and refresh other open same-origin banner pages. The Demo Lab previews every supported lifecycle and orchestration state without calling live providers or changing saved settings, including scrolling-info and three-second all-sports rotation tests.
+You only need this setup once per computer. No npm account is required to install or run SportsOver.
 
-Team directories live in each `sports/<sport>/teams.json`. The control room can refresh one sport or all sports from MLB and ESPN when served by `node scripts/serve.mjs`. The command-line equivalent is `node scripts/update-team-catalog.mjs [sport]`, where the optional sport is `baseball`, `football`, `college-football`, `hockey`, `soccer`, or `basketball`. Production theme overrides are preserved. College football contains ESPN's complete team directory, including every Big Ten program. Watched-team rankings remain browser-local settings and are not overwritten by catalog refreshes.
+## Run from source
 
-Default display times are 20 seconds for live games, 5 seconds for upcoming games, and 10 seconds for finals. Each queued game can be adjusted in five-second steps from Live Control. The unfiltered overlay rotates through ranked sport categories with a short slide/fade transition between games. When no included watched team in a sport is live, automatic and rotate modes add one league-wide live spotlight game beside that sport's watched-team fallback. A live watched team suppresses the league-wide spotlight. Top-watched-team mode never adds spotlight games. Use `?sport=` to scope a preview to one sport.
+Download or clone [SportsOver on GitHub](https://github.com/joelstanner/SportsOver) and extract it if it came as a ZIP. In your terminal, use `cd` (change directory) to enter the folder containing SportsOver's `package.json`.
 
-Football and basketball show persistent timeout pips beneath each team, matching the compact treatment used by major broadcast scorebugs. Football uses the three-timeout-per-half rule; NBA uses seven regulation timeouts and two per overtime period. Hockey and soccer feeds do not expose a reliable comparable timeout inventory, so the banner does not invent one.
+For example, if the folder is named `SportsOver` in your Downloads folder, use the command for your system:
 
-### Demo a live game
+**macOS — Terminal or iTerm:**
 
-On an off day, open [http://localhost:8080/?sport=baseball&demo=live](http://localhost:8080/?sport=baseball&demo=live) for a fixed baseball example. Change `sport=football` for the NFL layout or use another configured sport. Demo mode does not call a live API or start a polling timer, so the display remains stable while developing and reviewing visual changes. Remove the query string to return to the highest-ranked sport with an included watched team.
-
-For serverless testing in OBS, select `demo.html` as the Browser Source's local file. It redirects to the same fixed live-game example while preserving relative access to the overlay files.
-
-Opening `index.html` directly with a `file:///` URL may also work in some browsers, but browser security policies differ. If the MLB request is blocked or the overlay stays blank, use the local HTTP server command above. No backend or API key is needed.
-
-The local control server serves the static overlay and provides the local-only endpoint used to update team catalog files.
-
-To diagnose a problem, open the browser developer console. Network/API failures are logged there while the overlay keeps its last valid display.
-
-## Add to OBS
-
-1. In OBS, add a **Browser** source.
-2. Enable **Local file** and select `index.html`.
-3. To preview a live game without a server, select `demo.html` instead. Switch back to `index.html` for real MLB data.
-4. Set the width to `472` and height to `100`.
-5. Leave custom CSS empty. The page is already transparent.
-6. Enable **Refresh browser when scene becomes active** if you want an immediate refresh on scene changes.
-
-If local-file loading is blocked by a browser or system policy, run the local server and use `http://localhost:8080` as the source URL instead.
-
-## Recommended dimensions
-
-- Browser Source: **472 × 100 px** (recommended)
-- Live overlay: up to **460 × 88 px**, plus 6 px transparent breathing room on each side
-- Pregame/final/off-day overlay: **460 × 62 px**
-
-At a 2560 × 1440 canvas, this occupies about 18% of the screen width and remains readable at its native size. Scale the OBS source uniformly if needed; avoid stretching it in only one direction.
-
-## Customization
-
-The main controls are at the top of `sports/baseball/style.css` in the `:root` block:
-
-- `--bug-width`, `--bug-height`, and `--detail-row-height`: overall overlay sizes
-- `--font-size`: base text size
-- `--horizontal-padding`: left/right spacing
-- `--navy`, `--panel`, and `--panel-2`: background styling
-- `--teal` and `--teal-soft`: Seattle accent styling
-
-In `core/app.js`, change `showNoGameMessage` to `false` to hide the source completely on days with no Mariners game. The polling interval is `pollIntervalMs` (12 seconds by default).
-
-## Display behavior
-
-- **Live:** scores, top/bottom inning indicator, `MID` and `END` labels between innings, inning, ball-strike count, yellow-dot out indicators, base occupancy, current pitcher with pitch count, current batter with game hits/at-bats, and MLB's most recent completed-play description
-- **Pregame:** matchup and scheduled time with the computer's local time zone abbreviation
-- **Final:** final score and `FINAL`
-- **Delayed/postponed/suspended:** MLB's detailed status
-- **No game:** a subtle message, or fully hidden via the configuration noted above
-
-The overlay rechecks the schedule every five minutes on off days and keeps the last good display through temporary network failures.
-Schedule lookups explicitly use the computer's current local calendar date, including after the date rolls over at midnight.
-
-## Architecture
-
-```text
-sports-obs-overlay/
-├── index.html
-├── admin/
-│   ├── index.html
-│   ├── admin.js
-│   └── admin.css
-├── core/
-│   ├── app.js
-│   ├── config.js
-│   ├── event-model.js
-│   ├── game-selection.js
-│   └── registry.js
-├── sports/
-│   ├── baseball/
-│   │   ├── teams.json
-│   │   ├── demo-data.js
-│   │   ├── layout.js
-│   │   ├── style.css
-│   │   └── providers/
-│   │       └── mlb.js
-│   ├── football/
-│   │   ├── teams.json
-│   │   ├── demo-data.js
-│   │   ├── layout.js
-│   │   ├── style.css
-│   │   └── providers/
-│   │       └── espn.js
-│   ├── college-football/
-│   │   ├── teams.json
-│   │   ├── demo-data.js
-│   │   └── providers/
-│   │       └── espn.js
-│   ├── hockey/
-│   │   ├── teams.json
-│   │   ├── demo-data.js
-│   │   ├── layout.js
-│   │   ├── style.css
-│   │   └── providers/
-│   │       └── espn.js
-│   ├── soccer/
-│   │   ├── teams.json
-│   │   ├── demo-data.js
-│   │   ├── layout.js
-│   │   ├── style.css
-│   │   └── providers/
-│   │       └── espn.js
-│   └── basketball/
-│       ├── teams.json
-│       ├── demo-data.js
-│       ├── layout.js
-│       ├── style.css
-│       └── providers/
-│           └── espn.js
-└── tests/
-    ├── core/
-    │   └── registry.test.js
-    └── sports/
-        ├── baseball/
-        │   └── mlb-provider.test.js
-        ├── football/
-        │   └── demo-data.test.js
-        ├── hockey/
-        │   └── espn-provider.test.js
-        ├── soccer/
-        │   └── espn-provider.test.js
-        └── basketball/
-            └── espn-provider.test.js
+```sh
+cd "$HOME/Downloads/SportsOver"
 ```
 
-- `core/event-model.js`: shared event envelope, lifecycle states, and non-baseball pregame date/time formatting used by current and future sports. Baseball intentionally keeps time-only pregame formatting.
-- `core/game-selection.js`: builds the stable watched-team/spotlight rotation and ranks live games using postseason importance, national broadcasts, team rankings, available spreads, score margin, and game progress.
-- `core/timeouts.js`: normalizes provider timeout counts and renders accessible broadcast-style timeout pips for football and basketball.
-- `core/config.js`: versioned local settings, nested sport/watched-team rankings, team-catalog loading, validation, migration, and persistence.
-- `sports/*/teams.json`: provider IDs, names, abbreviations, colors, and logos used by the team picker and banner themes.
-- `scripts/team-catalog.mjs`: shared MLB/ESPN catalog refresh and normalization logic.
-- `scripts/update-team-catalog.mjs`: command-line catalog refresh for one sport or all sports.
-- `scripts/serve.mjs`: local static server plus the control-room catalog refresh endpoint.
-- `core/registry.js`: connects named providers and sport layouts without hard-coding their implementation paths into shared logic.
-- `core/app.js`: ranked cross-sport rotation, current-event orchestration, and refresh timing.
-- `sports/baseball/providers/mlb.js`: MLB schedule/live-feed requests and normalization into the shared event envelope.
-- `sports/baseball/layout.js`: creates baseball markup and renders scores, innings, counts, outs, bases, players, and last play.
-- `sports/baseball/style.css`: baseball-specific presentation.
-- `sports/baseball/demo-data.js`: stable MLB fixtures for visual development.
-- `sports/football/layout.js`: creates football markup and renders team logos, scores, quarter, clock, down and distance, field position, possession, and last play.
-- `sports/football/style.css`: football-specific presentation.
-- `sports/football/demo-data.js`: fixed NFL fixtures covering every shared lifecycle state.
-- `sports/football/providers/espn.js`: unauthenticated ESPN schedule and game-summary adapter for live Seahawks data. ESPN does not publish a compatibility contract for this feed, so normalization tests protect the overlay and the adapter remains replaceable.
-- `sports/college-football/providers/espn.js`: separate ESPN NCAAF schedule and game-summary adapter for live Nebraska and Washington data; it reuses the football layout without sharing NFL selection.
-- `sports/hockey/providers/espn.js`: free, unauthenticated ESPN schedule and game-summary adapter for live Kraken data, including scores, period, clock, shots, power-play totals, scoring plays, records, and team logos.
-- `sports/soccer/providers/espn.js`: free, unauthenticated ESPN MLS schedule and match-summary adapter for live Sounders data, including scores, half, clock, possession, shots on target, match events, records, and team logos.
-- `sports/basketball/providers/espn.js`: free, unauthenticated ESPN schedule and game-summary adapter for live Pistons data, including scores, quarter, clock, field-goal percentage, rebounds, scoring plays, records, and team logos.
+**Windows — Command Prompt:**
 
-## Provider selection policy
-
-For every new sport, evaluate a free league-owned feed first. Verify schedule coverage, live details, logos, authentication requirements, browser CORS compatibility, and reliability from a static OBS browser source. Use the league feed when it passes those checks; otherwise use the best free browser-compatible fallback and document why. ESPN is a fallback, not the default assumption.
-
-The NBA-owned live-data CDN was evaluated for basketball. It returned HTTP 403 and restricted browser CORS access to `nba.com`, so this static overlay uses the ESPN adapter instead of adding a proxy dependency.
-
-Add future sports as sibling folders under `sports/`, using sport names for folders and league names for providers. For example, an NFL provider belongs at `sports/football/providers/nfl.js`.
-
-The shared lifecycle is `pregame`, `live`, `interrupted`, and `final`. No-game and temporary-error behavior remain orchestration concerns: no game may hide or show a message, while an error retains the last good display.
-
-League-wide spotlight discovery uses the existing public MLB and ESPN feeds without credentials. ESPN betting lines are used opportunistically when present; they are not required because coverage is inconsistent. Paid odds or betting-split feeds require a local proxy so credentials are never exposed by the static browser source.
-
-Run the dependency-free normalization tests with:
-
-```powershell
-node --test tests/core/*.test.js tests/sports/baseball/*.test.js tests/sports/football/*.test.js tests/sports/college-football/*.test.js tests/sports/hockey/*.test.js tests/sports/soccer/*.test.js tests/sports/basketball/*.test.js
+```bat
+cd /d "%USERPROFILE%\Downloads\SportsOver"
 ```
 
-## Shared control with Twitchbot
+Replace the example path with the folder's actual location and name. Keep the quotes if the path contains spaces. If npm reports that it cannot find `package.json`, you are probably in the wrong folder.
 
-For Chrome controls that affect OBS, use Twitchbot's existing HTTP server:
+Once you are in the SportsOver folder, run these commands one at a time:
 
-- Control room: `http://127.0.0.1:8000/sports/admin/`
-- OBS banner: `http://127.0.0.1:8000/sports/`
+```sh
+npm install
+npm start
+```
 
-Twitchbot serves this checkout directly using `SPORTS_OVERLAY_DIR`. Import an
-export from the old control room, or choose **Start with defaults** on first use.
-Settings are persisted by Twitchbot and checked once per second. Changes apply
-without a banner page reload. The browser retains the last acknowledged settings
-through outages, and conflicting edits are reported for review/reapply.
+Wait for `npm install` to finish before running `npm start`. Keep that terminal session open while SportsOver runs; you can minimize the terminal window. On later launches, return to the same folder and run `npm start`.
 
-The Node server and local files remain standalone previews: their local settings
-are not shared with OBS. Demo Lab is isolated from production settings. Exact
-rotation position and score polling remain per banner. Hosted catalog refresh
-runs the existing Node updater through Twitchbot; it does not need a Node server.
+The first installation/start downloads Electron for your OS and architecture. Internet access is needed for installation, live sports feeds, logos, and catalog refresh. The banner and Settings open together. Closing Settings leaves the banner running; use **Quit SportsOver** in the tray/menu bar or application menu to exit.
 
-The browser integration test uses isolated profiles and mocked network responses:
-`node tests/browser/shared-state.cjs` (requires Playwright and its Chromium).
-Set `PLAYWRIGHT_CHANNEL=chrome` to use installed Chrome; optionally set
-`PLAYWRIGHT_MODULE` to an existing Playwright module path. Ordinary unit tests
-remain dependency-free.
+This repository distributes source only. Installers, signing/notarization, automatic updates, and public-release packaging are outside the current scope. To update a downloaded checkout, replace it with the newer source and run `npm install` again. If you obtained it with Git, pull from your configured source first. The source repository is [joelstanner/SportsOver](https://github.com/joelstanner/SportsOver).
 
-The Settings tab includes a shared **Time zone** selector. Choose a region such
-as **Pacific — Los Angeles (PST/PDT)** to make control-room game times and all
-banner layouts agree across computers and browser locales. Daylight saving is
-automatic. Existing configurations default to the device time zone. US regions
-use consistent standard/daylight abbreviations; other regions use UTC offsets.
-This setting formats displayed times and dates; provider schedule discovery
-retains its existing date/season logic.
+## Desktop controls
 
+- **Move:** drag anywhere on the unlocked banner, including between monitors.
+- **Resize:** choose Banner size in Settings or the tray menu. Proportional scaling keeps the full 472 × 100 design intact; transparent windows do not rely on platform-specific native resize borders.
+- **Lock:** clicks pass through the banner to the application beneath it. Use **Unlock** in Settings or uncheck **Lock / click through** in the tray menu.
+- **Recover:** **Ctrl+Shift+U** on Windows or **Cmd+Shift+U** on macOS unlocks, shows, and moves the banner onto the primary display, then opens Settings. The Settings status reports if another application owns that shortcut. Tray and Settings controls remain available.
+- **Show/hide:** available in Settings and the tray menu. Position, size, lock state, visibility, and sports settings survive restarts. Settings opens on every launch so a hidden or locked banner always has a recovery path.
+- Launching a second instance recovers the existing banner. Disconnecting a monitor brings an offscreen banner into an available work area.
 
-### Configurable score refresh
+## Sports settings
 
-Control room → Settings → Score refresh intervals configures each sport's live,
-pregame, idle/no-game, and final intervals. Values are whole seconds, 5–3600.
-Defaults: live 12, pregame 60, idle 300, final 300. Old settings gain these defaults.
-Save settings applies changes to open shared-state banners without reloading.
-The local settings check remains once per second.
+MLB, NFL, college football, NHL, MLS, and NBA use the existing MLB/ESPN providers and team directories. Rank sports and watched teams, enable/disable favorites, select time zone and fallback behavior, and configure provider polling. **Save settings** applies changes to the banner without reloading it.
 
-Intervals are minimum waits after completion for each distinct provider URL,
-not a total sport-wide request budget. Each game summary and schedule is cached
-independently. Rotation, discovery, visibility changes, and client recreation
-reuse that cache; concurrent requests for the same URL share one request.
-Interrupted games use live timing. Schedule feeds use the highest-priority state
-present (live/interrupted, pregame, final, otherwise idle). Errors retain the last
-state's wait, including idle on an initial failure, while the banner retains its
-last successful display. New games or schedule URLs can fetch immediately.
+**Live control** reads discovered games from that same engine and manages automatic, hybrid, or curated game rotation, game order and durations, and game locks. A game lock chooses what plays; the desktop click-through lock controls mouse input. **Demo lab** previews deterministic sport/lifecycle examples without changing the live banner. Use the Electron overlay window to view the live output while changing Settings. Demo lab uses fixed data only.
 
-A longer interval may delay discovery of a new game or state transition. Hidden
-pages may update later because of browser throttling. Each banner, control-room
-game list, and preview has its own cache; extra pages and page reloads make
-additional requests. Centralized provider polling remains separate future work.
-"Refresh games" respects the cache. Preview Refresh reloads that preview.
+**Refresh teams** saves current provider catalogs in app data, leaving the source checkout unchanged. A failed sport refresh retains its previous directory; other successful sports may still update. Live feeds can be unavailable or delayed. Existing provider fallback/error states apply; this app does not guarantee real-time scores.
 
-Mocked timer/request checks: `node --test tests/core/*.test.js tests/sports/**/*.test.js`.
-The browser integration also checks refresh bounds and live shared-setting updates.
+## OBS browser source
 
+With SportsOver running, copy the OBS URL from Settings (normally `http://127.0.0.1:17843/output`) into an OBS Browser Source. Set width **472** and height **100**, then scale it in OBS as needed. The page has a transparent background. SportsOver must stay running; hiding or locking its desktop window has no effect on OBS. Closing OBS does not stop SportsOver.
 
-Discovery combines one league scoreboard per sport with schedules for every
-included watched team. Add teams under Settings → Watch another team, keep
-Included checked, and save. Ranking affects banner priority, not which schedules
-are fetched. With no included teams, only the league scoreboard is queried.
-Duplicate games are merged; a failed team schedule does not discard successful
-feeds. Discovery allows four concurrent operations per sport and retains the
-per-feed refresh cache. More included teams can mean more distinct requests.
+Desktop, OBS and embedded previews consume the same published HTML frame, rendered by one hidden engine. Outputs fetch local snapshots every 200 ms; they never call sports providers or own a rotation timer. Delivery is near-synchronous, not frame-locked video. CSS marquee animation phases may differ between clients. If SportsOver disconnects, the output labels the last received score as disconnected and reconnects automatically.
 
+The listener binds only to IPv4 loopback on port 17843. If that port is occupied, Settings reports the error and the desktop remains usable; free the port and restart for OBS/API access. This implementation intentionally does not expose the listener on your LAN.
 
-### MLB postseason context
+## Optional integrations
 
-Postseason games use the existing footer for round, series game number, and
-best-of length. During play, it cycles through series identity, compatible series
-standing (when supplied), and pitcher/batter details every eight seconds. Long
-provider result text uses the existing marquee and gets enough time to scroll;
-reduced-motion settings retain the existing static-text fallback. Pregame, final,
-interruptions, and inning breaks omit the player phase. Regular-season games keep
-the original footer. The OBS source remains 472 × 100.
+The secured local API accepts temporary game-selection commands and owns their duration and restoration. See [desktop/API.md](desktop/API.md) for authentication, schemas, retry rules and examples. Copy the integration token from Settings. No Twitch reward mapping or live Twitchbot integration is configured here.
 
-Series metadata comes from `seriesStatus` hydration on existing cached schedule
-requests and is joined to game feeds by game ID. No additional polling loop or
-request is added. A standing is omitted when the completed series-game count or
-schedule final status disagrees with the detailed game feed. Normal score updates
-do not restart footer phases. Missing metadata leaves the usual game display.
+SportsOver is the destination for future sports development. The original `sports-obs-overlay` and Twitchbot sports implementations remain untouched and operational during migration; their retirement requires a later explicit migration decision.
+
+## Storage and recovery
+
+App-owned files live in Electron's user-data directory:
+
+- macOS: `~/Library/Application Support/SportsOver`
+- Windows: `%APPDATA%\SportsOver`
+- Linux (experimental): typically `~/.config/SportsOver`
+
+`settings.json` contains normalized sports settings and desktop preferences. Changes use atomic file replacement and keep the previous valid file in `settings.json.bak`. If the main file is invalid, the app tries the backup, then defaults, and displays a recovery message in Settings. A damaged primary file is preserved with a `.recovered-<timestamp>` suffix on the next save. Close SportsOver before manually editing/restoring these files. Refreshed directories are under `sports/<sport>/teams.json` in the same data folder. Uninstalling/replacing the source folder does not delete app data.
+
+## Architecture and security
+
+`desktop/main.cjs` owns native windows, tray, single-instance handling, recovery, and a narrow IPC command handler. Renderers use sandboxing, context isolation, no Node integration, denied permissions, blocked popup/navigation targets, and a Content Security Policy. The private `sportsover://app` protocol serves an allowlisted renderer asset tree plus app-owned state/catalog endpoints. The separate loopback listener exposes passive output and a small bearer-authenticated command API; it does not expose settings writes, Electron IPC, or arbitrary source files. No Twitchbot service is involved. Its standard secure scheme allows the existing relative asset URLs and shared-state polling to work ([Electron protocol documentation](https://www.electronjs.org/docs/latest/api/protocol)).
+
+`desktop/store.cjs` validates through the existing configuration model and rejects stale revision writes. `desktop/bounds.cjs` clamps restored placement to connected work areas. `core/app.js` runs live providers and rotation only in the hidden engine window. `core/engine-host.js` publishes frames and game metadata to `desktop/engine-state.cjs`; `display.html` is the passive client shared by desktop, OBS and production previews. Existing `sports` layouts render once in the engine. Settings uses published discovery data. `desktop/server.cjs` serves output and authenticated integration commands. `scripts/serve.mjs` remains an optional browser development server, not the desktop runtime.
+
+## Verification
+
+```sh
+npm test
+npm run test:desktop
+```
+
+`npm test` runs the provider/rotation/configuration suite and desktop persistence, recovery, bounds, and protocol tests. `npm run test:desktop` launches real Electron windows with isolated temporary app data and mocked provider responses. It checks shared rendering, authenticated API access, override expiry/restoration, independent desktop visibility, shared settings, desktop controls and secure preferences, then restarts to verify persistence. It also asserts that only one engine window makes provider requests while desktop, Settings and an HTTP browser-source client are connected. It leaves screenshots and test data in the temporary directory printed at completion. It does not alter your normal preferences.
+
+Platform results and remaining manual checks are recorded in [desktop/TESTING.md](desktop/TESTING.md). Always-on-top cannot cover exclusive-fullscreen games or protected system screens. macOS fullscreen-workspace visibility is requested but needs manual validation on the target setup. Windows support needs native Windows testing. Linux is experimental; Wayland does not provide Electron's always-on-top behavior.
+
+## License
+
+SportsOver is licensed under the [MIT License](LICENSE). Third-party dependencies and sports data, logos, and trademarks remain subject to their respective licenses and terms.

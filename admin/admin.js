@@ -111,7 +111,6 @@
   });
   undoLiveButton.addEventListener("click", undoLastLiveChange);
   document.querySelector("#reset-rotation").addEventListener("click", resetRotation);
-  document.querySelector("#refresh-production").addEventListener("click", updateProduction);
   document.querySelector("#live-sport").addEventListener("change", updateLive);
   document.querySelector("#refresh-live").addEventListener("click", updateLive);
   document.querySelector("#demo-sport").addEventListener("change", updateDemo);
@@ -144,7 +143,7 @@
       try {
         workingConfig = await configApi.saveConfig(config, { initialize: true });
         acknowledge(); renderSettings();
-        status.textContent = "Shared settings initialized.";
+        status.textContent = global.sportsDesktop ? "Imported. Banner updates automatically." : "Shared settings initialized.";
         refreshConnection();
       } catch (error) { status.textContent = error.message; }
     }
@@ -165,9 +164,11 @@
       const connected = shared.connected();
       connection.textContent = !connected ? "Disconnected — changes cannot be saved."
         : !initialized ? "Import your previous settings or start with defaults."
-        : "Connected — controlling the OBS banner.";
+        : "Connected — controlling the desktop banner.";
       if (snapshot?.recovery) connection.textContent += ` ${snapshot.recovery}`;
-      input.disabled = defaults.disabled = !connected || initialized;
+      input.disabled = !connected || (initialized && !global.sportsDesktop);
+      defaults.disabled = !connected || initialized;
+      if (global.sportsDesktop) defaults.hidden = true;
       document.querySelector("#save-settings").disabled = !connected || !initialized;
       document.querySelector("#reset-settings").disabled = !connected || !initialized;
     }
@@ -189,10 +190,9 @@
       workingConfig = configApi.loadConfig(); acknowledge(); renderSettings();
     });
     refreshConnection();
-  } else connection.textContent = "Local preview — settings here do not control OBS. Export them to import into shared control.";
+  } else connection.textContent = "Local preview — settings here do not control the desktop banner. Export them to import into shared control.";
   status.before(migration);
   renderSettings();
-  updateProduction();
   updateDemo();
 
   function selectTab(name) {
@@ -205,7 +205,6 @@
       panel.hidden = panel.dataset.panel !== name;
     });
     if (name === "live") {
-      updateProduction();
       updateLive();
       discoverRotationGames();
     }
@@ -439,7 +438,20 @@
     autoApplyLiveChange(previousLiveConfig, "Queue mode applied");
   }
 
-  async function discoverRotationGames() {
+  async function discoverRotationGames(event) {
+    if (global.sportsDesktop) {
+      clearTimeout(gameDiscoveryTimer);
+      try {
+        if (event?.type === 'click') await global.sportsDesktop.action('refresh');
+        const state = await global.sportsDesktop.engine();
+        automaticRotationEntries = state.automaticEntries;
+        availableRotationEntries = state.availableEntries;
+        renderRotationControls();
+        document.querySelector('#rotation-status').textContent = state.ready ? 'Shared engine games' : 'Sports engine starting…';
+      } catch (error) { document.querySelector('#rotation-status').textContent = error.message; }
+      gameDiscoveryTimer = setTimeout(discoverRotationGames, 2000);
+      return;
+    }
     clearTimeout(gameDiscoveryTimer);
     gameDiscoveryTimer = setTimeout(discoverRotationGames, 60 * 60 * 1_000);
     const revision = ++gameDiscoveryRevision;
@@ -755,7 +767,6 @@
       undoLiveConfig = previousLiveConfig;
       undoLiveButton.hidden = false;
       renderSettings();
-      if (!shared) updateProduction();
       const rotationStatus = document.querySelector("#rotation-status");
       rotationStatus.textContent = message;
       rotationStatus.className = "save-status is-saved";
@@ -778,7 +789,6 @@
       undoLiveConfig = null;
       undoLiveButton.hidden = true;
       renderSettings();
-      if (!shared) updateProduction();
       const rotationStatus = document.querySelector("#rotation-status");
       rotationStatus.textContent = "Last live change undone";
       rotationStatus.className = "save-status is-saved";
@@ -879,12 +889,9 @@
 
   function updateLive() {
     const sport = document.querySelector("#live-sport").value;
-    const url = `../index.html?sport=${encodeURIComponent(sport)}`;
+    const url = global.sportsDesktop ? "../display.html" : `../index.html?sport=${encodeURIComponent(sport)}`;
     document.querySelector("#live-preview").src = url;
     document.querySelector("#open-live").href = url;
   }
 
-  function updateProduction() {
-    document.querySelector("#production-preview").src = "../index.html?surface=admin";
-  }
 })(window);

@@ -1,0 +1,21 @@
+node_modules/
+.DS_Store
+*.log
+
+# Local credentials and runtime state must never be published.
+.env
+.env.*
+!.env.example
+.npmrc
+integration.json
+settings.json
+settings.json.*
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+secrets*.json
+
+# Local conversation handoff, not project source.
+PROJECT-HANDOFF.txt

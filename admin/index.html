@@ -3,28 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sports Overlay Control Room</title>
+  <title>SportsOver Settings</title>
   <link rel="stylesheet" href="admin.css?v=15">
 </head>
 <body>
   <header class="masthead">
     <div class="masthead-copy">
-      <p class="eyebrow">ANTLERJONES STREAM TOOLS</p>
-      <h1>Sports Overlay</h1>
+      <p class="eyebrow">DESKTOP SPORTS BANNER</p>
+      <h1>SportsOver</h1>
       <p class="subtitle">Choose teams to watch and inspect every banner state.</p>
     </div>
-    <section class="masthead-preview" aria-label="Live production banner">
-      <div class="masthead-preview-bar">
-        <span><span class="live-dot"></span>LIVE PRODUCTION</span>
-        <div>
-          <button id="undo-live-change" class="undo-live-button" type="button" hidden>Undo last change</button>
-          <button id="refresh-production" class="preview-refresh" type="button">Refresh</button>
-        </div>
-      </div>
-      <div class="masthead-preview-stage">
-        <iframe id="production-preview" title="Production sports banner preview" width="472" height="100"></iframe>
-      </div>
-    </section>
   </header>
 
   <nav class="tabs" aria-label="Sports overlay sections">
@@ -83,7 +71,7 @@
       <div class="settings-grid">
         <label class="field">Time zone
           <select id="time-zone"></select>
-          <small>Choose a region to keep Chrome and OBS times consistent.</small>
+          <small>Choose a region to use a consistent time zone across the banner and previews.</small>
         </label>
         <label class="field">Display mode
           <select id="display-mode">
@@ -182,6 +170,7 @@
         </div>
 
         <div class="actions rotation-actions">
+          <button id="undo-live-change" class="undo-live-button" type="button" hidden>Undo last change</button>
           <button id="reset-rotation" class="button button--quiet" type="button">Reset rotation</button>
           <span id="rotation-status" class="save-status" role="status"></span>
         </div>
@@ -233,7 +222,7 @@
         <button id="refresh-demo" class="button button--secondary" type="button">Refresh preview</button>
       </div>
       <div class="preview-shell">
-        <div class="preview-label"><span>OBS PREVIEW</span><code id="preview-size">472 × 100</code></div>
+        <div class="preview-label"><span>BANNER PREVIEW</span><code id="preview-size">472 × 100</code></div>
         <div class="preview-stage">
           <iframe id="demo-preview" title="Sports banner demo preview" width="472" height="100"></iframe>
         </div>
@@ -311,5 +300,6 @@
   <script src="../sports/soccer/providers/espn.js?v=3"></script>
   <script src="../sports/basketball/providers/espn.js?v=4"></script>
   <script src="admin.js?v=22"></script>
+  <script src="../core/desktop.js"></script>
 </body>
 </html>
