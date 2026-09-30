@@ -1,3 +1,17 @@
+#sports-overlay[data-preseason="true"]::before {
+  content: "PRESEASON";
+  display: block;
+  padding: 2px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(3, 9, 20, 0.44);
+  color: #aebbc6;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 12px;
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+
 #sports-overlay {
   transform-origin: left center;
   will-change: opacity, transform;

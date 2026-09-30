@@ -47,8 +47,9 @@
       els.bug.classList.remove("is-loading", "is-hidden");
       els.bug.dataset.sport = event.sport;
       els.bug.dataset.state = event.state;
+      els.bug.dataset.preseason = String(event.details.preseason === true);
       global.SportsOverlay.teamTheme.apply(els.bug, event);
-      els.bug.setAttribute("aria-label", `${away.name} at ${home.name} ${event.league} match`);
+      els.bug.setAttribute("aria-label", `${away.name} at ${home.name} ${event.league}${event.details.preseason ? " preseason" : ""} match`);
       setTeam(els.awayMark, els.awayAbbr, els.awayRecord, away);
       setTeam(els.homeMark, els.homeAbbr, els.homeRecord, home);
       const showScore = event.state !== EVENT_STATES.PREGAME;
@@ -78,6 +79,7 @@
     }
 
     function renderNoEvent(message = "No selected soccer match", visible = true) {
+      delete els.bug.dataset.preseason;
       els.bug.classList.remove("is-loading");
       els.bug.classList.toggle("is-hidden", !visible);
       if (!visible) return;

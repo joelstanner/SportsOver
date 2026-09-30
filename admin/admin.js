@@ -47,6 +47,7 @@
   let availableRotationEntries = [];
   let automaticRotationEntries = [];
   let gameDiscoveryRevision = 0;
+  let gameDiscoveryTimer = null;
 
   document.querySelectorAll(".tab").forEach(tab => {
     tab.addEventListener("click", () => selectTab(tab.dataset.tab));
@@ -439,6 +440,8 @@
   }
 
   async function discoverRotationGames() {
+    clearTimeout(gameDiscoveryTimer);
+    gameDiscoveryTimer = setTimeout(discoverRotationGames, 60 * 60 * 1_000);
     const revision = ++gameDiscoveryRevision;
     const rotationStatus = document.querySelector("#rotation-status");
     rotationStatus.textContent = "Loading games…";
@@ -571,6 +574,15 @@
   function renderAvailableGame(entry, list) {
     const card = document.querySelector("#available-game-template").content.firstElementChild.cloneNode(true);
     fillGameCard(card, entry);
+    card.classList.toggle("is-final", entry.candidate.state === "final");
+    if (entry.candidate.state === "final") {
+      const label = document.createElement("span");
+      label.className = "game-final-label";
+      label.textContent = "Final";
+      const meta = gameMeta(entry.candidate);
+      const finalIndex = meta.indexOf(label.textContent);
+      card.querySelector(".game-meta").replaceChildren(meta.slice(0, finalIndex), label, meta.slice(finalIndex + label.textContent.length));
+    }
     card.querySelector(".add-game").addEventListener("click", () => addRotationGame(entry));
     list.append(card);
   }
@@ -648,7 +660,11 @@
   }
 
   function gameMeta(candidate) {
-    const state = candidate.state === "live" ? "Live now" : candidate.state === "final" ? "Final" : "Upcoming";
+    const preseason = candidate.sport === "baseball"
+      ? ["S", "E"].includes(candidate.raw?.gameType)
+      : global.SportsOverlay.model.espnPreseason(candidate.raw || {}, candidate.sport !== "soccer");
+    const gameState = candidate.state === "live" ? "Live now" : candidate.state === "final" ? "Final" : "Upcoming";
+    const state = preseason ? `PRESEASON · ${gameState}` : gameState;
     if (candidate.state === "live" || !candidate.startTime) return state;
     return `${state} · ${global.SportsOverlay.model.formatPregameStart(candidate.startTime, new Date(), workingConfig.timeZone === "local" ? undefined : workingConfig.timeZone)}`;
   }

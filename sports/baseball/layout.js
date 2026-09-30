@@ -153,8 +153,9 @@
       els.bug.classList.remove("is-hidden", "is-loading");
       els.bug.dataset.sport = event.sport;
       els.bug.dataset.state = event.state;
+      els.bug.dataset.preseason = String(event.details.preseason === true);
       global.SportsOverlay.teamTheme.apply(els.bug, event);
-      els.bug.setAttribute("aria-label", `${away.name} at ${home.name} ${event.league} game`);
+      els.bug.setAttribute("aria-label", `${away.name} at ${home.name} ${event.league}${event.details.preseason ? " preseason" : ""} game`);
       setTeam(els.awayTeam, els.awayLogo, els.awayAbbr, away);
       setTeam(els.homeTeam, els.homeLogo, els.homeAbbr, home);
 
@@ -252,6 +253,7 @@
     }
 
     function renderNoEvent(message = "No selected game today", visible = true) {
+      delete els.bug.dataset.preseason;
       dispose();
       showElement(els.seriesDetails, false);
       hideExtendedDetails();

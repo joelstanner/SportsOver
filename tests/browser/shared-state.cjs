@@ -94,6 +94,25 @@ const root = path.resolve(__dirname, '../..');
     await defaultLive.fill('20');
     await defaultLive.press('Tab');
     const postseason = await contexts[1].newPage();
+    const hourlyAdmin = await contexts[0].newPage();
+    await hourlyAdmin.clock.install();
+    await hourlyAdmin.goto('http://127.0.0.1:8000/sports/admin/');
+    await hourlyAdmin.evaluate(() => {
+      window.discoveryCalls = 0;
+      window.SportsOverlay.providerDiscovery.discover = async () => {
+        window.discoveryCalls += 1;
+        return { favoriteGames: [], leagueGames: [], failures: 0 };
+      };
+    });
+    await hourlyAdmin.getByRole('button', { name: 'Live control', exact: true }).click();
+    await hourlyAdmin.getByText('Games refreshed', { exact: true }).waitFor();
+    const firstDiscoveryCalls = await hourlyAdmin.evaluate(() => window.discoveryCalls);
+    assert.ok(firstDiscoveryCalls > 0);
+    await hourlyAdmin.clock.fastForward(59 * 60 * 1000);
+    assert.equal(await hourlyAdmin.evaluate(() => window.discoveryCalls), firstDiscoveryCalls);
+    await hourlyAdmin.clock.fastForward(60 * 1000);
+    await hourlyAdmin.waitForFunction(count => window.discoveryCalls > count, firstDiscoveryCalls);
+    await hourlyAdmin.close();
     await postseason.clock.install();
     await postseason.goto('http://127.0.0.1:8000/sports/?sport=baseball&demo=live');
     await postseason.evaluate(() => {

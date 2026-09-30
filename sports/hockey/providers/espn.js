@@ -78,6 +78,7 @@
         home: normalizeTeam(homeSource, homeStats?.team, featuredTeamId),
       },
       details: {
+        preseason: global.SportsOverlay.model.espnPreseason(payload),
         period: periodLabel(status.period),
         clock: status.displayClock || "",
         awayShots: statistic(awayStats, "shotsTotal"),

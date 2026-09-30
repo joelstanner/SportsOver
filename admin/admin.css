@@ -128,6 +128,9 @@ select, input { border: 1px solid var(--line); border-radius: 8px; padding: 10px
 .game-name { overflow: hidden; font-size: 0.82rem; text-overflow: ellipsis; white-space: nowrap; }
 .game-meta, .game-source { color: var(--muted); font-size: 0.68rem; }
 .game-card.is-live .game-meta { color: #ff6b6b; font-weight: 800; }
+.game-card--available.is-final { background: #121b29; border-color: #41516a; }
+.game-card--available.is-final .game-meta { color: #a8b9d1; font-weight: 800; }
+.game-final-label { color: var(--amber); }
 .game-source { border: 1px solid var(--line); border-radius: 999px; padding: 4px 6px; white-space: nowrap; }
 .duration-control { display: grid; grid-template-columns: 26px 42px 26px; align-items: center; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
 .duration-control button { border: 0; padding: 5px 0; color: var(--ink); background: #101d21; font-weight: 800; }

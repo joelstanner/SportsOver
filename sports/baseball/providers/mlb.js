@@ -118,6 +118,7 @@
       startTime: gameData.datetime?.dateTime ?? null,
       teams: { away, home },
       details: {
+        preseason: ["S", "E"].includes(gameData.game?.type),
         inningNumber: linescore.currentInning ?? null,
         inningOrdinal: linescore.currentInningOrdinal ?? null,
         inningState: linescore.inningState ?? null,

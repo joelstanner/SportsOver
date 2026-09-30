@@ -37,6 +37,17 @@
     return event;
   }
 
+  // Read game-level metadata only; league metadata may describe a different season.
+  function espnPreseason(payload, numericType = true) {
+    const season = payload.header?.season ?? payload.season
+      ?? payload.header?.competitions?.[0]?.season ?? payload.competitions?.[0]?.season;
+    const type = season?.type;
+    const name = typeof type === "object" ? type?.name : "";
+    const slug = season?.slug || name || season?.name || "";
+    if (/^pre[ -]?season$/i.test(slug)) return true;
+    return numericType && Number(typeof type === "object" ? type?.id ?? type?.type : type) === 1;
+  }
+
   function selectedTimeZone() {
     const configured = global.SportsOverlay?.config?.loadConfig()?.timeZone;
     return !configured || configured === "local"
@@ -74,5 +85,5 @@
   }
 
   global.SportsOverlay = global.SportsOverlay || {};
-  global.SportsOverlay.model = Object.freeze({ EVENT_STATES, createEvent, validateEvent, formatPregameStart, formatGameTime });
+  global.SportsOverlay.model = Object.freeze({ EVENT_STATES, createEvent, validateEvent, espnPreseason, formatPregameStart, formatGameTime });
 })(typeof window === "undefined" ? globalThis : window);

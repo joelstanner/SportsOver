@@ -93,6 +93,7 @@
       startTime: competition.date ?? payload.date ?? null,
       teams: { away, home },
       details: {
+        preseason: global.SportsOverlay.model.espnPreseason(payload),
         quarter: periodLabel(status.period),
         clock: status.displayClock || "",
         down: finiteNumberOrNull(situation.down),
