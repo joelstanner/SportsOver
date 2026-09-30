@@ -19,6 +19,7 @@
   window.sportsDesktop.onEngineCommand(command => {
     if (command.type === 'override') window.SportsOverlay.engine?.override(command.value);
     if (command.type === 'refresh') window.SportsOverlay.engine?.refresh();
+    if (command.type === 'next') window.SportsOverlay.engine?.next();
     publish();
   });
   setInterval(publish, 100);

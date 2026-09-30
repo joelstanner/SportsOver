@@ -5,6 +5,7 @@ const { EngineState } = require('./engine-state.cjs');
 const { startServer, credentials } = require('./server.cjs');
 const { Store, applyCatalog } = require('./store.cjs');
 const { fitBounds } = require('./bounds.cjs');
+const { createBannerGesture } = require('./banner-gesture.cjs');
 const { createHandler, ORIGIN } = require('./protocol.cjs');
 app.setName('SportsOver');
 if (process.env.SPORTSOVER_TEST_DATA) app.setPath('userData', process.env.SPORTSOVER_TEST_DATA);
@@ -12,6 +13,11 @@ protocol.registerSchemesAsPrivileged([{ scheme: 'sportsover', privileges: { stan
 const engineState = new EngineState();
 let appIcon, trayIcon, outputServer, engineWindow, obsUrl, integrationToken, lastRefresh = 0;
 let banner, settings, tray, store, quitting = false, locked = false, shortcut = false, saveTimer;
+const bannerGesture = createBannerGesture({
+  bounds: () => banner.getBounds(),
+  move: (x, y) => banner.setPosition(x, y),
+  next: () => engineWindow.webContents.send('engine:command', { type: 'next' }),
+});
 const root = path.resolve(__dirname, '..');
 const trusted = url => url.startsWith(`${ORIGIN}/sports/`);
 function secure(win) {
@@ -26,6 +32,7 @@ function persist(patch) {
   catch (error) { dialog.showErrorBox('SportsOver could not save preferences', error.message); }
 }
 function lock(value) {
+  bannerGesture({ phase: 'cancel' });
   locked = !!value;
   banner.setIgnoreMouseEvents(locked, { forward: true });
   persist({ locked });
@@ -127,6 +134,12 @@ else {
     const bounds = fitBounds(store.value.desktop.bounds, screen.getAllDisplays());
     banner = new BrowserWindow({ ...bounds, title: 'SportsOver', transparent: true, backgroundColor: '#00000000', frame: false, hasShadow: false, alwaysOnTop: true, resizable: false, maximizable: false, fullscreenable: false, skipTaskbar: true, show: false, webPreferences: preferences() });
     secure(banner);
+    banner.on('blur', () => bannerGesture({ phase: 'cancel' }));
+    banner.webContents.on('context-menu', () => {
+      bannerGesture({ phase: 'cancel' });
+      if (locked) return;
+      Menu.buildFromTemplate([{ label: 'Settings…', click: openSettings }]).popup({ window: banner });
+    });
     banner.setAlwaysOnTop(true, 'floating');
     if (process.platform === 'darwin') banner.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
     banner.on('close', event => { if (!quitting) { event.preventDefault(); banner.hide(); persist({ visible: false }); menus(); } });
@@ -182,6 +195,13 @@ else {
       else if (action === 'recover') recover();
       else if (action === 'size') resize(value);
       else if (action === 'settings') openSettings();
+      else if (action === 'banner-pointer') {
+        if (event.sender !== banner.webContents) throw Error('Banner access required');
+        if (!locked) bannerGesture(value);
+      }
+      else if (action === 'next') {
+        if (!locked) engineWindow.webContents.send('engine:command', { type: 'next' });
+      }
       else if (action === 'copy-obs') { if (obsUrl) clipboard.writeText(obsUrl); }
       else if (action === 'copy-token') {
         if (event.sender !== settings?.webContents) throw Error('Settings access required');

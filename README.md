@@ -55,7 +55,11 @@ This repository distributes source only. Installers, signing/notarization, autom
 
 ## Desktop controls
 
-- **Move:** drag anywhere on the unlocked banner, including between monitors.
+`npm start` preserves Electron's diagnostic output. If Chromium reports a macOS Keychain certificate with `Failed parsing extensions`, the launcher adds an explanation that Chromium skipped that certificate and is continuing. No action is needed when scores load normally; other certificate or network errors still need investigation.
+
+- **Skip:** click the unlocked banner to advance to the next rotation item with a fresh display interval. Game locks and temporary overrides still apply. Desktop and OBS stay in sync.
+- **Move:** click anywhere on the unlocked banner and drag, including between monitors. Moving more than 5 screen pixels starts a drag; releasing after dragging never skips a game.
+- **Settings:** right-click the banner and choose **Settings…**. Right-clicking does not advance rotation.
 - **Resize:** choose Banner size in Settings or the tray menu. Proportional scaling keeps the full 472 × 100 design intact; transparent windows do not rely on platform-specific native resize borders.
 - **Lock:** clicks pass through the banner to the application beneath it. Use **Unlock** in Settings or uncheck **Lock / click through** in the tray menu.
 - **Recover:** **Ctrl+Shift+U** on Windows or **Cmd+Shift+U** on macOS unlocks, shows, and moves the banner onto the primary display, then opens Settings. The Settings status reports if another application owns that shortcut. Tray and Settings controls remain available.

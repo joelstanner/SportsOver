@@ -58,7 +58,7 @@ async function fixture(extraFavorites = []) {
     }
     now = end; await flush();
   }
-  return { calls, renders, timers, advance, flush, visibility,
+  return { calls, renders, timers, advance, flush, visibility, engine: api.engine,
     async updateDefaultDuration(seconds) {
       config.defaultGameDurations = { live: seconds, pregame: 5, final: 10 };
       await notify({ initialized: true, instance: "one", catalogRevision: 0, config: structuredClone(config) });
@@ -129,4 +129,29 @@ test("default timing changes immediately reschedule banner rotation", async () =
   assert.equal(app.renders.length, count);
   await app.advance(15000);
   assert.equal(app.renders.at(-1), "game/2");
+});
+
+test("manual next wraps the queue and gives the next game a fresh dwell interval", async () => {
+  const app = await fixture();
+  await app.advance(4000);
+  await app.engine.next();
+  assert.equal(app.renders.at(-1), "game/2");
+  await app.advance(1000);
+  assert.equal(app.renders.at(-1), "game/2", "old rotation deadline was cancelled");
+  await app.advance(4000);
+  assert.equal(app.renders.at(-1), "game/1");
+  await app.engine.next();
+  await app.engine.next();
+  assert.equal(app.renders.at(-1), "game/1");
+  assert.ok(app.timers.size <= 3);
+});
+
+test("manual next preserves a temporary game override", async () => {
+  const app = await fixture();
+  app.engine.override({ gameKey: "baseball:2" });
+  await app.flush();
+  const before = app.engine.describe().currentGameKey;
+  await app.engine.next();
+  assert.equal(app.engine.describe().currentGameKey, before);
+  assert.equal(app.engine.describe().overrideGameKey, "baseball:2");
 });

@@ -12,7 +12,7 @@ Implementation tested on macOS (Darwin 24.6.0, Apple Silicon), Electron 44.5.0, 
 
 The automated test invokes native APIs but does **not** establish that physical mouse clicks pass through to another application or that OS drag regions track real mouse movement correctly. Before relying on the app during a broadcast/session, check:
 
-1. Drag the unlocked banner across monitors with different scaling; quit/restart and confirm placement and size.
+1. Drag from anywhere on the unlocked banner across monitors with different scaling; quit/restart and confirm placement and size. Click and release to skip. Confirm dragging (including dragging away and back) does not skip on release. Right-click and choose Settings; confirm the menu opens Settings without advancing rotation.
 2. Lock and click a control in another app beneath the banner. Unlock from the tray, Settings, and the recovery shortcut.
 3. Hide the banner, close Settings, and reopen from the tray. Launch a second instance and confirm the existing app recovers.
 4. Disconnect the monitor containing the banner, including while locked. Check recovery on the remaining display.

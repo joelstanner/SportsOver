@@ -82,8 +82,15 @@ const root = path.resolve(__dirname, '../..');
     assert.ok([...adminSchedules].some(path => path.includes('/teams/158/schedule')));
     assert.ok([...adminSchedules].some(path => path.includes('/teams/264/schedule')));
     const defaultLive = chrome.locator('[data-default-duration="live"]');
-    await defaultLive.fill('40');
-    await defaultLive.press('Tab');
+    await defaultLive.fill('');
+    // Refreshing the rotation UI (also done by desktop polling) preserves edits.
+    await chrome.evaluate(() => document.querySelector('#game-search').dispatchEvent(new Event('input')));
+    assert.equal(await defaultLive.inputValue(), '');
+    await defaultLive.pressSequentially('4');
+    await chrome.evaluate(() => document.querySelector('#game-search').dispatchEvent(new Event('input')));
+    assert.equal(await defaultLive.inputValue(), '4');
+    await defaultLive.pressSequentially('0');
+    await defaultLive.press('Enter');
     await obs.waitForFunction(() => window.SportsOverlay.config.loadConfig().defaultGameDurations.live === 40);
     assert.equal(await obs.evaluate(() => window.testMarker), marker);
     await chrome.locator('#undo-live-change').click();
@@ -91,6 +98,12 @@ const root = path.resolve(__dirname, '../..');
     await defaultLive.fill('8');
     await defaultLive.press('Tab');
     assert.equal(state.config.defaultGameDurations.live, 20);
+    for (const invalid of ['4', '305']) {
+      await defaultLive.fill(invalid);
+      await defaultLive.press('Enter');
+      assert.equal(await defaultLive.evaluate(input => input.checkValidity()), false);
+      assert.equal(state.config.defaultGameDurations.live, 20);
+    }
     await defaultLive.fill('20');
     await defaultLive.press('Tab');
     const postseason = await contexts[1].newPage();

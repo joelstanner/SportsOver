@@ -69,6 +69,47 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     await banner.locator('.scorebug').waitFor();
     assert.match(await banner.locator('body').innerText(), /SEA|Mariners/i);
     assert.equal(await banner.evaluate(() => typeof window.SportsOverlay), 'undefined', 'desktop loads no provider or rotation engine');
+    await admin.getByRole('button', { name: 'Live control', exact: true }).click();
+    await admin.locator('#available-games [data-game-key="baseball:2"] .add-game').click();
+    await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 2);
+    const initialGame = await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey);
+    await banner.locator('.scorebug').click();
+    await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey !== key, initialGame);
+    const skippedGame = await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey);
+    assert.equal(await banner.locator('.banner-controls').count(), 0, 'no hover controls cover scores');
+    const bannerBounds = () => application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
+      .find(win => win.webContents.getURL().includes('display.html?desktop')).getBounds());
+    const beforeDrag = await bannerBounds();
+    const box = await banner.locator('.scorebug').boundingBox();
+    await banner.mouse.move(box.x + 40, box.y + 20);
+    await banner.mouse.down();
+    await banner.mouse.move(box.x + 70, box.y + 40);
+    await banner.mouse.up();
+    const afterDrag = await bannerBounds();
+    assert.ok(afterDrag.x !== beforeDrag.x || afterDrag.y !== beforeDrag.y, 'dragging moves the native window');
+    assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame, 'drag release does not skip');
+    await application.evaluate(({ Menu, BrowserWindow }) => {
+      const build = Menu.buildFromTemplate;
+      Menu.buildFromTemplate = function(template) {
+        const menu = build.call(this, template);
+        if (template.length === 1 && template[0].label === 'Settings…') globalThis.bannerTestMenu = menu;
+        return menu;
+      };
+      BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('/admin/')).hide();
+    });
+    await banner.locator('.scorebug').click({ button: 'right' });
+    await application.evaluate(async () => {
+      for (let i = 0; i < 50 && !globalThis.bannerTestMenu; i++) await new Promise(resolve => setTimeout(resolve, 20));
+      if (!globalThis.bannerTestMenu) throw Error('Banner context menu did not open');
+      globalThis.bannerTestMenu.closePopup();
+      globalThis.bannerTestMenu.items[0].click();
+    });
+    assert.equal(await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
+      .find(win => win.webContents.getURL().includes('/admin/')).isVisible()), true);
+    assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame, 'right-click Settings does not skip');
+    await admin.locator('#rotation-queue [data-game-key="baseball:2"] .remove-game').click();
+    await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 1);
+    await admin.locator('[data-tab="settings"]').click();
     await banner.screenshot({ path: path.join(directory, 'banner.png'), omitBackground: true });
     await admin.screenshot({ path: path.join(directory, 'settings.png') });
     await admin.locator('[data-desktop="lock"]').click();

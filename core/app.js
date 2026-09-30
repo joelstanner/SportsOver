@@ -62,6 +62,15 @@ window.SportsOverlay.engine = {
     overrideGameKey: entryKey(overrideEntry) || null,
   }),
   refresh: () => discoverGames(),
+  async next() {
+    if (overrideEntry || rotationQueue.length < 2) return;
+    clearTimeout(rotationTimer); rotationTimer = null;
+    const generation = ++rotationGeneration;
+    clearTimeout(pollTimer); pollGeneration++;
+    currentIndex = (currentIndex + 1) % rotationQueue.length;
+    await renderCurrentGame({ animate: true });
+    if (generation === rotationGeneration) { schedulePoll(); scheduleRotation(); }
+  },
   override(value) {
     overrideEntry = value ? (cachedDiscoveries || []).flatMap(result => result.availableEntries)
       .find(entry => entryKey(entry) === value.gameKey) || null : null;

@@ -102,6 +102,12 @@
   document.querySelector("#available-sport-filter").addEventListener("change", renderRotationControls);
   document.querySelector("#game-search").addEventListener("input", renderRotationControls);
   document.querySelectorAll("[data-default-duration]").forEach(input => {
+    input.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        if (input.reportValidity()) input.blur();
+      }
+    });
     input.addEventListener("change", () => {
       if (!input.reportValidity()) return;
       const previousLiveConfig = savedLiveConfig();
@@ -518,7 +524,10 @@
 
   function renderRotationControls() {
     document.querySelectorAll("[data-default-duration]").forEach(input => {
-      input.value = workingConfig.defaultGameDurations[input.dataset.defaultDuration];
+      // Desktop engine refreshes must not replace a value being typed.
+      if (document.activeElement !== input) {
+        input.value = workingConfig.defaultGameDurations[input.dataset.defaultDuration];
+      }
     });
     document.querySelector("#rotation-mode").value = workingConfig.rotationMode;
     const queue = currentRotationQueue();
@@ -586,15 +595,6 @@
   function renderAvailableGame(entry, list) {
     const card = document.querySelector("#available-game-template").content.firstElementChild.cloneNode(true);
     fillGameCard(card, entry);
-    card.classList.toggle("is-final", entry.candidate.state === "final");
-    if (entry.candidate.state === "final") {
-      const label = document.createElement("span");
-      label.className = "game-final-label";
-      label.textContent = "Final";
-      const meta = gameMeta(entry.candidate);
-      const finalIndex = meta.indexOf(label.textContent);
-      card.querySelector(".game-meta").replaceChildren(meta.slice(0, finalIndex), label, meta.slice(finalIndex + label.textContent.length));
-    }
     card.querySelector(".add-game").addEventListener("click", () => addRotationGame(entry));
     list.append(card);
   }
@@ -607,6 +607,15 @@
     renderGameLogos(card.querySelector(".game-logos"), entry.candidate);
     card.querySelector(".game-name").textContent = gameName(entry.candidate);
     card.querySelector(".game-meta").textContent = gameMeta(entry.candidate);
+    card.classList.toggle("is-final", entry.candidate.state === "final");
+    if (entry.candidate.state === "final") {
+      const label = document.createElement("span");
+      label.className = "game-final-label";
+      label.textContent = "Final";
+      const meta = gameMeta(entry.candidate);
+      const finalIndex = meta.indexOf(label.textContent);
+      card.querySelector(".game-meta").replaceChildren(meta.slice(0, finalIndex), label, meta.slice(finalIndex + label.textContent.length));
+    }
   }
 
   function renderGameLogos(container, candidate) {
