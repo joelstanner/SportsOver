@@ -10,7 +10,8 @@
   "scripts": {
     "start": "electron .",
     "test": "node --test tests/core/*.test.js tests/sports/*/*.test.js tests/desktop/*.test.cjs",
-    "test:desktop": "node scripts/desktop-smoke.cjs"
+    "test:desktop": "node scripts/desktop-smoke.cjs",
+    "build:mac": "node scripts/build-mac.cjs"
   },
   "devDependencies": {
     "electron": "44.5.0",

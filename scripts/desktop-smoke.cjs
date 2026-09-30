@@ -15,7 +15,7 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
   let application;
   const errors = [];
   async function launch() {
-    application = await electron.launch({ args: [path.resolve(__dirname, '..')], env: { ...process.env, SPORTSOVER_TEST_DATA: directory } });
+    application = await electron.launch({ ...(process.env.SPORTSOVER_TEST_EXECUTABLE ? { executablePath: process.env.SPORTSOVER_TEST_EXECUTABLE, args: [] } : { args: [path.resolve(__dirname, '..')] }), env: { ...process.env, SPORTSOVER_TEST_DATA: directory } });
     application.on('window', page => page.on('pageerror', error => errors.push(error.message)));
     await application.evaluate(async ({ session }, fixture) => {
       globalThis.sportsTestRequests = [];
@@ -43,11 +43,29 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     const banner = pages.find(page => page.url().includes('display.html?desktop'));
     const engine = pages.find(page => page.url().includes('engine=1'));
     assert.ok(admin && banner && engine, 'settings, passive banner, and sole engine exist');
+    // Packaged apps can start fetching before Playwright installs the fixtures.
+    // Restart the engine after interception so assertions never use live data.
+    await engine.reload();
     await admin.waitForFunction(async () => (await window.sportsDesktop.engine()).availableEntries.length >= 2);
+    await banner.waitForFunction(() => /SEA|Mariners/i.test(document.body.innerText));
     return { admin, banner, engine };
   }
   try {
     let { admin, banner, engine } = await launch();
+    const desktopStatus = await admin.evaluate(() => window.sportsDesktop.status());
+    assert.equal(desktopStatus.trayAvailable, true, 'native status item was created');
+    assert.equal(desktopStatus.appIconAvailable, true, 'custom application artwork loaded');
+    assert.ok(desktopStatus.trayBounds.width > 0 && desktopStatus.trayBounds.height > 0);
+    const menuState = await application.evaluate(({ Menu }) => {
+      const menu = Menu.getApplicationMenu();
+      menu.getMenuItemById('toggle-banner').click();
+      return { labels: menu.items.map(item => item.label), settingsShortcut: menu.getMenuItemById('settings').accelerator };
+    });
+    assert.ok(menuState.labels.includes('Banner'));
+    assert.equal(menuState.settingsShortcut, 'CommandOrControl+,');
+    assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).visible), false);
+    await application.evaluate(({ Menu }) => Menu.getApplicationMenu().getMenuItemById('toggle-banner').click());
+    assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).visible), true);
     await banner.locator('.scorebug').waitFor();
     assert.match(await banner.locator('body').innerText(), /SEA|Mariners/i);
     assert.equal(await banner.evaluate(() => typeof window.SportsOverlay), 'undefined', 'desktop loads no provider or rotation engine');

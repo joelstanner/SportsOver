@@ -21,4 +21,14 @@ The automated test invokes native APIs but does **not** establish that physical 
 7. Load the local URL in the actual OBS Browser Source on each target platform. Check reconnection after SportsOver restart and desktop-independent visibility. Test real MLB/ESPN requests and catalog refresh under offline/reconnect conditions.
 8. Check Windows source installation/start and all native behaviors. Linux is experimental, especially Wayland; exclusive-fullscreen and protected system screens are outside the always-on-top guarantee.
 
-The app intentionally uses explicit proportional size controls because transparent native-window resizing varies by platform. No installer, signing, notarization, update service, or packaged-release behavior has been tested or implemented.
+The app intentionally uses explicit proportional size controls because transparent native-window resizing varies by platform. No installer, distribution signing, notarization, or update service is implemented. The local ad-hoc signed macOS bundle is built and verified separately below.
+
+## Native menus and icons
+
+The desktop smoke test also checks status-item creation and nonzero native bounds, the Settings shortcut, and hide/show via the application menu. These checks do not prove the item is physically visible: macOS can hide status items when the menu bar is full or auto-hidden.
+
+After restart, locate the compact scoreboard icon in the right menu bar. Single-click it and check Settings, hide/show, lock, recovery, size and Quit. Check light/dark appearance and Retina displays. The same banner controls are under the **Banner** application menu; Settings uses Cmd+,; standard About, Services, Hide, Edit, File/Close and Window menus use native behavior. With Settings closed and the banner hidden, the tray must still reopen Settings.
+
+Dock/About artwork now uses the supplied scoreboard PNG; see `assets/README.md`. `npm run build:mac` creates a local SportsOver.app with the same icon and native application name. Check its Finder/Dock icon and application menu separately from the `npm start` development launcher. The bundle is ad-hoc signed, not notarized.
+
+The local bundle passed `codesign --verify --deep --strict` and the desktop smoke test using `SPORTSOVER_TEST_EXECUTABLE` set to its `Contents/MacOS/Electron` executable. The smoke test reloads the engine after installing request fixtures to avoid a packaged-startup race with live feeds. The running bundle was checked through macOS accessibility: its application menu is named SportsOver. A native placement probe confirmed the default moves the status item to x=1180 on the 1470-point display instead of the center/notch area; physical tray visibility still depends on the OS layout.

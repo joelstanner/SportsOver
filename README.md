@@ -114,3 +114,9 @@ Platform results and remaining manual checks are recorded in [desktop/TESTING.md
 ## License
 
 SportsOver is licensed under the [MIT License](LICENSE). Third-party dependencies and sports data, logos, and trademarks remain subject to their respective licenses and terms.
+
+## Local macOS app
+
+Run `npm run build:mac`, then open `dist/SportsOver.app` for the SportsOver application name and scoreboard Dock/Finder icon. This reuses the installed Electron runtime and creates a local ad-hoc signed bundle; it is not notarized for distribution. Rebuild after source changes. `npm start` remains the development launcher and macOS may identify it as Electron. Both launches use the same SportsOver settings.
+
+The menu-bar scoreboard uses a compact template icon with a persistent position. Its initial position is near the right edge to avoid a crowded MacBook notch area; Cmd-drag can reposition it. Banner controls also remain available in the Banner application menu.

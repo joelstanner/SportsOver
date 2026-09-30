@@ -1,5 +1,6 @@
-const { app, BrowserWindow, Menu, Tray, nativeImage, globalShortcut, ipcMain, protocol, screen, session, dialog, clipboard } = require('electron');
+const { app, BrowserWindow, Menu, Tray, nativeImage, globalShortcut, ipcMain, protocol, screen, session, dialog, clipboard, systemPreferences } = require('electron');
 const path = require('node:path');
+const fs = require('node:fs');
 const { EngineState } = require('./engine-state.cjs');
 const { startServer, credentials } = require('./server.cjs');
 const { Store, applyCatalog } = require('./store.cjs');
@@ -9,7 +10,7 @@ app.setName('SportsOver');
 if (process.env.SPORTSOVER_TEST_DATA) app.setPath('userData', process.env.SPORTSOVER_TEST_DATA);
 protocol.registerSchemesAsPrivileged([{ scheme: 'sportsover', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
 const engineState = new EngineState();
-let engineWindow, outputServer, obsUrl, integrationToken, lastRefresh = 0;
+let appIcon, trayIcon, outputServer, engineWindow, obsUrl, integrationToken, lastRefresh = 0;
 let banner, settings, tray, store, quitting = false, locked = false, shortcut = false, saveTimer;
 const root = path.resolve(__dirname, '..');
 const trusted = url => url.startsWith(`${ORIGIN}/sports/`);
@@ -40,33 +41,57 @@ function recover() {
 }
 function openSettings() {
   if (settings && !settings.isDestroyed()) { if (settings.webContents.isCrashed()) settings.webContents.reload(); settings.show(); settings.focus(); return; }
-  settings = new BrowserWindow({ title: 'SportsOver Settings', width: 1120, height: 820, minWidth: 700, minHeight: 500, backgroundColor: '#0b1620', webPreferences: preferences() });
+  settings = new BrowserWindow({ icon: appIcon, title: 'SportsOver Settings', width: 1120, height: 820, minWidth: 700, minHeight: 500, backgroundColor: '#0b1620', webPreferences: preferences() });
   secure(settings);
   settings.on('closed', () => { settings = null; });
   settings.loadURL(`${ORIGIN}/sports/admin/`);
 }
 function menus() {
   const controls = [
-    { label: 'Settings…', click: openSettings },
-    { label: banner?.isVisible() ? 'Hide banner' : 'Show banner', click: () => { if (banner.isVisible()) { banner.hide(); persist({ visible: false }); menus(); } else showBanner(); } },
-    { label: 'Lock / click through', type: 'checkbox', checked: locked, click: item => lock(item.checked) },
-    { label: 'Recover banner (unlock and reposition)', accelerator: 'CommandOrControl+Shift+U', click: recover },
+    { id: 'settings', label: 'Settings…', accelerator: 'CommandOrControl+,', click: openSettings },
+    { id: 'toggle-banner', label: banner?.isVisible() ? 'Hide banner' : 'Show banner', click: () => { if (banner.isVisible()) { banner.hide(); persist({ visible: false }); menus(); } else showBanner(); } },
+    { id: 'lock-banner', label: 'Lock / click through', type: 'checkbox', checked: locked, click: item => lock(item.checked) },
+    { id: 'recover-banner', label: 'Recover banner (unlock and reposition)', accelerator: 'CommandOrControl+Shift+U', click: recover },
     { label: 'Banner size', submenu: [0.75, 1, 1.25, 1.5, 2].map(scale => ({ label: `${Math.round(scale * 100)}%`, click: () => resize(scale) })) },
     { type: 'separator' }, { label: 'Quit SportsOver', accelerator: 'CommandOrControl+Q', click: () => app.quit() },
   ];
   tray?.setContextMenu(Menu.buildFromTemplate(controls));
-  Menu.setApplicationMenu(Menu.buildFromTemplate([{ label: 'SportsOver', submenu: controls }, { label: 'Edit', submenu: [{ role: 'undo' }, { role: 'redo' }, { type: 'separator' }, { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }] }]));
+  const mac = process.platform === 'darwin';
+  const settingsItem = controls[0];
+  const bannerControls = controls.slice(1, 5);
+  const quitItem = controls[6];
+  Menu.setApplicationMenu(Menu.buildFromTemplate([
+    ...(mac ? [{ label: 'SportsOver', submenu: [
+      { role: 'about' }, { type: 'separator' }, settingsItem,
+      { type: 'separator' }, { role: 'services' }, { type: 'separator' },
+      { role: 'hide' }, { role: 'hideOthers' }, { role: 'unhide' },
+      { type: 'separator' }, quitItem,
+    ] }] : []),
+    { label: 'File', submenu: [...(mac ? [] : [settingsItem, { type: 'separator' }]), { role: 'close' }, ...(mac ? [] : [quitItem])] },
+    { label: 'Edit', submenu: [{ role: 'undo' }, { role: 'redo' }, { type: 'separator' }, { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }] },
+    { label: 'Banner', submenu: bannerControls },
+    { role: 'windowMenu' },
+  ]));
 }
 function resize(scale) {
   if (typeof scale !== 'number' || !Number.isFinite(scale) || scale < 0.5 || scale > 3) throw Error('Invalid banner size');
   banner.setBounds(fitBounds({ ...banner.getBounds(), width: Math.round(472 * scale) }, screen.getAllDisplays()));
 }
-function status() { return { obsUrl, engineReady: engineState.ready, override: engineState.override, locked, visible: banner.isVisible(), scale: banner.getBounds().width / 472, shortcut, warning: store.warning }; }
+function status() { return { trayAvailable: !!tray && !tray.isDestroyed(), trayBounds: tray && !tray.isDestroyed() ? tray.getBounds() : null, appIconAvailable: !!appIcon, obsUrl, engineReady: engineState.ready, override: engineState.override, locked, visible: banner.isVisible(), scale: banner.getBounds().width / 472, shortcut, warning: store.warning }; }
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', () => { if (banner) recover(); });
   app.whenReady().then(async () => {
     store = new Store(app.getPath('userData'));
+    // Source launches have no bundle icon. Load custom artwork when supplied.
+    const appIconPath = path.join(__dirname, 'assets', 'SportsOver.png');
+    if (fs.existsSync(appIconPath)) {
+      const image = nativeImage.createFromPath(appIconPath);
+      if (!image.isEmpty()) appIcon = image;
+      else store.warning += ' SportsOver.png could not be decoded.';
+    }
+    if (process.platform === 'darwin' && appIcon) app.dock.setIcon(appIcon);
+    app.setAboutPanelOptions({ applicationName: 'SportsOver', applicationVersion: app.getVersion(), ...(appIcon ? { iconPath: appIconPath } : {}) });
     const { updateCatalogs } = await import('../scripts/team-catalog.mjs');
     protocol.handle('sportsover', createHandler({ root, dataRoot: app.getPath('userData'), store, engine: engineState, refresh: async sport => {
       try { return await updateCatalogs(sport, app.getPath('userData')); }
@@ -117,10 +142,35 @@ else {
       const border = x < 4 || x > 15 || y < 5 || y > 14 || x === 9 || x === 10;
       if (border) { const i = (y * 20 + x) * 4; pixels[i] = pixels[i + 1] = pixels[i + 2] = process.platform === 'darwin' ? 0 : 255; pixels[i + 3] = 255; }
     }
-    const icon = nativeImage.createFromBitmap(pixels, { width: 20, height: 20 });
-    icon.setTemplateImage(true);
-    try { tray = new Tray(icon); tray.setToolTip('SportsOver — desktop sports banner'); tray.on('double-click', openSettings); }
-    catch (error) { store.warning += ` Tray unavailable: ${error.message}`; }
+    trayIcon = nativeImage.createFromBitmap(pixels, { width: 20, height: 20 });
+    // Keep both the image and Tray alive. Supply a Retina representation too.
+    const retina = Buffer.alloc(40 * 40 * 4);
+    for (let y = 0; y < 40; y++) for (let x = 0; x < 40; x++) {
+      const source = (Math.floor(y / 2) * 20 + Math.floor(x / 2)) * 4;
+      pixels.copy(retina, (y * 40 + x) * 4, source, source + 4);
+    }
+    trayIcon.addRepresentation({ scaleFactor: 2, buffer: nativeImage.createFromBitmap(retina, { width: 40, height: 40 }).toPNG() });
+    trayIcon.setTemplateImage(process.platform === 'darwin');
+    try {
+      if (trayIcon.isEmpty()) throw Error('The status icon is empty');
+      const trayId = '671bb5a6-24fd-45f6-a087-9a51fd74f13b';
+      if (process.platform === 'darwin') {
+        // AppKit's autosaved status-item position is measured from the right.
+        // A registration default avoids the crowded/notched center on first use;
+        // an existing user-chosen position always takes precedence.
+        systemPreferences.registerDefaults({ [`NSStatusItem Preferred Position ${trayId}`]: 220 });
+      }
+      tray = process.platform === 'darwin' ? new Tray(trayIcon, trayId) : new Tray(trayIcon);
+      tray.setToolTip('SportsOver — desktop sports banner');
+      if (process.platform === 'darwin') {
+        tray.setIgnoreDoubleClickEvents(true);
+      } else tray.on('double-click', openSettings);
+      menus();
+    } catch (error) {
+      tray?.destroy(); tray = null;
+      store.warning += ` Tray unavailable: ${error.message}`;
+      console.error('SportsOver status item unavailable:', error);
+    }
     shortcut = globalShortcut.register('CommandOrControl+Shift+U', recover);
     ipcMain.handle('desktop:status', event => { authorize(event); return status(); });
     ipcMain.handle('desktop:action', (event, action, value) => {
@@ -159,4 +209,4 @@ function authorize(event) {
 app.on('activate', () => { if (banner) openSettings(); });
 app.on('window-all-closed', () => { /* Tray owns the application lifetime. */ });
 app.on('before-quit', () => { quitting = true; clearTimeout(saveTimer); if (banner && store) persist({ bounds: banner.getBounds() }); });
-app.on('will-quit', () => { globalShortcut.unregisterAll(); engineState.stop(); outputServer?.close(); });
+app.on('will-quit', () => { globalShortcut.unregisterAll(); tray?.destroy(); engineState.stop(); outputServer?.close(); });

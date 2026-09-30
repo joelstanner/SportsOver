@@ -1,0 +1,9 @@
+# SportsOver application artwork
+
+`SportsOver.png` is a 1024 × 1024 navy/cyan scoreboard icon derived from the existing status-item design. It is used for the running Dock icon, About panel, and Settings window where supported. It may be replaced with approved branding at the same path.
+
+The status item keeps the compact 1×/2× monochrome scoreboard glyph. Extra text is intentionally omitted to save room near MacBook camera notches.
+
+Run `npm run build:mac` on macOS to create `dist/SportsOver.app` using the installed Electron runtime, a generated `.icns`, and SportsOver bundle metadata. The bundle has a local ad-hoc signature; it is not notarized for distribution. Double-click that app for the SportsOver menu name and Finder icon. `npm start` remains the Electron development launcher.
+
+The macOS status item uses a stable GUID so Cmd-drag positioning survives relaunches. An AppKit registration default places it near the right edge on first use; saved user preferences override the default. This platform-specific preference key should be rechecked on macOS upgrades.

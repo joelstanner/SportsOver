@@ -19,3 +19,6 @@ secrets*.json
 
 # Local conversation handoff, not project source.
 PROJECT-HANDOFF.txt
+
+# Local macOS app bundles.
+dist/
