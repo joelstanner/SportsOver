@@ -76,13 +76,25 @@
           <select id="time-zone"></select>
           <small>Choose a region to use a consistent time zone across the banner and previews.</small>
         </label>
-        <label class="field">Display mode
+        <div class="field">
+          <div class="field-label-help">
+            <label for="display-mode">Display mode</label>
+            <div class="display-mode-info">
+              <button class="info-button" type="button" aria-label="Explain display modes" aria-describedby="display-mode-tooltip" aria-expanded="false">i</button>
+              <div id="display-mode-tooltip" class="info-tooltip" role="tooltip" hidden>
+                <p><strong>Automatic priority:</strong> For each enabled sport with watched teams, prefer its highest-ranked watched team playing live. Otherwise, use the top watched team’s fallback game and add a live spotlight game when available.</p>
+                <p><strong>Rotate watched team + spotlight:</strong> Currently uses the same selection as Automatic priority. Selected games rotate using Live control’s order and durations.</p>
+                <p><strong>Top watched team only:</strong> Uses watched-team games with the same live priority and fallback rules, without adding spotlight games.</p>
+                <p>“When nothing is live” chooses the watched-team fallback. Live control’s queue mode, manual choices, and locks determine the final rotation. Save settings to apply.</p>
+              </div>
+            </div>
+          </div>
           <select id="display-mode">
             <option value="automatic">Automatic priority</option>
             <option value="rotate">Rotate watched team + spotlight</option>
             <option value="top-favorite">Top watched team only</option>
           </select>
-        </label>
+        </div>
         <label class="field">When nothing is live
           <select id="fallback-mode">
             <option value="up-next">Show next upcoming game</option>
@@ -159,13 +171,6 @@
             <div class="game-filters">
               <select id="available-sport-filter" aria-label="Filter available games by sport">
                 <option value="">All sports</option>
-                <option value="baseball">MLB</option>
-                <option value="football">NFL</option>
-                <option value="college-football">NCAAF</option>
-                <option value="hockey">NHL</option>
-                <option value="soccer">MLS</option>
-                <option value="basketball">NBA</option>
-                <option value="college-basketball">NCAAM</option>
               </select>
               <input id="game-search" type="search" placeholder="Find a team" aria-label="Find an available team">
             </div>

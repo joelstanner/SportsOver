@@ -89,23 +89,24 @@
   document.querySelector("#fallback-mode").addEventListener("change", readBehaviorFields);
   document.querySelector("#rotation-mode").addEventListener("change", updateRotationControls);
   document.querySelector("#refresh-games").addEventListener("click", discoverRotationGames);
-  const discoveryInfo = document.querySelector(".discovery-info");
-  const discoveryInfoButton = document.querySelector("#discovery-info-button");
-  const discoveryInfoTooltip = document.querySelector("#discovery-info-tooltip");
-  function showDiscoveryInfo(show) {
-    discoveryInfoTooltip.hidden = !show;
-    discoveryInfoButton.setAttribute("aria-expanded", String(show));
-  }
-  discoveryInfo.addEventListener("mouseenter", () => showDiscoveryInfo(true));
-  discoveryInfo.addEventListener("mouseleave", () => showDiscoveryInfo(false));
-  discoveryInfoButton.addEventListener("focus", () => showDiscoveryInfo(true));
-  discoveryInfoButton.addEventListener("click", () => showDiscoveryInfo(true));
-  discoveryInfo.addEventListener("focusout", () => showDiscoveryInfo(false));
-  document.addEventListener("keydown", event => {
-    if (event.key === "Escape") showDiscoveryInfo(false);
-  });
-  document.addEventListener("click", event => {
-    if (!discoveryInfo.contains(event.target)) showDiscoveryInfo(false);
+  document.querySelectorAll(".discovery-info, .display-mode-info").forEach(info => {
+    const button = info.querySelector(".info-button");
+    const tooltip = info.querySelector(".info-tooltip");
+    const show = visible => {
+      tooltip.hidden = !visible;
+      button.setAttribute("aria-expanded", String(visible));
+    };
+    info.addEventListener("mouseenter", () => show(true));
+    info.addEventListener("mouseleave", () => show(false));
+    button.addEventListener("focus", () => show(true));
+    button.addEventListener("click", () => show(true));
+    info.addEventListener("focusout", () => show(false));
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") show(false);
+    });
+    document.addEventListener("click", event => {
+      if (!info.contains(event.target)) show(false);
+    });
   });
   document.querySelector("#available-sport-filter").addEventListener("change", renderRotationControls);
   document.querySelector("#game-search").addEventListener("input", renderRotationControls);
@@ -395,9 +396,13 @@
 
   function renderLiveSportPicker() {
     const picker = document.querySelector("#live-sport");
+    const filter = document.querySelector("#available-sport-filter");
     const selectedSport = picker.value;
+    const selectedFilter = filter.value;
+    const enabledSports = workingConfig.sports.filter(group => group.enabled !== false);
     picker.replaceChildren();
-    workingConfig.sports.filter(group => group.enabled !== false).forEach(group => {
+    filter.replaceChildren(new Option("All sports", ""));
+    enabledSports.forEach(group => {
       const sport = configApi.findSport(group.sport);
       const topFavorite = group.favorites
         .filter(favorite => favorite.enabled)
@@ -407,8 +412,14 @@
       option.value = group.sport;
       option.textContent = `${sport.name} · ${topFavorite?.name || "no included team"}`;
       picker.append(option);
+      filter.append(new Option(sport.league, group.sport));
     });
-    if (workingConfig.sports.some(group => group.sport === selectedSport && group.enabled !== false)) picker.value = selectedSport;
+    if (enabledSports.some(group => group.sport === selectedSport)) picker.value = selectedSport;
+    filter.value = enabledSports.some(group => group.sport === selectedFilter) ? selectedFilter : "";
+    picker.disabled = !enabledSports.length;
+    filter.disabled = !enabledSports.length;
+    if (!enabledSports.length) picker.append(new Option("No sports enabled", ""));
+    if (picker.value !== selectedSport) updateLive();
   }
 
   function addTeam() {

@@ -77,7 +77,9 @@
     const homeSource = competitors(competition).find(team => team.homeAway === "home") ?? {};
     const awayStats = findTeamStats(payload.boxscore, awaySource);
     const homeStats = findTeamStats(payload.boxscore, homeSource);
-    const detailedState = statusType.description || statusType.detail || "Scheduled";
+    const detailedState = statusType.name === "STATUS_END_PERIOD"
+      ? statusType.detail || statusType.description || "End of Period"
+      : statusType.description || statusType.detail || "Scheduled";
 
     return createEvent({
       id: payload.header?.id ?? payload.id ?? competition.id ?? fallbackId,
@@ -124,7 +126,7 @@
   }
 
   function normalizeState(state, completed, detailedState) {
-    if (/intermission|delay|postpon|suspend|cancel/i.test(detailedState || "")) return EVENT_STATES.INTERRUPTED;
+    if (/intermission|end of (?:\d+(?:st|nd|rd|th)\s+)?period|delay|postpon|suspend|cancel/i.test(detailedState || "")) return EVENT_STATES.INTERRUPTED;
     if (completed || state === "post") return EVENT_STATES.FINAL;
     if (state === "in") return EVENT_STATES.LIVE;
     return EVENT_STATES.PREGAME;

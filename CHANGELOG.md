@@ -3,6 +3,22 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.7.1 — 2026-09-30
+
+### Changed
+
+- Added a Display mode tooltip explaining each option, fallback behavior, and
+  how Live control determines the final rotation.
+
+### Fixed
+
+- MLS discovery now combines ESPN's completed results and upcoming fixtures so
+  future watched-team matches appear in game selection and rotation.
+- NHL end-of-period states now show the period break and hide active power-play
+  indicators until play resumes.
+- Live control sport dropdowns exclude disabled sports, restore re-enabled
+  sports, and reset selections when the selected sport is disabled.
+
 ## 0.7.0 — 2026-09-30
 
 ### Added

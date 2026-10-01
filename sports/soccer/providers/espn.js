@@ -22,8 +22,18 @@
     }
 
     async function findGames(date = new Date()) {
-      const schedule = await fetchJson(`${API}/teams/${encodeURIComponent(featuredTeamId)}/schedule?season=${date.getFullYear()}`);
-      return schedule.events ?? [];
+      const url = `${API}/teams/${encodeURIComponent(featuredTeamId)}/schedule?season=${date.getFullYear()}`;
+      // Soccer separates results from upcoming fixtures, unlike other ESPN sports.
+      const responses = await Promise.allSettled([fetchJson(url), fetchJson(`${url}&fixture=true`)]);
+      const schedules = responses.filter(result => result.status === "fulfilled");
+      if (!schedules.length) throw responses[0].reason;
+      const seen = new Set();
+      return schedules.flatMap(result => result.value.events ?? []).filter(event => {
+        const id = String(event.id || "");
+        if (!id || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
     }
 
     async function findLeagueGames() {

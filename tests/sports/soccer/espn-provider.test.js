@@ -88,6 +88,30 @@ test("client calls Sounders schedule and MLS match-summary endpoints", async () 
   assert.equal((await client.findLeagueGames())[0].id, "league-live");
   assert.equal((await client.getEvent("761837")).teams.home.abbreviation, "SEA");
   assert.match(requests[0], /teams\/9726\/schedule\?season=2026/);
-  assert.match(requests[1], /soccer\/usa\.1\/scoreboard/);
-  assert.match(requests[2], /summary\?event=761837/);
+  assert.match(requests[1], /season=2026&fixture=true/);
+  assert.match(requests[2], /soccer\/usa\.1\/scoreboard/);
+  assert.match(requests[3], /summary\?event=761837/);
+});
+
+test("soccer combines upcoming fixtures and results without duplicating matches", async () => {
+  const client = provider.createClient({ teamId: 9726, requestTimeoutMs: 1000, fetchImpl: async url =>
+    new Response(JSON.stringify({ events: url.includes('fixture=true')
+      ? [{ id: '761798', date: '2026-10-02T01:30Z', status: { type: { state: 'pre' } } }, { id: '761837' }]
+      : [{ id: '761837', status: { type: { state: 'post' } } }] })) });
+  const games = await client.findGames(new Date('2026-09-30T12:00:00Z'));
+  assert.deepEqual(games.map(game => game.id), ['761837', '761798']);
+  assert.equal(games[0].status.type.state, 'post');
+  assert.equal(games[1].date, '2026-10-02T01:30Z');
+});
+
+test("soccer keeps either schedule when the other fails and reports complete failure", async () => {
+  for (const failed of ['results', 'fixtures', 'both']) {
+    const client = provider.createClient({ teamId: 9726, requestTimeoutMs: 1000, fetchImpl: async url => {
+      const kind = url.includes('fixture=true') ? 'fixtures' : 'results';
+      if (failed === kind || failed === 'both') throw new Error('offline');
+      return new Response(JSON.stringify({ events: [{ id: kind }] }));
+    } });
+    if (failed === 'both') await assert.rejects(client.findGames(), /offline/);
+    else assert.equal((await client.findGames())[0].id, failed === 'results' ? 'fixtures' : 'results');
+  }
 });

@@ -112,7 +112,7 @@ test("current power-play flags clear on false, missing data, and feed failure wi
 });
 
 test("non-live hockey games do not request a situation or infer an advantage from old plays", async () => {
-  for (const [state, description] of [['pre', 'Scheduled'], ['in', 'Intermission'], ['post', 'Final']]) {
+  for (const [state, description] of [['pre', 'Scheduled'], ['in', 'Intermission'], ['in', 'End of Period'], ['in', 'End of 2nd Period'], ['post', 'Final']]) {
     const summary = liveSummary();
     summary.header.competitions[0].status.type = { state, description };
     summary.plays.push({ strength: { text: 'Power Play' }, scoringPlay: true });
@@ -124,6 +124,33 @@ test("non-live hockey games do not request a situation or infer an advantage fro
     assert.equal((await client.getEvent('401900001')).details.powerPlayActive, null);
     assert.equal(requests.length, 1);
   }
+});
+
+test("ESPN period-end status interrupts carryover power plays until play resumes", async () => {
+  const summary = liveSummary();
+  summary.header.competitions[0].status = { period: 2, displayClock: '0:00', type: {
+    name: 'STATUS_END_PERIOD', state: 'in', completed: false, description: 'End of Period', detail: 'End of 2nd Period',
+  } };
+  let situationCalls = 0;
+  const client = provider.createClient({ requestTimeoutMs: 1000, fetchImpl: async url => {
+    if (url.endsWith('/situation')) {
+      situationCalls++;
+      return new Response(JSON.stringify({ powerPlay: true, emptyNet: false }));
+    }
+    return new Response(JSON.stringify(summary));
+  } });
+  const breakEvent = await client.getEvent('401900001');
+  assert.equal(breakEvent.state, EVENT_STATES.INTERRUPTED);
+  assert.equal(breakEvent.detailedState, 'End of 2nd Period');
+  assert.equal(breakEvent.details.powerPlayActive, null);
+  assert.equal(situationCalls, 0);
+  summary.header.competitions[0].status = { period: 3, displayClock: '19:50', type: {
+    name: 'STATUS_IN_PROGRESS', state: 'in', description: 'In Progress',
+  } };
+  const resumed = await client.getEvent('401900001');
+  assert.equal(resumed.state, EVENT_STATES.LIVE);
+  assert.equal(resumed.details.powerPlayActive, true);
+  assert.equal(situationCalls, 1);
 });
 
 test("power-play team requires matching snapshots, complete unequal on-ice lists, and no empty net", async () => {
