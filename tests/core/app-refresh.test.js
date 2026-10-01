@@ -5,14 +5,14 @@ const vm = require("node:vm");
 const fs = require("node:fs");
 const path = require("node:path");
 
-async function fixture(extraFavorites = []) {
+async function fixture(extraFavorites = [], gameCount = 2) {
   let now = 0, timerId = 0, notify, visibility;
   const timers = new Map(), calls = [], renders = [];
   let release = null, holdNext = false;
   const config = { sports: [{ sport: "baseball", favorites: [{ teamKey: "team", enabled: true }, ...extraFavorites] }],
     providerRefreshSeconds: { baseball: { live: 12, pregame: 60, idle: 300, final: 300 } },
     gameDurations: {}, lockedGameKeys: [], fallbackMode: "up-next", displayMode: "automatic" };
-  const games = [{ id: "1", state: "live", teamKeys: ["team"] }, { id: "2", state: "live", teamKeys: ["team"] }];
+  const games = Array.from({ length: gameCount }, (_, index) => ({ id: String(index + 1), state: "live", teamKeys: ["team"] }));
   const response = data => ({ ok: true, clone: () => response(data), json: async () => data });
   const provider = { toCandidate: game => game, normalizeEvent: event => event,
     createClient: ({ fetchImpl, teamId }) => ({
@@ -190,4 +190,35 @@ test("manual next preserves a temporary game override", async () => {
   await app.engine.next();
   assert.equal(app.engine.describe().currentGameKey, before);
   assert.equal(app.engine.describe().overrideGameKey, "baseball:2");
+});
+
+
+test("manual previous selects the preceding item, wraps, and resets its display interval", async () => {
+  const app = await fixture([], 3);
+  await app.advance(4000);
+  await app.engine.previous();
+  assert.equal(app.renders.at(-1), "game/3");
+  await app.advance(1000);
+  assert.equal(app.renders.at(-1), "game/3", "previous game gets a fresh interval");
+  await app.engine.previous();
+  assert.equal(app.renders.at(-1), "game/2");
+  await app.advance(5000);
+  assert.equal(app.renders.at(-1), "game/3", "automatic rotation continues forwards");
+  assert.ok(app.timers.size <= 3);
+});
+
+test("previous respects temporary overrides and queues with fewer than two items", async () => {
+  const app = await fixture([], 3);
+  app.engine.override({ gameKey: "baseball:2" });
+  await app.flush();
+  await app.engine.previous();
+  assert.equal(app.engine.describe().currentGameKey, "baseball:2");
+  assert.equal(app.engine.describe().overrideGameKey, "baseball:2");
+  const single = await fixture([], 1);
+  const count = single.renders.length;
+  await single.engine.previous();
+  assert.equal(single.renders.length, count);
+  await single.setSportEnabled(false);
+  await single.engine.previous();
+  assert.equal(single.engine.describe().currentGameKey, null);
 });

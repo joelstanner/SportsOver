@@ -26,9 +26,9 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
       await session.defaultSession.protocol.handle('https', request => {
         const url = new URL(request.url);
         let body = { dates: [], events: [], sports: [] };
-        if (url.pathname.includes('/schedule') && url.host === 'statsapi.mlb.com') body = { dates: [{ games: [1, 2].map(id => ({
-          gamePk: id, gameDate: new Date().toISOString(), gameType: 'R', status: { abstractGameState: 'Live', detailedState: 'In Progress' },
-          teams: { away: { team: { id: 136, name: 'Seattle Mariners' } }, home: { team: { id: 133, name: 'Athletics' } } },
+        if (url.pathname.includes('/schedule') && url.host === 'statsapi.mlb.com') body = { dates: [{ games: (url.searchParams.get('teamId') === '135' ? [3] : [1, 2]).map(id => ({
+          gamePk: id, gameDate: new Date(Date.now() + (id === 3 ? 3600000 : 0)).toISOString(), gameType: 'R', status: { abstractGameState: id === 3 ? 'Preview' : 'Live', detailedState: id === 3 ? 'Scheduled' : 'In Progress' },
+          teams: { away: { team: { id: id === 3 ? 135 : 136, name: id === 3 ? 'San Diego Padres' : 'Seattle Mariners' } }, home: { team: { id: 133, name: 'Athletics' } } },
         })) }] };
         if (url.pathname.includes('/feed/live')) {
           body = structuredClone(fixture);
@@ -106,6 +106,16 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     await banner.locator('.scorebug').waitFor();
     assert.match(await banner.locator('body').innerText(), /SEA|Mariners/i);
     assert.equal(await banner.evaluate(() => typeof window.SportsOverlay), 'undefined', 'desktop loads no provider or rotation engine');
+    // Adding a secondary watched team automatically discovers and selects its game.
+    await admin.locator('#team-sport-picker').selectOption('baseball');
+    await admin.locator('#team-picker').selectOption('mlb:135');
+    await admin.locator('#add-team').click();
+    await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.some(entry => entry.candidate.sport === 'baseball' && entry.candidate.id === '3'));
+    await admin.getByRole('button', { name: 'Live control', exact: true }).click();
+    await admin.locator('#rotation-queue [data-game-key="baseball:3"]').waitFor();
+    await admin.getByRole('button', { name: 'Settings', exact: true }).click();
+    await admin.locator('[data-team-key="mlb:135"] .remove-team').click();
+    await engine.waitForFunction(() => !window.SportsOverlay.engine.describe().queue.some(entry => entry.candidate.sport === 'baseball' && entry.candidate.id === '3'));
     await admin.getByRole('button', { name: 'Live control', exact: true }).click();
     await admin.locator('#available-games [data-game-key="baseball:2"] .add-game').click();
     await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 2);
@@ -113,6 +123,11 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     await banner.locator('.scorebug').click();
     await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey !== key, initialGame);
     const skippedGame = await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey);
+    await banner.locator('.scorebug').click({ position: { x: 15, y: 20 } });
+    await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey === key, initialGame);
+    await banner.locator('.scorebug').click();
+    await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey === key, skippedGame);
+
     assert.equal(await banner.locator('.banner-controls').count(), 0, 'no hover controls cover scores');
     const bannerBounds = () => application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
       .find(win => win.webContents.getURL().includes('display.html?desktop')).getBounds());
@@ -171,12 +186,18 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     await admin.screenshot({ path: path.join(directory, 'settings.png') });
     await admin.locator('[data-desktop="lock"]').click();
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).locked), true);
+    const lockedGame = await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey);
+    await banner.evaluate(async () => {
+      await window.sportsDesktop.action('banner-pointer', { phase: 'start', x: window.screenX + 15, y: window.screenY + 20 });
+      await window.sportsDesktop.action('banner-pointer', { phase: 'end', x: window.screenX + 15, y: window.screenY + 20 });
+    });
+    assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), lockedGame, 'locked banner ignores backwards navigation');
+
     await admin.locator('[data-desktop="unlock"]').click();
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).locked), false);
     await admin.locator('#desktop-size').selectOption('1.5');
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).scale), 1.5);
     await admin.locator('#display-mode').selectOption('top-favorite');
-    await admin.locator('#save-settings').click();
     await engine.waitForFunction(() => window.SportsOverlay.config.loadConfig().displayMode === 'top-favorite');
     const { obsUrl } = await admin.evaluate(() => window.sportsDesktop.status());
     const base = new URL(obsUrl).origin;

@@ -48,7 +48,7 @@ test("live favorite selection respects favorite ranking", () => {
     favoriteTeamIds: ["NEB", "WASH"],
     toCandidate: candidate,
   });
-  assert.deepEqual(queue.map(entry => [entry.candidate.id, entry.featuredTeamId]), [["top-live", "NEB"]]);
+  assert.deepEqual(queue.map(entry => [entry.candidate.id, entry.featuredTeamId]), [["top-live", "NEB"], ["second-live", "WASH"]]);
 });
 
 test("pregame favorite rotates with the biggest non-favorite live game", () => {
@@ -145,4 +145,40 @@ test("custom state durations apply unless a game has an override", () => {
     assert.equal(selection.gameDurationSeconds(entry, {}, undefined, defaults), expected);
     assert.equal(selection.gameDurationSeconds(entry, { "football:1": 60 }, undefined, defaults), 60);
   }
+});
+
+test("Mariners and Padres each contribute an upcoming game in watched-team order", () => {
+  const mlbGame = (id, team, state, date) => ({ gamePk: id, gameDate: date, status: { abstractGameState: state }, teams: { away: { team: { id: team } }, home: { team: { id: 119 } } } });
+  const games = [
+    mlbGame(3, 135, 'Preview', '2026-10-02T20:00:00Z'),
+    mlbGame(1, 136, 'Preview', '2026-10-03T20:00:00Z'),
+    mlbGame(2, 135, 'Preview', '2026-10-01T20:00:00Z'),
+  ];
+  const args = { favoriteGames: games, favoriteTeamIds: [136, 135], toCandidate: selection.mlbCandidate, includeSpotlight: false };
+  assert.deepEqual(selection.buildRotationQueue(args).map(entry => [entry.candidate.id, entry.featuredTeamId]), [['1', '136'], ['2', '135']]);
+  assert.deepEqual(selection.buildRotationQueue({ ...args, favoriteTeamIds: [135, 136] }).map(entry => entry.candidate.id), ['2', '1']);
+});
+
+test("a live watched game replaces only its own fallback, retaining other teams' upcoming games", () => {
+  const games = [espnGame('sea-next', 'pre', 'SEA', 'SF'), espnGame('was-next', 'pre', 'WAS', 'DAL'), espnGame('was-live', 'in', 'WAS', 'NYG')];
+  const queue = selection.buildRotationQueue({ favoriteGames: games, leagueGames: [espnGame('spotlight', 'in', 'KC', 'BUF')], favoriteTeamIds: ['SEA', 'WAS'], toCandidate: candidate });
+  assert.deepEqual(queue.map(entry => [entry.candidate.id, entry.kind]), [['sea-next', 'favorite'], ['was-live', 'favorite-live']]);
+});
+
+test("shared watched matchups occur once and retain the highest-ranked team's identity", () => {
+  const shared = espnGame('shared', 'pre', 'SEA', 'SF');
+  const queue = selection.buildRotationQueue({ favoriteGames: [shared, shared], leagueGames: [shared], favoriteTeamIds: ['SF', 'SEA'], toCandidate: candidate });
+  assert.deepEqual(queue.map(entry => [entry.candidate.id, entry.featuredTeamId]), [['shared', 'SF']]);
+});
+
+test("each team uses its own recent final; missing games do not suppress other teams", () => {
+  const args = { favoriteGames: [espnGame('old', 'post', 'SEA', 'SF', { date: '2026-10-01T00:00:00Z' }), espnGame('latest', 'post', 'SEA', 'SF'), espnGame('second', 'post', 'WAS', 'DAL')], favoriteTeamIds: ['MISSING', 'SEA', 'WAS'], fallbackMode: 'recent-final', toCandidate: candidate, includeSpotlight: false };
+  assert.deepEqual(selection.buildRotationQueue(args).map(entry => entry.candidate.id), ['latest', 'second']);
+  assert.deepEqual(selection.buildRotationQueue({ ...args, fallbackMode: 'hide' }), []);
+});
+
+test("top-only mode limits selection to the first included team even if another is live", () => {
+  const args = { favoriteGames: [espnGame('first-next', 'pre', 'SEA', 'SF'), espnGame('second-live', 'in', 'WAS', 'DAL')], favoriteTeamIds: ['SEA', 'WAS'], toCandidate: candidate, topFavoriteOnly: true, includeSpotlight: false };
+  assert.deepEqual(selection.buildRotationQueue(args).map(entry => entry.candidate.id), ['first-next']);
+  assert.deepEqual(selection.buildRotationQueue({ ...args, favoriteTeamIds: ['MISSING', 'WAS'] }), []);
 });

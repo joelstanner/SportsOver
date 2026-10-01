@@ -18,6 +18,7 @@ const bannerGesture = createBannerGesture({
   bounds: () => banner.getBounds(),
   move: (x, y) => banner.setPosition(x, y),
   next: () => engineWindow.webContents.send('engine:command', { type: 'next' }),
+  previous: () => engineWindow.webContents.send('engine:command', { type: 'previous' }),
 });
 const root = path.resolve(__dirname, '..');
 const trusted = url => url.startsWith(`${ORIGIN}/sports/`);

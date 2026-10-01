@@ -3,6 +3,29 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.10.0 — 2026-10-01
+
+### Added
+
+- Click the leftmost 20% of the unlocked banner to show the previous rotation
+  item; click elsewhere to advance. Both directions wrap and restart the display
+  interval, while dragging, game locks, and temporary overrides keep their behavior.
+
+## 0.9.0 — 2026-10-01
+
+### Changed
+
+- Settings save automatically and update the banner. Number fields apply on
+  leaving the field or pressing Enter; failed saves retain edits and offer Retry save.
+- Automatic rotation includes a live or fallback game for every included watched
+  team, in rank order, with shared matchups shown once. Top watched team only
+  limits each sport to its first included team; manual queue controls still apply.
+
+### Fixed
+
+- Queued saves preserve rapid edits while another change is saving, and refreshes
+  keep actively edited number fields intact.
+
 ## 0.8.0 — 2026-10-01
 
 ### Added

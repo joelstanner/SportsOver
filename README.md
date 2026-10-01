@@ -59,7 +59,7 @@ This repository distributes source only. Installers, signing/notarization, autom
 
 `npm start` preserves Electron's diagnostic output. If Chromium reports a macOS Keychain certificate with `Failed parsing extensions`, the launcher adds an explanation that Chromium skipped that certificate and is continuing. No action is needed when scores load normally; other certificate or network errors still need investigation.
 
-- **Skip:** click the unlocked banner to advance to the next rotation item with a fresh display interval. Game locks and temporary overrides still apply. Desktop and OBS stay in sync.
+- **Navigate:** click the leftmost 20% of the unlocked banner for the previous rotation item; click elsewhere for the next item. Both directions wrap around and start a fresh display interval. Game locks and temporary overrides still apply. Desktop and OBS stay in sync.
 - **Move:** click anywhere on the unlocked banner and drag, including between monitors. Moving more than 5 screen pixels starts a drag; releasing after dragging never skips a game.
 - **Settings:** right-click the banner and choose **Settings…**. Right-clicking does not advance rotation.
 - **Resize:** choose Banner size in Settings or the tray menu. Proportional scaling keeps the full 472 × 100 design intact; transparent windows do not rely on platform-specific native resize borders.
@@ -70,19 +70,21 @@ This repository distributes source only. Installers, signing/notarization, autom
 
 ## Sports settings
 
-MLB, NFL, college football, NHL, MLS, NBA, and NCAA men's basketball use MLB/ESPN providers and team directories. Rank sports and watched teams, enable/disable favorites, select time zone and fallback behavior, and configure provider polling. **Save settings** applies changes to the banner without reloading it.
+MLB, NFL, college football, NHL, MLS, NBA, and NCAA men's basketball use MLB/ESPN providers and team directories. Rank sports and watched teams, enable/disable favorites, select time zone and fallback behavior, and configure provider polling. Settings changes save automatically and update the banner without reloading it. Number fields apply when you leave the field or press Enter; invalid values are not saved. If saving fails, your changes remain available and a **Retry save** button appears.
 
 When ESPN supplies spreads or moneylines in the existing scoreboard or game-summary response, the banner shows them in a compact odds row. NHL spreads are labeled **Puck line**; MLS moneylines include the draw when available. Pregame lines remain for five minutes after the banner observes the game start, labeled **PRE**, then disappear. When joining an already live game, the scheduled start is used to avoid showing old pregame lines. Explicit live markets are labeled **LIVE** and remain while supplied; closing lines are never treated as live odds. Finals and missing odds hide the row. This adds no provider requests, and MLB's current feed does not supply odds.
 
-To follow NCAA men's basketball, choose **NCAA men’s basketball · NCAAM** in Team tracking, select a team, and save. No college basketball teams are added to your watched list automatically. The ESPN directory, scoreboard, schedules, and game summaries power this sport; these are public endpoints without a supported developer API contract. Refresh team data to update the bundled directory. The banner displays halves and overtime, including overtime finals. College timeouts appear as `TO n` only when ESPN reports a remaining count; missing counts stay hidden. It does not infer timeouts from NBA rules or partial play logs. See the [NCAA provider notes](sports/college-basketball/README.md).
+To follow NCAA men's basketball, choose **NCAA men’s basketball · NCAAM** in Team tracking, select a team; the change saves automatically. No college basketball teams are added to your watched list automatically. The ESPN directory, scoreboard, schedules, and game summaries power this sport; these are public endpoints without a supported developer API contract. Refresh team data to update the bundled directory. The banner displays halves and overtime, including overtime finals. College timeouts appear as `TO n` only when ESPN reports a remaining count; missing counts stay hidden. It does not infer timeouts from NBA rules or partial play logs. See the [NCAA provider notes](sports/college-basketball/README.md).
+
+Automatic rotation includes one live or fallback game per included watched team, following sport and team rank. Shared matchups appear once. A live game takes priority over the fallback for that same team; other watched teams still contribute their own games. **Top watched team only** limits each sport to its first included team. Manual queue modes, exclusions, ordering, and locks still apply.
 
 **Live control** reads discovered games from that same engine and manages automatic, hybrid, or curated game rotation, game order and durations, and game locks. A game lock chooses what plays; the desktop click-through lock controls mouse input. **Demo lab** previews deterministic sport/lifecycle examples without changing the live banner. Use the Electron overlay window to view the live output while changing Settings. Demo lab uses fixed data only.
 
 **Refresh teams** saves current provider catalogs in app data, leaving the source checkout unchanged. A failed sport refresh retains its previous directory; other successful sports may still update. Live feeds can be unavailable or delayed. Existing provider fallback/error states apply; this app does not guarantee real-time scores.
 
-Turn off **Show sport** in a sport's Settings card and save to remove that sport
+Turn off **Show sport** in a sport's Settings card to remove that sport
 from the banner and game selection, including manually added or locked games.
-Teams, ordering, and preferences stay saved. Turn it back on and save to restore
+Teams, ordering, and preferences stay saved. Turn it back on to restore
 the sport. All sports can be turned off; older configurations keep sports enabled.
 
 Live NHL games show **POWER PLAY ACTIVE** when ESPN's situation feed explicitly

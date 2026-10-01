@@ -73,3 +73,33 @@ test('fractional drag coordinates round to integers and canonicalize negative ze
   gesture({ phase: 'move', x: 9.8, y: 9.6 });
   assert.deepEqual(moves, [[0, 0]]);
 });
+
+test('leftmost 20 percent goes backwards and the boundary or remainder goes forwards at every size', () => {
+  for (const width of [236, 472, 708, 1416]) {
+    for (const [offset, expected] of [[0, 'previous'], [width * 0.1, 'previous'], [width * 0.2 - 0.01, 'previous'], [width * 0.2, 'next'], [width * 0.8, 'next']]) {
+      const calls = [], moves = [];
+      const gesture = createBannerGesture({ bounds: () => ({ x: -900, y: 100, width }),
+        move: (...point) => moves.push(point), next: () => calls.push('next'), previous: () => calls.push('previous') });
+      gesture({ phase: 'start', x: -900 + offset, y: 110 });
+      assert.deepEqual(calls, []);
+      gesture({ phase: 'end', x: -900 + offset, y: 110 });
+      assert.deepEqual(calls, [expected]);
+      assert.deepEqual(moves, []);
+    }
+  }
+});
+
+test('left-side drags and cancellations never navigate', () => {
+  const calls = [], moves = [];
+  const gesture = createBannerGesture({ bounds: () => ({ x: 100, y: 200, width: 472 }),
+    move: (...point) => moves.push(point), next: () => calls.push('next'), previous: () => calls.push('previous') });
+  gesture({ phase: 'start', x: 110, y: 220 });
+  gesture({ phase: 'move', x: 125, y: 230 });
+  gesture({ phase: 'end', x: 110, y: 220 });
+  assert.deepEqual(calls, []);
+  assert.ok(moves.length > 0);
+  gesture({ phase: 'start', x: 110, y: 220 });
+  gesture({ phase: 'cancel' });
+  gesture({ phase: 'end', x: 110, y: 220 });
+  assert.deepEqual(calls, []);
+});

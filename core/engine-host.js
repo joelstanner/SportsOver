@@ -20,6 +20,7 @@
     if (command.type === 'override') window.SportsOverlay.engine?.override(command.value);
     if (command.type === 'refresh') window.SportsOverlay.engine?.refresh();
     if (command.type === 'next') window.SportsOverlay.engine?.next();
+    if (command.type === 'previous') window.SportsOverlay.engine?.previous();
     publish();
   });
   setInterval(publish, 100);

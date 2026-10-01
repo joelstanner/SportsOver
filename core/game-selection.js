@@ -53,26 +53,25 @@
     };
   }
 
-  function buildRotationQueue({ favoriteGames = [], leagueGames = [], favoriteTeamIds = [], toCandidate, fallbackMode = "up-next", includeSpotlight = true }) {
+  function buildRotationQueue({ favoriteGames = [], leagueGames = [], favoriteTeamIds = [], toCandidate, fallbackMode = "up-next", includeSpotlight = true, topFavoriteOnly = false }) {
     const favoriteIds = favoriteTeamIds.map(value => String(value).toUpperCase());
     const allCandidates = deduplicate([...leagueGames, ...favoriteGames].map(toCandidate).filter(candidate => candidate.id));
-    const favoriteCandidates = allCandidates.filter(candidate => candidate.teamKeys.some(key => favoriteIds.includes(String(key).toUpperCase())));
-    const liveFavorite = favoriteIds
-      .map(teamId => ({ teamId, candidate: favoriteCandidates.find(item => item.state === "live" && item.teamKeys.includes(teamId)) }))
-      .filter(entry => entry.candidate)
-      .find(Boolean);
-    if (liveFavorite) return [{ kind: "favorite-live", candidate: liveFavorite.candidate, featuredTeamId: liveFavorite.teamId }];
-
     const queue = [];
-    const topFavoriteId = favoriteIds[0];
-    const topFavoriteCandidates = favoriteGames.map(toCandidate)
-      .filter(candidate => candidate.teamKeys.includes(topFavoriteId));
-    const favorite = chooseFavoriteFallback(topFavoriteCandidates, fallbackMode);
-    if (favorite) queue.push({ kind: "favorite", candidate: favorite, featuredTeamId: topFavoriteId });
+    const selectedIds = new Set();
+    for (const teamId of topFavoriteOnly ? favoriteIds.slice(0, 1) : favoriteIds) {
+      const teamCandidates = allCandidates.filter(candidate => candidate.teamKeys.includes(teamId));
+      const live = teamCandidates.find(candidate => candidate.state === "live");
+      const chosen = live || chooseFavoriteFallback(teamCandidates, fallbackMode);
+      if (!chosen || selectedIds.has(chosen.id)) continue;
+      selectedIds.add(chosen.id);
+      queue.push({ kind: live ? "favorite-live" : "favorite", candidate: chosen, featuredTeamId: teamId });
+    }
 
-    if (includeSpotlight) {
+    // Watched teams keep their ranked slots, even while another watched team is live.
+    // A live watched game still takes precedence over adding an unrelated spotlight.
+    if (includeSpotlight && !queue.some(entry => entry.kind === "favorite-live")) {
       const spotlight = chooseSpotlight(allCandidates, favoriteIds);
-      if (spotlight && !queue.some(entry => entry.candidate.id === spotlight.id)) {
+      if (spotlight && !selectedIds.has(spotlight.id)) {
         queue.push({ kind: "spotlight", candidate: spotlight, featuredTeamId: null });
       }
     }

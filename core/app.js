@@ -62,15 +62,8 @@ window.SportsOverlay.engine = {
     overrideGameKey: entryKey(overrideEntry) || null,
   }),
   refresh: () => discoverGames(),
-  async next() {
-    if (overrideEntry || rotationQueue.length < 2) return;
-    clearTimeout(rotationTimer); rotationTimer = null;
-    const generation = ++rotationGeneration;
-    clearTimeout(pollTimer); pollGeneration++;
-    currentIndex = (currentIndex + 1) % rotationQueue.length;
-    await renderCurrentGame({ animate: true });
-    if (generation === rotationGeneration) { schedulePoll(); scheduleRotation(); }
-  },
+  next: () => stepRotation(1),
+  previous: () => stepRotation(-1),
   override(value) {
     overrideEntry = value ? (cachedDiscoveries || []).flatMap(result => result.availableEntries)
       .find(entry => entryKey(entry) === value.gameKey) || null : null;
@@ -81,6 +74,16 @@ window.SportsOverlay.engine = {
     else discoverGames(false);
   },
 };
+async function stepRotation(direction) {
+  if (overrideEntry || rotationQueue.length < 2) return;
+  clearTimeout(rotationTimer); rotationTimer = null;
+  const generation = ++rotationGeneration;
+  clearTimeout(pollTimer); pollGeneration++;
+  currentIndex = (currentIndex + direction + rotationQueue.length) % rotationQueue.length;
+  await renderCurrentGame({ animate: true });
+  if (generation === rotationGeneration) { schedulePoll(); scheduleRotation(); }
+}
+
 function publicEntry(entry) {
   const { context, ...value } = entry;
   return value;
@@ -281,6 +284,7 @@ async function discoverSport(context) {
     toCandidate: context.providerModule.toCandidate,
     fallbackMode: savedConfig.fallbackMode,
     includeSpotlight: CONFIG.includeSpotlight,
+    topFavoriteOnly: savedConfig.displayMode === "top-favorite",
   }).map(entry => ({ ...entry, context })) : [];
   const favoriteIds = context.favoriteTeams.map(team => String(team.teamId).toUpperCase());
   const candidates = [...leagueGames, ...favoriteGames]

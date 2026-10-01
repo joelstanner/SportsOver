@@ -4,7 +4,7 @@
   if (!api || window.top !== window) return;
   if (new URLSearchParams(location.search).has('desktop')) {
     document.body.classList.add('desktop-banner');
-    document.body.title = 'Click to skip · Drag anywhere to move · Right-click for Settings';
+    document.body.title = 'Left 20%: previous game · Elsewhere: next game · Drag to move · Right-click for Settings';
     let pointerId = null;
     const sendPointer = (phase, event) => api.action('banner-pointer', {
       phase, x: event.screenX, y: event.screenY,
@@ -51,7 +51,7 @@
   const section = document.createElement('section');
   section.className = 'watch-team-panel';
   section.style.margin = '20px 28px';
-  section.innerHTML = `<div><h2>Desktop banner</h2><p>Click and release the unlocked banner to skip to the next rotation item. Click anywhere and drag to move it; releasing after a drag never skips. Right-click the banner and choose Settings to reopen this window. Lock lets clicks pass to the app beneath. Game locks and temporary overrides still apply.</p><p id="desktop-status" role="status"></p></div><div class="watch-team-controls"><div class="actions"><button class="button" data-desktop="unlock">Unlock</button><button class="button button--secondary" data-desktop="lock">Lock</button><button class="button button--secondary" data-desktop="show">Show</button><button class="button button--secondary" data-desktop="hide">Hide</button><button class="button button--secondary" data-desktop="recover">Recover position</button></div><label class="field">Banner size<select id="desktop-size"><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option><option value="3">300%</option></select></label></div>`;
+  section.innerHTML = `<div><h2>Desktop banner</h2><p>Click the leftmost 20% of the unlocked banner to show the previous rotation item; click elsewhere for the next item. Both directions wrap around and start a fresh display interval. Click anywhere and drag to move it; releasing after a drag never skips. Right-click the banner and choose Settings to reopen this window. Lock lets clicks pass to the app beneath. Game locks and temporary overrides still apply.</p><p id="desktop-status" role="status"></p></div><div class="watch-team-controls"><div class="actions"><button class="button" data-desktop="unlock">Unlock</button><button class="button button--secondary" data-desktop="lock">Lock</button><button class="button button--secondary" data-desktop="show">Show</button><button class="button button--secondary" data-desktop="hide">Hide</button><button class="button button--secondary" data-desktop="recover">Recover position</button></div><label class="field">Banner size<select id="desktop-size"><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option><option value="3">300%</option></select></label></div>`;
   document.querySelector('[data-panel="settings"]').prepend(section);
   const output = document.createElement('section');
   output.className = 'watch-team-panel'; output.style.margin = '20px 28px';

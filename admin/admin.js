@@ -12,27 +12,36 @@
   let baseRevision = shared?.snapshot()?.revision;
   let baseInstance = shared?.snapshot()?.instance;
   let saving = false;
+  let saveQueue = Promise.resolve();
+  const pendingSettings = new Set();
+  let settingsSaveTimer;
+  let settingsSaveRunning = false;
+  let settingsSavePaused = false;
   function acknowledge() {
     baseline = structuredClone(configApi.loadConfig());
     baseRevision = shared?.snapshot()?.revision;
     baseInstance = shared?.snapshot()?.instance;
   }
-  async function persist(config, fields) {
-    if (saving) throw new Error("A save is already in progress.");
-    saving = true;
-    try {
-      const result = await configApi.saveConfig(config, {
-        fields, revision: baseRevision, instance: baseInstance,
-      });
-      acknowledge();
-      return result;
-    } catch (error) {
-      if (error.conflict) {
-        baseRevision = shared.snapshot().revision;
-        baseInstance = shared.snapshot().instance;
-      }
-      throw error;
-    } finally { saving = false; }
+  function persist(config, fields) {
+    const submitted = structuredClone(config);
+    const operation = saveQueue.then(async () => {
+      saving = true;
+      try {
+        const result = await configApi.saveConfig(submitted, shared ? {
+          fields, revision: baseRevision, instance: baseInstance,
+        } : undefined);
+        acknowledge();
+        return result;
+      } catch (error) {
+        if (error.conflict) {
+          baseRevision = shared.snapshot().revision;
+          baseInstance = shared.snapshot().instance;
+        }
+        throw error;
+      } finally { saving = false; }
+    });
+    saveQueue = operation.catch(() => {});
+    return operation;
   }
   const sportsList = document.querySelector("#sports-list");
   const status = document.querySelector("#save-status");
@@ -197,12 +206,19 @@
       }
       if (!snapshot?.initialized || saving) return;
       if (snapshot.revision === baseRevision && snapshot.instance === baseInstance) return;
-      const dirty = JSON.stringify(workingConfig) !== JSON.stringify(baseline);
-      if (dirty) {
-        status.textContent = "Settings changed elsewhere. Your unsaved draft is preserved.";
-        return;
+      const incoming = configApi.loadConfig();
+      const edited = Object.keys(workingConfig).filter(key => JSON.stringify(workingConfig[key]) !== JSON.stringify(baseline[key]));
+      const overlap = edited.some(key => pendingSettings.has(key) && JSON.stringify(incoming[key]) !== JSON.stringify(baseline[key]));
+      for (const key of Object.keys(incoming)) {
+        if (!edited.includes(key)) workingConfig[key] = structuredClone(incoming[key]);
       }
-      workingConfig = configApi.loadConfig(); acknowledge(); renderSettings();
+      acknowledge();
+      if (overlap) {
+        settingsSavePaused = true;
+        clearTimeout(settingsSaveTimer);
+        showSettingsError("Settings changed elsewhere. Your changes are preserved; retry to apply them.");
+      }
+      renderSettings();
     });
     refreshConnection();
   } else connection.textContent = "Local preview — settings here do not control the desktop banner. Export them to import into shared control.";
@@ -228,8 +244,8 @@
 
   function renderSettings() {
     const refreshFields = document.querySelector("#provider-refresh-fields");
-    refreshFields.replaceChildren();
-    for (const sport of configApi.SPORT_CATALOG) {
+    // Keep number inputs mounted so background saves never interrupt typing.
+    if (!refreshFields.children.length) for (const sport of configApi.SPORT_CATALOG) {
       const row = document.createElement("fieldset");
       row.className = "provider-refresh-row";
       const legend = document.createElement("legend");
@@ -243,14 +259,24 @@
         input.type = "number"; input.min = "5"; input.max = "3600"; input.step = "1";
         input.required = true; input.value = seconds;
         input.dataset.sport = sport.key; input.dataset.state = state;
-        input.addEventListener("input", () => {
-          if (input.checkValidity()) workingConfig.providerRefreshSeconds[sport.key][state] = Number(input.value);
-          markUnsaved();
+        input.addEventListener("keydown", event => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            if (input.reportValidity()) input.blur();
+          }
+        });
+        input.addEventListener("change", () => {
+          if (!input.reportValidity()) return;
+          workingConfig.providerRefreshSeconds[sport.key][state] = Number(input.value);
+          scheduleSettingsSave("providerRefreshSeconds");
         });
         label.append(input); row.append(label);
       }
       refreshFields.append(row);
     }
+    refreshFields.querySelectorAll("input").forEach(input => {
+      if (document.activeElement !== input) input.value = workingConfig.providerRefreshSeconds[input.dataset.sport][input.dataset.state];
+    });
     sportsList.replaceChildren();
     workingConfig.sports.forEach((group, sportIndex) => {
       const sport = configApi.findSport(group.sport);
@@ -265,7 +291,7 @@
       enabled.setAttribute("aria-label", `Show ${sport.name}`);
       enabled.addEventListener("change", () => {
         group.enabled = enabled.checked;
-        markUnsaved();
+        scheduleSettingsSave("sports");
         renderSettings();
       });
       section.querySelector(".sport-disabled-note").hidden = enabled.checked;
@@ -374,7 +400,7 @@
     card.querySelector(".team-enabled").checked = favorite.enabled;
     card.querySelector(".team-enabled").addEventListener("change", event => {
       favorite.enabled = event.target.checked;
-      markUnsaved();
+      scheduleSettingsSave("sports");
     });
     card.querySelector(".move-up").disabled = index === 0;
     card.querySelector(".move-down").disabled = index === group.favorites.length - 1;
@@ -429,37 +455,35 @@
     if (!group || group.favorites.some(favorite => favorite.teamKey === team.key)) return;
     group.favorites.push({ teamKey: team.key, enabled: true });
     recentlyAddedTeamKey = team.key;
-    markUnsaved();
+    scheduleSettingsSave("sports");
     renderSettings();
-    status.textContent = `${team.name} added · unsaved changes`;
+    status.textContent = `${team.name} added · saving automatically…`;
   }
 
   function removeTeam(group, teamKey) {
     group.favorites = group.favorites.filter(favorite => favorite.teamKey !== teamKey);
-    markUnsaved();
+    scheduleSettingsSave("sports");
     renderSettings();
   }
 
   function moveTeam(group, index, offset) {
     const [favorite] = group.favorites.splice(index, 1);
     group.favorites.splice(index + offset, 0, favorite);
-    markUnsaved();
+    scheduleSettingsSave("sports");
     renderSettings();
   }
 
   function moveSport(index, offset) {
     const [sport] = workingConfig.sports.splice(index, 1);
     workingConfig.sports.splice(index + offset, 0, sport);
-    markUnsaved();
+    scheduleSettingsSave("sports");
     renderSettings();
   }
 
-  function readBehaviorFields() {
-    workingConfig.timeZone = timeZonePicker.value;
-    workingConfig.displayMode = document.querySelector("#display-mode").value;
-    workingConfig.rotationMode = document.querySelector("#rotation-mode").value;
-    workingConfig.fallbackMode = document.querySelector("#fallback-mode").value;
-    markUnsaved();
+  function readBehaviorFields(event) {
+    const key = { "time-zone": "timeZone", "display-mode": "displayMode", "fallback-mode": "fallbackMode" }[event.target.id];
+    workingConfig[key] = event.target.value;
+    scheduleSettingsSave(key);
   }
 
   function updateRotationControls() {
@@ -532,6 +556,7 @@
       toCandidate: providerModule.toCandidate,
       fallbackMode: workingConfig.fallbackMode,
       includeSpotlight: workingConfig.displayMode !== "top-favorite",
+      topFavoriteOnly: workingConfig.displayMode === "top-favorite",
     }) : [];
     const seen = new Set();
     const availableEntries = [...leagueGames, ...watchedGames]
@@ -798,11 +823,14 @@
       renderRotationControls();
       return;
     }
+    const submittedLive = cloneLiveConfig(workingConfig);
     try {
       const savedConfig = configApi.loadConfig();
-      copyLiveConfig(savedConfig, workingConfig);
+      copyLiveConfig(savedConfig, submittedLive);
       const normalizedConfig = await persist(savedConfig, liveConfigKeys);
-      copyLiveConfig(workingConfig, normalizedConfig);
+      for (const key of liveConfigKeys) {
+        if (JSON.stringify(workingConfig[key]) === JSON.stringify(submittedLive[key])) workingConfig[key] = structuredClone(normalizedConfig[key]);
+      }
       undoLiveConfig = previousLiveConfig;
       undoLiveButton.hidden = false;
       renderSettings();
@@ -878,41 +906,71 @@
     return age >= -2 * 60 * 60 * 1_000 && age <= 7 * 24 * 60 * 60 * 1_000;
   }
 
+  function showSettingsError(message) {
+    status.textContent = message;
+    status.className = "save-status is-error";
+    document.querySelector("#save-settings").hidden = false;
+  }
+
   async function saveSettings() {
-    for (const input of document.querySelectorAll("#provider-refresh-fields input")) {
-      if (!input.reportValidity()) return;
-    }
-    readBehaviorFields();
+    if (settingsSaveRunning) return;
+    settingsSavePaused = false;
+    clearTimeout(settingsSaveTimer);
+    settingsSaveRunning = true;
     try {
-      const fields = Object.keys(workingConfig).filter(key => JSON.stringify(workingConfig[key]) !== JSON.stringify(baseline[key]));
-      workingConfig = await persist(workingConfig, fields);
-      renderSettings();
-      status.textContent = shared ? "Saved. Banner updates automatically." : "Saved locally (preview only).";
+      while (pendingSettings.size && !settingsSavePaused) {
+        const fields = [...pendingSettings];
+        fields.forEach(key => pendingSettings.delete(key));
+        const submitted = structuredClone(workingConfig);
+        status.textContent = "Saving…";
+        status.className = "save-status";
+        try {
+          const result = await persist(submitted, fields);
+          let refreshed = false;
+          for (const key of Object.keys(result)) {
+            if (JSON.stringify(workingConfig[key]) === JSON.stringify(submitted[key])
+              && JSON.stringify(workingConfig[key]) !== JSON.stringify(result[key])) {
+              workingConfig[key] = structuredClone(result[key]);
+              refreshed = true;
+            }
+          }
+          if (refreshed) renderSettings();
+        } catch (error) {
+          fields.forEach(key => pendingSettings.add(key));
+          settingsSavePaused = true;
+          clearTimeout(settingsSaveTimer);
+          showSettingsError(error.conflict
+            ? "Settings changed elsewhere. Your changes are preserved; retry to apply them."
+            : `${error.message} Your changes are preserved; retry to save.`);
+          return;
+        }
+      }
+      if (settingsSavePaused) return;
+      document.querySelector("#save-settings").hidden = true;
+      status.textContent = shared ? "Saved automatically. Banner updated." : "Saved automatically locally (preview only).";
       status.className = "save-status is-saved";
       discoverRotationGames();
-    } catch (error) {
-      status.textContent = error.message;
-      status.className = "save-status is-error";
-    }
+    } finally { settingsSaveRunning = false; }
   }
 
-  async function resetSettings() {
-    try {
-      workingConfig = await persist(configApi.DEFAULT_CONFIG);
-      undoLiveConfig = null;
-      undoLiveButton.hidden = true;
-      renderSettings();
-      status.textContent = "Defaults restored.";
-      status.className = "save-status is-saved";
-    } catch (error) {
-      status.textContent = error.message;
-      status.className = "save-status is-error";
-    }
+  function resetSettings() {
+    clearTimeout(settingsSaveTimer);
+    settingsSavePaused = false;
+    workingConfig = configApi.normalizeConfig(configApi.DEFAULT_CONFIG);
+    Object.keys(workingConfig).forEach(key => pendingSettings.add(key));
+    undoLiveConfig = null;
+    undoLiveButton.hidden = true;
+    renderSettings();
+    saveSettings();
   }
 
-  function markUnsaved() {
-    status.textContent = "Unsaved changes";
+  function scheduleSettingsSave(key) {
+    pendingSettings.add(key);
+    if (settingsSavePaused) return;
+    status.textContent = "Saving automatically…";
     status.className = "save-status";
+    clearTimeout(settingsSaveTimer);
+    settingsSaveTimer = setTimeout(saveSettings, 150);
   }
 
   function updateDemo() {
