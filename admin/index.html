@@ -11,7 +11,7 @@
     <div class="masthead-copy">
       <p class="eyebrow">DESKTOP SPORTS BANNER</p>
       <div class="app-heading"><h1>SportsOver</h1><span id="app-version" class="app-version" hidden></span></div>
-      <p class="subtitle">Choose teams to watch and inspect every banner state.</p>
+      <p class="subtitle">Choose teams and PDGA tournaments to watch, and inspect every banner state.</p>
     </div>
   </header>
 
@@ -24,8 +24,8 @@
   <main>
     <section id="settings-panel" class="panel" data-panel="settings">
       <div class="panel-heading">
-        <div><p class="section-kicker">SELECTION ORDER</p><h2>Sports and watched teams</h2></div>
-        <p>Choose which sports appear in the banner, then rank sports and their watched teams. Changes save automatically.</p>
+        <div><p class="section-kicker">SELECTION ORDER</p><h2>Sports and watched events</h2></div>
+        <p>Choose which sports appear in the banner, then rank sports, teams, and PDGA tournaments. Changes save automatically.</p>
       </div>
 
       <section class="watch-team-panel" aria-labelledby="watch-team-heading">
@@ -169,10 +169,10 @@
               <div class="discovery-info">
                 <button id="discovery-info-button" class="info-button" type="button" aria-label="How available games are discovered" aria-describedby="discovery-info-tooltip" aria-expanded="false">i</button>
                 <div id="discovery-info-tooltip" class="info-tooltip" role="tooltip" hidden>
-                  <p>MLB/ESPN league scoreboards plus every included watched team’s schedule. Games already on the banner are excluded; sport/search filters also apply.</p>
+                  <p>MLB/ESPN league scoreboards, every included watched team’s schedule, and watched PDGA tournament divisions. Games already on the banner are excluded; sport/search filters also apply.</p>
                   <p>Includes live games, starts from 2 hours ago through 7 days ahead, and finals started within 24 hours, subject to provider coverage.</p>
                   <p>Add teams in Settings → Watch another team → Watch team. Keep Included checked; changes save automatically. All included teams contribute schedules; ranking sets the automatic rotation order.</p>
-                  <p>Then use Live control → Refresh games (respects refresh intervals).</p>
+                  <p>For disc golf, add a tournament and division in Settings → Disc golf. Then use Live control → Refresh games (respects refresh intervals).</p>
                 </div>
               </div>
             </div>
@@ -180,7 +180,7 @@
               <select id="available-sport-filter" aria-label="Filter available games by sport">
                 <option value="">All sports</option>
               </select>
-              <input id="game-search" type="search" placeholder="Find a team" aria-label="Find an available team">
+              <input id="game-search" type="search" placeholder="Find a team or tournament" aria-label="Find a team or tournament">
             </div>
             <div id="available-games" class="game-list" aria-live="polite"></div>
           </section>
@@ -221,7 +221,7 @@
       </div>
       <div class="demo-controls">
         <label class="field">Sport
-          <select id="demo-sport"><option value="baseball">Baseball · MLB</option><option value="football">Football · NFL</option><option value="college-football">College football · NCAAF</option><option value="hockey">Hockey · NHL</option><option value="soccer">Soccer · MLS</option><option value="basketball">Basketball · NBA</option><option value="college-basketball">NCAA men’s basketball · NCAAM</option></select>
+          <select id="demo-sport"><option value="baseball">Baseball · MLB</option><option value="football">Football · NFL</option><option value="college-football">College football · NCAAF</option><option value="hockey">Hockey · NHL</option><option value="soccer">Soccer · MLS</option><option value="basketball">Basketball · NBA</option><option value="college-basketball">NCAA men’s basketball · NCAAM</option><option value="disc-golf">Disc golf · PDGA</option></select>
         </label>
         <label class="field">State
           <select id="demo-state">
@@ -268,7 +268,7 @@
         </div>
       </header>
       <div class="sport-favorites"></div>
-      <p class="sport-disabled-note empty-state" hidden>Off — this sport will not appear in the banner. Turn Show sport on to restore your saved teams and preferences.</p>
+      <p class="sport-disabled-note empty-state" hidden>Off — this sport will not appear in the banner. Turn Show sport on to restore your saved selections and preferences.</p>
     </section>
   </template>
 
@@ -314,14 +314,14 @@
     </article>
   </template>
 
-  <script src="../core/config.js?v=18"></script>
+  <script src="../core/config.js?v=19"></script>
   <script src="../core/shared-state.js?v=1"></script>
-  <script src="../core/provider-refresh.js?v=1"></script>
+  <script src="../core/provider-refresh.js?v=2"></script>
   <script src="../core/provider-discovery.js?v=1"></script>
-  <script src="../core/event-model.js?v=4"></script>
+  <script src="../core/event-model.js?v=6"></script>
   <script src="../core/registry.js?v=2"></script>
   <script src="../core/game-selection.js?v=8"></script>
-  <script src="../core/live-mode.js?v=1"></script>
+  <script src="../core/live-mode.js?v=2"></script>
   <script src="../sports/baseball/providers/mlb.js?v=4"></script>
   <script src="../sports/football/providers/espn.js?v=5"></script>
   <script src="../sports/college-football/providers/espn.js?v=6"></script>
@@ -329,7 +329,9 @@
   <script src="../sports/soccer/providers/espn.js?v=3"></script>
   <script src="../sports/basketball/providers/espn.js?v=4"></script>
   <script src="../sports/college-basketball/providers/espn.js?v=1"></script>
-  <script src="admin.js?v=27"></script>
+  <script src="../sports/disc-golf/providers/pdga.js?v=1"></script>
+  <script src="pdga-settings.js?v=1"></script>
+  <script src="admin.js?v=28"></script>
   <script src="../core/desktop.js?v=6"></script>
 </body>
 </html>

@@ -29,7 +29,9 @@ The app intentionally uses explicit proportional size controls because transpare
 
 ## Native menus and icons
 
-The desktop smoke test also checks status-item creation and nonzero native bounds, the Settings shortcut, and hide/show via the application menu. These checks do not prove the item is physically visible: macOS can hide status items when the menu bar is full or auto-hidden.
+The desktop smoke test also checks status-item creation and nonzero native bounds, the Settings shortcut, and hide/show via the application menu. On macOS it checks Dock visibility after normal startup, relaunch, and opening Settings from a background launch; closing Settings keeps the Dock visible and activation reopens Settings without showing a hidden banner. The banner still joins all workspaces. These checks do not prove the status item is physically visible: macOS can hide status items when the menu bar is full or auto-hidden.
+
+The macOS banner uses a floating panel and skips Electron's process-type transformation when joining fullscreen Spaces. Without that option, Electron hides the entire app from the Dock and Cmd-Tab. Manually confirm the app remains in Cmd-Tab, its application menu appears when Settings is active, and the banner remains visible over another app in fullscreen.
 
 After restart, locate the compact scoreboard icon in the right menu bar. Single-click it and check Settings, hide/show, lock, recovery, size and Quit. Check light/dark appearance and Retina displays. The same banner controls are under the **Banner** application menu; Settings uses Cmd+,; standard About, Services, Hide, Edit, File/Close and Window menus use native behavior. With Settings closed and the banner hidden, the tray must still reopen Settings.
 
@@ -62,6 +64,20 @@ Native Intel execution, the minimum macOS version on actual hardware,
 browser-download quarantine/first-launch approval, and upgrading a real prior
 installation still require manual verification. Signing and disk-image integrity
 checks do not prove Gatekeeper acceptance or Apple notarization.
+
+## Release verification — 0.14.1, 2026-10-01
+
+- All 197 unit tests and the disc-golf browser flow passed.
+- Rebuilt the local app and both Mac installers at 0.14.1. Disk images,
+  checksums, signatures, bundle identity, minimum OS, architecture, and packaged
+  runtime files passed verification.
+- An Apple Silicon app copied from the mounted installer passed the desktop
+  smoke suite after ejecting the image, including Dock visibility and reopening
+  Settings after closure. The test waits for closure before simulating activation.
+- That copy also passed the live PDGA feed check, 200% banner scaling, player
+  selection, rotation, Live mode removal, and shared OBS output.
+- Native Intel execution and first-launch approval on another Mac remain
+  unverified. Builds remain ad-hoc signed and unnotarized.
 
 ## Icon release verification — 0.13.1, 2026-10-01
 

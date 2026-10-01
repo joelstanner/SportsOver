@@ -3,6 +3,39 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.14.1 — 2026-10-01
+
+### Fixed
+
+- SportsOver remains in the macOS Dock, Cmd-Tab switcher, and application menu
+  while the floating banner follows desktop and fullscreen Spaces.
+- Closing Settings keeps the app accessible; activating the app reopens Settings
+  without showing a banner that was hidden.
+
+### Changed
+
+- Successful local Mac builds retain only the newest previous app backup.
+
+## 0.14.0 — 2026-10-01
+
+### Added
+
+- Disc golf with PDGA tournament/division selection, current-event browsing,
+  and optional followed players. Individual events share rotation, timing,
+  locks, Live mode, desktop scaling, and OBS output with team sports.
+- Compact leaderboard and followed-player banners with ranks, scores relative
+  to par, round progress, tee times, playoff results, and stale-data indicators.
+- **Check for updates…** in the tray, banner context menu, and application menu,
+  with a link to the official release download page when an update is available.
+- Automatic update checks on launch, limited to once per 24 hours. Background
+  launches and automatic failures stay quiet; installation remains manual.
+
+### Changed
+
+- Saved settings support individual events while preserving existing team
+  selections. Add a tournament in **Settings → Disc golf** to begin watching;
+  no migration steps are required.
+
 ## 0.13.1 — 2026-10-01
 
 ### Changed

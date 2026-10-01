@@ -80,6 +80,13 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     const banner = pages.find(page => page.url().includes('display.html?desktop'));
     const engine = pages.find(page => page.url().includes('engine=1'));
     assert.ok(admin && banner && engine, 'settings, passive banner, and sole engine exist');
+    if (process.platform === 'darwin') {
+      assert.equal(await application.evaluate(({ app }) => app.dock.isVisible()), true,
+        'SportsOver stays in the Dock and Cmd-Tab after banner startup');
+      assert.equal(await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
+        .find(win => win.webContents.getURL().includes('display.html?desktop')).isVisibleOnAllWorkspaces()), true,
+      'banner still follows macOS workspaces');
+    }
     // Packaged apps can start fetching before Playwright installs the fixtures.
     // Restart the engine after interception so assertions never use live data.
     await engine.reload();
@@ -270,7 +277,7 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
       const build = Menu.buildFromTemplate;
       Menu.buildFromTemplate = function(template) {
         const menu = build.call(this, template);
-        if (template.length === 1 && template[0].label === 'Settings…') globalThis.bannerTestMenu = menu;
+        if (template.length === 2 && template[0].label === 'Settings…') globalThis.bannerTestMenu = menu;
         return menu;
       };
       BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('/admin/')).hide();
@@ -379,6 +386,20 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     await admin.evaluate(async () => { await window.sportsDesktop.action('lock'); await window.sportsDesktop.action('hide'); });
     await admin.evaluate(() => window.sportsDesktop.action('live-mode', true));
     await engine.waitForFunction(() => window.SportsOverlay.engine.describe().liveMode.active);
+    if (process.platform === 'darwin') {
+      const settingsClosed = admin.waitForEvent('close');
+      await application.evaluate(({ app, BrowserWindow }) => {
+        BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('/admin/')).close();
+        if (!app.dock.isVisible()) throw Error('Closing Settings hid SportsOver from the Dock');
+      });
+      await settingsClosed;
+      const reopenedWindow = application.waitForEvent('window');
+      await application.evaluate(({ app }) => app.emit('activate'));
+      const reopened = await reopenedWindow;
+      await reopened.waitForFunction(async () => (await window.sportsDesktop.status()).locked);
+      assert.equal(await reopened.evaluate(async () => (await window.sportsDesktop.status()).visible), false,
+        'Dock activation reopens Settings without changing saved banner visibility');
+    }
     await application.close();
     ({ admin, banner, engine } = await launch());
     assert.equal(await admin.evaluate(() => window.SportsOverlay.config.loadConfig().displayMode), 'top-favorite');

@@ -106,6 +106,12 @@ function publicEntry(entry) {
 
 function createSportContext(group) {
   if (group.enabled === false) return null;
+  if (group.sport === "disc-golf") {
+    const providerModule = window.SportsOverlay.registry.getProvider("pdga");
+    return { sport: group.sport, league: "PDGA", providerModule,
+      provider: providerModule.createClient({ watches: group.events, requestTimeoutMs: CONFIG.requestTimeoutMs,
+        fetchImpl: refresh.fetchFor(group.sport, providerModule) }) };
+  }
   const favoriteTeams = group.favorites
     .filter(favorite => favorite.enabled)
     .map(favorite => window.SportsOverlay.config.findTeam(favorite.teamKey))
@@ -269,7 +275,7 @@ async function discoverGamesOnce(refresh = true) {
     rotationTimer = null;
     rotationGeneration += 1;
     renderedGameKey = null;
-    layout.renderNoEvent(liveMode.isActive() ? "No live games in rotation" : "No watched or live spotlight games found", liveMode.isActive() || CONFIG.showNoGameMessage);
+    layout.renderNoEvent(liveMode.isActive() ? "No live games in rotation" : discoveries.some(result => result.failures) ? "Scores unavailable · retrying automatically" : "No watched or live spotlight games found", liveMode.isActive() || CONFIG.showNoGameMessage);
     scheduleDiscovery();
     return;
   }
@@ -286,10 +292,16 @@ function selectedRotationQueue(availableEntries) {
     excludedKeys: savedConfig.excludedGames,
     enabledSports: sportContexts.map(context => context.sport),
     rotationOrder: savedConfig.rotationOrder, retentionMinutes: savedConfig.liveModeFinalMinutes,
+    allows: entry => window.SportsOverlay.config.isCandidateEnabled(savedConfig, entry.candidate),
   }) : window.SportsOverlay.selection.applyGameLocks(normalRotationQueue, savedConfig.lockedGameKeys, entryKey);
 }
 
 async function discoverSport(context) {
+  if (context.sport === "disc-golf") {
+    const result = await context.provider.discover({ topFavoriteOnly: savedConfig.displayMode === "top-favorite" });
+    return { failures: result.failures, automaticEntries: result.automaticEntries.map(entry => ({ ...entry, context })),
+      availableEntries: result.availableEntries.map(entry => ({ ...entry, context })) };
+  }
   let discovery;
   try {
     discovery = await window.SportsOverlay.providerDiscovery.discover({
@@ -348,7 +360,7 @@ async function renderGame(entry, revision, { animate = false } = {}) {
     if (entry.context.providerModule.withSchedule) {
       event = entry.context.providerModule.withSchedule(event, discovered?.candidate.raw);
     }
-    if (entry.context.sport !== "baseball") {
+    if (event.competitionType !== "individual" && entry.context.sport !== "baseball") {
       event.details.odds ??= window.SportsOverlay.model.espnOdds(discovered?.candidate.raw ?? entry.candidate.raw);
     }
     if (revision !== requestRevision) return;
@@ -380,7 +392,7 @@ async function renderGame(entry, revision, { animate = false } = {}) {
   } catch (error) {
     if (revision === requestRevision) {
       clearTransitionClasses();
-      layout.handleError(`${entry.context.selectedTeam.league} update failed for game ${entry.candidate.id}`, error);
+      layout.handleError(`${entry.context.league || entry.context.selectedTeam.league} update failed for game ${entry.candidate.id}`, error);
     }
   }
 }
@@ -497,13 +509,14 @@ if (!staticPreview) {
       .map(createSportContext).filter(Boolean);
     if (overrideEntry) {
       const context = sportContexts.find(context => context.sport === overrideEntry.context.sport);
-      overrideEntry = context ? { ...overrideEntry, context } : null;
+      overrideEntry = context && window.SportsOverlay.config.isCandidateEnabled(savedConfig, overrideEntry.candidate)
+        ? { ...overrideEntry, context } : null;
     }
     if (teamsChanged || catalogChanged) {
       // Invalidate in-flight discovery and remove disabled sports immediately,
       // including manual games, locks, and temporary overrides.
       discoveryGeneration++;
-      const allowed = entry => sportContexts.some(context => context.sport === entry.context.sport);
+      const allowed = entry => window.SportsOverlay.config.isCandidateEnabled(savedConfig, entry.candidate);
       const previousKey = entryKey(rotationQueue[currentIndex]);
       rotationQueue = rotationQueue.filter(allowed);
       automaticRotationEntries = automaticRotationEntries.filter(allowed);
@@ -513,7 +526,9 @@ if (!staticPreview) {
       currentIndex = Math.max(0, rotationQueue.findIndex(entry => entryKey(entry) === previousKey));
       clearTimeout(rotationTimer); rotationTimer = null; rotationGeneration++;
       clearTimeout(pollTimer); pollGeneration++;
-      if (renderedGameKey && !sportContexts.some(context => renderedGameKey.startsWith(`${context.sport}:`))) {
+      const separator = renderedGameKey?.indexOf(":");
+      if (renderedGameKey && !window.SportsOverlay.config.isCandidateEnabled(savedConfig,
+        { sport: renderedGameKey.slice(0, separator), id: renderedGameKey.slice(separator + 1) })) {
         renderedGameKey = null;
         layout.renderNoEvent(sportContexts.length ? "Updating selected sports…" : "No sports enabled", CONFIG.showNoGameMessage);
       }

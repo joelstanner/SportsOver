@@ -74,6 +74,7 @@
   document.querySelector("#confirm-reset-settings").addEventListener("click", resetSettings);
   teamPicker.addEventListener("change", updateAddTeamButton);
   for (const sport of configApi.SPORT_CATALOG) {
+    if (sport.competitionType === "individual") continue;
     const option = document.createElement("option");
     option.value = sport.key;
     option.textContent = `${sport.name} · ${sport.league}`;
@@ -305,7 +306,7 @@
       const section = document.querySelector("#sport-template").content.firstElementChild.cloneNode(true);
       section.dataset.sport = sport.key;
       section.querySelector(".sport-rank").textContent = `#${sportIndex + 1}`;
-      section.querySelector(".sport-icon").textContent = { baseball: "⚾", football: "🏈", "college-football": "🏈", hockey: "🏒", soccer: "⚽", basketball: "🏀", "college-basketball": "🏀" }[sport.key] || "";
+      section.querySelector(".sport-icon").textContent = { baseball: "⚾", football: "🏈", "college-football": "🏈", hockey: "🏒", soccer: "⚽", basketball: "🏀", "college-basketball": "🏀", "disc-golf": "🥏" }[sport.key] || "";
       section.querySelector(".sport-name").textContent = sport.name;
       section.querySelector(".sport-league").textContent = sport.league;
       const enabled = section.querySelector(".sport-enabled");
@@ -324,6 +325,13 @@
 
       const favoriteList = section.querySelector(".sport-favorites");
       favoriteList.hidden = !enabled.checked;
+      if (sport.competitionType === "individual") {
+        global.SportsOverlay.pdgaSettings.render(favoriteList, group, () => {
+          scheduleSettingsSave("sports");
+        }, providerRefresh.fetchFor("disc-golf", global.SportsOverlay.pdga));
+        sportsList.append(section);
+        return;
+      }
       group.favorites.forEach((favorite, index) => renderFavorite(group, favorite, index, favoriteList));
       if (!group.favorites.length) {
         const empty = document.createElement("p");
@@ -456,7 +464,7 @@
         .find(Boolean);
       const option = document.createElement("option");
       option.value = group.sport;
-      option.textContent = `${sport.name} · ${topFavorite?.name || "no included team"}`;
+      option.textContent = `${sport.name} · ${sport.competitionType === "individual" ? `${group.events.filter(event => event.enabled).length} watched divisions` : topFavorite?.name || "no included team"}`;
       picker.append(option);
       filter.append(new Option(sport.league, group.sport));
     });
@@ -576,6 +584,9 @@
 
   async function discoverSportGames(group) {
     if (group.enabled === false) return { automaticEntries: [], availableEntries: [] };
+    if (group.sport === "disc-golf") return global.SportsOverlay.pdga.createClient({ watches: group.events,
+      fetchImpl: providerRefresh.fetchFor("disc-golf", global.SportsOverlay.pdga),
+    }).discover({ topFavoriteOnly: workingConfig.displayMode === "top-favorite" });
     const watchedTeams = group.favorites
       .filter(favorite => favorite.enabled)
       .map(favorite => configApi.findTeam(favorite.teamKey))
@@ -667,7 +678,7 @@
   }
 
   function isSportEnabled(entry) {
-    return workingConfig.sports.some(group => group.sport === entry.candidate.sport && group.enabled !== false);
+    return configApi.isCandidateEnabled(workingConfig, entry.candidate);
   }
 
   function currentRotationQueue() {
@@ -678,6 +689,7 @@
       excludedKeys: workingConfig.excludedGames,
       enabledSports: workingConfig.sports.filter(group => group.enabled !== false).map(group => group.sport),
       rotationOrder: workingConfig.rotationOrder, retentionMinutes: workingConfig.liveModeFinalMinutes,
+      allows: isSportEnabled,
     });
   }
 
@@ -797,6 +809,7 @@
   }
 
   function gameName(candidate) {
+    if (candidate.sport === "disc-golf") return `${candidate.raw?.name || "PDGA tournament"} · ${candidate.raw?.division || ""}`;
     if (candidate.sport === "baseball") {
       const teams = candidate.raw?.teams;
       return [teams?.away?.team?.name, teams?.home?.team?.name].filter(Boolean).join(" at ") || `Game ${candidate.id}`;
@@ -810,6 +823,7 @@
   }
 
   function gameMeta(candidate) {
+    if (candidate.sport === "disc-golf") return `${candidate.raw?.stale ? "Last received · " : ""}${candidate.state === "final" ? "Final" : candidate.state === "live" ? "Live now" : candidate.state === "interrupted" ? "Round complete" : "Upcoming"} · R${candidate.raw?.round || 1} · ${candidate.raw?.dateRange || ""}`;
     const preseason = candidate.sport === "baseball"
       ? ["S", "E"].includes(candidate.raw?.gameType)
       : global.SportsOverlay.model.espnPreseason(candidate.raw || {}, candidate.sport !== "soccer");
@@ -974,6 +988,7 @@
   }
 
   function isCurrentGame(candidate) {
+    if (candidate.sport === "disc-golf") return true;
     if (candidate.state === "live") return true;
     const start = new Date(candidate.startTime || 0).getTime();
     if (!Number.isFinite(start)) return false;

@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 const vm = require("node:vm");
 const fs = require("node:fs");
 const path = require("node:path");
+require("../../core/config.js");
 
 async function fixture(extraFavorites = [], gameCount = 2) {
   let now = 0, timerId = 0, notify, visibility;
@@ -21,6 +22,7 @@ async function fixture(extraFavorites = [], gameCount = 2) {
       getEvent: async id => (await fetchImpl(`game/${id}`)).json(),
     }) };
   const api = { config: { ready: Promise.resolve(), loadConfig: () => structuredClone(config),
+      isCandidateEnabled: globalThis.SportsOverlay.config.isCandidateEnabled,
       normalizeConfig: structuredClone, TEAM_CATALOG: [{ sport: "baseball", teamId: "team" }],
       findTeam: teamId => ({ teamId }) },
     shared: { waitForConfig: async () => {}, snapshot: () => ({ instance: "one", catalogRevision: 0 }), subscribe: fn => { notify = fn; } },

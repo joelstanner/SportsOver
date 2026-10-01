@@ -94,6 +94,7 @@ To update a downloaded source checkout, replace it with the newer source and run
 - **Navigate:** click the leftmost 20% of the unlocked banner for the previous rotation item; click elsewhere for the next item. Single clicks wait briefly to distinguish a double-click. Both directions wrap around and start a fresh display interval. Game locks and temporary overrides still apply. Desktop and OBS stay in sync.
 - **Move:** click anywhere on the unlocked banner and drag, including between monitors. Moving more than 5 screen pixels starts a drag; releasing after dragging never skips a game.
 - **Settings:** right-click the banner and choose **Settings…**. Right-clicking does not advance rotation.
+- **Updates:** SportsOver checks the latest published GitHub release on launch, at most once every 24 hours. Normal launches prompt only when a newer version is available; background launches, up-to-date results, and automatic-check failures stay quiet. Choose **Check for updates…** in the tray dropdown, banner right-click menu, or application menu for an immediate manual check. **Open download page** opens the official release page for manual installation.
 - **Resize:** double-click the left half of the unlocked banner to shrink it, or the right half to enlarge it, stepping through 50%, 75%, 100%, 125%, 150%, 200%, and 300%. Double-clicks resize without changing games; dragging never resizes. Banner size in Settings and the tray menu also work. Proportional scaling keeps the full 472 × 100 design intact; transparent windows do not rely on platform-specific native resize borders.
 - **Lock:** clicks pass through the banner to the application beneath it. Use **Unlock** in Settings or uncheck **Lock / click through** in the tray menu.
 - Settings uses two stateful buttons: **Lock / Unlock** and **Hide / Show**. Their labels update after changes from Settings, the tray, or the application menu; each button controls its own state.
@@ -104,6 +105,12 @@ To update a downloaded source checkout, replace it with the newer source and run
 ## Sports settings
 
 MLB, NFL, college football, NHL, MLS, NBA, and NCAA men's basketball use MLB/ESPN providers and team directories. Rank sports and watched teams, enable/disable favorites, select time zone and fallback behavior, and configure provider polling. Settings changes save automatically and update the banner without reloading it. Number fields apply when you leave the field or press Enter; invalid values are not saved. If saving fails, your changes remain available and a **Retry save** button appears.
+
+**Disc golf · PDGA:** in its Settings card, paste a PDGA tournament URL/ID (or browse current events), load the tournament, choose a division, and click **Watch division**. Each division is one rotation entry. Choose the top-three leaderboard or **Followed player**, then load and select a player. Missing followed players fall back to the leaders. Rank, disable, or remove watched divisions independently; settings save automatically. No tournament is selected by default.
+
+PDGA uses an individual-competitor model and a compact banner within the existing 472 × 100 window, including 200% scaling. The banner shows provider-reported ranks and ties, total relative to par, round score relative to par, holes completed, playoff winners, and DNF/withdrawal status for a followed player. A completed intermediate round displays **Break**; an event with no scorecards displays **Upcoming**. Tee times are labeled course local because the feed does not always provide a time zone. Watched divisions stay in automatic rotation, including finals, until removed; **Top watched team only** selects the first included PDGA division. Queue modes, locks, durations, and Live mode also apply.
+
+The PDGA Live provider uses publicly reachable, undocumented JSON endpoints without an API key. Defaults are 30 seconds for live scores, 60 for metadata/upcoming, and 300 for finished/idle scores. Requests share the existing cache, failures back off, and the banner retains the last successful scores with a **STALE** label. Only individual stroke-play events are supported. Provider access and response formats can change. Player/event links and PDGA attribution are included.
 
 With no saved settings, watched teams start with Seattle Mariners, Seahawks, Kraken, and Sounders FC; Nebraska Cornhuskers and Washington Huskies in football and men's basketball; Seattle U Redhawks men's basketball; and Detroit Pistons. Existing saved selections are preserved; restoring defaults applies this starting list.
 
@@ -176,9 +183,13 @@ App-owned files live in Electron's user-data directory:
 ```sh
 npm test
 npm run test:desktop
+npm run test:pdga
+npm run test:pdga:live
 ```
 
 `npm test` runs the provider/rotation/configuration suite and desktop persistence, recovery, bounds, and protocol tests. `npm run test:desktop` launches real Electron windows with isolated temporary app data and mocked provider responses. It checks shared rendering, authenticated API access, override expiry/restoration, independent desktop visibility, shared settings, desktop controls and secure preferences, then restarts to verify persistence. It also asserts that only one engine window makes provider requests while desktop, Settings and an HTTP browser-source client are connected. It leaves screenshots and test data in the temporary directory printed at completion. It does not alter your normal preferences.
+
+`npm run test:pdga` uses Chrome with fixture scores to check PDGA settings, persistence, player selection, locks, stale data, and mixed-sport rendering. `npm run test:pdga:live` is an optional network check using a completed PDGA tournament in an isolated Electron instance; it verifies the native 200% banner and OBS, then simulates an active round to check removal from Live mode. Set `SPORTSOVER_TEST_EXECUTABLE` to test a built app instead of the source launcher.
 
 Platform results and remaining manual checks are recorded in [desktop/TESTING.md](desktop/TESTING.md). Always-on-top cannot cover exclusive-fullscreen games or protected system screens. macOS fullscreen-workspace visibility is requested but needs manual validation on the target setup. Windows support needs native Windows testing. Linux is experimental; Wayland does not provide Electron's always-on-top behavior.
 

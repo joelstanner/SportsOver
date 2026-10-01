@@ -13,6 +13,7 @@
     Object.freeze({ key: "soccer", name: "Soccer", league: "MLS" }),
     Object.freeze({ key: "basketball", name: "Basketball", league: "NBA" }),
     Object.freeze({ key: "college-basketball", name: "NCAA men’s basketball", league: "NCAAM" }),
+    Object.freeze({ key: "disc-golf", name: "Disc golf", league: "PDGA", competitionType: "individual", provider: "pdga" }),
   ]);
   const CATALOG_SPORTS = Object.freeze(["baseball", "football", "college-football", "hockey", "soccer", "basketball", "college-basketball"]);
   const TEAM_CATALOG = loadTeamCatalogSync();
@@ -23,7 +24,7 @@
       return TEAM_CATALOG;
     });
   const DEFAULT_CONFIG = Object.freeze({
-    version: 7,
+    version: 8,
     sports: Object.freeze([
       frozenSport("baseball", ["mlb:136"]),
       frozenSport("football", ["nfl:sea"]),
@@ -32,9 +33,10 @@
       frozenSport("soccer", ["mls:9726"]),
       frozenSport("basketball", ["nba:det"]),
       frozenSport("college-basketball", ["ncaam:158", "ncaam:264", "ncaam:2547"]),
+      Object.freeze({ sport: "disc-golf", enabled: true, favorites: Object.freeze([]), events: Object.freeze([]) }),
     ]),
-    providerRefreshSeconds: Object.freeze(Object.fromEntries(CATALOG_SPORTS.map(sport =>
-      [sport, Object.freeze({ live: 12, pregame: 60, idle: 300, final: 300 })]))),
+    providerRefreshSeconds: Object.freeze(Object.fromEntries(SPORT_CATALOG.map(({ key: sport }) =>
+      [sport, Object.freeze({ live: sport === "disc-golf" ? 30 : 12, pregame: 60, idle: 300, final: 300 })]))),
     rotationSeconds: 10,
     timeZone: "local",
     rotationMode: "automatic",
@@ -112,15 +114,17 @@
       const sport = String(group?.sport || "").toLowerCase();
       if (!findSport(sport) || seenSports.has(sport)) return;
       seenSports.add(sport);
-      sports.push({ sport, enabled: group.enabled !== false, favorites: normalizeFavorites(group.favorites, sport) });
+      sports.push({ sport, enabled: group.enabled !== false, favorites: normalizeFavorites(group.favorites, sport),
+        ...(sport === "disc-golf" ? { events: normalizePdgaEvents(group.events) } : {}) });
     });
     SPORT_CATALOG.forEach(sport => {
-      if (!seenSports.has(sport.key)) sports.push({ sport: sport.key, enabled: true, favorites: [] });
+      if (!seenSports.has(sport.key)) sports.push({ sport: sport.key, enabled: true, favorites: [],
+        ...(sport.key === "disc-golf" ? { events: [] } : {}) });
     });
 
     const rotationSeconds = Number(source.rotationSeconds);
     return {
-      version: 7,
+      version: 8,
       timeZone: normalizeTimeZone(source.timeZone),
       providerRefreshSeconds: normalizeProviderRefresh(source.providerRefreshSeconds),
       sports,
@@ -146,12 +150,26 @@
   }
 
   function normalizeProviderRefresh(value) {
-    return Object.fromEntries(CATALOG_SPORTS.map(sport => [sport, Object.fromEntries(
+    return Object.fromEntries(SPORT_CATALOG.map(({ key: sport }) => [sport, Object.fromEntries(
       Object.entries(DEFAULT_CONFIG.providerRefreshSeconds[sport]).map(([state, fallback]) => {
         const seconds = value?.[sport]?.[state];
         return [state, Number.isInteger(seconds) && seconds >= 5 && seconds <= 3600 ? seconds : fallback];
       })
     )]));
+  }
+
+  function normalizePdgaEvents(events) {
+    const seen = new Set();
+    return (Array.isArray(events) ? events : []).flatMap(event => {
+      const tournamentId = String(event?.tournamentId || "");
+      const division = String(event?.division || "").toUpperCase();
+      const key = `${tournamentId}:${division}`;
+      if (!/^[1-9]\d{0,8}$/.test(tournamentId) || !/^[A-Z][A-Z0-9]{1,5}$/.test(division) || seen.has(key)) return [];
+      seen.add(key);
+      return [{ tournamentId, division, name: String(event.name || `PDGA ${tournamentId}`).slice(0, 180),
+        enabled: event.enabled !== false, view: event.view === "player" ? "player" : "leaderboard",
+        playerId: /^[1-9]\d{0,8}$/.test(String(event.playerId || "")) ? String(event.playerId) : "" }];
+    }).slice(0, 30);
   }
 
   function normalizeTimeZone(value) {
@@ -246,7 +264,7 @@
       if (!existing.has(favorite.teamKey)) favorites.push(favorite);
     });
     const { favorites: _legacyFavorites, ...rest } = source || {};
-    return { ...rest, version: 7, sports: groupFavorites(favorites) };
+    return { ...rest, version: 8, sports: groupFavorites(favorites) };
   }
 
   function groupFavorites(favorites) {
@@ -279,6 +297,13 @@
       .filter(Boolean));
   }
 
+  function isCandidateEnabled(config, candidate) {
+    const group = config.sports.find(group => group.sport === candidate?.sport);
+    if (!group || group.enabled === false) return false;
+    return candidate.sport !== "disc-golf" || group.events.some(event => event.enabled !== false
+      && `${event.tournamentId}:${event.division}` === candidate.id);
+  }
+
   function browserStorage() {
     try {
       return global.localStorage || null;
@@ -302,5 +327,6 @@
     findSport,
     findTeam,
     enabledTeams,
+    isCandidateEnabled,
   });
 })(typeof window === "undefined" ? globalThis : window);

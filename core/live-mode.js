@@ -26,7 +26,7 @@
     }
 
     function update({ rotation = [], available = [], excludedKeys = [], enabledSports = [],
-      rotationOrder = [], retentionMinutes = 20 } = {}) {
+      rotationOrder = [], retentionMinutes = 20, allows = () => true } = {}) {
       if (!active) return rotation;
       const enabled = new Set(enabledSports);
       const excluded = new Set(excludedKeys);
@@ -40,7 +40,7 @@
       const entries = [];
       const timestamp = now();
       for (const [key, previous] of admitted) {
-        if (!enabled.has(previous.entry.candidate.sport)) { admitted.delete(key); continue; }
+        if (!enabled.has(previous.entry.candidate.sport) || !allows(previous.entry)) { admitted.delete(key); continue; }
         let entry = current.get(key) || previous.entry;
         // A score summary can detect final before the league scoreboard does.
         if (previous.finishedAt !== null && entry.candidate.state !== "final") entry = previous.entry;

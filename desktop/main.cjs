@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, Tray, nativeImage, globalShortcut, ipcMain, protocol, screen, session, dialog, clipboard, systemPreferences } = require('electron');
+const { app, BrowserWindow, Menu, Tray, nativeImage, globalShortcut, ipcMain, protocol, screen, session, dialog, clipboard, systemPreferences, shell } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const { EngineState } = require('./engine-state.cjs');
@@ -7,6 +7,11 @@ const { Store, applyCatalog } = require('./store.cjs');
 const { fitBounds, stepBannerScale } = require('./bounds.cjs');
 const { createBannerGesture } = require('./banner-gesture.cjs');
 const { createHandler, ORIGIN } = require('./protocol.cjs');
+const { createUpdateChecker } = require('./updates.cjs');
+const updateChecker = createUpdateChecker({ app, dialog, shell, onStateChange: menus,
+  readLastCheck: () => store?.value.desktop.lastUpdateCheck,
+  saveLastCheck: timestamp => store.desktop({ lastUpdateCheck: timestamp }),
+});
 let backgroundStartup = process.argv.includes('--background');
 app.setName('SportsOver');
 if (process.env.SPORTSOVER_TEST_DATA) app.setPath('userData', process.env.SPORTSOVER_TEST_DATA);
@@ -58,27 +63,29 @@ function openSettings() {
   settings.loadURL(`${ORIGIN}/sports/admin/`);
 }
 function menus() {
+  const updateItem = updateChecker.menuItem();
   const controls = [
     { id: 'settings', label: 'Settings…', accelerator: 'CommandOrControl+,', click: openSettings },
     { id: 'toggle-banner', label: banner?.isVisible() ? 'Hide banner' : 'Show banner', click: () => { if (banner.isVisible()) { banner.hide(); persist({ visible: false }); menus(); } else showBanner(); } },
     { id: 'lock-banner', label: 'Lock / click through', type: 'checkbox', checked: locked, click: item => lock(item.checked) },
     { id: 'recover-banner', label: 'Recover banner (unlock and reposition)', accelerator: 'CommandOrControl+Shift+U', click: recover },
     { label: 'Banner size', submenu: [0.75, 1, 1.25, 1.5, 2].map(scale => ({ label: `${Math.round(scale * 100)}%`, click: () => resize(scale) })) },
+    { type: 'separator' }, updateItem,
     { type: 'separator' }, { label: 'Quit SportsOver', accelerator: 'CommandOrControl+Q', click: () => app.quit() },
   ];
   tray?.setContextMenu(Menu.buildFromTemplate(controls));
   const mac = process.platform === 'darwin';
   const settingsItem = controls[0];
   const bannerControls = controls.slice(1, 5);
-  const quitItem = controls[6];
+  const quitItem = controls.at(-1);
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     ...(mac ? [{ label: 'SportsOver', submenu: [
-      { role: 'about' }, { type: 'separator' }, settingsItem,
+      { role: 'about' }, { type: 'separator' }, settingsItem, updateItem,
       { type: 'separator' }, { role: 'services' }, { type: 'separator' },
       { role: 'hide' }, { role: 'hideOthers' }, { role: 'unhide' },
       { type: 'separator' }, quitItem,
     ] }] : []),
-    { label: 'File', submenu: [...(mac ? [] : [settingsItem, { type: 'separator' }]), { role: 'close' }, ...(mac ? [] : [quitItem])] },
+    { label: 'File', submenu: [...(mac ? [] : [settingsItem, updateItem, { type: 'separator' }]), { role: 'close' }, ...(mac ? [] : [quitItem])] },
     { label: 'Edit', submenu: [{ role: 'undo' }, { role: 'redo' }, { type: 'separator' }, { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }] },
     { label: 'Banner', submenu: bannerControls },
     { role: 'windowMenu' },
@@ -139,17 +146,19 @@ else {
     });
     ipcMain.handle('engine:state', event => { authorize(event); return engineState.state(); });
     const bounds = fitBounds(store.value.desktop.bounds, screen.getAllDisplays());
-    banner = new BrowserWindow({ ...bounds, title: 'SportsOver', transparent: true, backgroundColor: '#00000000', frame: false, hasShadow: false, alwaysOnTop: true, resizable: false, maximizable: false, fullscreenable: false, skipTaskbar: true, show: false, webPreferences: preferences() });
+    // A macOS panel can float above fullscreen apps without hiding the whole app
+    // from the Dock, Cmd-Tab, and application menu bar.
+    banner = new BrowserWindow({ ...bounds, ...(process.platform === 'darwin' ? { type: 'panel' } : {}), title: 'SportsOver', transparent: true, backgroundColor: '#00000000', frame: false, hasShadow: false, alwaysOnTop: true, resizable: false, maximizable: false, fullscreenable: false, skipTaskbar: true, show: false, webPreferences: preferences() });
     secure(banner);
     banner.on('blur', () => bannerGesture({ phase: 'cancel' }));
     banner.on('hide', () => bannerGesture({ phase: 'cancel' }));
     banner.webContents.on('context-menu', () => {
       bannerGesture({ phase: 'cancel' });
       if (locked) return;
-      Menu.buildFromTemplate([{ label: 'Settings…', click: openSettings }]).popup({ window: banner });
+      Menu.buildFromTemplate([{ label: 'Settings…', click: openSettings }, updateChecker.menuItem()]).popup({ window: banner });
     });
     banner.setAlwaysOnTop(true, 'floating');
-    if (process.platform === 'darwin') banner.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    if (process.platform === 'darwin') banner.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
     banner.on('close', event => { if (!quitting) { event.preventDefault(); banner.hide(); persist({ visible: false }); menus(); } });
     const saveBounds = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => persist({ bounds: banner.getBounds() }), 250); };
     banner.on('move', saveBounds);
@@ -253,6 +262,8 @@ else {
     if (!backgroundStartup && store.value.desktop.visible !== false) banner.showInactive();
     menus();
     if (!backgroundStartup) openSettings();
+    // Do not hold startup open while GitHub responds; launch checks handle errors silently.
+    void updateChecker.checkOnLaunch({ background: backgroundStartup });
   }).catch(error => { dialog.showErrorBox('SportsOver could not start', error.stack || error.message); app.quit(); });
 }
 function authorize(event) {

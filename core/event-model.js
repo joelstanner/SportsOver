@@ -16,7 +16,9 @@
       state: input.state,
       detailedState: String(input.detailedState || ""),
       startTime: input.startTime || null,
+      competitionType: input.competitionType || "team",
       teams: input.teams,
+      competitors: input.competitors,
       details: input.details || {},
     };
 
@@ -31,7 +33,9 @@
     if (!Object.values(EVENT_STATES).includes(event.state)) {
       throw new TypeError(`Unsupported sports event state: ${event.state}`);
     }
-    if (!event.teams?.away || !event.teams?.home) {
+    if (event.competitionType === "individual") {
+      if (!Array.isArray(event.competitors)) throw new TypeError("Individual event requires a competitor list.");
+    } else if (!event.teams?.away || !event.teams?.home) {
       throw new TypeError("Sports event requires away and home competitors.");
     }
     return event;

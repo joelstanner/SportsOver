@@ -1,7 +1,7 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const ORIGIN = 'sportsover://app';
-const CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://statsapi.mlb.com https://site.api.espn.com https://site.web.api.espn.com https://sports.core.api.espn.com; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'";
+const CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://statsapi.mlb.com https://site.api.espn.com https://site.web.api.espn.com https://sports.core.api.espn.com https://www.pdga.com; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'";
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml' };
 function createHandler({ root, dataRoot, store, refresh, engine }) {
   let refreshing = false;

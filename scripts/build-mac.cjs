@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 const { execFileSync } = require('node:child_process');
+const { pruneMacBuildBackups } = require('./build-backups.cjs');
 if (process.platform !== 'darwin') throw Error('Build this app on macOS.');
 const root = path.resolve(__dirname, '..');
 const output = path.join(root, 'dist', 'SportsOver.app');
@@ -36,5 +37,7 @@ try {
   if (fs.existsSync(output)) fs.renameSync(output, `${output}.${Date.now()}.previous`);
   execFileSync('/usr/bin/ditto', [bundle, output]);
   execFileSync('/usr/bin/codesign', ['--verify', '--deep', '--strict', output]);
+  // Only prune after the replacement is verified, retaining one rollback build.
+  pruneMacBuildBackups(path.dirname(output));
   console.log(`Built ${output}\nLocal ad-hoc signature only; not notarized for distribution.`);
 } finally { fs.rmSync(staging, { recursive: true, force: true }); }

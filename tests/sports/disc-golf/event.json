@@ -1,0 +1,133 @@
+{
+  "Name": "TDU - 2025 New Zealand Disc Golf Open presented by RPM Discs",
+  "SimpleName": "TDU - 2025 New Zealand Disc Golf Open",
+  "StartDate": "2025-01-25",
+  "DateRange": "Jan 25-27, 2025",
+  "Rounds": 3,
+  "FinalRound": 3,
+  "LatestRound": 3,
+  "HighestCompletedRound": 3,
+  "ScoringFormat": "S",
+  "Divisions": [
+    {
+      "DivisionID": 100,
+      "Division": "MPO",
+      "DivisionName": "Mixed Pro Open",
+      "Players": 20,
+      "IsPro": true,
+      "ShortName": "Mixed Pro Open",
+      "AbbreviatedName": "Mixed Pro Open",
+      "LatestRound": 3
+    },
+    {
+      "DivisionID": 105,
+      "Division": "FPO",
+      "DivisionName": "Women's Pro Open",
+      "Players": 7,
+      "IsPro": true,
+      "ShortName": "Women's Pro Open",
+      "AbbreviatedName": "Women's Pro Open",
+      "LatestRound": 3
+    },
+    {
+      "DivisionID": 111,
+      "Division": "MP40",
+      "DivisionName": "Mixed Pro 40+",
+      "Players": 8,
+      "IsPro": true,
+      "ShortName": "Mixed Pro 40+",
+      "AbbreviatedName": "Mixed Pro 40+",
+      "LatestRound": 3
+    },
+    {
+      "DivisionID": 400,
+      "Division": "MA1",
+      "DivisionName": "Mixed Amateur 1",
+      "Players": 14,
+      "IsPro": false,
+      "ShortName": "Mixed Amateur 1",
+      "AbbreviatedName": "Mixed Am 1",
+      "LatestRound": 3
+    },
+    {
+      "DivisionID": 405,
+      "Division": "FA1",
+      "DivisionName": "Women's Amateur 1",
+      "Players": 2,
+      "IsPro": false,
+      "ShortName": "Women's Amateur 1",
+      "AbbreviatedName": "Women's Am 1",
+      "LatestRound": 3
+    },
+    {
+      "DivisionID": 411,
+      "Division": "MA40",
+      "DivisionName": "Mixed Amateur 40+",
+      "Players": 16,
+      "IsPro": false,
+      "ShortName": "Mixed Amateur 40+",
+      "AbbreviatedName": "Mixed Am 40+",
+      "LatestRound": 3
+    },
+    {
+      "DivisionID": 416,
+      "Division": "FA40",
+      "DivisionName": "Women's Amateur 40+",
+      "Players": 4,
+      "IsPro": false,
+      "ShortName": "Women's Amateur 40+",
+      "AbbreviatedName": "Women's Am 40+",
+      "LatestRound": 3
+    },
+    {
+      "DivisionID": 421,
+      "Division": "MA50",
+      "DivisionName": "Mixed Amateur 50+",
+      "Players": 10,
+      "IsPro": false,
+      "ShortName": "Mixed Amateur 50+",
+      "AbbreviatedName": "Mixed Am 50+",
+      "LatestRound": 3
+    },
+    {
+      "DivisionID": 500,
+      "Division": "MA2",
+      "DivisionName": "Mixed Amateur 2",
+      "Players": 18,
+      "IsPro": false,
+      "ShortName": "Mixed Amateur 2",
+      "AbbreviatedName": "Mixed Am 2",
+      "LatestRound": 3
+    },
+    {
+      "DivisionID": 505,
+      "Division": "FA2",
+      "DivisionName": "Women's Amateur 2",
+      "Players": 5,
+      "IsPro": false,
+      "ShortName": "Women's Amateur 2",
+      "AbbreviatedName": "Women's Am 2",
+      "LatestRound": 3
+    },
+    {
+      "DivisionID": 600,
+      "Division": "MA3",
+      "DivisionName": "Mixed Amateur 3",
+      "Players": 23,
+      "IsPro": false,
+      "ShortName": "Mixed Amateur 3",
+      "AbbreviatedName": "Mixed Am 3",
+      "LatestRound": 3
+    },
+    {
+      "DivisionID": 801,
+      "Division": "MJ18",
+      "DivisionName": "Mixed Junior \u226418",
+      "Players": 4,
+      "IsPro": false,
+      "ShortName": "Mixed Junior \u226418",
+      "AbbreviatedName": "Mixed Junior \u226418",
+      "LatestRound": 3
+    }
+  ]
+}

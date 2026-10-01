@@ -23,20 +23,25 @@
         const key = `${sport}:${url}`;
         let record = records.get(key);
         if (!record) {
-          record = { sport, state: provider.refreshState?.(null, url) || "idle", completed: -Infinity, response: null, error: null, pending: null };
+          record = { sport, state: provider.refreshState?.(null, url) || "idle", completed: -Infinity, response: null, error: null, pending: null, failures: 0 };
           records.set(key, record);
         }
-        if (!record.pending && now() >= record.completed + interval(sport, record.state)) {
+        const delay = provider.failureBackoff && record.failures
+          ? Math.max(interval(sport, record.state), Math.min(300000, 30000 * 2 ** (record.failures - 1)))
+          : interval(sport, record.state);
+        if (!record.pending && now() >= record.completed + delay) {
           record.pending = Promise.resolve().then(async () => {
             try {
               const response = await fetchImpl(url, options);
-              if (!response.ok) throw new Error(`Score provider returned HTTP ${response.status}`);
+              if (!response.ok) { const error = new Error(`Score provider returned HTTP ${response.status}`); error.status = response.status; throw error; }
               const state = classify(await response.clone().json(), provider, url);
               record.state = ["live", "interrupted", "pregame", "final"].includes(state) ? state : "idle";
               record.response = response;
               record.error = null;
+              record.failures = 0;
             } catch (error) {
               record.error = error;
+              record.failures++;
             } finally {
               record.completed = now();
               record.pending = null;
