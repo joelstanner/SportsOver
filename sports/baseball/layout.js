@@ -6,6 +6,7 @@
   function createLayout(root = document) {
     const mount = root.querySelector("#sports-overlay");
     if (!mount) throw new Error("Baseball layout requires the sports overlay mount point.");
+    global.SportsOverlay.odds?.clear(mount);
     mount.className = "scorebug is-loading";
     mount.setAttribute("aria-label", "Baseball game score");
     mount.innerHTML = `

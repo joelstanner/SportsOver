@@ -49,6 +49,42 @@
     return numericType && Number(typeof type === "object" ? type?.id ?? type?.type : type) === 1;
   }
 
+  // ESPN summaries and scoreboards embed both closing and explicitly live markets.
+  function espnOdds(payload = {}) {
+    const competition = payload.header?.competitions?.[0] ?? payload.competitions?.[0] ?? payload;
+    const sources = [payload.pickcenter, payload.odds, competition.odds].find(items => Array.isArray(items) && items.length) ?? [];
+    const source = sources.find(item => item.provider?.priority === 1) ?? sources[0];
+    if (!source) return null;
+    const number = value => (typeof value !== "number" && typeof value !== "string") || String(value).trim() === "" || !Number.isFinite(Number(value)) ? null : Number(value);
+    const market = (name, field, legacy) => {
+      const result = { pregame: {}, live: {} };
+      for (const side of ["away", "home", "draw"]) {
+        const structured = source[name]?.[side];
+        result.live[side] = number(structured?.live?.[field]);
+        result.pregame[side] = number(structured?.close?.[field] ?? source[`${side}TeamOdds`]?.[legacy]
+          ?? (side === "draw" && name === "moneyline" ? source.drawOdds?.moneyLine : null));
+      }
+      return result;
+    };
+    const spread = market("pointSpread", "line", "spread");
+    // Legacy spread signs are inconsistent across sports. Only use a named team line.
+    if (spread.pregame.away === null && spread.pregame.home === null) {
+      const match = String(source.details || "").match(/^(.+?)\s+([+-]\d+(?:\.\d+)?)$/);
+      if (match && number(source.spread) !== null && Math.abs(Number(match[2])) === Math.abs(Number(source.spread))) {
+        for (const side of ["away", "home"]) {
+          const team = competition.competitors?.find(item => item.homeAway === side)?.team;
+          if (team && [team.abbreviation, team.displayName, team.shortDisplayName].includes(match[1])) {
+            spread.pregame[side] = Number(match[2]);
+            spread.pregame[side === "away" ? "home" : "away"] = -Number(match[2]);
+          }
+        }
+      }
+    }
+    const moneyline = market("moneyline", "odds", "moneyLine");
+    return [spread, moneyline].some(item => Object.values(item.pregame).concat(Object.values(item.live)).some(value => value !== null))
+      ? { spread, moneyline } : null;
+  }
+
   function selectedTimeZone() {
     const configured = global.SportsOverlay?.config?.loadConfig()?.timeZone;
     return !configured || configured === "local"
@@ -105,5 +141,5 @@
   }
 
   global.SportsOverlay = global.SportsOverlay || {};
-  global.SportsOverlay.model = Object.freeze({ EVENT_STATES, createEvent, validateEvent, espnPreseason, formatPregameStart, formatGameTime, formatFinalStatus });
+  global.SportsOverlay.model = Object.freeze({ EVENT_STATES, createEvent, validateEvent, espnPreseason, espnOdds, formatPregameStart, formatGameTime, formatFinalStatus });
 })(typeof window === "undefined" ? globalThis : window);

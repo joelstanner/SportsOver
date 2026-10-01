@@ -319,6 +319,9 @@ async function renderGame(entry, revision, { animate = false } = {}) {
     if (entry.context.providerModule.withSchedule) {
       event = entry.context.providerModule.withSchedule(event, discovered?.candidate.raw);
     }
+    if (entry.context.sport !== "baseball") {
+      event.details.odds ??= window.SportsOverlay.model.espnOdds(discovered?.candidate.raw ?? entry.candidate.raw);
+    }
     if (revision !== requestRevision) return;
     if (animate && !await transitionOut(revision)) return;
     if (!animate) clearTransitionClasses();

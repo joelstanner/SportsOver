@@ -3,6 +3,15 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.8.0 — 2026-10-01
+
+### Added
+
+- Banner spreads and moneylines from existing ESPN responses, including NHL
+  puck lines and MLS draw odds when available. No extra provider requests.
+- Pregame odds clear after a five-minute grace period once play begins;
+  explicitly live markets remain labeled LIVE while supplied. Finals hide odds.
+
 ## 0.7.2 — 2026-09-30
 
 ### Fixed

@@ -6,6 +6,7 @@
   function createLayout(root = document) {
     const mount = root.querySelector("#sports-overlay");
     if (!mount) throw new Error("Football layout requires the sports overlay mount point.");
+    global.SportsOverlay.odds?.clear(mount);
     mount.className = "football-scorebug is-loading";
     mount.setAttribute("aria-label", "Football game score");
     mount.innerHTML = `
@@ -90,10 +91,12 @@
         els.statusText.textContent = statusText(event);
         show(els.status);
       }
+      global.SportsOverlay.odds?.render(els.bug, event);
       return event.state;
     }
 
     function renderNoEvent(message = "No selected football game", visible = true) {
+      global.SportsOverlay.odds?.clear(els.bug);
       delete els.bug.dataset.preseason;
       els.bug.classList.remove("is-loading");
       els.bug.classList.toggle("is-hidden", !visible);

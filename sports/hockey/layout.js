@@ -6,6 +6,7 @@
   function createLayout(root = document) {
     const mount = root.querySelector("#sports-overlay");
     if (!mount) throw new Error("Hockey layout requires the sports overlay mount point.");
+    global.SportsOverlay.odds?.clear(mount);
     mount.className = "hockey-scorebug is-loading";
     mount.setAttribute("aria-label", "Hockey game score");
     mount.innerHTML = `
@@ -83,10 +84,12 @@
         els.statusText.textContent = statusText(event);
         show(els.status);
       }
+      global.SportsOverlay.odds?.render(els.bug, event);
       return event.state;
     }
 
     function renderNoEvent(message = "No selected hockey game", visible = true) {
+      global.SportsOverlay.odds?.clear(els.bug);
       delete els.bug.dataset.preseason;
       hide(els.advantage);
       els.bug.classList.remove("is-loading");

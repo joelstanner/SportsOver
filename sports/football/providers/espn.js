@@ -93,6 +93,8 @@
       startTime: competition.date ?? payload.date ?? null,
       teams: { away, home },
       details: {
+        odds: global.SportsOverlay.model.espnOdds(payload),
+        inPlay: statusType.state === "in",
         preseason: global.SportsOverlay.model.espnPreseason(payload),
         quarter: periodLabel(status.period),
         clock: status.displayClock || "",

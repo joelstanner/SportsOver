@@ -85,6 +85,8 @@
         home: normalizeTeam(homeSource, homeStats?.team, featuredTeamId),
       },
       details: {
+        odds: global.SportsOverlay.model.espnOdds(payload),
+        inPlay: statusType.state === "in",
         preseason: global.SportsOverlay.model.espnPreseason(payload, false),
         period: periodLabel(status.period, detailedState),
         clock: status.displayClock || statusType.shortDetail || "",
