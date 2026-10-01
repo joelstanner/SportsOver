@@ -61,8 +61,8 @@
         const details = event.details;
         els.clock.textContent = details.clock || "—";
         els.period.textContent = details.period || "—";
-        els.possession.textContent = `${away.abbreviation} ${percent(details.awayPossession)} · ${home.abbreviation} ${percent(details.homePossession)}`;
-        els.shots.textContent = `${away.abbreviation} ${details.awayShotsOnTarget ?? "—"} · ${home.abbreviation} ${details.homeShotsOnTarget ?? "—"}`;
+        els.possession.textContent = `${home.abbreviation} ${percent(details.homePossession)} · ${away.abbreviation} ${percent(details.awayPossession)}`;
+        els.shots.textContent = `${home.abbreviation} ${details.homeShotsOnTarget ?? "—"} · ${away.abbreviation} ${details.awayShotsOnTarget ?? "—"}`;
         show(els.detail);
         if (details.lastEvent) {
           show(els.lastEvent);

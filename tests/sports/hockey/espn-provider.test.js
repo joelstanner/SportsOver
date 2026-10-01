@@ -87,4 +87,68 @@ test("client calls Kraken schedule and game summary endpoints", async () => {
   assert.match(requests[0], /teams\/sea\/schedule\?season=2027/);
   assert.match(requests[1], /hockey\/nhl\/scoreboard/);
   assert.match(requests[2], /summary\?event=401900001/);
+  assert.match(requests[3], /sports\.core\.api\.espn\.com.*401900001\/competitions\/401900001\/situation$/);
+});
+
+test("current power-play flags clear on false, missing data, and feed failure without losing scores", async () => {
+  let situation = { powerPlay: true }, failure = false;
+  const client = provider.createClient({ teamId: "SEA", requestTimeoutMs: 1000, fetchImpl: async url => {
+    if (!url.endsWith('/situation')) return new Response(JSON.stringify(liveSummary()));
+    if (failure) throw new Error('offline');
+    return new Response(JSON.stringify(situation));
+  } });
+  assert.equal((await client.getEvent('401900001')).details.powerPlayActive, true);
+  situation = { powerPlay: false };
+  assert.equal((await client.getEvent('401900001')).details.powerPlayActive, false);
+  for (const value of [{}, { powerPlay: 'true' }]) {
+    situation = value;
+    assert.equal((await client.getEvent('401900001')).details.powerPlayActive, null);
+  }
+  failure = true;
+  const event = await client.getEvent('401900001');
+  assert.equal(event.details.powerPlayActive, null);
+  assert.equal(event.teams.home.score, 3);
+  assert.equal(event.details.homePowerPlay, '1/3');
+});
+
+test("non-live hockey games do not request a situation or infer an advantage from old plays", async () => {
+  for (const [state, description] of [['pre', 'Scheduled'], ['in', 'Intermission'], ['post', 'Final']]) {
+    const summary = liveSummary();
+    summary.header.competitions[0].status.type = { state, description };
+    summary.plays.push({ strength: { text: 'Power Play' }, scoringPlay: true });
+    const requests = [];
+    const client = provider.createClient({ requestTimeoutMs: 1000, fetchImpl: async url => {
+      requests.push(url);
+      return new Response(JSON.stringify(summary));
+    } });
+    assert.equal((await client.getEvent('401900001')).details.powerPlayActive, null);
+    assert.equal(requests.length, 1);
+  }
+});
+
+test("power-play team requires matching snapshots, complete unequal on-ice lists, and no empty net", async () => {
+  const summary = liveSummary();
+  summary.plays.at(-1).id = 'latest';
+  let situation = { powerPlay: true, emptyNet: false, lastPlay: { $ref: 'https://sports.core.api.espn.com/plays/latest?lang=en' } };
+  const row = (id, count) => ({ teamId: id, entries: Array.from({ length: count }, (_, index) => ({
+    athleteid: `${id}-${index}`, whereabouts: { name: 'ROSTER_WHEREABOUTS_IN_PLAY' },
+  })) });
+  const client = provider.createClient({ requestTimeoutMs: 1000, fetchImpl: async url =>
+    new Response(JSON.stringify(url.endsWith('/situation') ? situation : summary)) });
+  for (const [away, home, expected] of [[6,5,'23'], [5,6,'124292'], [4,6,'124292'], [5,4,'23'], [6,6,null], [3,6,null], [7,5,null]]) {
+    summary.onIce = [row('23', away), row('124292', home)];
+    assert.equal((await client.getEvent('401900001')).details.powerPlayTeamId, expected);
+  }
+  summary.onIce = [row('23', 6), row('124292', 5)];
+  const valid = structuredClone(situation);
+  for (const change of [{ emptyNet: true }, { emptyNet: undefined }, { powerPlay: false }, { lastPlay: { $ref: 'https://example.com/plays/older' } }, { lastPlay: undefined }]) {
+    situation = { ...valid, ...change };
+    assert.equal((await client.getEvent('401900001')).details.powerPlayTeamId, null);
+  }
+  situation = valid;
+  for (const rows of [undefined, [row('23', 6)], [row('23', 6), row('23', 5)],
+    [row('23', 6), { teamId: '124292', entries: Array(5).fill(row('124292', 1).entries[0]) }]]) {
+    summary.onIce = rows;
+    assert.equal((await client.getEvent('401900001')).details.powerPlayTeamId, null);
+  }
 });

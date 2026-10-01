@@ -3,6 +3,19 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.6.0 — 2026-09-30
+
+### Added
+
+- Live NHL power-play indicator using ESPN's situation feed. Shows the team when
+  matching on-ice data identifies the advantage; otherwise shows a generic label.
+  Clears when inactive or unavailable, with cumulative totals labeled PP GOALS / OPP.
+
+### Fixed
+
+- MLS possession and shots-on-target stats now list the home team first to match
+  the score display.
+
 ## 0.5.2 — 2026-09-30
 
 ### Fixed

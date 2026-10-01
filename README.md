@@ -78,6 +78,14 @@ To follow NCAA men's basketball, choose **NCAA men’s basketball · NCAAM** in 
 
 **Refresh teams** saves current provider catalogs in app data, leaving the source checkout unchanged. A failed sport refresh retains its previous directory; other successful sports may still update. Live feeds can be unavailable or delayed. Existing provider fallback/error states apply; this app does not guarantee real-time scores.
 
+Live NHL games show **POWER PLAY ACTIVE** when ESPN's situation feed explicitly
+reports a power play. The separate **PP GOALS / OPP** row shows cumulative totals.
+The indicator names the team with more players on ice when both feeds share the
+latest play and ESPN explicitly reports no empty net. Otherwise it shows a generic
+active indicator. It does not infer a countdown from past plays and is hidden
+when situation data is unavailable. Live hockey refreshes fetch both the
+game summary and situation feed at the configured live refresh interval.
+
 ## Background startup
 
 Run `npm start -- --background` to start the engine, local OBS server, and tray

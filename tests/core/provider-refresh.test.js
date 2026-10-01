@@ -6,6 +6,30 @@ require("../../core/provider-refresh.js");
 const api = globalThis.SportsOverlay;
 const provider = { toCandidate: game => game, normalizeEvent: payload => payload };
 
+test("NHL situations use the live interval even after an initial failure", async () => {
+  require('../../core/event-model.js');
+  require('../../sports/hockey/providers/espn.js');
+  let clock = 0, calls = 0;
+  const config = api.config.normalizeConfig();
+  const cache = api.providerRefresh.create({ config: () => config, now: () => clock, fetchImpl: async () => {
+    if (++calls === 1) throw new Error('offline');
+    return new Response(JSON.stringify({ powerPlay: calls === 2 }));
+  } });
+  const fetch = cache.fetchFor('hockey', api.espnNhl);
+  const url = 'https://sports.core.api.espn.com/v2/sports/hockey/leagues/nhl/events/1/competitions/1/situation';
+  await assert.rejects(fetch(url), /offline/);
+  clock = 11000;
+  await assert.rejects(fetch(url), /offline/);
+  assert.equal(calls, 1);
+  clock = 12000;
+  assert.equal((await (await fetch(url)).json()).powerPlay, true);
+  clock = 23000;
+  assert.equal((await (await fetch(url)).json()).powerPlay, true);
+  clock = 24000;
+  assert.equal((await (await fetch(url)).json()).powerPlay, false);
+  assert.equal(calls, 3);
+});
+
 function fixture() {
   const config = api.config.normalizeConfig();
   let clock = 0, calls = 0, payload = { state: "live" }, fail = false;

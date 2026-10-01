@@ -3,6 +3,7 @@
 (function initializeEspnNhlProvider(global) {
   const { EVENT_STATES, createEvent } = global.SportsOverlay.model;
   const API = "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl";
+  const SITUATION_API = "https://sports.core.api.espn.com/v2/sports/hockey/leagues/nhl/events/";
 
   function createClient(options) {
     const featuredTeamId = String(options.teamId || "").toUpperCase();
@@ -33,7 +34,19 @@
 
     async function getEvent(gameId, eventFeaturedTeamId = featuredTeamId) {
       const summary = await fetchJson(`${API}/summary?event=${encodeURIComponent(gameId)}`);
-      return normalizeEvent(summary, eventFeaturedTeamId, gameId);
+      const event = normalizeEvent(summary, eventFeaturedTeamId, gameId);
+      if (event.state !== EVENT_STATES.LIVE) return event;
+      // This endpoint reports the current advantage, unlike cumulative PP stats
+      // or a historical play's strength. Failure must not preserve an old flag.
+      try {
+        const id = encodeURIComponent(gameId);
+        const situation = await fetchJson(`${SITUATION_API}${id}/competitions/${id}/situation`);
+        event.details.powerPlayActive = typeof situation.powerPlay === "boolean" ? situation.powerPlay : null;
+        event.details.powerPlayTeamId = powerPlayTeam(summary, situation, event.teams);
+      } catch (_) {
+        event.details.powerPlayActive = null;
+      }
+      return event;
     }
 
     return Object.freeze({ findGames, findLeagueGames, getEvent });
@@ -85,9 +98,29 @@
         homeShots: statistic(homeStats, "shotsTotal"),
         awayPowerPlay: powerPlay(awayStats),
         homePowerPlay: powerPlay(homeStats),
+        powerPlayActive: null,
+        powerPlayTeamId: null,
         lastPlay: latestScoringPlay(payload.plays),
       },
     });
+  }
+
+  function powerPlayTeam(summary, situation, teams) {
+    // Counts include goalies. Only compare complete on-ice lists when ESPN
+    // explicitly rules out an empty net and both snapshots share the last play.
+    if (situation.powerPlay !== true || situation.emptyNet !== false) return null;
+    const playId = situation.lastPlay?.$ref?.match(/\/plays\/([^/?]+)(?:[?]|$)/)?.[1];
+    if (!playId || String(summary.plays?.at(-1)?.id) !== playId) return null;
+    const counts = [teams.away, teams.home].map(team => {
+      const rows = summary.onIce?.filter(row => String(row.teamId) === team.id);
+      if (rows?.length !== 1 || !Array.isArray(rows[0].entries)) return null;
+      const entries = rows[0].entries;
+      if (entries.some(entry => !entry.athleteid || entry.whereabouts?.name !== "ROSTER_WHEREABOUTS_IN_PLAY")) return null;
+      const count = new Set(entries.map(entry => String(entry.athleteid))).size;
+      return count === entries.length && count >= 4 && count <= 6 ? count : null;
+    });
+    if (counts.includes(null) || counts[0] === counts[1]) return null;
+    return counts[0] > counts[1] ? teams.away.id : teams.home.id;
   }
 
   function normalizeState(state, completed, detailedState) {
@@ -165,6 +198,7 @@
     normalizeState,
     periodLabel,
     seasonEndingYear,
+    refreshState: (_payload, url) => url.startsWith(SITUATION_API) && url.endsWith("/situation") ? EVENT_STATES.LIVE : null,
     toCandidate: event => global.SportsOverlay.selection.espnCandidate(event, "hockey"),
   });
   global.SportsOverlay.espnNhl = provider;

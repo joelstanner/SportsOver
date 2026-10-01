@@ -14,7 +14,7 @@
       id: "nhl-live",
       state: EVENT_STATES.LIVE,
       detailedState: "In Progress",
-      details: { period: "2ND", clock: "08:42", awayShots: 19, homeShots: 24, awayPowerPlay: "0/2", homePowerPlay: "1/3", lastPlay: "Jared McCann scores on a wrist shot." },
+      details: { period: "2ND", clock: "08:42", awayShots: 19, homeShots: 24, awayPowerPlay: "0/2", homePowerPlay: "1/3", powerPlayActive: true, powerPlayTeamId: "124292", lastPlay: "Jared McCann scores on a wrist shot." },
     }),
     interrupted: createEvent({ ...base, id: "nhl-interrupted", state: EVENT_STATES.INTERRUPTED, detailedState: "2nd Intermission" }),
     final: createEvent({ ...base, id: "nhl-final", state: EVENT_STATES.FINAL, detailedState: "Final" }),

@@ -65,6 +65,40 @@ const root = path.resolve(__dirname, '../..');
         await page.evaluate(() => { window.testEvent.details.preseason = true; window.testLayout.render(window.testEvent); window.testLayout.renderNoEvent(); });
         assert.equal(await page.locator('#sports-overlay').getAttribute('data-preseason'), null);
       }
+      if (sport === 'hockey') {
+        for (const [state, active, visible] of [
+          ['live', true, true], ['live', false, false], ['live', null, false],
+          ['interrupted', true, false], ['final', true, false], ['pregame', true, false],
+        ]) {
+          await page.evaluate(({ state, active }) => {
+            window.testEvent = window.SportsOverlay.registry.getDemo('hockey', 'live');
+            window.testEvent.state = state;
+            window.testEvent.details.powerPlayActive = active;
+            window.testLayout.render(window.testEvent);
+          }, { state, active });
+          assert.equal(await page.locator('#hockey-advantage').isVisible(), visible);
+          if (visible) {
+            assert.equal(await page.locator('#hockey-advantage').innerText(), 'SEA POWER PLAY');
+            assert.equal(await page.locator('#hockey-power-play').innerText(), 'VAN 0/2 · SEA 1/3');
+            assert.equal(await page.locator('#sports-overlay').evaluate(el => el.scrollWidth <= el.clientWidth), true);
+            await page.screenshot({ path: '/tmp/sportsover-hockey-power-play.png' });
+          }
+        }
+        for (const [teamId, text] of [['23', 'VAN POWER PLAY'], [null, 'POWER PLAY ACTIVE'], ['unknown', 'POWER PLAY ACTIVE']]) {
+          await page.evaluate(teamId => {
+            window.testEvent.state = 'live';
+            window.testEvent.details.powerPlayActive = true;
+            window.testEvent.details.powerPlayTeamId = teamId;
+            window.testLayout.render(window.testEvent);
+          }, teamId);
+          assert.equal(await page.locator('#hockey-advantage').innerText(), text);
+        }
+        await page.evaluate(() => {
+          window.testEvent.state = 'live'; window.testLayout.render(window.testEvent);
+          window.testLayout.renderNoEvent();
+        });
+        assert.equal(await page.locator('#hockey-advantage').isHidden(), true);
+      }
       if (sport === 'college-basketball') {
         await page.evaluate(() => {
           const api = window.SportsOverlay;

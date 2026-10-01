@@ -8,7 +8,9 @@
     function interval(sport, state) {
       return config().providerRefreshSeconds[sport][state === "interrupted" ? "live" : state] * 1000;
     }
-    function classify(payload, provider) {
+    function classify(payload, provider, url) {
+      const explicitState = provider.refreshState?.(payload, url);
+      if (explicitState) return explicitState;
       const games = payload.dates?.flatMap(date => date.games ?? []) ?? payload.events;
       if (Array.isArray(games)) {
         const states = games.map(game => provider.toCandidate(game).state);
@@ -21,7 +23,7 @@
         const key = `${sport}:${url}`;
         let record = records.get(key);
         if (!record) {
-          record = { sport, state: "idle", completed: -Infinity, response: null, error: null, pending: null };
+          record = { sport, state: provider.refreshState?.(null, url) || "idle", completed: -Infinity, response: null, error: null, pending: null };
           records.set(key, record);
         }
         if (!record.pending && now() >= record.completed + interval(sport, record.state)) {
@@ -29,7 +31,7 @@
             try {
               const response = await fetchImpl(url, options);
               if (!response.ok) throw new Error(`Score provider returned HTTP ${response.status}`);
-              const state = classify(await response.clone().json(), provider);
+              const state = classify(await response.clone().json(), provider, url);
               record.state = ["live", "interrupted", "pregame", "final"].includes(state) ? state : "idle";
               record.response = response;
               record.error = null;

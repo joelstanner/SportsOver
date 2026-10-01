@@ -23,9 +23,10 @@
         </div>
       </section>
       <section id="hockey-status" class="hockey-status" hidden><span id="hockey-matchup"></span><strong id="hockey-status-text"></strong></section>
+      <section id="hockey-advantage" class="hockey-advantage" hidden>POWER PLAY ACTIVE</section>
       <section id="hockey-live-detail" class="hockey-live-detail" hidden>
         <div><span>SHOTS</span><strong id="hockey-shots"></strong></div>
-        <div><span>POWER PLAY</span><strong id="hockey-power-play"></strong></div>
+        <div><span title="Power-play goals / opportunities">PP GOALS / OPP</span><strong id="hockey-power-play"></strong></div>
       </section>
       <section id="hockey-last-play" class="hockey-last-play" hidden><span class="scorebug-scroll-viewport"><span id="hockey-last-play-text" class="scorebug-scroll-text"></span></span></section>`;
 
@@ -39,6 +40,7 @@
       clock: find("#hockey-clock"), period: find("#hockey-period"),
       status: find("#hockey-status"), matchup: find("#hockey-matchup"), statusText: find("#hockey-status-text"),
       detail: find("#hockey-live-detail"), shots: find("#hockey-shots"), powerPlay: find("#hockey-power-play"),
+      advantage: find("#hockey-advantage"),
       lastPlay: find("#hockey-last-play"), lastPlayText: find("#hockey-last-play-text"), lastPlayViewport: find("#hockey-last-play .scorebug-scroll-viewport"),
     };
 
@@ -55,10 +57,16 @@
       const showScore = event.state !== EVENT_STATES.PREGAME;
       els.awayScore.textContent = showScore ? away.score ?? 0 : "";
       els.homeScore.textContent = showScore ? home.score ?? 0 : "";
-      hide(els.status); hide(els.detail); hide(els.lastPlay);
+      hide(els.status); hide(els.detail); hide(els.lastPlay); hide(els.advantage);
 
       if (event.state === EVENT_STATES.LIVE) {
         const details = event.details;
+        if (details.powerPlayActive === true) {
+          const team = [away, home].find(team => team.id === details.powerPlayTeamId);
+          els.advantage.textContent = team ? `${team.abbreviation} POWER PLAY` : "POWER PLAY ACTIVE";
+          els.advantage.setAttribute("aria-label", team ? `${team.name} power play` : "Power play active");
+          show(els.advantage);
+        }
         els.clock.textContent = details.clock || "—";
         els.period.textContent = details.period || "—";
         els.shots.textContent = `${away.abbreviation} ${details.awayShots ?? "—"} · ${home.abbreviation} ${details.homeShots ?? "—"}`;
@@ -80,6 +88,7 @@
 
     function renderNoEvent(message = "No selected hockey game", visible = true) {
       delete els.bug.dataset.preseason;
+      hide(els.advantage);
       els.bug.classList.remove("is-loading");
       els.bug.classList.toggle("is-hidden", !visible);
       if (!visible) return;

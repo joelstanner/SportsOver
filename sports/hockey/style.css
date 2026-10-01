@@ -26,8 +26,9 @@
 .hockey-center span { color: #7fd8e5; font-size: 0.62em; font-weight: 800; letter-spacing: 0.08em; }
 .hockey-status { display: flex; justify-content: space-between; align-items: center; min-height: 26px; padding: 0 15px; border-top: 1px solid var(--hockey-line); }
 .hockey-status strong { color: #7fd8e5; font-size: 0.76em; letter-spacing: 0.05em; text-transform: uppercase; }
+.hockey-advantage { padding: 3px 10px; border-top: 1px solid rgba(255, 209, 102, 0.4); background: rgba(255, 209, 102, 0.14); color: #ffdc87; font-size: 0.6em; font-weight: 850; letter-spacing: 0.08em; text-align: center; white-space: nowrap; }
 .hockey-live-detail { display: grid; grid-template-columns: 1fr 1.35fr; border-top: 1px solid var(--hockey-line); background: rgba(2, 10, 17, 0.44); }
-.hockey-live-detail div { display: flex; justify-content: space-between; gap: 8px; padding: 2px 10px; border-right: 1px solid var(--hockey-line); }
+.hockey-live-detail div { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 2px 8px; white-space: nowrap; border-right: 1px solid var(--hockey-line); }
 .hockey-live-detail div:last-child { border-right: 0; }
 .hockey-live-detail span { color: #7fd8e5; font-size: 0.52em; font-weight: 800; letter-spacing: 0.08em; }
 .hockey-live-detail strong { font-size: 0.66em; }
