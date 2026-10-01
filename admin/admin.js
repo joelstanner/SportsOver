@@ -284,6 +284,7 @@
       const section = document.querySelector("#sport-template").content.firstElementChild.cloneNode(true);
       section.dataset.sport = sport.key;
       section.querySelector(".sport-rank").textContent = `#${sportIndex + 1}`;
+      section.querySelector(".sport-icon").textContent = { baseball: "⚾", football: "🏈", "college-football": "🏈", hockey: "🏒", soccer: "⚽", basketball: "🏀", "college-basketball": "🏀" }[sport.key] || "";
       section.querySelector(".sport-name").textContent = sport.name;
       section.querySelector(".sport-league").textContent = sport.league;
       const enabled = section.querySelector(".sport-enabled");
@@ -394,9 +395,6 @@
     setTeamMark(card.querySelector(".team-mark"), team);
     card.querySelector(".team-name").textContent = team.name;
     card.querySelector(".team-meta").textContent = `${team.league} · watched #${index + 1}`;
-    const providerBadge = card.querySelector(".provider-badge");
-    providerBadge.textContent = team.providerStatus === "live" ? "LIVE PROVIDER" : "DEMO READY";
-    providerBadge.classList.toggle("is-demo", team.providerStatus !== "live");
     card.querySelector(".team-enabled").checked = favorite.enabled;
     card.querySelector(".team-enabled").addEventListener("change", event => {
       favorite.enabled = event.target.checked;

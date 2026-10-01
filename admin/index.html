@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SportsOver Settings</title>
-  <link rel="stylesheet" href="admin.css?v=15">
+  <link rel="stylesheet" href="admin.css?v=17">
 </head>
 <body>
   <header class="masthead">
@@ -242,7 +242,7 @@
   <template id="sport-template">
     <section class="sport-card">
       <header class="sport-heading">
-        <div><span class="sport-rank"></span><h3 class="sport-name"></h3><span class="sport-league"></span></div>
+        <div><span class="sport-rank"></span><span class="sport-icon" aria-hidden="true"></span><h3 class="sport-name"></h3><span class="sport-league"></span></div>
         <div class="order-buttons">
           <label class="toggle"><input class="sport-enabled" type="checkbox"><span>Show sport</span></label>
           <button class="icon-button move-sport-up" type="button" aria-label="Move sport up">↑</button>
@@ -258,7 +258,6 @@
     <article class="favorite-card">
       <span class="team-mark"></span>
       <div class="team-copy"><strong class="team-name"></strong><span class="team-meta"></span></div>
-      <span class="provider-badge"></span>
       <label class="toggle"><input class="team-enabled" type="checkbox"><span>Included</span></label>
       <div class="order-buttons">
         <button class="icon-button move-up" type="button" aria-label="Move watched team up">↑</button>
@@ -311,7 +310,7 @@
   <script src="../sports/soccer/providers/espn.js?v=3"></script>
   <script src="../sports/basketball/providers/espn.js?v=4"></script>
   <script src="../sports/college-basketball/providers/espn.js?v=1"></script>
-  <script src="admin.js?v=23"></script>
+  <script src="admin.js?v=25"></script>
   <script src="../core/desktop.js?v=2"></script>
 </body>
 </html>

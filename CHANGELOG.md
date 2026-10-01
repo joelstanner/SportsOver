@@ -3,6 +3,18 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.10.2 — 2026-10-01
+
+### Changed
+
+- Added sport icons between the rank number and sport name in Settings.
+
+## 0.10.1 — 2026-10-01
+
+### Changed
+
+- Removed redundant provider tags from watched-team cards and tightened their layout.
+
 ## 0.10.0 — 2026-10-01
 
 ### Added

@@ -29,7 +29,6 @@ button, select { cursor: pointer; }
 .eyebrow, .section-kicker { margin: 0 0 8px; color: var(--teal); font-size: 0.7rem; font-weight: 800; letter-spacing: 0.16em; }
 h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.7rem); line-height: 0.95; letter-spacing: -0.05em; }
 .subtitle { margin: 14px 0 0; color: var(--muted); }
-.provider-badge { border: 1px solid var(--teal); border-radius: 999px; padding: 7px 10px; color: var(--teal); font-size: 0.64rem; font-weight: 800; letter-spacing: 0.1em; white-space: nowrap; }
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
 .tab { border: 0; border-bottom: 3px solid transparent; padding: 13px 18px; color: var(--muted); background: transparent; font-weight: 750; }
 .tab.is-active { border-color: var(--teal); color: var(--ink); }
@@ -52,19 +51,18 @@ h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.7rem); line-height: 0.95; letter-s
 .sport-heading > div:first-child { display: flex; align-items: baseline; gap: 10px; }
 .sport-heading h3 { margin: 0; font-size: 1.05rem; }
 .sport-rank { color: var(--teal); font-size: 0.72rem; font-weight: 900; }
+.sport-icon { align-self: center; flex: 0 0 auto; font-size: 1.25rem; line-height: 1; }
 .sport-league { color: var(--muted); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; }
 .sport-favorites { display: grid; gap: 8px; padding: 12px; }
 .sport-favorites[hidden], .sport-disabled-note[hidden] { display: none; }
 .sport-heading .order-buttons { flex-wrap: wrap; justify-content: flex-end; }
-.favorite-card { display: grid; grid-template-columns: 44px minmax(180px, 1fr) auto auto auto auto; gap: 14px; align-items: center; border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: linear-gradient(120deg, var(--panel-raised), var(--panel)); }
+.favorite-card { display: grid; grid-template-columns: 44px minmax(180px, 1fr) auto auto auto; gap: 14px; align-items: center; border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: linear-gradient(120deg, var(--panel-raised), var(--panel)); }
 .favorite-card.is-new { animation: watched-team-added 1.4s ease-out; }
 @keyframes watched-team-added { from { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(49, 198, 179, 0.2); } }
 .team-mark { display: grid; width: 40px; height: 40px; place-items: center; border-radius: 50%; background: var(--teal-dark); color: var(--teal); font-size: 0.72rem; font-weight: 900; }
 .team-mark img { width: 34px; height: 34px; object-fit: contain; }
 .team-copy { display: grid; gap: 3px; }
 .team-meta { color: var(--muted); font-size: 0.76rem; text-transform: capitalize; }
-.provider-badge { padding: 5px 8px; font-size: 0.56rem; }
-.provider-badge.is-demo { border-color: var(--amber); color: var(--amber); }
 .toggle { display: flex; gap: 7px; align-items: center; color: var(--muted); font-size: 0.8rem; }
 .toggle input { accent-color: var(--teal); }
 .order-buttons { display: flex; gap: 4px; }
@@ -153,7 +151,6 @@ iframe { max-width: 100%; border: 0; background: transparent; }
   body { padding: 24px 18px 50px; }
   .favorite-card { grid-template-columns: 42px 1fr auto; }
   .sport-heading > div:first-child { flex-wrap: wrap; }
-  .provider-badge { grid-column: 2; justify-self: start; }
   .toggle { grid-column: 3; grid-row: 1; }
   .order-buttons { grid-column: 2; }
   .remove-team { grid-column: 3; }
