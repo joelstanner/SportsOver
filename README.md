@@ -78,6 +78,11 @@ To follow NCAA men's basketball, choose **NCAA men’s basketball · NCAAM** in 
 
 **Refresh teams** saves current provider catalogs in app data, leaving the source checkout unchanged. A failed sport refresh retains its previous directory; other successful sports may still update. Live feeds can be unavailable or delayed. Existing provider fallback/error states apply; this app does not guarantee real-time scores.
 
+Turn off **Show sport** in a sport's Settings card and save to remove that sport
+from the banner and game selection, including manually added or locked games.
+Teams, ordering, and preferences stay saved. Turn it back on and save to restore
+the sport. All sports can be turned off; older configurations keep sports enabled.
+
 Live NHL games show **POWER PLAY ACTIVE** when ESPN's situation feed explicitly
 reports a power play. The separate **PP GOALS / OPP** row shows cumulative totals.
 The indicator names the team with more players on ice when both feeds share the

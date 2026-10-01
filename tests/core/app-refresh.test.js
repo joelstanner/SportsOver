@@ -59,6 +59,12 @@ async function fixture(extraFavorites = []) {
     now = end; await flush();
   }
   return { calls, renders, timers, advance, flush, visibility, engine: api.engine,
+    time: value => { now = value; },
+    async setSportEnabled(enabled) {
+      config.sports[0].enabled = enabled;
+      await notify({ initialized: true, instance: "one", catalogRevision: 0, config: structuredClone(config) });
+      await flush();
+    },
     async updateDefaultDuration(seconds) {
       config.defaultGameDurations = { live: seconds, pregame: 5, final: 10 };
       await notify({ initialized: true, instance: "one", catalogRevision: 0, config: structuredClone(config) });
@@ -72,6 +78,36 @@ async function fixture(extraFavorites = []) {
     hold() { holdNext = true; }, async release() { const fn = release; release = null; fn(); await flush(); },
   };
 }
+
+test("disabling the sport clears rotation and overrides, stops polling, and supports re-enabling", async () => {
+  const f = await fixture();
+  f.engine.override({ gameKey: 'baseball:1' }); await f.flush();
+  assert.equal(f.engine.describe().overrideGameKey, 'baseball:1');
+  await f.setSportEnabled(false);
+  assert.equal(f.engine.describe().queue.length, 0);
+  assert.equal(f.engine.describe().availableEntries.length, 0);
+  assert.equal(f.engine.describe().overrideGameKey, null);
+  assert.equal(f.engine.describe().renderedGameKey, null);
+  const calls = f.calls.length, renders = f.renders.length;
+  await f.advance(60000);
+  assert.equal(f.calls.length, calls);
+  assert.equal(f.renders.length, renders);
+  await f.setSportEnabled(true);
+  assert.equal(f.engine.describe().queue.length, 2);
+  assert.ok(f.renders.length > renders);
+});
+
+test("disabled sports cannot return through an in-flight discovery", async () => {
+  const f = await fixture();
+  f.time(12000);
+  f.hold();
+  const pending = f.engine.refresh();
+  await f.flush();
+  await f.setSportEnabled(false);
+  await f.release(); await pending; await f.flush();
+  assert.equal(f.engine.describe().queue.length, 0);
+  assert.equal(f.engine.describe().availableEntries.length, 0);
+});
 
 test("actual banner rotation and discovery obey request limits and update without reload", async () => {
   const f = await fixture();

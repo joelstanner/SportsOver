@@ -25,7 +25,7 @@
     <section id="settings-panel" class="panel" data-panel="settings">
       <div class="panel-heading">
         <div><p class="section-kicker">SELECTION ORDER</p><h2>Sports and watched teams</h2></div>
-        <p>Rank sports first, then rank watched teams within each sport.</p>
+        <p>Choose which sports appear in the banner, then rank sports and their watched teams. Save to apply changes.</p>
       </div>
 
       <section class="watch-team-panel" aria-labelledby="watch-team-heading">
@@ -239,11 +239,13 @@
       <header class="sport-heading">
         <div><span class="sport-rank"></span><h3 class="sport-name"></h3><span class="sport-league"></span></div>
         <div class="order-buttons">
+          <label class="toggle"><input class="sport-enabled" type="checkbox"><span>Show sport</span></label>
           <button class="icon-button move-sport-up" type="button" aria-label="Move sport up">↑</button>
           <button class="icon-button move-sport-down" type="button" aria-label="Move sport down">↓</button>
         </div>
       </header>
       <div class="sport-favorites"></div>
+      <p class="sport-disabled-note empty-state" hidden>Off — this sport will not appear in the banner. Turn Show sport on to restore your saved teams and preferences.</p>
     </section>
   </template>
 

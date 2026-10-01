@@ -3,6 +3,15 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.7.0 — 2026-09-30
+
+### Added
+
+- Per-sport Show sport switches in Settings. Disabling a sport removes its games
+  from the banner and game selection, including locks and temporary overrides.
+  Re-enabling restores saved teams, ordering, and preferences. All sports can be
+  disabled; existing configurations keep sports enabled by default.
+
 ## 0.6.0 — 2026-09-30
 
 ### Added

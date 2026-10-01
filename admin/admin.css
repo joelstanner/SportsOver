@@ -54,6 +54,8 @@ h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.7rem); line-height: 0.95; letter-s
 .sport-rank { color: var(--teal); font-size: 0.72rem; font-weight: 900; }
 .sport-league { color: var(--muted); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; }
 .sport-favorites { display: grid; gap: 8px; padding: 12px; }
+.sport-favorites[hidden], .sport-disabled-note[hidden] { display: none; }
+.sport-heading .order-buttons { flex-wrap: wrap; justify-content: flex-end; }
 .favorite-card { display: grid; grid-template-columns: 44px minmax(180px, 1fr) auto auto auto auto; gap: 14px; align-items: center; border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: linear-gradient(120deg, var(--panel-raised), var(--panel)); }
 .favorite-card.is-new { animation: watched-team-added 1.4s ease-out; }
 @keyframes watched-team-added { from { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(49, 198, 179, 0.2); } }

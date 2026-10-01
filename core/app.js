@@ -87,6 +87,7 @@ function publicEntry(entry) {
 }
 
 function createSportContext(group) {
+  if (group.enabled === false) return null;
   const favoriteTeams = group.favorites
     .filter(favorite => favorite.enabled)
     .map(favorite => window.SportsOverlay.config.findTeam(favorite.teamKey))
@@ -168,6 +169,7 @@ function renderScrollingDemo() {
 
 async function startDemoRotation() {
   const demos = savedConfig.sports
+    .filter(group => group.enabled !== false)
     .map(group => window.SportsOverlay.registry.getDemo(group.sport, "live"))
     .filter(Boolean);
   if (!demos.length) {
@@ -209,8 +211,12 @@ async function discoverGamesOnce(refresh = true) {
   clearTimeout(pollTimer);
   pollGeneration += 1;
   if (!sportContexts.length) {
+    rotationQueue = []; automaticRotationEntries = []; cachedDiscoveries = [];
+    overrideEntry = null; currentIndex = 0;
+    requestRevision++; rotationGeneration++;
+    clearTimeout(rotationTimer); rotationTimer = null;
     renderedGameKey = null;
-    layout.renderNoEvent(`No included ${initialSport} team configured`, CONFIG.showNoGameMessage);
+    layout.renderNoEvent("No sports enabled", CONFIG.showNoGameMessage);
     return;
   }
 
@@ -442,7 +448,26 @@ if (!staticPreview) {
       .map(createSportContext).filter(Boolean);
     if (overrideEntry) {
       const context = sportContexts.find(context => context.sport === overrideEntry.context.sport);
-      if (context) overrideEntry = { ...overrideEntry, context };
+      overrideEntry = context ? { ...overrideEntry, context } : null;
+    }
+    if (teamsChanged || catalogChanged) {
+      // Invalidate in-flight discovery and remove disabled sports immediately,
+      // including manual games, locks, and temporary overrides.
+      discoveryGeneration++;
+      const allowed = entry => sportContexts.some(context => context.sport === entry.context.sport);
+      const previousKey = entryKey(rotationQueue[currentIndex]);
+      rotationQueue = rotationQueue.filter(allowed);
+      automaticRotationEntries = automaticRotationEntries.filter(allowed);
+      cachedDiscoveries = cachedDiscoveries?.map(result => ({ ...result,
+        automaticEntries: result.automaticEntries.filter(allowed), availableEntries: result.availableEntries.filter(allowed),
+      })) || null;
+      currentIndex = Math.max(0, rotationQueue.findIndex(entry => entryKey(entry) === previousKey));
+      clearTimeout(rotationTimer); rotationTimer = null; rotationGeneration++;
+      clearTimeout(pollTimer); pollGeneration++;
+      if (renderedGameKey && !sportContexts.some(context => renderedGameKey.startsWith(`${context.sport}:`))) {
+        renderedGameKey = null;
+        layout.renderNoEvent(sportContexts.length ? "Updating selected sports…" : "No sports enabled", CONFIG.showNoGameMessage);
+      }
     }
     requestRevision += 1;
     if (timingChanged) scheduleRotation();

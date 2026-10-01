@@ -259,12 +259,22 @@
       section.querySelector(".sport-rank").textContent = `#${sportIndex + 1}`;
       section.querySelector(".sport-name").textContent = sport.name;
       section.querySelector(".sport-league").textContent = sport.league;
+      const enabled = section.querySelector(".sport-enabled");
+      enabled.checked = group.enabled !== false;
+      enabled.setAttribute("aria-label", `Show ${sport.name}`);
+      enabled.addEventListener("change", () => {
+        group.enabled = enabled.checked;
+        markUnsaved();
+        renderSettings();
+      });
+      section.querySelector(".sport-disabled-note").hidden = enabled.checked;
       section.querySelector(".move-sport-up").disabled = sportIndex === 0;
       section.querySelector(".move-sport-down").disabled = sportIndex === workingConfig.sports.length - 1;
       section.querySelector(".move-sport-up").addEventListener("click", () => moveSport(sportIndex, -1));
       section.querySelector(".move-sport-down").addEventListener("click", () => moveSport(sportIndex, 1));
 
       const favoriteList = section.querySelector(".sport-favorites");
+      favoriteList.hidden = !enabled.checked;
       group.favorites.forEach((favorite, index) => renderFavorite(group, favorite, index, favoriteList));
       if (!group.favorites.length) {
         const empty = document.createElement("p");
@@ -387,7 +397,7 @@
     const picker = document.querySelector("#live-sport");
     const selectedSport = picker.value;
     picker.replaceChildren();
-    workingConfig.sports.forEach(group => {
+    workingConfig.sports.filter(group => group.enabled !== false).forEach(group => {
       const sport = configApi.findSport(group.sport);
       const topFavorite = group.favorites
         .filter(favorite => favorite.enabled)
@@ -398,7 +408,7 @@
       option.textContent = `${sport.name} · ${topFavorite?.name || "no included team"}`;
       picker.append(option);
     });
-    if (workingConfig.sports.some(group => group.sport === selectedSport)) picker.value = selectedSport;
+    if (workingConfig.sports.some(group => group.sport === selectedSport && group.enabled !== false)) picker.value = selectedSport;
   }
 
   function addTeam() {
@@ -489,6 +499,7 @@
   }
 
   async function discoverSportGames(group) {
+    if (group.enabled === false) return { automaticEntries: [], availableEntries: [] };
     const watchedTeams = group.favorites
       .filter(favorite => favorite.enabled)
       .map(favorite => configApi.findTeam(favorite.teamKey))
@@ -547,6 +558,7 @@
     const sportFilter = document.querySelector("#available-sport-filter").value;
     const search = document.querySelector("#game-search").value.trim().toLowerCase();
     const available = availableRotationEntries
+      .filter(isSportEnabled)
       .filter(entry => !queuedKeys.has(rotationEntryKey(entry)))
       .filter(entry => isCurrentGame(entry.candidate))
       .filter(entry => !sportFilter || entry.candidate.sport === sportFilter)
@@ -557,10 +569,14 @@
     available.forEach(entry => renderAvailableGame(entry, availableList));
   }
 
+  function isSportEnabled(entry) {
+    return workingConfig.sports.some(group => group.sport === entry.candidate.sport && group.enabled !== false);
+  }
+
   function currentRotationQueue() {
     return selectionApi.applyRotationControls({
-      automaticEntries: automaticRotationEntries,
-      availableEntries: availableRotationEntries,
+      automaticEntries: automaticRotationEntries.filter(isSportEnabled),
+      availableEntries: availableRotationEntries.filter(isSportEnabled),
       mode: workingConfig.rotationMode,
       includedGameKeys: workingConfig.includedGames,
       excludedGameKeys: workingConfig.excludedGames,
@@ -862,6 +878,7 @@
       renderSettings();
       status.textContent = shared ? "Saved. Banner updates automatically." : "Saved locally (preview only).";
       status.className = "save-status is-saved";
+      discoverRotationGames();
     } catch (error) {
       status.textContent = error.message;
       status.className = "save-status is-error";

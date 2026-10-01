@@ -94,6 +94,7 @@
   function frozenSport(sport, teamKeys) {
     return Object.freeze({
       sport,
+      enabled: true,
       favorites: Object.freeze(teamKeys.map(teamKey => Object.freeze({ teamKey, enabled: true }))),
     });
   }
@@ -110,10 +111,10 @@
       const sport = String(group?.sport || "").toLowerCase();
       if (!findSport(sport) || seenSports.has(sport)) return;
       seenSports.add(sport);
-      sports.push({ sport, favorites: normalizeFavorites(group.favorites, sport) });
+      sports.push({ sport, enabled: group.enabled !== false, favorites: normalizeFavorites(group.favorites, sport) });
     });
     SPORT_CATALOG.forEach(sport => {
-      if (!seenSports.has(sport.key)) sports.push({ sport: sport.key, favorites: [] });
+      if (!seenSports.has(sport.key)) sports.push({ sport: sport.key, enabled: true, favorites: [] });
     });
 
     const rotationSeconds = Number(source.rotationSeconds);
@@ -269,7 +270,7 @@
   }
 
   function enabledTeams(config) {
-    return normalizeConfig(config).sports.flatMap(group => group.favorites
+    return normalizeConfig(config).sports.filter(group => group.enabled).flatMap(group => group.favorites
       .filter(favorite => favorite.enabled)
       .map(favorite => findTeam(favorite.teamKey))
       .filter(Boolean));

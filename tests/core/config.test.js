@@ -25,6 +25,24 @@ function favoriteKeys(config, sport) {
   return config.sports.find(group => group.sport === sport).favorites.map(favorite => favorite.teamKey);
 }
 
+test("sport visibility persists without losing favorites and older configs default to enabled", () => {
+  const storage = memoryStorage();
+  const config = configApi.normalizeConfig();
+  assert.ok(config.sports.every(group => group.enabled));
+  const hockey = config.sports.find(group => group.sport === 'hockey');
+  const favorites = structuredClone(hockey.favorites);
+  hockey.enabled = false;
+  configApi.saveConfig(config, storage);
+  const restored = configApi.loadConfig(storage);
+  assert.equal(restored.sports.find(group => group.sport === 'hockey').enabled, false);
+  assert.deepEqual(restored.sports.find(group => group.sport === 'hockey').favorites, favorites);
+  assert.ok(configApi.enabledTeams(restored).every(team => team.sport !== 'hockey'));
+  restored.sports.find(group => group.sport === 'hockey').enabled = true;
+  assert.ok(configApi.enabledTeams(restored).some(team => team.sport === 'hockey'));
+  restored.sports.forEach(group => { group.enabled = false; });
+  assert.deepEqual(configApi.enabledTeams(restored), []);
+});
+
 test("defaults rank sports first and favorites within each sport", () => {
   const config = configApi.loadConfig(memoryStorage());
   assert.deepEqual(sportKeys(config), ["baseball", "football", "college-football", "hockey", "soccer", "basketball", "college-basketball"]);
