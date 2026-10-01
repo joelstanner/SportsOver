@@ -54,13 +54,13 @@ const root = path.resolve(__dirname, '../..');
     await saved();
     assert.equal(state.config.sports[0].sport, 'football');
     await page.locator('#team-sport-picker').selectOption('college-basketball');
-    await page.locator('#team-picker').selectOption('ncaam:264');
+    await page.locator('#team-picker').selectOption('ncaam:150');
     await page.locator('#add-team').click();
     await saved();
-    assert.equal(state.config.sports.find(group => group.sport === 'college-basketball').favorites[0].teamKey, 'ncaam:264');
-    await page.locator('[data-team-key="ncaam:264"] .remove-team').click();
+    assert.equal(state.config.sports.find(group => group.sport === 'college-basketball').favorites.at(-1).teamKey, 'ncaam:150');
+    await page.locator('[data-team-key="ncaam:150"] .remove-team').click();
     await saved();
-    assert.equal(state.config.sports.find(group => group.sport === 'college-basketball').favorites.length, 0);
+    assert.deepEqual(state.config.sports.find(group => group.sport === 'college-basketball').favorites.map(team => team.teamKey), ['ncaam:158', 'ncaam:264', 'ncaam:2547']);
     // A slow save must not overwrite a later edit, including changes to the same field.
     hold = true;
     await page.locator('#display-mode').selectOption('top-favorite');

@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const { EngineState } = require('./engine-state.cjs');
 const { startServer, credentials } = require('./server.cjs');
 const { Store, applyCatalog } = require('./store.cjs');
-const { fitBounds } = require('./bounds.cjs');
+const { fitBounds, stepBannerScale } = require('./bounds.cjs');
 const { createBannerGesture } = require('./banner-gesture.cjs');
 const { createHandler, ORIGIN } = require('./protocol.cjs');
 let backgroundStartup = process.argv.includes('--background');
@@ -19,6 +19,7 @@ const bannerGesture = createBannerGesture({
   move: (x, y) => banner.setPosition(x, y),
   next: () => engineWindow.webContents.send('engine:command', { type: 'next' }),
   previous: () => engineWindow.webContents.send('engine:command', { type: 'previous' }),
+  resize: direction => resize(stepBannerScale(banner.getBounds().width / 472, direction)),
 });
 const root = path.resolve(__dirname, '..');
 const trusted = url => url.startsWith(`${ORIGIN}/sports/`);
@@ -85,6 +86,7 @@ function menus() {
 }
 function resize(scale) {
   if (typeof scale !== 'number' || !Number.isFinite(scale) || scale < 0.5 || scale > 3) throw Error('Invalid banner size');
+  bannerGesture({ phase: 'cancel' });
   banner.setBounds(fitBounds({ ...banner.getBounds(), width: Math.round(472 * scale) }, screen.getAllDisplays()));
 }
 function status() { return { version: app.getVersion(), trayAvailable: !!tray && !tray.isDestroyed(), trayBounds: tray && !tray.isDestroyed() ? tray.getBounds() : null, appIconAvailable: !!appIcon, obsUrl, engineReady: engineState.ready, override: engineState.override, locked, visible: banner.isVisible(), scale: banner.getBounds().width / 472, shortcut, warning: store.warning }; }
@@ -140,6 +142,7 @@ else {
     banner = new BrowserWindow({ ...bounds, title: 'SportsOver', transparent: true, backgroundColor: '#00000000', frame: false, hasShadow: false, alwaysOnTop: true, resizable: false, maximizable: false, fullscreenable: false, skipTaskbar: true, show: false, webPreferences: preferences() });
     secure(banner);
     banner.on('blur', () => bannerGesture({ phase: 'cancel' }));
+    banner.on('hide', () => bannerGesture({ phase: 'cancel' }));
     banner.webContents.on('context-menu', () => {
       bannerGesture({ phase: 'cancel' });
       if (locked) return;
@@ -195,6 +198,11 @@ else {
       authorize(event);
       if (action === 'unlock') { lock(false); showBanner(); }
       else if (action === 'lock') lock(true);
+      else if (action === 'toggle-lock') lock(!locked);
+      else if (action === 'toggle-visibility') {
+        if (banner.isVisible()) { banner.hide(); persist({ visible: false }); menus(); }
+        else showBanner();
+      }
       else if (action === 'show') showBanner();
       else if (action === 'hide') { banner.hide(); persist({ visible: false }); menus(); }
       else if (action === 'recover') recover();
@@ -233,5 +241,5 @@ function authorize(event) {
 }
 app.on('activate', () => { if (banner && !backgroundStartup) openSettings(); });
 app.on('window-all-closed', () => { /* Tray owns the application lifetime. */ });
-app.on('before-quit', () => { quitting = true; clearTimeout(saveTimer); if (banner && store) persist({ bounds: banner.getBounds() }); });
+app.on('before-quit', () => { quitting = true; bannerGesture({ phase: 'cancel' }); clearTimeout(saveTimer); if (banner && store) persist({ bounds: banner.getBounds() }); });
 app.on('will-quit', () => { globalShortcut.unregisterAll(); tray?.destroy(); engineState.stop(); outputServer?.close(); });

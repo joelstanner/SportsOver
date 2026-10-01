@@ -1,3 +1,13 @@
+const BANNER_SCALES = Object.freeze([0.5, 0.75, 1, 1.25, 1.5, 2, 3]);
+
+function stepBannerScale(scale, direction) {
+  // Window dimensions are rounded to pixels and may be constrained by a monitor.
+  const tolerance = 1 / 472;
+  return direction > 0
+    ? BANNER_SCALES.find(value => value > scale + tolerance) ?? BANNER_SCALES.at(-1)
+    : [...BANNER_SCALES].reverse().find(value => value < scale - tolerance) ?? BANNER_SCALES[0];
+}
+
 function fitBounds(saved = {}, displays) {
   const areas = displays.map(display => display.workArea);
   const initial = areas[0];
@@ -11,4 +21,4 @@ function fitBounds(saved = {}, displays) {
   const h = Math.round(w * 100 / 472);
   return { x: Math.round(Math.max(area.x, Math.min(x, area.x + area.width - w))), y: Math.round(Math.max(area.y, Math.min(y, area.y + area.height - h))), width: w, height: h };
 }
-module.exports = { fitBounds };
+module.exports = { fitBounds, BANNER_SCALES, stepBannerScale };

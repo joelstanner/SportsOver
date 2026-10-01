@@ -90,6 +90,16 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
   try {
     let { admin, banner, engine } = await launch();
     const desktopStatus = await admin.evaluate(() => window.sportsDesktop.status());
+    assert.deepEqual(await admin.evaluate(() => window.SportsOverlay.config.loadConfig().sports.flatMap(group => group.favorites.map(team => team.teamKey))),
+      ['mlb:136', 'nfl:sea', 'ncaaf:158', 'ncaaf:264', 'nhl:sea', 'mls:9726', 'nba:det', 'ncaam:158', 'ncaam:264', 'ncaam:2547'], 'clean app startup uses Nebraska and Seattle favorites, plus the Pistons');
+    for (const teamKey of ['ncaam:158', 'ncaam:264', 'ncaam:2547']) {
+      assert.equal(await admin.locator(`.favorite-card[data-team-key="${teamKey}"]`).count(), 1, 'default college basketball teams appear in Settings');
+    }
+    const lockToggle = admin.locator('[data-desktop="toggle-lock"]');
+    const visibilityToggle = admin.locator('[data-desktop="toggle-visibility"]');
+    assert.equal(await lockToggle.innerText(), 'Lock');
+    assert.equal(await visibilityToggle.innerText(), 'Hide');
+    assert.equal(await admin.locator('[data-desktop="lock"], [data-desktop="unlock"], [data-desktop="show"], [data-desktop="hide"]').count(), 0, 'only two stateful banner controls remain');
     assert.equal(desktopStatus.trayAvailable, true, 'native status item was created');
     assert.equal(desktopStatus.appIconAvailable, true, 'custom application artwork loaded');
     assert.ok(desktopStatus.trayBounds.width > 0 && desktopStatus.trayBounds.height > 0);
@@ -101,8 +111,28 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     assert.ok(menuState.labels.includes('Banner'));
     assert.equal(menuState.settingsShortcut, 'CommandOrControl+,');
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).visible), false);
+    await admin.waitForFunction(() => document.querySelector('[data-desktop="toggle-visibility"]').textContent === 'Show');
+    await lockToggle.click();
+    assert.equal(await lockToggle.innerText(), 'Unlock');
+    assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).locked), true);
+    await lockToggle.click();
+    assert.equal(await lockToggle.innerText(), 'Lock');
+    assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).visible), false, 'unlocking a hidden banner keeps it hidden');
+    await visibilityToggle.click();
+    assert.equal(await visibilityToggle.innerText(), 'Hide');
+    assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).visible), true);
+    await visibilityToggle.click();
+    assert.equal(await visibilityToggle.innerText(), 'Show');
     await application.evaluate(({ Menu }) => Menu.getApplicationMenu().getMenuItemById('toggle-banner').click());
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).visible), true);
+    await admin.waitForFunction(() => document.querySelector('[data-desktop="toggle-visibility"]').textContent === 'Hide');
+    await application.evaluate(({ Menu }) => {
+      const item = Menu.getApplicationMenu().getMenuItemById('lock-banner');
+      item.click({ checked: true });
+    });
+    await admin.waitForFunction(() => document.querySelector('[data-desktop="toggle-lock"]').textContent === 'Unlock');
+    await lockToggle.click();
+    assert.equal(await lockToggle.innerText(), 'Lock');
     await banner.locator('.scorebug').waitFor();
     assert.match(await banner.locator('body').innerText(), /SEA|Mariners/i);
     assert.equal(await banner.evaluate(() => typeof window.SportsOverlay), 'undefined', 'desktop loads no provider or rotation engine');
@@ -127,6 +157,27 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey === key, initialGame);
     await banner.locator('.scorebug').click();
     await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey === key, skippedGame);
+
+    const doubleClickBanner = async direction => {
+      const box = await banner.locator('.scorebug').boundingBox();
+      await banner.locator('.scorebug').dblclick({ position: { x: box.width * (direction > 0 ? 0.75 : 0.25), y: box.height / 2 } });
+      // Let any incorrectly retained single-click timer fire before checking.
+      await banner.waitForTimeout(450);
+    };
+    await doubleClickBanner(1);
+    assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).scale), 1.25, 'right-half double-click enlarges');
+    assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame, 'enlarging does not navigate');
+    await admin.waitForFunction(() => document.querySelector('#desktop-size').value === '1.25');
+    await doubleClickBanner(-1);
+    assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).scale), 1, 'left-half double-click shrinks');
+    assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame, 'shrinking does not navigate');
+    for (const [scale, direction] of [[0.5, -1], [3, 1]]) {
+      await admin.evaluate(scale => window.sportsDesktop.action('size', scale), scale);
+      await doubleClickBanner(direction);
+      assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).scale), scale, 'size limit is respected');
+      assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame, 'double-click at size limit does not navigate');
+    }
+    await admin.evaluate(() => window.sportsDesktop.action('size', 1));
 
     assert.equal(await banner.locator('.banner-controls').count(), 0, 'no hover controls cover scores');
     const bannerBounds = () => application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
@@ -160,6 +211,16 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     const safeBounds = await bannerBounds();
     assert.deepEqual(safeBounds, fractionalBounds, 'invalid coordinates do not move the native window');
     assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame, 'invalid gestures never skip');
+    const dragScale = await admin.evaluate(async () => (await window.sportsDesktop.status()).scale);
+    await banner.evaluate(async () => {
+      const send = (phase, x, y) => window.sportsDesktop.action('banner-pointer', { phase, x, y });
+      const x = window.screenX + window.innerWidth * 0.75, y = window.screenY + 20;
+      await send('start', x, y); await send('end', x, y);
+      await send('start', x, y); await send('move', x + 20, y); await send('end', x, y);
+    });
+    await banner.waitForTimeout(450);
+    assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).scale), dragScale, 'second-press dragging does not resize');
+    assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame, 'second-press dragging cancels pending navigation');
     await application.evaluate(({ Menu, BrowserWindow }) => {
       const build = Menu.buildFromTemplate;
       Menu.buildFromTemplate = function(template) {
@@ -184,16 +245,23 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     await admin.locator('[data-tab="settings"]').click();
     await banner.screenshot({ path: path.join(directory, 'banner.png'), omitBackground: true });
     await admin.screenshot({ path: path.join(directory, 'settings.png') });
-    await admin.locator('[data-desktop="lock"]').click();
+    await lockToggle.click();
+    assert.equal(await lockToggle.innerText(), 'Unlock');
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).locked), true);
     const lockedGame = await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey);
+    const lockedScale = await admin.evaluate(async () => (await window.sportsDesktop.status()).scale);
     await banner.evaluate(async () => {
-      await window.sportsDesktop.action('banner-pointer', { phase: 'start', x: window.screenX + 15, y: window.screenY + 20 });
-      await window.sportsDesktop.action('banner-pointer', { phase: 'end', x: window.screenX + 15, y: window.screenY + 20 });
+      for (let i = 0; i < 2; i++) {
+        await window.sportsDesktop.action('banner-pointer', { phase: 'start', x: window.screenX + 15, y: window.screenY + 20 });
+        await window.sportsDesktop.action('banner-pointer', { phase: 'end', x: window.screenX + 15, y: window.screenY + 20 });
+      }
     });
+    await banner.waitForTimeout(450);
+    assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).scale), lockedScale, 'locked banner ignores double-click resizing');
     assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), lockedGame, 'locked banner ignores backwards navigation');
 
-    await admin.locator('[data-desktop="unlock"]').click();
+    await lockToggle.click();
+    assert.equal(await lockToggle.innerText(), 'Lock');
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).locked), false);
     await admin.locator('#desktop-size').selectOption('1.5');
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).scale), 1.5);
@@ -222,7 +290,8 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     assert.equal(await obs.evaluate(() => typeof window.SportsOverlay), 'undefined', 'OBS loads no providers or rotation engine');
     const before = await (await fetch(`${base}/api/v1/state`, { headers })).json();
     const overrideKey = before.currentGameKey === 'baseball:1' ? 'baseball:2' : 'baseball:1';
-    await admin.locator('[data-desktop="hide"]').click();
+    await visibilityToggle.click();
+    assert.equal(await visibilityToggle.innerText(), 'Show');
     const command = { requestId: 'smoke-override', type: 'show-game', gameKey: overrideKey, durationSeconds: 5 };
     const response = await fetch(`${base}/api/v1/commands`, { method: 'POST', headers, body: JSON.stringify(command) });
     assert.equal(response.status, 200);
@@ -254,12 +323,17 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     assert.equal(native.top, true);
     assert.equal(native.preferences.sandbox, true);
     assert.equal(native.preferences.contextIsolation, true);
-    await admin.evaluate(async () => { await window.sportsDesktop.action('size', 1.25); await window.sportsDesktop.action('lock'); await window.sportsDesktop.action('hide'); });
+    await admin.evaluate(() => window.sportsDesktop.action('size', 1));
+    await doubleClickBanner(1);
+    assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).scale), 1.25);
+    await admin.evaluate(async () => { await window.sportsDesktop.action('lock'); await window.sportsDesktop.action('hide'); });
     await application.close();
     ({ admin, banner, engine } = await launch());
     assert.equal(await admin.evaluate(() => window.SportsOverlay.config.loadConfig().displayMode), 'top-favorite');
     const restored = await admin.evaluate(() => window.sportsDesktop.status());
     assert.equal(restored.scale, 1.25); assert.equal(restored.locked, true); assert.equal(restored.visible, false);
+    assert.equal(await admin.locator('[data-desktop="toggle-lock"]').innerText(), 'Unlock');
+    assert.equal(await admin.locator('[data-desktop="toggle-visibility"]').innerText(), 'Show');
     assert.equal(restored.override, null);
     await admin.locator('[data-desktop="recover"]').click();
     await application.close();

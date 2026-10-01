@@ -45,16 +45,32 @@ test("sport visibility persists without losing favorites and older configs defau
 
 test("defaults rank sports first and favorites within each sport", () => {
   const config = configApi.loadConfig(memoryStorage());
+  assert.deepEqual(configApi.normalizeConfig(), config);
   assert.deepEqual(sportKeys(config), ["baseball", "football", "college-football", "hockey", "soccer", "basketball", "college-basketball"]);
   assert.deepEqual(favoriteKeys(config, "college-football"), ["ncaaf:158", "ncaaf:264"]);
   assert.equal(config.rotationSeconds, 10);
   configApi.TEAM_CATALOG.forEach(team => assert.match(team.logoUrl, /^https:\/\//));
   assert.ok(configApi.TEAM_CATALOG.filter(team => team.sport === "college-basketball").length > 350);
-  assert.deepEqual(favoriteKeys(config, "college-basketball"), []);
+  assert.deepEqual(favoriteKeys(config, "college-basketball"), ["ncaam:158", "ncaam:264", "ncaam:2547"]);
+  assert.deepEqual(favoriteKeys(config, "basketball"), ["nba:det"]);
   assert.equal(configApi.findTeam("ncaam:264").name, "Washington Huskies");
   assert.equal(configApi.TEAM_CATALOG.filter(team => team.sport === "college-football").length, 762);
   assert.equal(configApi.findTeam("nba:lal").name, "Los Angeles Lakers");
-  assert.deepEqual(configApi.enabledTeams(config).map(team => team.name), ["Seattle Mariners", "Seattle Seahawks", "Nebraska Cornhuskers", "Washington Huskies", "Seattle Kraken", "Seattle Sounders FC", "Detroit Pistons"]);
+  assert.deepEqual(configApi.enabledTeams(config).map(team => team.name), ["Seattle Mariners", "Seattle Seahawks", "Nebraska Cornhuskers", "Washington Huskies", "Seattle Kraken", "Seattle Sounders FC", "Detroit Pistons", "Nebraska Cornhuskers", "Washington Huskies", "Seattle U Redhawks"]);
+});
+
+test("saved watched teams and intentionally empty sports do not gain first-run defaults", () => {
+  const storage = memoryStorage();
+  const saved = configApi.normalizeConfig({ sports: [
+    { sport: "basketball", favorites: [{ teamKey: "nba:det", enabled: true }] },
+    { sport: "college-basketball", enabled: false, favorites: [] },
+    { sport: "college-football", favorites: [] },
+  ] });
+  configApi.saveConfig(saved, storage);
+  assert.deepEqual(configApi.loadConfig(storage), saved);
+  const reset = configApi.resetConfig(storage);
+  assert.deepEqual(favoriteKeys(reset, "college-basketball"), ["ncaam:158", "ncaam:264", "ncaam:2547"]);
+  assert.deepEqual(favoriteKeys(reset, "basketball"), ["nba:det"]);
 });
 
 test("normalizes independent sport and favorite rankings", () => {

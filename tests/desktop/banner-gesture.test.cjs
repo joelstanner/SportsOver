@@ -2,17 +2,40 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createBannerGesture } = require('../../desktop/banner-gesture.cjs');
 
+function createTestGesture(options) {
+  let time = 0, timerId = 0;
+  const timers = new Map();
+  const gesture = createBannerGesture({ ...options,
+    now: () => time,
+    setTimer(fn, delay) { timers.set(++timerId, { fn, at: time + delay }); return timerId; },
+    clearTimer(id) { timers.delete(id); },
+  });
+  gesture.advance = ms => {
+    const end = time + ms;
+    while (true) {
+      const next = [...timers].sort((a, b) => a[1].at - b[1].at)[0];
+      if (!next || next[1].at > end) break;
+      time = next[1].at; timers.delete(next[0]); next[1].fn();
+    }
+    time = end;
+  };
+  return gesture;
+}
+
 function fixture() {
   const moves = [], skips = [];
-  const gesture = createBannerGesture({ bounds: () => ({ x: -100, y: 200 }),
+  const gesture = createTestGesture({ bounds: () => ({ x: -100, y: 200 }),
     move: (...point) => moves.push(point), next: () => skips.push(true) });
-  return { moves, skips, send: (phase, x = 20, y = 30) => gesture({ phase, x, y }) };
+  return { moves, skips, advance: gesture.advance, send: (phase, x = 20, y = 30) => gesture({ phase, x, y }) };
 }
-test('click tolerates slight motion and advances only on release', () => {
+test('click tolerates slight motion and waits after release to distinguish a double-click', () => {
   const f = fixture();
   f.send('start'); f.send('move', 23, 32);
   assert.equal(f.skips.length, 0);
   f.send('end', 23, 32);
+  f.advance(399);
+  assert.equal(f.skips.length, 0);
+  f.advance(1);
   assert.equal(f.skips.length, 1);
   assert.deepEqual(f.moves, []);
 });
@@ -33,6 +56,7 @@ test('cancellation prevents advancement and a new gesture still works', () => {
   const f = fixture(); f.send('start'); f.send('cancel'); f.send('end');
   assert.equal(f.skips.length, 0);
   f.send('start'); f.send('end');
+  f.advance(400);
   assert.equal(f.skips.length, 1);
 });
 
@@ -40,7 +64,7 @@ test('invalid pointer coordinates cancel the gesture without a native move or sk
   for (const invalid of [NaN, Infinity, -Infinity, Number.MAX_VALUE, 2147483648, -2147483649, '10', null]) {
     for (const axis of ['x', 'y']) {
       const moves = [], skips = [];
-      const gesture = createBannerGesture({ bounds: () => ({ x: 0, y: 0 }),
+      const gesture = createTestGesture({ bounds: () => ({ x: 0, y: 0 }),
         move: (...point) => moves.push(point), next: () => skips.push(true) });
       gesture({ phase: 'start', x: 0, y: 0 });
       gesture({ phase: 'move', x: 10, y: 10, [axis]: invalid });
@@ -49,6 +73,7 @@ test('invalid pointer coordinates cancel the gesture without a native move or sk
       assert.deepEqual(skips, []);
       gesture({ phase: 'start', x: 0, y: 0 });
       gesture({ phase: 'end', x: 0, y: 0 });
+      gesture.advance(400);
       assert.equal(skips.length, 1);
     }
   }
@@ -57,7 +82,7 @@ test('invalid pointer coordinates cancel the gesture without a native move or sk
 test('derived coordinates cannot overflow the native integer range', () => {
   for (const origin of [{ x: 2147483640, y: 0 }, { x: 0, y: -2147483640 }, { x: undefined, y: 0 }]) {
     const moves = [], skips = [];
-    const gesture = createBannerGesture({ bounds: () => origin, move: (...point) => moves.push(point), next: () => skips.push(true) });
+    const gesture = createTestGesture({ bounds: () => origin, move: (...point) => moves.push(point), next: () => skips.push(true) });
     gesture({ phase: 'start', x: 0, y: 0 });
     gesture({ phase: 'move', x: 20, y: -20 });
     gesture({ phase: 'end', x: 0, y: 0 });
@@ -68,7 +93,7 @@ test('derived coordinates cannot overflow the native integer range', () => {
 
 test('fractional drag coordinates round to integers and canonicalize negative zero', () => {
   const moves = [];
-  const gesture = createBannerGesture({ bounds: () => ({ x: -10, y: -10 }), move: (...point) => moves.push(point), next() {} });
+  const gesture = createTestGesture({ bounds: () => ({ x: -10, y: -10 }), move: (...point) => moves.push(point), next() {} });
   gesture({ phase: 'start', x: 0, y: 0 });
   gesture({ phase: 'move', x: 9.8, y: 9.6 });
   assert.deepEqual(moves, [[0, 0]]);
@@ -78,11 +103,12 @@ test('leftmost 20 percent goes backwards and the boundary or remainder goes forw
   for (const width of [236, 472, 708, 1416]) {
     for (const [offset, expected] of [[0, 'previous'], [width * 0.1, 'previous'], [width * 0.2 - 0.01, 'previous'], [width * 0.2, 'next'], [width * 0.8, 'next']]) {
       const calls = [], moves = [];
-      const gesture = createBannerGesture({ bounds: () => ({ x: -900, y: 100, width }),
+      const gesture = createTestGesture({ bounds: () => ({ x: -900, y: 100, width }),
         move: (...point) => moves.push(point), next: () => calls.push('next'), previous: () => calls.push('previous') });
       gesture({ phase: 'start', x: -900 + offset, y: 110 });
       assert.deepEqual(calls, []);
       gesture({ phase: 'end', x: -900 + offset, y: 110 });
+      gesture.advance(400);
       assert.deepEqual(calls, [expected]);
       assert.deepEqual(moves, []);
     }
@@ -91,7 +117,7 @@ test('leftmost 20 percent goes backwards and the boundary or remainder goes forw
 
 test('left-side drags and cancellations never navigate', () => {
   const calls = [], moves = [];
-  const gesture = createBannerGesture({ bounds: () => ({ x: 100, y: 200, width: 472 }),
+  const gesture = createTestGesture({ bounds: () => ({ x: 100, y: 200, width: 472 }),
     move: (...point) => moves.push(point), next: () => calls.push('next'), previous: () => calls.push('previous') });
   gesture({ phase: 'start', x: 110, y: 220 });
   gesture({ phase: 'move', x: 125, y: 230 });
@@ -102,4 +128,92 @@ test('left-side drags and cancellations never navigate', () => {
   gesture({ phase: 'cancel' });
   gesture({ phase: 'end', x: 110, y: 220 });
   assert.deepEqual(calls, []);
+});
+
+function resizingFixture(width = 472) {
+  const calls = [], moves = [];
+  const gesture = createTestGesture({ bounds: () => ({ x: -900, y: 100, width }),
+    move: (...point) => moves.push(point), next: () => calls.push('next'), previous: () => calls.push('previous'),
+    resize: direction => calls.push(direction > 0 ? 'bigger' : 'smaller') });
+  const send = (phase, offset, y = 110) => gesture({ phase, x: -900 + offset, y });
+  const click = offset => { send('start', offset); send('end', offset); };
+  return { gesture, calls, moves, send, click, advance: gesture.advance };
+}
+
+test('double-click halves resize once without navigation at every banner size', () => {
+  for (const width of [236, 472, 708, 1416]) {
+    for (const [offset, expected] of [[0, 'smaller'], [width * 0.3, 'smaller'], [width / 2 - 0.01, 'smaller'], [width / 2, 'bigger'], [width * 0.9, 'bigger']]) {
+      const f = resizingFixture(width);
+      f.click(offset); f.advance(100); f.click(offset);
+      assert.deepEqual(f.calls, [expected]);
+      f.advance(1000);
+      assert.deepEqual(f.calls, [expected]);
+      assert.deepEqual(f.moves, []);
+    }
+  }
+});
+
+test('a second press within the double-click interval holds navigation until release', () => {
+  const f = resizingFixture();
+  f.click(300); f.advance(399); f.send('start', 302, 111);
+  f.advance(1000);
+  assert.deepEqual(f.calls, []);
+  f.send('end', 302, 111);
+  assert.deepEqual(f.calls, ['bigger']);
+});
+
+test('a slow second click remains two single clicks', () => {
+  const f = resizingFixture();
+  f.click(20); f.advance(401); f.click(20); f.advance(400);
+  assert.deepEqual(f.calls, ['previous', 'previous']);
+});
+
+test('spatially separate or opposite-half clicks do not resize', () => {
+  for (const [first, second, expected] of [[20, 300, ['previous', 'next']], [235, 237, ['next', 'next']], [300, 306, ['next', 'next']]]) {
+    const f = resizingFixture();
+    f.click(first); f.advance(100); f.click(second); f.advance(400);
+    assert.deepEqual(f.calls, expected);
+  }
+});
+
+test('dragging on the second press cancels resizing and pending navigation', () => {
+  const f = resizingFixture();
+  f.click(300); f.advance(100); f.send('start', 300);
+  f.send('move', 320, 120); f.send('end', 300);
+  f.advance(1000);
+  assert.deepEqual(f.calls, []);
+  assert.ok(f.moves.length > 0);
+});
+
+test('cancellation and invalid coordinates clear pending clicks and double-clicks', () => {
+  for (const invalid of [{ phase: 'cancel' }, { phase: 'move', x: Infinity, y: 110 }]) {
+    for (const secondPress of [false, true]) {
+      const f = resizingFixture();
+      f.click(300); f.advance(100);
+      if (secondPress) f.send('start', 300);
+      f.gesture(invalid); f.send('end', 300); f.advance(1000);
+      assert.deepEqual(f.calls, []);
+      f.click(300); f.advance(400);
+      assert.deepEqual(f.calls, ['next']);
+    }
+  }
+});
+
+test('a completed drag does not seed a double-click', () => {
+  const f = resizingFixture();
+  f.send('start', 300); f.send('move', 320); f.send('end', 300);
+  f.click(300); f.advance(400);
+  assert.deepEqual(f.calls, ['next']);
+});
+
+test('size steps follow settings presets, bounded at 50 and 300 percent', () => {
+  const { BANNER_SCALES, stepBannerScale } = require('../../desktop/bounds.cjs');
+  for (const [index, scale] of BANNER_SCALES.entries()) {
+    assert.equal(stepBannerScale(scale, 1), BANNER_SCALES[Math.min(index + 1, BANNER_SCALES.length - 1)]);
+    assert.equal(stepBannerScale(scale, -1), BANNER_SCALES[Math.max(index - 1, 0)]);
+  }
+  assert.equal(stepBannerScale(471 / 472, 1), 1.25, 'pixel rounding does not select the current preset again');
+  assert.equal(stepBannerScale(473 / 472, -1), 0.75);
+  assert.equal(stepBannerScale(1.8, 1), 2, 'monitor-constrained scales use the next preset');
+  assert.equal(stepBannerScale(1.8, -1), 1.5);
 });

@@ -31,7 +31,7 @@
       frozenSport("hockey", ["nhl:sea"]),
       frozenSport("soccer", ["mls:9726"]),
       frozenSport("basketball", ["nba:det"]),
-      frozenSport("college-basketball", []),
+      frozenSport("college-basketball", ["ncaam:158", "ncaam:264", "ncaam:2547"]),
     ]),
     providerRefreshSeconds: Object.freeze(Object.fromEntries(CATALOG_SPORTS.map(sport =>
       [sport, Object.freeze({ live: 12, pregame: 60, idle: 300, final: 300 })]))),

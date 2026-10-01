@@ -3,6 +3,23 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.11.0 — 2026-10-01
+
+### Added
+
+- Double-click the unlocked banner's left half to shrink it or right half to
+  enlarge it through the existing 50–300% size steps, without changing games.
+  Single-click navigation waits 0.4 seconds to distinguish double-clicks.
+
+### Changed
+
+- Condensed desktop controls into Lock/Unlock and Hide/Show toggle buttons.
+  Locked state uses amber with a subtle glow; visible state uses teal, and
+  hidden state uses a muted outline. Unlocking leaves a hidden banner hidden.
+- Fresh settings include Nebraska Cornhuskers, Washington Huskies, and Seattle U
+  Redhawks men's basketball alongside the existing Nebraska and Seattle teams
+  and Detroit Pistons. Saved watched-team selections are preserved.
+
 ## 0.10.3 — 2026-10-01
 
 ### Changed

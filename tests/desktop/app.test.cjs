@@ -7,6 +7,23 @@ const { Store } = require('../../desktop/store.cjs');
 const { fitBounds } = require('../../desktop/bounds.cjs');
 const { createHandler } = require('../../desktop/protocol.cjs');
 const temp = t => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sportsover-test-')); t.after(() => fs.rmSync(dir, { recursive: true, force: true })); return dir; };
+test('clean desktop startup seeds Nebraska and Seattle watched teams, then preserves saved choices', t => {
+  const directory = temp(t), store = new Store(directory);
+  const initial = store.snapshot();
+  assert.equal(initial.initialized, true);
+  assert.deepEqual(initial.config.sports.flatMap(group => group.favorites.map(team => team.teamKey)),
+    ['mlb:136', 'nfl:sea', 'ncaaf:158', 'ncaaf:264', 'nhl:sea', 'mls:9726', 'nba:det', 'ncaam:158', 'ncaam:264', 'ncaam:2547']);
+  assert.ok(initial.config.sports.every(group => group.enabled && group.favorites.every(team => team.enabled)));
+  assert.equal(store.warning, '');
+  // Persisting desktop preferences on first launch also persists the defaults.
+  store.desktop({ visible: true });
+  const restarted = new Store(directory);
+  assert.deepEqual(restarted.snapshot().config, initial.config);
+  const sports = [{ sport: 'basketball', favorites: [{ teamKey: 'nba:det', enabled: false }] },
+    { sport: 'college-basketball', favorites: [] }, { sport: 'college-football', enabled: false, favorites: [] }];
+  assert.equal(restarted.patch({ instance: restarted.instance, expectedRevision: 0, config: { sports } }).status, 200);
+  assert.deepEqual(new Store(directory).snapshot().config, restarted.snapshot().config);
+});
 test('settings persist, reject stale writes, recover corruption, and preserve healthy backup', t => {
   const dir = temp(t), store = new Store(dir);
   const patch = config => store.patch({ instance: store.instance, expectedRevision: store.revision, config });

@@ -4,7 +4,7 @@
   if (!api || window.top !== window) return;
   if (new URLSearchParams(location.search).has('desktop')) {
     document.body.classList.add('desktop-banner');
-    document.body.title = 'Left 20%: previous game · Elsewhere: next game · Drag to move · Right-click for Settings';
+    document.body.title = 'Left 20%: previous game · Elsewhere: next game · Double-click left half: smaller / right half: bigger · Drag to move · Right-click for Settings';
     let pointerId = null;
     const sendPointer = (phase, event) => api.action('banner-pointer', {
       phase, x: event.screenX, y: event.screenY,
@@ -51,7 +51,7 @@
   const section = document.createElement('section');
   section.className = 'watch-team-panel';
   section.style.margin = '20px 28px';
-  section.innerHTML = `<div><h2>Desktop banner</h2><p>Click the leftmost 20% of the unlocked banner to show the previous rotation item; click elsewhere for the next item. Both directions wrap around and start a fresh display interval. Click anywhere and drag to move it; releasing after a drag never skips. Right-click the banner and choose Settings to reopen this window. Lock lets clicks pass to the app beneath. Game locks and temporary overrides still apply.</p><p id="desktop-status" role="status"></p></div><div class="watch-team-controls"><div class="actions"><button class="button" data-desktop="unlock">Unlock</button><button class="button button--secondary" data-desktop="lock">Lock</button><button class="button button--secondary" data-desktop="show">Show</button><button class="button button--secondary" data-desktop="hide">Hide</button><button class="button button--secondary" data-desktop="recover">Recover position</button></div><label class="field">Banner size<select id="desktop-size"><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option><option value="3">300%</option></select></label></div>`;
+  section.innerHTML = `<div><h2>Desktop banner</h2><p>Click the leftmost 20% of the unlocked banner to show the previous rotation item; click elsewhere for the next item. Both directions wrap around and start a fresh display interval. Single clicks wait briefly to distinguish a double-click. Double-click the left half to make the banner smaller, or the right half to make it bigger, using the Banner size steps from 50% to 300%. Resizing does not change the game. Click anywhere and drag to move it; releasing after a drag never skips. Right-click the banner and choose Settings to reopen this window. Lock lets clicks pass to the app beneath. Game locks and temporary overrides still apply.</p><p id="desktop-status" role="status"></p></div><div class="watch-team-controls"><div class="actions"><button class="button button--secondary" data-desktop="toggle-lock" disabled>Lock</button><button class="button button--secondary" data-desktop="toggle-visibility" disabled>Hide</button><button class="button button--secondary" data-desktop="recover">Recover position</button></div><label class="field">Banner size<select id="desktop-size"><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option><option value="3">300%</option></select></label></div>`;
   document.querySelector('[data-panel="settings"]').prepend(section);
   const output = document.createElement('section');
   output.className = 'watch-team-panel'; output.style.margin = '20px 28px';
@@ -59,11 +59,21 @@
   section.after(output);
   output.querySelector('[data-desktop="clear-override"]').title = 'Integrations can temporarily show a requested game, such as a game requested through a connected Twitch channel-points reward. End the override early to resume normal rotation, or let its timer expire. Your saved queue and settings stay unchanged.';
   const status = section.querySelector('#desktop-status');
+  const lockButton = section.querySelector('[data-desktop="toggle-lock"]');
+  const visibilityButton = section.querySelector('[data-desktop="toggle-visibility"]');
   function render(value) {
     const version = document.querySelector('#app-version');
     version.textContent = value.version ? `v${value.version}` : '';
     version.hidden = !value.version;
     status.textContent = `${value.visible ? 'Visible' : 'Hidden'} · ${value.locked ? 'Locked / click-through' : 'Unlocked / draggable'}. ${value.shortcut ? 'Recovery shortcut: Ctrl/Cmd+Shift+U.' : 'Recovery shortcut unavailable; use Unlock here or the tray menu.'} ${value.warning}`;
+    lockButton.textContent = value.locked ? 'Unlock' : 'Lock';
+    lockButton.dataset.state = value.locked ? 'locked' : 'unlocked';
+    lockButton.title = value.locked ? 'Banner locked. Unlock to move, resize, and navigate games.' : 'Banner unlocked. Lock so clicks pass through to the app beneath.';
+    visibilityButton.textContent = value.visible ? 'Hide' : 'Show';
+    visibilityButton.dataset.state = value.visible ? 'visible' : 'hidden';
+    visibilityButton.title = value.visible ? 'Banner visible. Hide the desktop banner; OBS continues displaying games.' : 'Banner hidden. Show the desktop banner.';
+    lockButton.disabled = false;
+    visibilityButton.disabled = false;
     output.querySelector('#obs-address').textContent = value.obsUrl || 'Local output server unavailable; see the status above.';
     output.querySelector('#override-status').textContent = value.override ? `Temporary game: ${value.override.gameKey} · ends ${new Date(value.override.expiresAt).toLocaleTimeString()}` : 'Normal rotation · no temporary override';
     const select = section.querySelector('select');
