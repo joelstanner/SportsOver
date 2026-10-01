@@ -95,6 +95,14 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     for (const teamKey of ['ncaam:158', 'ncaam:264', 'ncaam:2547']) {
       assert.equal(await admin.locator(`.favorite-card[data-team-key="${teamKey}"]`).count(), 1, 'default college basketball teams appear in Settings');
     }
+    const configBeforeReset = await admin.evaluate(() => window.SportsOverlay.config.loadConfig());
+    await admin.locator('#reset-settings').click();
+    assert.equal(await admin.locator('#reset-settings-dialog').isVisible(), true);
+    assert.equal(await admin.locator('#cancel-reset-settings').evaluate(button => button === document.activeElement), true);
+    await admin.screenshot({ path: path.join(directory, 'restore-defaults.png') });
+    await admin.keyboard.press('Escape');
+    assert.equal(await admin.locator('#reset-settings-dialog').isVisible(), false);
+    assert.deepEqual(await admin.evaluate(() => window.SportsOverlay.config.loadConfig()), configBeforeReset, 'desktop cancellation keeps settings');
     const lockToggle = admin.locator('[data-desktop="toggle-lock"]');
     const visibilityToggle = admin.locator('[data-desktop="toggle-visibility"]');
     assert.equal(await lockToggle.innerText(), 'Lock');

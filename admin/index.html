@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SportsOver Settings</title>
-  <link rel="stylesheet" href="admin.css?v=18">
+  <link rel="stylesheet" href="admin.css?v=20">
 </head>
 <body>
   <header class="masthead">
@@ -239,6 +239,16 @@
     </section>
   </main>
 
+  <dialog id="reset-settings-dialog" class="reset-settings-dialog" aria-labelledby="reset-settings-heading" aria-describedby="reset-settings-description reset-settings-warning">
+    <h2 id="reset-settings-heading">Restore default settings?</h2>
+    <p id="reset-settings-description">This replaces your watched teams, display preferences, refresh intervals, and rotation customizations with SportsOver defaults. Your custom game queue and game locks will be cleared.</p>
+    <p id="reset-settings-warning" class="reset-settings-warning">Changes will be saved immediately. This cannot be undone.</p>
+    <div class="actions">
+      <button id="cancel-reset-settings" class="button button--secondary" type="button" autofocus>Cancel</button>
+      <button id="confirm-reset-settings" class="button button--danger" type="button">Restore defaults</button>
+    </div>
+  </dialog>
+
   <template id="sport-template">
     <section class="sport-card">
       <header class="sport-heading">
@@ -310,7 +320,7 @@
   <script src="../sports/soccer/providers/espn.js?v=3"></script>
   <script src="../sports/basketball/providers/espn.js?v=4"></script>
   <script src="../sports/college-basketball/providers/espn.js?v=1"></script>
-  <script src="admin.js?v=25"></script>
-  <script src="../core/desktop.js?v=5"></script>
+  <script src="admin.js?v=26"></script>
+  <script src="../core/desktop.js?v=6"></script>
 </body>
 </html>

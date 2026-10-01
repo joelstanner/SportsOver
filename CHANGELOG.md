@@ -3,6 +3,18 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.11.1 — 2026-10-01
+
+### Changed
+
+- Made the desktop banner info card easier to scan with separate controls,
+  short gesture instructions, status badges, and a recovery shortcut.
+
+### Fixed
+
+- Restore defaults now requires confirmation before replacing saved settings.
+  Cancel is focused by default; Cancel or Escape leaves settings unchanged.
+
 ## 0.11.0 — 2026-10-01
 
 ### Added

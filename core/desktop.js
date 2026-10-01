@@ -49,23 +49,62 @@
   if (inspection) { inspection.hidden = true; inspection.style.display = 'none'; }
   document.querySelectorAll('a[target="_blank"]').forEach(link => { link.hidden = true; link.style.display = 'none'; });
   const section = document.createElement('section');
-  section.className = 'watch-team-panel';
-  section.style.margin = '20px 28px';
-  section.innerHTML = `<div><h2>Desktop banner</h2><p>Click the leftmost 20% of the unlocked banner to show the previous rotation item; click elsewhere for the next item. Both directions wrap around and start a fresh display interval. Single clicks wait briefly to distinguish a double-click. Double-click the left half to make the banner smaller, or the right half to make it bigger, using the Banner size steps from 50% to 300%. Resizing does not change the game. Click anywhere and drag to move it; releasing after a drag never skips. Right-click the banner and choose Settings to reopen this window. Lock lets clicks pass to the app beneath. Game locks and temporary overrides still apply.</p><p id="desktop-status" role="status"></p></div><div class="watch-team-controls"><div class="actions"><button class="button button--secondary" data-desktop="toggle-lock" disabled>Lock</button><button class="button button--secondary" data-desktop="toggle-visibility" disabled>Hide</button><button class="button button--secondary" data-desktop="recover">Recover position</button></div><label class="field">Banner size<select id="desktop-size"><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option><option value="3">300%</option></select></label></div>`;
+  section.className = 'desktop-info-card';
+  section.setAttribute('aria-labelledby', 'desktop-banner-heading');
+  section.innerHTML = `
+    <header class="desktop-info-heading">
+      <h2 id="desktop-banner-heading">Desktop banner</h2>
+      <p>Move, resize, and browse games right from your desktop.</p>
+    </header>
+    <div class="desktop-info-controls">
+      <div class="actions">
+        <button class="button button--secondary" data-desktop="toggle-lock" disabled>Lock</button>
+        <button class="button button--secondary" data-desktop="toggle-visibility" disabled>Hide</button>
+        <button class="button button--secondary" data-desktop="recover">Recover position</button>
+      </div>
+      <label class="field">Banner size<select id="desktop-size"><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option><option value="3">300%</option></select></label>
+    </div>
+    <div class="desktop-info-guide">
+      <h3>When the banner is unlocked</h3>
+      <dl class="desktop-gestures">
+        <div><dt>Browse games <span>Click</span></dt><dd>Leftmost 20%: previous item. Anywhere else: next item.</dd></div>
+        <div><dt>Resize <span>Double-click</span></dt><dd>Left half: smaller. Right half: bigger. Size ranges from 50% to 300%.</dd></div>
+        <div><dt>Move <span>Drag</span></dt><dd>Click anywhere and drag to reposition. Dragging and resizing keep the current game.</dd></div>
+        <div><dt>Open Settings <span>Right-click</span></dt><dd>Right-click the banner, then choose Settings to reopen this window.</dd></div>
+      </dl>
+      <p class="desktop-info-note">Browsing wraps around and restarts the display timer. Clicks pause briefly to detect double-clicks. Game locks and temporary overrides still apply.</p>
+    </div>
+    <footer class="desktop-info-footer">
+      <div id="desktop-status" class="desktop-info-status" role="status">
+        <div class="desktop-state-badges"><span id="desktop-visibility" class="desktop-state-badge"></span><span id="desktop-lock-state" class="desktop-state-badge"></span></div>
+        <p id="desktop-lock-hint"></p>
+        <p id="desktop-warning" class="desktop-info-warning" hidden></p>
+      </div>
+      <p id="desktop-recovery" class="desktop-info-recovery"></p>
+    </footer>`;
   document.querySelector('[data-panel="settings"]').prepend(section);
   const output = document.createElement('section');
   output.className = 'watch-team-panel'; output.style.margin = '20px 28px';
   output.innerHTML = `<div><h2>OBS and integrations</h2><p>The desktop and OBS display the same SportsOver engine. Hiding the desktop does not hide OBS.</p><p id="obs-address"></p><p id="override-status" role="status"></p></div><div class="actions"><button class="button button--secondary" data-desktop="copy-obs">Copy OBS URL</button><button class="button button--secondary" data-desktop="copy-token">Copy integration token</button><button class="button button--secondary" data-desktop="clear-override">End temporary override</button></div>`;
   section.after(output);
   output.querySelector('[data-desktop="clear-override"]').title = 'Integrations can temporarily show a requested game, such as a game requested through a connected Twitch channel-points reward. End the override early to resume normal rotation, or let its timer expire. Your saved queue and settings stay unchanged.';
-  const status = section.querySelector('#desktop-status');
+  const warning = section.querySelector('#desktop-warning');
+  function showWarning(message) { warning.textContent = message || ''; warning.hidden = !message; }
   const lockButton = section.querySelector('[data-desktop="toggle-lock"]');
   const visibilityButton = section.querySelector('[data-desktop="toggle-visibility"]');
   function render(value) {
     const version = document.querySelector('#app-version');
     version.textContent = value.version ? `v${value.version}` : '';
     version.hidden = !value.version;
-    status.textContent = `${value.visible ? 'Visible' : 'Hidden'} · ${value.locked ? 'Locked / click-through' : 'Unlocked / draggable'}. ${value.shortcut ? 'Recovery shortcut: Ctrl/Cmd+Shift+U.' : 'Recovery shortcut unavailable; use Unlock here or the tray menu.'} ${value.warning}`;
+    const visibility = section.querySelector('#desktop-visibility');
+    visibility.textContent = value.visible ? 'Visible' : 'Hidden';
+    visibility.dataset.state = value.visible ? 'visible' : 'hidden';
+    const lockState = section.querySelector('#desktop-lock-state');
+    lockState.textContent = value.locked ? 'Locked' : 'Unlocked';
+    lockState.dataset.state = value.locked ? 'locked' : 'unlocked';
+    section.querySelector('#desktop-lock-hint').textContent = value.locked ? 'Clicks pass through to the app beneath.' : 'Lock the banner to let clicks pass through.';
+    section.querySelector('#desktop-recovery').innerHTML = value.shortcut ? 'Recover position <kbd>Ctrl/Cmd + Shift + U</kbd>' : 'Recovery shortcut unavailable. Use Recover position or the tray menu.';
+    showWarning(value.warning);
     lockButton.textContent = value.locked ? 'Unlock' : 'Lock';
     lockButton.dataset.state = value.locked ? 'locked' : 'unlocked';
     lockButton.title = value.locked ? 'Banner locked. Unlock to move, resize, and navigate games.' : 'Banner unlocked. Lock so clicks pass through to the app beneath.';
@@ -79,10 +118,10 @@
     const select = section.querySelector('select');
     if (document.activeElement !== select) select.value = String(Math.round(value.scale * 100) / 100);
   }
-  async function action(name, value) { try { render(await api.action(name, value)); } catch (error) { status.textContent = error.message; } }
+  async function action(name, value) { try { render(await api.action(name, value)); } catch (error) { showWarning(error.message); } }
   document.querySelectorAll('[data-desktop]').forEach(button => button.addEventListener('click', () => action(button.dataset.desktop)));
   section.querySelector('select').addEventListener('change', event => action('size', Number(event.target.value)));
-  async function poll() { try { render(await api.status()); } catch (error) { status.textContent = error.message; } }
+  async function poll() { try { render(await api.status()); } catch (error) { showWarning(error.message); } }
   await poll();
   setInterval(poll, 1000);
 })();

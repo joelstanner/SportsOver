@@ -51,6 +51,7 @@
   const refreshCatalogButton = document.querySelector("#refresh-team-catalog");
   const catalogRefreshStatus = document.querySelector("#catalog-refresh-status");
   const undoLiveButton = document.querySelector("#undo-live-change");
+  const resetDialog = document.querySelector("#reset-settings-dialog");
   const liveConfigKeys = ["rotationMode", "includedGames", "excludedGames", "rotationOrder", "gameDurations", "defaultGameDurations", "lockedGameKeys"];
   let undoLiveConfig = null;
   let recentlyAddedTeamKey = null;
@@ -63,7 +64,9 @@
     tab.addEventListener("click", () => selectTab(tab.dataset.tab));
   });
   document.querySelector("#save-settings").addEventListener("click", saveSettings);
-  document.querySelector("#reset-settings").addEventListener("click", resetSettings);
+  document.querySelector("#reset-settings").addEventListener("click", () => resetDialog.showModal());
+  document.querySelector("#cancel-reset-settings").addEventListener("click", () => resetDialog.close());
+  document.querySelector("#confirm-reset-settings").addEventListener("click", resetSettings);
   teamPicker.addEventListener("change", updateAddTeamButton);
   for (const sport of configApi.SPORT_CATALOG) {
     const option = document.createElement("option");
@@ -952,6 +955,8 @@
   }
 
   function resetSettings() {
+    if (!resetDialog.open) return;
+    resetDialog.close();
     clearTimeout(settingsSaveTimer);
     settingsSavePaused = false;
     workingConfig = configApi.normalizeConfig(configApi.DEFAULT_CONFIG);
