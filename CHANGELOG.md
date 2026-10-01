@@ -3,6 +3,13 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.11.2 — 2026-10-01
+
+### Changed
+
+- Settings, Live control, and Demo lab tabs stay visible at the top of the
+  settings window while scrolling.
+
 ## 0.11.1 — 2026-10-01
 
 ### Changed
