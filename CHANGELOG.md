@@ -3,6 +3,13 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.5.2 — 2026-09-30
+
+### Fixed
+
+- MLS possession and shots-on-target stats use balanced columns and tighter
+  spacing to keep labels and values on one line.
+
 ## 0.5.1 — 2026-09-30
 
 ### Fixed
