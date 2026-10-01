@@ -3,6 +3,14 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.10.3 — 2026-10-01
+
+### Changed
+
+- Pre-game and final banners use available space for full team names, including
+  the city, with abbreviations retained when names do not fit. Baseball status
+  moves below the teams to give names more room.
+
 ## 0.10.2 — 2026-10-01
 
 ### Changed

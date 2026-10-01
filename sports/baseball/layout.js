@@ -13,12 +13,12 @@
       <section id="game-view" class="game-view">
         <div id="away-team" class="team">
           <img id="away-logo" class="team__logo" alt="" hidden>
-          <span id="away-abbr" class="team__abbr">SEA</span>
+          <span id="away-abbr" class="team__abbr team-name-label">SEA</span>
           <span id="away-score" class="team__score">–</span>
         </div>
         <div id="home-team" class="team">
           <img id="home-logo" class="team__logo" alt="" hidden>
-          <span id="home-abbr" class="team__abbr">OPP</span>
+          <span id="home-abbr" class="team__abbr team-name-label">OPP</span>
           <span id="home-score" class="team__score">–</span>
         </div>
         <div class="divider" aria-hidden="true"></div>
@@ -177,6 +177,7 @@
         renderStatus(event, formatLocalTime(event.startTime) || event.detailedState);
       }
       updateFooter(event);
+      global.SportsOverlay.teamNames.render(event, els.awayAbbr, els.homeAbbr);
       return event.state;
     }
 

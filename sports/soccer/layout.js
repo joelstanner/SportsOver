@@ -13,13 +13,13 @@
       <section class="soccer-main">
         <div class="soccer-team">
           <span id="soccer-home-mark" class="soccer-mark"><img alt="" hidden><span>HME</span></span>
-          <div><strong id="soccer-home-abbr">HME</strong><span id="soccer-home-record" class="soccer-record"></span></div>
+          <div class="team-name-slot"><strong class="team-name-label" id="soccer-home-abbr">HME</strong><span id="soccer-home-record" class="soccer-record"></span></div>
           <strong id="soccer-home-score" class="soccer-score">—</strong>
         </div>
         <div class="soccer-center"><strong id="soccer-clock">—</strong><span id="soccer-period">—</span></div>
         <div class="soccer-team soccer-team--away">
           <strong id="soccer-away-score" class="soccer-score">—</strong>
-          <div><strong id="soccer-away-abbr">AWY</strong><span id="soccer-away-record" class="soccer-record"></span></div>
+          <div class="team-name-slot"><strong class="team-name-label" id="soccer-away-abbr">AWY</strong><span id="soccer-away-record" class="soccer-record"></span></div>
           <span id="soccer-away-mark" class="soccer-mark"><img alt="" hidden><span>AWY</span></span>
         </div>
       </section>
@@ -77,6 +77,7 @@
         show(els.status);
       }
       global.SportsOverlay.odds?.render(els.bug, event);
+      global.SportsOverlay.teamNames.render(event, els.awayAbbr, els.homeAbbr);
       return event.state;
     }
 

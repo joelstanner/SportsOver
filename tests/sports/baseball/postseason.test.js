@@ -48,6 +48,7 @@ function layoutFixture() {
     teamTheme: { apply() {} }, scrolling: { render(view, node, text) { node.textContent = text; } } },
     setTimeout: (fn, ms) => { timers.set(++timerId, { fn, ms }); return timerId; }, clearTimeout: id => timers.delete(id), requestAnimationFrame: fn => fn(), console };
   scope.window = scope;
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../../core/team-names.js'),'utf8'), scope);
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../../sports/baseball/layout.js'),'utf8'), scope);
   const layout = scope.SportsOverlay.baseballLayout.createLayout(root);
   const current = { id:'10', sport:'baseball', league:'MLB', state:'live', teams:{away:{name:'Away',abbreviation:'AWY'},home:{name:'Home',abbreviation:'HME'}},

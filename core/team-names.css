@@ -1,0 +1,48 @@
+/* Pre-game and final layouts can give the unused clock area to team names. */
+#sports-overlay:is([data-state="pregame"], [data-state="final"]) :is(.basketball-main, .football-main, .hockey-main, .soccer-main) {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 12px;
+}
+#sports-overlay:is([data-state="pregame"], [data-state="final"]) :is(.basketball-center, .football-center, .hockey-center, .soccer-center) {
+  display: none;
+}
+#sports-overlay:is([data-state="pregame"], [data-state="final"]) .team-name-slot {
+  flex: 1;
+  min-width: 0;
+}
+#sports-overlay:is([data-state="pregame"], [data-state="final"]) .team-name-label {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+#sports-overlay:is([data-state="pregame"], [data-state="final"]) .football-team-name {
+  display: block;
+}
+#sports-overlay:is([data-state="pregame"], [data-state="final"]) :is(.team__score, .basketball-score, .football-score, .hockey-score, .soccer-score) {
+  flex-shrink: 0;
+}
+#sports-overlay[data-state="pregame"] :is(.team__score, .basketball-score, .football-score, .hockey-score, .soccer-score) {
+  display: none;
+}
+
+/* Baseball keeps the status below the teams so both name slots have room. */
+.scorebug:is([data-state="pregame"], [data-state="final"]) .game-view:not([hidden]) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: minmax(38px, 1fr) auto;
+}
+.scorebug:is([data-state="pregame"], [data-state="final"]) .team {
+  min-width: 0;
+}
+.scorebug:is([data-state="pregame"], [data-state="final"]) .team-name-label {
+  flex: 1;
+}
+.scorebug:is([data-state="pregame"], [data-state="final"]) .divider {
+  display: none;
+}
+.scorebug:is([data-state="pregame"], [data-state="final"]) .status-details {
+  grid-column: 1 / -1;
+  min-height: 26px;
+  border-top: 1px solid var(--line);
+}

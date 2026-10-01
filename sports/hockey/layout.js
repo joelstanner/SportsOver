@@ -13,13 +13,13 @@
       <section class="hockey-main">
         <div class="hockey-team">
           <span id="hockey-away-mark" class="hockey-mark"><img alt="" hidden><span>AWY</span></span>
-          <div><strong id="hockey-away-abbr">AWY</strong><span id="hockey-away-record" class="hockey-record"></span></div>
+          <div class="team-name-slot"><strong class="team-name-label" id="hockey-away-abbr">AWY</strong><span id="hockey-away-record" class="hockey-record"></span></div>
           <strong id="hockey-away-score" class="hockey-score">—</strong>
         </div>
         <div class="hockey-center"><strong id="hockey-clock">—</strong><span id="hockey-period">—</span></div>
         <div class="hockey-team hockey-team--home">
           <strong id="hockey-home-score" class="hockey-score">—</strong>
-          <div><strong id="hockey-home-abbr">HME</strong><span id="hockey-home-record" class="hockey-record"></span></div>
+          <div class="team-name-slot"><strong class="team-name-label" id="hockey-home-abbr">HME</strong><span id="hockey-home-record" class="hockey-record"></span></div>
           <span id="hockey-home-mark" class="hockey-mark"><img alt="" hidden><span>HME</span></span>
         </div>
       </section>
@@ -85,6 +85,7 @@
         show(els.status);
       }
       global.SportsOverlay.odds?.render(els.bug, event);
+      global.SportsOverlay.teamNames.render(event, els.awayAbbr, els.homeAbbr);
       return event.state;
     }
 
