@@ -240,7 +240,18 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     await banner.mouse.down();
     await banner.mouse.move(box.x + 70, box.y + 40);
     await banner.mouse.up();
-    const afterDrag = await bannerBounds();
+    // Mouse dispatch completes before the renderer's pointer IPC necessarily
+    // reaches the main process. Wait for the native move before asserting it.
+    const afterDrag = await application.evaluate(async ({ BrowserWindow }, origin) => {
+      const win = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('display.html?desktop'));
+      const deadline = Date.now() + 1000;
+      let bounds = win.getBounds();
+      while (bounds.x === origin.x && bounds.y === origin.y && Date.now() < deadline) {
+        await new Promise(resolve => setTimeout(resolve, 20));
+        bounds = win.getBounds();
+      }
+      return bounds;
+    }, beforeDrag);
     assert.ok(afterDrag.x !== beforeDrag.x || afterDrag.y !== beforeDrag.y, 'dragging moves the native window');
     assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame, 'drag release does not skip');
     await banner.evaluate(async origin => {

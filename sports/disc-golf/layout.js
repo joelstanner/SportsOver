@@ -14,6 +14,7 @@
     function render(event) {
       lastEvent = event;
       const { details, competitors } = event;
+      const stale = details.stale && event.state !== "pregame";
       const leaders = competitors.filter(player => !player.status).slice(0, 3);
       const featured = details.view === "player" && competitors.find(player => player.pdgaNumber === details.playerId);
       const roundLabel = `R${details.round}`;
@@ -28,10 +29,12 @@
         const course = details.layouts.find(layout => Number(layout.LayoutID) === featured.layoutId)?.CourseName;
         footer = [course, featured.status || (featured.started ? `${featured.roundScore ?? "—"} strokes · ${featured.holes ?? "—"} holes` : featured.teeTime ? `Tee ${featured.teeTime} (course local)` : "Awaiting tee time")].filter(Boolean).join(" · ");
       }
-      if (details.stale) footer = "STALE · Last received scores · retrying automatically";
+      if (stale) footer = event.state === "live"
+        ? "STALE · Last received scores · retrying automatically"
+        : "Last received scores · awaiting scheduled update";
       mount.classList.remove("is-loading", "is-hidden");
-      mount.dataset.sport = "disc-golf"; mount.dataset.state = event.state; mount.dataset.stale = String(details.stale);
-      mount.setAttribute("aria-label", `${details.name}, ${details.division}, round ${details.round}, ${event.detailedState}${details.stale ? ", stale scores" : ""}`);
+      mount.dataset.sport = "disc-golf"; mount.dataset.state = event.state; mount.dataset.stale = String(stale);
+      mount.setAttribute("aria-label", `${details.name}, ${details.division}, round ${details.round}, ${event.detailedState}${stale ? ", stale scores" : ""}`);
       mount.innerHTML = `<div class="pdga-bar"><span class="pdga-brand">PDGA</span><a class="pdga-event" href="https://www.pdga.com/tour/event/${encodeURIComponent(details.tournamentId)}" target="_blank" rel="noopener" title="${escape(details.name)}">${escape(details.name)}</a><span class="pdga-state">${escape(details.division)} · ${roundLabel} · ${state}</span></div>
         ${featured ? `<div class="pdga-focus"><span class="pdga-place">${place(featured)}</span><div class="pdga-person"><strong class="pdga-name">${playerName(featured)}</strong><span class="pdga-sub">${featured.wonPlayoff ? "Playoff winner" : `PDGA #${escape(featured.pdgaNumber)}`} · ${roundLabel}</span></div>${metric("TOTAL", signed(featured.total), "pdga-total")}${metric("ROUND", signed(featured.roundToPar))}${metric(!featured.started && featured.teeTime ? "TEE" : "THRU", through(featured))}</div><div class="pdga-chase"><span>LEADERS</span>${leaders.map(player => `<span>${place(player)} ${escape(player.shortName)} <b>${signed(player.total)}</b></span>`).join("")}</div>`
         : `<div class="pdga-board"><div class="pdga-labels"><span>POS</span><span>PLAYER</span><span>TOTAL</span><span>ROUND</span><span>${event.state === "pregame" ? "TEE" : "THRU"}</span></div>${leaders.length ? leaders.map(player => `<div class="pdga-entry"><span class="pdga-place">${place(player)}</span><strong class="pdga-name">${playerName(player)}${player.wonPlayoff ? '<span class="pdga-playoff">PLAYOFF</span>' : ""}</strong><strong class="pdga-total">${signed(player.total)}</strong><span>${signed(player.roundToPar)}</span><span class="pdga-thru" title="${escape(!player.started && player.teeTime ? `Tee ${player.teeTime} (course local)` : through(player))}">${through(player)}</span></div>`).join("") : '<div class="pdga-empty">Awaiting player scores</div>'}</div>`}
@@ -49,7 +52,7 @@
     function handleError(message, error) {
       console.warn(`[SportsOver] ${message}`, error);
       if (lastEvent) render({ ...lastEvent, details: { ...lastEvent.details, stale: true } });
-      else renderNoEvent("PDGA unavailable · retrying automatically");
+      else renderNoEvent("PDGA unavailable · awaiting scheduled update");
     }
     return { render, renderNoEvent, handleError };
   }

@@ -65,6 +65,18 @@ browser-download quarantine/first-launch approval, and upgrading a real prior
 installation still require manual verification. Signing and disk-image integrity
 checks do not prove Gatekeeper acceptance or Apple notarization.
 
+## Release verification — 0.14.2, 2026-10-01
+
+- All 199 unit tests and the PDGA browser flow passed, including upcoming-feed
+  failures, retained tee times, transition to live scoring, and live backoff.
+- Both Mac installers passed disk-image, checksum, signature, version,
+  architecture, content, and packaged PDGA-source checks.
+- An Apple Silicon app copied from the installer passed the desktop/shared-engine
+  smoke suite after ejecting both images. The native drag assertion now waits
+  briefly for pointer IPC to update the window position.
+- Native Intel execution and first-launch approval on another Mac remain
+  unverified. Builds remain ad-hoc signed and unnotarized.
+
 ## Release verification — 0.14.1, 2026-10-01
 
 - All 197 unit tests and the disc-golf browser flow passed.

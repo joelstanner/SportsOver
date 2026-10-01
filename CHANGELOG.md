@@ -3,6 +3,19 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.14.2 — 2026-10-01
+
+### Fixed
+
+- Upcoming PDGA events retain their upcoming status and tee times when refreshes
+  fail, without showing stale-score or automatic-retry warnings.
+- Missing first-round score feeds use the upcoming refresh interval.
+
+### Changed
+
+- PDGA failure backoff and automatic-retry messaging apply only to live scores.
+  Routine checks continue to detect play starting, new rounds, and result updates.
+
 ## 0.14.1 — 2026-10-01
 
 ### Fixed

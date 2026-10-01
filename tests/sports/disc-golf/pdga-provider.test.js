@@ -97,17 +97,70 @@ test('Live mode drops an explicitly removed PDGA division even when its feed dis
   assert.deepEqual(mode.update({...options,rotation:[],available:[]}),[]);
 });
 
-test('PDGA errors retain HTTP status and back off without hammering upstream', async () => {
+test('live PDGA errors retain HTTP status and back off without hammering upstream', async () => {
   const config = api.config.normalizeConfig();
-  let now=0,calls=0,fail=true;
+  let now=0,calls=0,fail=false;
   const cache = api.providerRefresh.create({config:()=>config,now:()=>now,fetchImpl:async()=>{
     calls++; return fail ? new Response('{}',{status:503}) : Response.json({data:{scores:[{RoundStarted:1,Played:1}]}});
   }});
   const fetch = cache.fetchFor('disc-golf',api.pdga);
   const url='https://www.pdga.com/apps/tournament/live-api/live_results_fetch_round?TournID=1';
-  await assert.rejects(fetch(url),error=>error.status===503);
-  now=30000; await assert.rejects(fetch(url)); assert.equal(calls,2);
-  now=60000; await assert.rejects(fetch(url)); assert.equal(calls,2);
-  now=90000; fail=false; await fetch(url); assert.equal(calls,3);
-  now=120000; await fetch(url); assert.equal(calls,4);
+  await fetch(url);
+  now=30000; fail=true; await assert.rejects(fetch(url),error=>error.status===503);
+  now=60000; await assert.rejects(fetch(url)); assert.equal(calls,3);
+  now=90000; await assert.rejects(fetch(url)); assert.equal(calls,3);
+  now=120000; await assert.rejects(fetch(url)); assert.equal(calls,4);
+  now=240000; await assert.rejects(fetch(url)); assert.equal(calls,5);
+  now=480000; await assert.rejects(fetch(url)); assert.equal(calls,6);
+  now=779999; await assert.rejects(fetch(url)); assert.equal(calls,6);
+  now=780000; fail=false; await fetch(url); assert.equal(calls,7);
+  now=810000; await fetch(url); assert.equal(calls,8);
+});
+
+test('upcoming PDGA failures keep routine checks and recover automatically into live scoring', async () => {
+  const config = api.config.normalizeConfig();
+  const upcomingMetadata = {...metadata,LatestRound:1,HighestCompletedRound:0,Divisions:[{Division:'MPO',LatestRound:1}]};
+  let now=0,fail=false,started=false;
+  const calls = {metadata:0,round:0};
+  const cache = api.providerRefresh.create({config:()=>config,now:()=>now,fetchImpl:async url=>{
+    const isMetadata = url.includes('fetch_event');
+    calls[isMetadata ? 'metadata' : 'round']++;
+    if (fail) return new Response('{}',{status:503});
+    return Response.json({data:isMetadata ? upcomingMetadata : {scores:[{Name:'Player',Round:1,RoundStarted:started ? 1 : 0,Played:started ? 1 : 0,TeeTime:'09:00'}]}});
+  }});
+  const client = api.pdga.createClient({watches:[{...watch,tournamentId:'90002'}],fetchImpl:cache.fetchFor('disc-golf',api.pdga)});
+  assert.equal((await client.getEvent('90002:MPO')).state,'pregame');
+  fail=true;
+  for (now=60000; now<=300000; now+=60000) {
+    const discovery = await client.discover();
+    assert.equal(discovery.availableEntries[0].candidate.state,'pregame');
+    assert.equal(discovery.availableEntries[0].candidate.raw.stale,false);
+    assert.equal(discovery.failures,0);
+    assert.equal((await client.getEvent('90002:MPO')).competitors[0].teeTime,'09:00');
+    assert.equal(calls.metadata,1+now/60000);
+  }
+  // A metadata failure prevents another round request; cached callers don't
+  // bypass the routine cadence. Successful refresh then detects live play.
+  assert.equal(calls.round,1);
+  fail=false; started=true;
+  const live = await client.getEvent('90002:MPO');
+  assert.equal(live.state,'live'); assert.equal(live.details.stale,false);
+  now+=30000;
+  await client.getEvent('90002:MPO');
+  assert.equal(calls.round,3);
+});
+
+test('a missing first score feed uses upcoming checks rather than live retries', async () => {
+  const config = api.config.normalizeConfig();
+  let now=0,calls=0;
+  const cache = api.providerRefresh.create({config:()=>config,now:()=>now,fetchImpl:async()=>{
+    calls++; return new Response('{}',{status:404});
+  }});
+  const fetch = cache.fetchFor('disc-golf',api.pdga);
+  const url='https://www.pdga.com/apps/tournament/live-api/live_results_fetch_round?TournID=90003';
+  await assert.rejects(fetch(url));
+  now=30000; await assert.rejects(fetch(url)); assert.equal(calls,1);
+  for (now=60000; now<=300000; now+=60000) {
+    await assert.rejects(fetch(url)); assert.equal(calls,1+now/60000);
+  }
 });

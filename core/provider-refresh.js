@@ -26,7 +26,9 @@
           record = { sport, state: provider.refreshState?.(null, url) || "idle", completed: -Infinity, response: null, error: null, pending: null, failures: 0 };
           records.set(key, record);
         }
-        const delay = provider.failureBackoff && record.failures
+        const failureBackoff = typeof provider.failureBackoff === "function"
+          ? provider.failureBackoff(record.state) : provider.failureBackoff;
+        const delay = failureBackoff && record.failures
           ? Math.max(interval(sport, record.state), Math.min(300000, 30000 * 2 ** (record.failures - 1)))
           : interval(sport, record.state);
         if (!record.pending && now() >= record.completed + delay) {

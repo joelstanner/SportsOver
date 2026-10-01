@@ -14,10 +14,12 @@ const scores = require('../sports/disc-golf/round.json');
   const browser = await chromium.launch({headless:true,channel:process.env.PLAYWRIGHT_CHANNEL || 'chrome'});
   try {
     const context = await browser.newContext({viewport:{width:1120,height:850}});
-    let offline = false;
+    let offline = false, upcoming = false;
     await context.route('**/*', async route => {
       const url = new URL(route.request().url());
-      if (url.hostname === 'www.pdga.com') return route.fulfill({status:offline ? 503 : 200,json:{data:url.pathname.endsWith('fetch_event') ? metadata : scores}});
+      if (url.hostname === 'www.pdga.com') return route.fulfill({status:offline ? 503 : 200,json:{data:url.pathname.endsWith('fetch_event')
+        ? upcoming ? {...metadata,LatestRound:1,HighestCompletedRound:0,Divisions:[{Division:'MPO',LatestRound:1}]} : metadata
+        : upcoming ? {scores:[{Name:'Kevin Jones',PDGANum:41760,Round:1,TeeTime:'09:00'}]} : scores}});
       if (url.hostname !== 'overlay.test') return route.fulfill({json:{events:[],dates:[]}});
       const file = url.pathname === '/admin/' ? 'admin/index.html' : url.pathname.slice(1);
       try { return route.fulfill({body:await fs.readFile(path.join(root,file)),contentType:({'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json'})[path.extname(file)]}); }
@@ -57,7 +59,28 @@ const scores = require('../sports/disc-golf/round.json');
     offline = true;
     await banner.waitForFunction(()=>document.querySelector('#sports-overlay')?.dataset.stale==='true',{},{timeout:15000});
     assert.match(await banner.locator('.pdga-focus').innerText(),/Kevin Jones/);
-    assert.match(await banner.locator('.pdga-footer').innerText(),/STALE/);
+    assert.match(await banner.locator('.pdga-footer').innerText(),/Last received scores/);
+    assert.doesNotMatch(await banner.locator('.pdga-footer').innerText(),/retrying/);
+    offline = false;
+    upcoming = true;
+    await banner.reload();
+    await banner.locator('.pdga-scorebug[data-state="pregame"]').waitFor();
+    offline = true;
+    // Wait for a scheduled refresh failure, then check the actual error
+    // rendering path too: neither should turn an upcoming field stale.
+    await banner.waitForResponse(response=>response.url().includes('www.pdga.com') && response.status()===503);
+    await banner.waitForFunction(()=>document.querySelector('#sports-overlay')?.dataset.stale==='false');
+    await banner.evaluate(metadata=>{
+      const api = window.SportsOverlay;
+      const layout = api.registry.getLayout('disc-golf').createLayout(document);
+      layout.render(api.pdga.normalizeEvent(metadata,{scores:[],roundNumber:1},
+        {tournamentId:'86076',division:'MPO',view:'leaderboard'}));
+      layout.handleError('Simulated upcoming failure',new Error('offline'));
+    },metadata);
+    assert.equal(await banner.locator('#sports-overlay').getAttribute('data-stale'),'false');
+    assert.match(await banner.locator('.pdga-state').innerText(),/UPCOMING/);
+    assert.doesNotMatch(await banner.locator('.pdga-footer').innerText(),/STALE|retrying/);
+    assert.doesNotMatch(await banner.locator('#sports-overlay').getAttribute('aria-label'),/stale/);
     offline = false;
     // Existing layouts still activate after an individual event.
     await banner.goto('http://overlay.test/index.html?sport=basketball&demo=live');

@@ -109,7 +109,9 @@
       } catch (error) {
         const cached = lastGood.get(id);
         if (!cached) throw error;
-        return { ...cached, details: { ...cached.details, stale: true, view: watch.view, playerId: watch.playerId } };
+        // Upcoming fields may have tee times but no scores to go stale. Keep
+        // their normal status until a routine refresh detects play starting.
+        return { ...cached, details: { ...cached.details, stale: cached.state !== "pregame", view: watch.view, playerId: watch.playerId } };
       }
     }
     async function discover({ topFavoriteOnly = false } = {}) {
@@ -133,9 +135,9 @@
     };
   }
   const provider = { createClient, normalizeEvent, normalizePlayer, toCandidate, roundState,
-    failureBackoff: true,
+    failureBackoff: state => state === "live",
     refreshState(payload, url) {
-      if (String(url).includes("live_results_fetch_round")) return payload ? roundState(payload.data?.scores) : "live";
+      if (String(url).includes("live_results_fetch_round")) return payload ? roundState(payload.data?.scores) : "pregame";
       return "pregame";
     },
   };
