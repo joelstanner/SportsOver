@@ -4,7 +4,39 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 A standalone Electron sports banner for your desktop. Transparent, borderless, draggable, and always on top of ordinary application windows, with separate settings and tray/menu-bar controls. SportsOver owns one sports engine and serves two outputs: the floating desktop banner and an optional local OBS browser source. OBS and Twitchbot are not required to run the app.
 
-## Install Node.js and npm (first-time setup)
+## Install on macOS
+
+Mac disk images are built for **macOS 13 Ventura or newer**, with separate
+downloads for **Apple Silicon (`arm64`)** and **Intel (`x64`)**. Check
+**Apple menu → About This Mac** if you are unsure which chip you have.
+The app includes its runtime: Node.js, npm, and Terminal are not needed.
+
+Download the matching `.dmg` from
+[the latest GitHub Release](https://github.com/joelstanner/SportsOver/releases/latest),
+open it, and drag **SportsOver** into **Applications**. Eject the disk image,
+then open SportsOver from Applications. Each release includes installers,
+SHA-256 checksums, and installation instructions. You can also run from source
+using the instructions below or build a DMG using [the packaging guide](desktop/PACKAGING.md).
+
+**First launch:** these early builds are ad-hoc signed and **not notarized by
+Apple**. macOS will normally block the first launch. If you trust the download,
+try opening SportsOver, dismiss the warning, then go to **System Settings →
+Privacy & Security → Open Anyway** and confirm. Follow
+[Apple's guidance](https://support.apple.com/102445). Managed Macs may prohibit
+this exception. Do not disable system-wide security; report warnings about
+damage or malware instead of trying to bypass them. The disk image also
+includes **Install SportsOver.txt** with these instructions.
+
+**Updates:** quit SportsOver and replace the app in Applications with the new
+download. Settings and team selections stay in
+`~/Library/Application Support/SportsOver`. Updates are manual.
+**Uninstall:** quit the app and move it from Applications to the Trash;
+saved preferences remain available for a later reinstall.
+
+Windows continues to use the source installation below with `npm install`
+and `npm start`. No Windows installer is provided.
+
+## Install Node.js and npm (Windows or running from source)
 
 **npm** is the tool that downloads SportsOver's dependencies and starts the app. It comes with **Node.js**, so you install Node.js once and then use npm in your terminal. Running `npm install` later installs this project's dependencies, not npm itself. See the [official npm installation guide](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm/).
 
@@ -53,7 +85,7 @@ Wait for `npm install` to finish before running `npm start`. Keep that terminal 
 
 The first installation/start downloads Electron for your OS and architecture. Internet access is needed for installation, live sports feeds, logos, and catalog refresh. The banner and Settings open together. Closing Settings leaves the banner running; use **Quit SportsOver** in the tray/menu bar or application menu to exit.
 
-This repository distributes source only. Installers, signing/notarization, automatic updates, and public-release packaging are outside the current scope. To update a downloaded checkout, replace it with the newer source and run `npm install` again. If you obtained it with Git, pull from your configured source first. The source repository is [joelstanner/SportsOver](https://github.com/joelstanner/SportsOver).
+To update a downloaded source checkout, replace it with the newer source and run `npm install` again. If you obtained it with Git, pull from your configured source first. The source repository is [joelstanner/SportsOver](https://github.com/joelstanner/SportsOver). This remains the Windows installation method; the package is not published to the npm registry.
 
 ## Desktop controls
 
@@ -157,5 +189,12 @@ SportsOver is licensed under the [MIT License](LICENSE). Third-party dependencie
 ## Local macOS app
 
 Run `npm run build:mac`, then open `dist/SportsOver.app` for the SportsOver application name and scoreboard Dock/Finder icon. This reuses the installed Electron runtime and creates a local ad-hoc signed bundle; it is not notarized for distribution. Rebuild after source changes. `npm start` remains the development launcher and macOS may identify it as Electron. Both launches use the same SportsOver settings.
+
+Run `npm run dist:mac` on a Mac to build a downloadable DMG for that Mac's
+architecture, or `npm run dist:mac -- --all` for both Apple Silicon and Intel.
+Installers, SHA-256 checksums, and installation instructions are written to
+`dist/installers/`. These are ad-hoc signed, unnotarized builds and are never
+uploaded automatically. See [macOS packaging](desktop/PACKAGING.md) for build
+commands, verification, and the release checklist.
 
 The menu-bar scoreboard uses a compact template icon with a persistent position. Its initial position is near the right edge to avoid a crowded MacBook notch area; Cmd-drag can reposition it. Banner controls also remain available in the Banner application menu.

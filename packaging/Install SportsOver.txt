@@ -1,0 +1,54 @@
+INSTALL SPORTSOVER ON YOUR MAC
+============================
+
+Requires macOS 13 Ventura or newer. No Node.js, npm or Terminal is needed.
+Choose the arm64 download for Apple Silicon (M-series chips), or the x64
+download for an Intel Mac. Apple menu > About This Mac shows your chip.
+
+1. Open the downloaded SportsOver .dmg file.
+2. Drag SportsOver into the Applications folder shown in the disk image.
+3. Eject the SportsOver disk image, then open SportsOver from Applications.
+
+FIRST LAUNCH
+
+This early release is not signed with an Apple Developer ID or notarized
+by Apple. macOS will normally block the first launch because it cannot
+verify the developer or check the app for malicious software.
+
+If you trust the download from https://github.com/joelstanner/SportsOver:
+
+1. Try opening SportsOver from Applications, then dismiss the warning.
+2. Open System Settings > Privacy & Security.
+3. Scroll to the message about SportsOver and choose Open Anyway.
+4. Confirm Open and authenticate if macOS asks.
+
+This approves this app; you do not need to disable system-wide security.
+An organization-managed Mac may prohibit this exception. If the warning
+says the app is damaged or contains malware, stop and report the exact
+message rather than trying to bypass it.
+
+Apple's guidance: https://support.apple.com/102445
+
+USING SPORTSOVER
+
+Settings opens when the app starts. Closing Settings leaves SportsOver
+running. Use the scoreboard icon in the menu bar to show Settings or choose
+Quit SportsOver. Cmd+Shift+U recovers a hidden or locked banner.
+Internet access is needed for live scores, team logos and catalog updates.
+
+UPDATING
+
+Quit SportsOver, download the newer installer, and drag the new app into
+Applications. Choose Replace when Finder asks. Your preferences and team
+selections remain in ~/Library/Application Support/SportsOver.
+Updates are manual; this release does not update itself.
+
+UNINSTALLING
+
+Quit SportsOver, then move SportsOver from Applications to the Trash.
+Saved preferences remain available if you reinstall later.
+
+SOURCE, HELP AND DOWNLOADS
+
+https://github.com/joelstanner/SportsOver
+https://github.com/joelstanner/SportsOver/releases

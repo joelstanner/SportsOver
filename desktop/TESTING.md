@@ -25,7 +25,7 @@ The automated test invokes native APIs but does **not** establish that physical 
 7. Load the local URL in the actual OBS Browser Source on each target platform. Check reconnection after SportsOver restart and desktop-independent visibility. Test real MLB/ESPN requests and catalog refresh under offline/reconnect conditions.
 8. Check Windows source installation/start and all native behaviors. Linux is experimental, especially Wayland; exclusive-fullscreen and protected system screens are outside the always-on-top guarantee.
 
-The app intentionally uses explicit proportional size controls because transparent native-window resizing varies by platform. No installer, distribution signing, notarization, or update service is implemented. The local ad-hoc signed macOS bundle is built and verified separately below.
+The app intentionally uses explicit proportional size controls because transparent native-window resizing varies by platform. macOS DMG packaging is available with an ad-hoc signature; Developer ID signing, notarization, automatic updates, and Windows installers are not implemented. See [packaging and release checks](PACKAGING.md). The local development bundle is verified separately below.
 
 ## Native menus and icons
 
@@ -36,3 +36,29 @@ After restart, locate the compact scoreboard icon in the right menu bar. Single-
 Dock/About artwork now uses the supplied scoreboard PNG; see `assets/README.md`. `npm run build:mac` creates a local SportsOver.app with the same icon and native application name. Check its Finder/Dock icon and application menu separately from the `npm start` development launcher. The bundle is ad-hoc signed, not notarized.
 
 The local bundle passed `codesign --verify --deep --strict` and the desktop smoke test using `SPORTSOVER_TEST_EXECUTABLE` set to its `Contents/MacOS/Electron` executable. The smoke test reloads the engine after installing request fixtures to avoid a packaged-startup race with live feeds. The running bundle was checked through macOS accessibility: its application menu is named SportsOver. A native placement probe confirmed the default moves the status item to x=1180 on the 1470-point display instead of the center/notch area; physical tray visibility still depends on the OS layout.
+
+## DMG packaging verification — 2026-10-01
+
+Version 0.13.0 installers and the local development app were rebuilt after the
+approved version bump. Installers use electron-builder 26.17.0.
+
+- All 173 unit tests passed.
+- Apple Silicon and Intel DMGs built successfully. Both passed `hdiutil verify`
+  and their generated SHA-256 checksum checks.
+- Both app signatures passed `codesign --verify --deep --strict` and report
+  ad-hoc signing with no Team ID. Bundle identity is `com.sportsover.desktop`,
+  version is 0.13.0, and minimum macOS is 13.0. Executables contain the expected
+  arm64 or x86_64 architecture.
+- The Apple Silicon packaged app passed the existing desktop/shared-engine
+  smoke suite using temporary settings and mocked feeds. Its ASAR archive
+  supports the app's relative resources and catalog-module import.
+- Both mounted images contained the app, an Applications shortcut, and the
+  exact installation instructions. Both archives were checked for required
+  runtime files and exclusion of development dependencies and local state.
+  An Apple Silicon app copied from the DMG passed the same smoke suite after
+  both images were ejected, using an isolated temporary install location.
+
+Native Intel execution, the minimum macOS version on actual hardware,
+browser-download quarantine/first-launch approval, and upgrading a real prior
+installation still require manual verification. Signing and disk-image integrity
+checks do not prove Gatekeeper acceptance or Apple notarization.

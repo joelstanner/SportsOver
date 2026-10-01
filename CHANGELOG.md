@@ -3,6 +3,18 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.13.0 — 2026-10-01
+
+### Added
+
+- macOS drag-to-Applications DMG installers for Apple Silicon and Intel,
+  requiring macOS 13 or newer and no separate Node.js or npm installation.
+- Installation, first-launch approval, update, and uninstall instructions,
+  with SHA-256 checksums for each installer. These early builds are ad-hoc
+  signed and not notarized by Apple; updates are manual.
+
+Windows continues to use the existing source-based npm installation.
+
 ## 0.12.0 — 2026-10-01
 
 ### Added
