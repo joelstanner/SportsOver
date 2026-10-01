@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SportsOver Settings</title>
-  <link rel="stylesheet" href="admin.css?v=21">
+  <link rel="stylesheet" href="admin.css?v=22">
 </head>
 <body>
   <header class="masthead">
@@ -102,6 +102,10 @@
             <option value="hide">Skip that team</option>
           </select>
         </label>
+        <label class="field">Keep finished games in Live mode (minutes)
+          <input id="live-mode-final-minutes" type="number" min="0" max="1440" step="1" required>
+          <small>Time after SportsOver detects the finish. Default: 20 minutes. Set 0 to remove immediately.</small>
+        </label>
       </div>
 
       <section aria-labelledby="provider-refresh-heading">
@@ -137,6 +141,10 @@
             <span>Game data</span>
             <button id="refresh-games" class="button button--secondary" type="button">Refresh games</button>
           </div>
+        </div>
+        <div class="live-mode-controls">
+          <button id="live-mode" class="button live-mode-button" type="button" aria-pressed="false" aria-describedby="live-mode-note" disabled>Live mode</button>
+          <p id="live-mode-note">Show only live games from your rotation. Finished games stay for the time set in Settings.</p>
         </div>
         <div class="timing-defaults" role="group" aria-label="Default rotation timing">
           <span>Default timing (seconds):</span>
@@ -306,13 +314,14 @@
     </article>
   </template>
 
-  <script src="../core/config.js?v=17"></script>
+  <script src="../core/config.js?v=18"></script>
   <script src="../core/shared-state.js?v=1"></script>
   <script src="../core/provider-refresh.js?v=1"></script>
   <script src="../core/provider-discovery.js?v=1"></script>
   <script src="../core/event-model.js?v=4"></script>
   <script src="../core/registry.js?v=2"></script>
   <script src="../core/game-selection.js?v=8"></script>
+  <script src="../core/live-mode.js?v=1"></script>
   <script src="../sports/baseball/providers/mlb.js?v=4"></script>
   <script src="../sports/football/providers/espn.js?v=5"></script>
   <script src="../sports/college-football/providers/espn.js?v=6"></script>
@@ -320,7 +329,7 @@
   <script src="../sports/soccer/providers/espn.js?v=3"></script>
   <script src="../sports/basketball/providers/espn.js?v=4"></script>
   <script src="../sports/college-basketball/providers/espn.js?v=1"></script>
-  <script src="admin.js?v=26"></script>
+  <script src="admin.js?v=27"></script>
   <script src="../core/desktop.js?v=6"></script>
 </body>
 </html>

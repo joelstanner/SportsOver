@@ -25,6 +25,18 @@ function favoriteKeys(config, sport) {
   return config.sports.find(group => group.sport === sport).favorites.map(favorite => favorite.teamKey);
 }
 
+test('Live mode retention defaults to 20 minutes, validates limits, and never persists activation', () => {
+  assert.equal(configApi.normalizeConfig().liveModeFinalMinutes, 20);
+  for (const [value, expected] of [[0, 0], [5, 5], [30.5, 31], [-2, 0], [2000, 1440], [null, 20], ['10', 20], [NaN, 20]]) {
+    const normalized = configApi.normalizeConfig({ liveModeFinalMinutes: value, liveMode: true });
+    assert.equal(normalized.liveModeFinalMinutes, expected);
+    assert.equal(Object.hasOwn(normalized, 'liveMode'), false);
+  }
+  const storage = memoryStorage();
+  configApi.saveConfig({ ...configApi.normalizeConfig(), liveModeFinalMinutes: 7 }, storage);
+  assert.equal(configApi.loadConfig(storage).liveModeFinalMinutes, 7);
+});
+
 test("sport visibility persists without losing favorites and older configs default to enabled", () => {
   const storage = memoryStorage();
   const config = configApi.normalizeConfig();

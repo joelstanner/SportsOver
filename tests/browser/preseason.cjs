@@ -106,8 +106,10 @@ const root = path.resolve(__dirname, '../..');
           window.testLayout.render(window.testEvent);
         });
         assert.equal(await page.locator('#basketball-period').innerText(), '2ND HALF');
-        assert.equal(await page.locator('#basketball-away-timeouts').innerText(), 'TO 2');
-        assert.equal(await page.locator('.timeout-marker').count(), 0, 'NCAA does not show NBA timeout slots');
+        assert.equal(await page.locator('#basketball-away-timeouts').innerText(), '');
+        assert.equal(await page.locator('#basketball-away-timeouts .timeout-marker.is-remaining').count(), 2);
+        assert.equal(await page.locator('#basketball-home-timeouts .timeout-marker.is-remaining').count(), 1);
+        assert.equal(await page.locator('#basketball-home-timeouts').getAttribute('aria-label'), 'Washington Huskies: 1 timeout remaining');
         await page.screenshot({ path: '/tmp/sportsover-ncaam-live.png', omitBackground: true });
         await page.evaluate(() => {
           window.testEvent.details.period = 'OT2';
@@ -115,14 +117,38 @@ const root = path.resolve(__dirname, '../..');
           window.testEvent.teams.home.timeoutsRemaining = null;
           window.testLayout.render(window.testEvent);
         });
-        assert.equal(await page.locator('#basketball-away-timeouts').innerText(), 'TO 5', 'overtime counts are not capped at the NBA limit');
+        assert.equal(await page.locator('#basketball-away-timeouts .timeout-marker.is-remaining').count(), 5, 'overtime counts are not capped at the NBA limit');
         assert.equal(await page.locator('#basketball-home-timeouts').isHidden(), true);
+        assert.equal(await page.locator('#basketball-home-timeouts .timeout-marker').count(), 0, 'missing counts clear previous markers');
+        assert.equal(await page.locator('#basketball-home-timeouts').getAttribute('aria-label'), null);
+        await page.evaluate(() => {
+          window.testEvent.teams.away.timeoutsRemaining = 0;
+          window.testLayout.render(window.testEvent);
+        });
+        assert.equal(await page.locator('#basketball-away-timeouts').isVisible(), true);
+        assert.equal(await page.locator('#basketball-away-timeouts .timeout-marker.is-remaining').count(), 0);
+        assert.equal(await page.locator('#basketball-away-timeouts .timeout-marker.is-used').count(), 1);
+        assert.equal(await page.locator('#basketball-away-timeouts').getAttribute('aria-label'), 'Nebraska Cornhuskers: 0 timeouts remaining');
+        await page.evaluate(() => {
+          window.testEvent.state = 'interrupted';
+          window.testEvent.detailedState = 'Halftime';
+          window.testEvent.teams.away.timeoutsRemaining = 3;
+          window.testLayout.render(window.testEvent);
+        });
+        assert.equal(await page.locator('#basketball-away-timeouts .timeout-marker.is-remaining').count(), 3, 'reported timeouts remain visible during interruptions');
+        for (const state of ['pregame', 'final']) {
+          await page.evaluate(state => { window.testEvent.state = state; window.testLayout.render(window.testEvent); }, state);
+          assert.equal(await page.locator('#basketball-away-timeouts').isHidden(), true);
+          assert.equal(await page.locator('#basketball-away-timeouts .timeout-marker').count(), 0);
+        }
         await page.evaluate(() => { window.testEvent.state = 'final'; window.testEvent.startTime = new Date().toISOString(); window.testLayout.render(window.testEvent); });
         assert.equal(await page.locator('#basketball-status-text').innerText(), 'FINAL / OT2');
       }
       await page.close();
     }
     const admin = await context.newPage();
+    // Autosave needs timers running after the paused banner scenarios.
+    await admin.clock.resume();
     admin.on('pageerror', error => errors.push(error.message));
     await admin.goto('http://overlay.test/sports/admin/');
     await admin.getByRole('button', { name: 'Start with defaults' }).click();
@@ -163,8 +189,7 @@ const root = path.resolve(__dirname, '../..');
     const favoritesBefore = await hockeyCard.locator('.favorite-card').count();
     await hockeyCard.getByRole('checkbox', { name: 'Show Hockey', exact: true }).uncheck();
     assert.equal(await hockeyCard.locator('.sport-favorites').isHidden(), true);
-    await admin.getByRole('button', { name: 'Save settings', exact: true }).click();
-    await admin.getByText('Saved. Banner updates automatically.', { exact: true }).waitFor();
+    await admin.getByText('Saved automatically. Banner updated.', { exact: true }).waitFor();
     assert.equal(sharedState.config.sports.find(group => group.sport === 'hockey').enabled, false);
     assert.ok(sharedState.config.includedGames.includes('hockey:900001'), 'manual choices remain saved');
     await admin.getByRole('button', { name: 'Live control', exact: true }).click();
@@ -179,8 +204,7 @@ const root = path.resolve(__dirname, '../..');
     await admin.getByRole('checkbox', { name: 'Show Hockey', exact: true }).check();
     assert.equal(await hockeyCard.locator('.favorite-card').count(), favoritesBefore);
     assert.equal(await hockeyCard.locator('.sport-favorites').isVisible(), true);
-    await admin.getByRole('button', { name: 'Save settings', exact: true }).click();
-    await admin.getByText('Saved. Banner updates automatically.', { exact: true }).waitFor();
+    await admin.getByText('Saved automatically. Banner updated.', { exact: true }).waitFor();
     assert.equal(sharedState.config.sports.find(group => group.sport === 'hockey').enabled, true);
     await admin.close();
     assert.deepEqual(errors, []);

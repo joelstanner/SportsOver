@@ -194,7 +194,7 @@ else {
     }
     shortcut = globalShortcut.register('CommandOrControl+Shift+U', recover);
     ipcMain.handle('desktop:status', event => { authorize(event); return status(); });
-    ipcMain.handle('desktop:action', (event, action, value) => {
+    ipcMain.handle('desktop:action', async (event, action, value) => {
       authorize(event);
       if (action === 'unlock') { lock(false); showBanner(); }
       else if (action === 'lock') lock(true);
@@ -221,6 +221,25 @@ else {
         clipboard.writeText(integrationToken);
       }
       else if (action === 'clear-override') engineState.clearOverride();
+      else if (action === 'live-mode') {
+        if (event.sender !== settings?.webContents) throw Error('Settings access required');
+        if (typeof value !== 'boolean') throw Error('Live mode requires an on/off value');
+        if (!engineState.output().ready) throw Error('Sports engine is not ready');
+        if (value && !engineState.state().liveMode?.active && !engineState.state().liveMode?.canActivate) {
+          throw Error('No live games in rotation');
+        }
+        if (engineState.state().liveMode?.active !== value) await new Promise((resolve, reject) => {
+          const changed = () => {
+            if (engineState.state().liveMode?.active !== value) return;
+            clearTimeout(timeout); engineState.off('frame', changed); resolve();
+          };
+          const timeout = setTimeout(() => {
+            engineState.off('frame', changed); reject(Error('Live mode did not respond. Try again.'));
+          }, 5000);
+          engineState.on('frame', changed);
+          engineWindow.webContents.send('engine:command', { type: 'live-mode', active: value });
+        });
+      }
       else if (action === 'refresh') {
         if (Date.now() - lastRefresh > 5000) { lastRefresh = Date.now(); engineWindow.webContents.send('engine:command', { type: 'refresh' }); }
       }

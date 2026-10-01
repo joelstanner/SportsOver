@@ -50,6 +50,8 @@ let automaticRotationEntries = [];
 let overrideEntry = null;
 let discoveryPending = null;
 let rediscover = false;
+let normalRotationQueue = [];
+const liveMode = window.SportsOverlay.liveMode.create();
 
 // The desktop host is the sole live engine. Outputs receive rendered snapshots.
 window.SportsOverlay.engine = {
@@ -57,6 +59,8 @@ window.SportsOverlay.engine = {
     availableEntries: (cachedDiscoveries || []).flatMap(result => result.availableEntries).map(publicEntry),
     automaticEntries: automaticRotationEntries.map(publicEntry),
     queue: rotationQueue.map(publicEntry),
+    normalQueue: normalRotationQueue.map(publicEntry),
+    liveMode: { active: liveMode.isActive(), canActivate: normalRotationQueue.some(window.SportsOverlay.liveMode.isLive) },
     currentGameKey: entryKey(overrideEntry || rotationQueue[currentIndex]) || null,
     renderedGameKey,
     overrideGameKey: entryKey(overrideEntry) || null,
@@ -64,6 +68,17 @@ window.SportsOverlay.engine = {
   refresh: () => discoverGames(),
   next: () => stepRotation(1),
   previous: () => stepRotation(-1),
+  setLiveMode(active) {
+    if (typeof active !== "boolean") return;
+    liveMode.setActive(active, normalRotationQueue);
+    requestRevision++;
+    clearTimeout(rotationTimer); rotationTimer = null; rotationGeneration++;
+    // Publish the latch and its filtered queue together, even during discovery.
+    const previousKey = entryKey(rotationQueue[currentIndex]);
+    rotationQueue = selectedRotationQueue((cachedDiscoveries || []).flatMap(result => result.availableEntries));
+    currentIndex = Math.max(0, rotationQueue.findIndex(entry => entryKey(entry) === previousKey));
+    return discoverGames(false);
+  },
   override(value) {
     overrideEntry = value ? (cachedDiscoveries || []).flatMap(result => result.availableEntries)
       .find(entry => entryKey(entry) === value.gameKey) || null : null;
@@ -214,7 +229,8 @@ async function discoverGamesOnce(refresh = true) {
   clearTimeout(pollTimer);
   pollGeneration += 1;
   if (!sportContexts.length) {
-    rotationQueue = []; automaticRotationEntries = []; cachedDiscoveries = [];
+    rotationQueue = []; normalRotationQueue = []; automaticRotationEntries = []; cachedDiscoveries = [];
+    liveMode.update({ enabledSports: [] });
     overrideEntry = null; currentIndex = 0;
     requestRevision++; rotationGeneration++;
     clearTimeout(rotationTimer); rotationTimer = null;
@@ -234,7 +250,7 @@ async function discoverGamesOnce(refresh = true) {
     { keyOf: entryKey },
   );
   const previousKey = entryKey(rotationQueue[currentIndex]);
-  const fullRotationQueue = window.SportsOverlay.selection.applyRotationControls({
+  normalRotationQueue = window.SportsOverlay.selection.applyRotationControls({
     automaticEntries: automaticRotationEntries,
     availableEntries,
     mode: savedConfig.rotationMode,
@@ -243,7 +259,7 @@ async function discoverGamesOnce(refresh = true) {
     rotationOrder: savedConfig.rotationOrder,
     keyOf: entryKey,
   });
-  rotationQueue = window.SportsOverlay.selection.applyGameLocks(fullRotationQueue, savedConfig.lockedGameKeys, entryKey);
+  rotationQueue = selectedRotationQueue(availableEntries);
   currentIndex = Math.max(0, rotationQueue.findIndex(entry => entryKey(entry) === previousKey));
   const changedGame = Boolean(previousKey && entryKey(rotationQueue[currentIndex]) !== previousKey);
 
@@ -253,7 +269,7 @@ async function discoverGamesOnce(refresh = true) {
     rotationTimer = null;
     rotationGeneration += 1;
     renderedGameKey = null;
-    layout.renderNoEvent("No watched or live spotlight games found", CONFIG.showNoGameMessage);
+    layout.renderNoEvent(liveMode.isActive() ? "No live games in rotation" : "No watched or live spotlight games found", liveMode.isActive() || CONFIG.showNoGameMessage);
     scheduleDiscovery();
     return;
   }
@@ -262,6 +278,15 @@ async function discoverGamesOnce(refresh = true) {
   await renderCurrentGame({ animate: changedGame });
   schedulePoll();
   if (!rotationTimer || changedGame || rotationQueue.length < 2) scheduleRotation();
+}
+
+function selectedRotationQueue(availableEntries) {
+  return liveMode.isActive() ? liveMode.update({
+    rotation: normalRotationQueue, available: availableEntries,
+    excludedKeys: savedConfig.excludedGames,
+    enabledSports: sportContexts.map(context => context.sport),
+    rotationOrder: savedConfig.rotationOrder, retentionMinutes: savedConfig.liveModeFinalMinutes,
+  }) : window.SportsOverlay.selection.applyGameLocks(normalRotationQueue, savedConfig.lockedGameKeys, entryKey);
 }
 
 async function discoverSport(context) {
@@ -327,6 +352,23 @@ async function renderGame(entry, revision, { animate = false } = {}) {
       event.details.odds ??= window.SportsOverlay.model.espnOdds(discovered?.candidate.raw ?? entry.candidate.raw);
     }
     if (revision !== requestRevision) return;
+    if (liveMode.isActive() && !overrideEntry) {
+      const observed = { ...entry, candidate: { ...entry.candidate, state: event.state } };
+      liveMode.observe(observed);
+      // Keep metadata and queue timing in step with the freshly polled score.
+      for (const result of cachedDiscoveries || []) {
+        result.availableEntries = result.availableEntries.map(item => entryKey(item) === entryKey(entry) ? observed : item);
+        result.automaticEntries = result.automaticEntries.map(item => entryKey(item) === entryKey(entry) ? observed : item);
+      }
+      normalRotationQueue = normalRotationQueue.map(item => entryKey(item) === entryKey(entry) ? observed : item);
+      rotationQueue[currentIndex] = observed;
+      scheduleDiscovery();
+      if (!["live", "interrupted", "final"].includes(event.state)
+        || (event.state === "final" && savedConfig.liveModeFinalMinutes === 0)) {
+        setTimeout(() => discoverGames(false), 0);
+        return;
+      }
+    }
     if (animate && !await transitionOut(revision)) return;
     if (!animate) clearTransitionClasses();
     const currentLayout = activateLayout(entry.context.sport);
@@ -420,12 +462,12 @@ function scheduleDiscovery() {
     const state = ["live", "interrupted", "pregame", "final"].find(value => states.includes(value)) || "idle";
     return refresh.interval(context.sport, state);
   }));
-  const expiryDelay = Math.min(...automaticRotationEntries
+  const expiryDelay = Math.min(liveMode.nextExpiry(savedConfig.liveModeFinalMinutes) - Date.now(), ...automaticRotationEntries
     .map(entry => entry.autoRetainUntil - Date.now())
     .filter(delay => Number.isFinite(delay) && delay > 0), Infinity);
   const delay = Math.min(providerDelay, expiryDelay);
   clearTimeout(discoveryTimer);
-  discoveryTimer = setTimeout(discoverGames, delay);
+  discoveryTimer = setTimeout(() => discoverGames(expiryDelay > providerDelay), delay);
 }
 
 function entryKey(entry) {

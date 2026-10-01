@@ -6,6 +6,10 @@ Implementation tested on macOS (Darwin 24.6.0, Apple Silicon), Electron 44.5.0, 
 
 - `npm test`: existing sports/configuration/rotation tests plus desktop atomic persistence, restart readback, stale-write conflicts, backup recovery, failed-write rollback, disconnected-monitor bounds, negative monitor coordinates, protocol asset restrictions, origin/Host checks, bearer authentication, command validation, idempotent override expiry/cancellation, public-source restrictions, and app-data catalog refresh with mocked upstream responses.
 - `npm run test:desktop`: actual macOS Electron process, isolated temporary data, deterministic mocked live rendering, Settings and embedded previews, renderer sandbox/context isolation, native always-on-top flag, lock/unlock controls, show/hide/recover, proportional resizing, configuration propagation between windows, and size/lock/visibility/settings retained after relaunch. A second browser client loads the local HTTP OBS output; the test verifies output equality, continued output with desktop hidden, API authorization, duplicate-command handling, override expiry/restoration, and that only the single engine window sends provider requests. This is an HTTP browser-source compatibility test, not a test inside the OBS application. Screenshots inspected for banner and Settings layout.
+- Live mode unit checks simulate finish detection, exact expiry, zero retention,
+  missing/stale discoveries, manual removals, and empty active queues. The desktop
+  smoke test checks its button, game-lock override/restoration, removal persistence,
+  and activation reset plus retention-setting persistence after app restart.
 - Test traffic is mocked. This does not establish current live API availability, logo availability, or feed accuracy.
 
 ## Manual platform checks still required

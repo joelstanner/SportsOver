@@ -10,7 +10,18 @@ Copy the token using **Copy integration token** in Settings. It is generated loc
 
 ## Read authoritative state
 
-`GET /api/v1/state` returns `ready`, `availableEntries`, `automaticEntries`, `queue`, `currentGameKey`, `overrideGameKey`, and `override`. Game keys are `<sport>:<provider-game-id>`; derive them from returned entries' `candidate.sport` and `candidate.id`. Candidate details are provider-specific. Do not guess identifiers or reward mappings.
+`GET /api/v1/state` returns `ready`, `availableEntries`, `automaticEntries`, `queue`, `normalQueue`, `liveMode`, `currentGameKey`, `overrideGameKey`, and `override`. Game keys are `<sport>:<provider-game-id>`; derive them from returned entries' `candidate.sport` and `candidate.id`. Candidate details are provider-specific. Do not guess identifiers or reward mappings.
+
+`normalQueue` is the selected rotation before game locks or Live mode filtering.
+`liveMode` reports `active` and `canActivate`. The Live control button starts Live
+mode only when that rotation contains a live game. Live mode temporarily bypasses
+game locks and shows live rotation games, including games between periods, plus
+games observed finishing during the current Live mode session. It keeps those
+finals for `liveModeFinalMinutes` after SportsOver first detects the finish
+(default 20; Settings accepts 0–1440 whole minutes). Explicit removals persist in
+the saved rotation. Turning Live mode off restores the underlying queue mode and
+locks. Activation and finish timestamps are not saved; app restart disables Live
+mode. Temporary integration overrides still take priority over the rotation.
 
 `GET /api/output` is the read-only passive output snapshot. OBS should use `/output`, not the API directly. Public snapshots contain rendered sports content, never the integration token or user settings.
 

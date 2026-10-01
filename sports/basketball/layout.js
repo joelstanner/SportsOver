@@ -56,7 +56,7 @@
       setTeam(els.homeMark, els.homeAbbr, els.homeRecord, home);
       const showTimeouts = event.state === EVENT_STATES.LIVE || event.state === EVENT_STATES.INTERRUPTED;
       if (event.sport === "college-basketball") {
-        // NCAA carryover and overtime allocations are not a fixed NBA-style row.
+        // Size the NCAA row from the reported count, without assuming an allocation.
         renderCollegeTimeouts(els.awayTimeouts, showTimeouts ? away.timeoutsRemaining : null, away.name);
         renderCollegeTimeouts(els.homeTimeouts, showTimeouts ? home.timeoutsRemaining : null, home.name);
       } else {
@@ -139,11 +139,9 @@
 
   function percent(value) { return value === null || value === undefined ? "—" : `${value}%`; }
   function renderCollegeTimeouts(element, count, teamName) {
-    const visible = Number.isInteger(count) && count >= 0;
-    element.hidden = !visible;
-    element.textContent = visible ? `TO ${count}` : "";
-    if (visible) element.setAttribute("aria-label", `${teamName}: ${count} timeouts remaining`);
-    else element.removeAttribute("aria-label");
+    const remaining = Number.isInteger(count) && count >= 0 ? count : null;
+    // A dim marker distinguishes zero remaining from unavailable data.
+    global.SportsOverlay.timeouts.renderMarkers(element, remaining, Math.max(1, remaining ?? 0), teamName);
   }
   function show(element) { element.hidden = false; }
   function hide(element) { element.hidden = true; }

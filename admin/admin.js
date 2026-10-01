@@ -59,6 +59,11 @@
   let automaticRotationEntries = [];
   let gameDiscoveryRevision = 0;
   let gameDiscoveryTimer = null;
+  const localLiveMode = global.SportsOverlay.liveMode.create();
+  let engineRotationState = null;
+  let changingLiveMode = false;
+  const liveModeButton = document.querySelector("#live-mode");
+  const liveModeFinalMinutes = document.querySelector("#live-mode-final-minutes");
 
   document.querySelectorAll(".tab").forEach(tab => {
     tab.addEventListener("click", () => selectTab(tab.dataset.tab));
@@ -101,6 +106,19 @@
   document.querySelector("#fallback-mode").addEventListener("change", readBehaviorFields);
   document.querySelector("#rotation-mode").addEventListener("change", updateRotationControls);
   document.querySelector("#refresh-games").addEventListener("click", discoverRotationGames);
+  liveModeButton.addEventListener("click", toggleLiveMode);
+  liveModeFinalMinutes.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      if (liveModeFinalMinutes.reportValidity()) liveModeFinalMinutes.blur();
+    }
+  });
+  liveModeFinalMinutes.addEventListener("change", () => {
+    if (!liveModeFinalMinutes.reportValidity()) return;
+    workingConfig.liveModeFinalMinutes = Number(liveModeFinalMinutes.value);
+    scheduleSettingsSave("liveModeFinalMinutes");
+    renderRotationControls();
+  });
   document.querySelectorAll(".discovery-info, .display-mode-info").forEach(info => {
     const button = info.querySelector(".info-button");
     const tooltip = info.querySelector(".info-tooltip");
@@ -320,6 +338,7 @@
     document.querySelector("#display-mode").value = workingConfig.displayMode;
     document.querySelector("#rotation-mode").value = workingConfig.rotationMode;
     document.querySelector("#fallback-mode").value = workingConfig.fallbackMode;
+    if (document.activeElement !== liveModeFinalMinutes) liveModeFinalMinutes.value = workingConfig.liveModeFinalMinutes;
     renderLiveSportPicker();
     renderRotationControls();
     if (recentlyAddedTeamKey) {
@@ -493,12 +512,33 @@
     autoApplyLiveChange(previousLiveConfig, "Queue mode applied");
   }
 
+  function liveModeActive() {
+    return global.sportsDesktop ? engineRotationState?.liveMode?.active === true : localLiveMode.isActive();
+  }
+
+  async function toggleLiveMode() {
+    if (changingLiveMode) return;
+    changingLiveMode = true;
+    liveModeButton.disabled = true;
+    try {
+      const active = !liveModeActive();
+      if (global.sportsDesktop) {
+        await global.sportsDesktop.action("live-mode", active);
+        await discoverRotationGames();
+      } else localLiveMode.setActive(active, normalRotationQueue());
+      renderRotationControls();
+    } catch (error) {
+      document.querySelector("#rotation-status").textContent = error.message;
+    } finally { changingLiveMode = false; renderRotationControls(); }
+  }
+
   async function discoverRotationGames(event) {
     if (global.sportsDesktop) {
       clearTimeout(gameDiscoveryTimer);
       try {
         if (event?.type === 'click') await global.sportsDesktop.action('refresh');
         const state = await global.sportsDesktop.engine();
+        engineRotationState = state;
         automaticRotationEntries = state.automaticEntries;
         availableRotationEntries = state.availableEntries;
         renderRotationControls();
@@ -581,6 +621,18 @@
       }
     });
     document.querySelector("#rotation-mode").value = workingConfig.rotationMode;
+    const active = liveModeActive();
+    liveModeButton.setAttribute("aria-pressed", String(active));
+    const canActivate = global.sportsDesktop ? engineRotationState?.ready && engineRotationState?.liveMode?.canActivate
+      : normalRotationQueue().some(global.SportsOverlay.liveMode.isLive);
+    liveModeButton.disabled = changingLiveMode || (!active && !canActivate);
+    liveModeButton.title = active ? "Turn off Live mode and restore your queue mode and game locks."
+      : canActivate ? "Show only live games from your rotation." : "No live games in rotation.";
+    document.querySelector("#rotation-mode").disabled = active;
+    document.querySelector("#reset-rotation").disabled = active;
+    document.querySelector("#live-mode-note").textContent = active
+      ? `Live mode is on. Queue mode and locks are paused. Finished games stay for ${workingConfig.liveModeFinalMinutes} minutes. Turn off to restore your choices.`
+      : "Show only live games from your rotation. Finished games stay for the time set in Settings.";
     const queue = currentRotationQueue();
     const queueList = document.querySelector("#rotation-queue");
     const availableList = document.querySelector("#available-games");
@@ -588,10 +640,11 @@
     availableList.replaceChildren();
     document.querySelector("#rotation-count").textContent = `${queue.length} game${queue.length === 1 ? "" : "s"}`;
 
-    if (!queue.length) appendRotationEmpty(queueList, availableRotationEntries.length ? "No games selected for the banner." : "Refresh games to build the live queue.");
+    if (!queue.length) appendRotationEmpty(queueList, active ? "No live games in rotation. Live mode is still on."
+      : availableRotationEntries.length ? "No games selected for the banner." : "Refresh games to build the live queue.");
     queue.forEach((entry, index) => renderQueueGame(entry, index, queue, queueList));
 
-    const queuedKeys = new Set(queue.map(rotationEntryKey));
+    const queuedKeys = new Set([...normalRotationQueue(), ...queue].map(rotationEntryKey));
     const sportFilter = document.querySelector("#available-sport-filter").value;
     const search = document.querySelector("#game-search").value.trim().toLowerCase();
     const available = availableRotationEntries
@@ -604,6 +657,13 @@
         || new Date(a.candidate.startTime || 0) - new Date(b.candidate.startTime || 0));
     if (!available.length) appendRotationEmpty(availableList, availableRotationEntries.length ? "No matching current games." : "No games loaded yet.");
     available.forEach(entry => renderAvailableGame(entry, availableList));
+    if (!global.sportsDesktop && active) {
+      const expiry = localLiveMode.nextExpiry(workingConfig.liveModeFinalMinutes);
+      if (Number.isFinite(expiry)) {
+        clearTimeout(gameDiscoveryTimer);
+        gameDiscoveryTimer = setTimeout(renderRotationControls, Math.max(1, expiry - Date.now()));
+      }
+    }
   }
 
   function isSportEnabled(entry) {
@@ -611,6 +671,17 @@
   }
 
   function currentRotationQueue() {
+    if (global.sportsDesktop && liveModeActive()) return (engineRotationState?.queue || [])
+      .filter(isSportEnabled).filter(entry => !workingConfig.excludedGames.includes(rotationEntryKey(entry)));
+    return localLiveMode.update({
+      rotation: normalRotationQueue(), available: availableRotationEntries,
+      excludedKeys: workingConfig.excludedGames,
+      enabledSports: workingConfig.sports.filter(group => group.enabled !== false).map(group => group.sport),
+      rotationOrder: workingConfig.rotationOrder, retentionMinutes: workingConfig.liveModeFinalMinutes,
+    });
+  }
+
+  function normalRotationQueue() {
     return selectionApi.applyRotationControls({
       automaticEntries: automaticRotationEntries.filter(isSportEnabled),
       availableEntries: availableRotationEntries.filter(isSportEnabled),
@@ -643,6 +714,8 @@
     lockButton.textContent = locked ? "Locked" : "Lock";
     lockButton.classList.toggle("is-locked", locked);
     lockButton.setAttribute("aria-pressed", String(locked));
+    lockButton.disabled = liveModeActive();
+    if (liveModeActive()) lockButton.title = "Game locks resume when Live mode is turned off.";
     lockButton.addEventListener("click", () => toggleGameLock(entry));
     card.querySelector(".remove-game").addEventListener("click", () => removeRotationGame(entry));
     list.append(card);
@@ -749,7 +822,7 @@
   function addRotationGame(entry) {
     const previousLiveConfig = savedLiveConfig();
     const key = rotationEntryKey(entry);
-    const currentKeys = currentRotationQueue().map(rotationEntryKey);
+    const currentKeys = normalRotationQueue().map(rotationEntryKey);
     workingConfig.includedGames = [...new Set([...workingConfig.includedGames, key])];
     workingConfig.excludedGames = workingConfig.excludedGames.filter(item => item !== key);
     workingConfig.rotationOrder = [...currentKeys.filter(item => item !== key), key];
@@ -762,7 +835,7 @@
     const key = rotationEntryKey(entry);
     const isAutomatic = automaticRotationEntries.some(candidate => rotationEntryKey(candidate) === key);
     workingConfig.includedGames = workingConfig.includedGames.filter(item => item !== key);
-    workingConfig.excludedGames = isAutomatic
+    workingConfig.excludedGames = isAutomatic || liveModeActive()
       ? [...new Set([...workingConfig.excludedGames, key])]
       : workingConfig.excludedGames.filter(item => item !== key);
     workingConfig.rotationOrder = workingConfig.rotationOrder.filter(item => item !== key);
@@ -775,8 +848,10 @@
 
   function moveRotationGame(queue, index, offset) {
     const previousLiveConfig = savedLiveConfig();
-    const keys = queue.map(rotationEntryKey);
-    [keys[index], keys[index + offset]] = [keys[index + offset], keys[index]];
+    const keys = [...new Set([...normalRotationQueue(), ...queue].map(rotationEntryKey))];
+    const first = keys.indexOf(rotationEntryKey(queue[index]));
+    const second = keys.indexOf(rotationEntryKey(queue[index + offset]));
+    [keys[first], keys[second]] = [keys[second], keys[first]];
     workingConfig.rotationOrder = keys;
     autoApplyLiveChange(previousLiveConfig, "Rotation order applied");
   }

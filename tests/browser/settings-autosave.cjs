@@ -42,6 +42,18 @@ const root = path.resolve(__dirname, '../..');
     await page.getByText('Shared settings initialized.', { exact: true }).waitFor();
     assert.equal(await page.locator('#save-settings').isVisible(), false);
     async function saved() { await page.getByText('Saved automatically. Banner updated.', { exact: true }).waitFor(); }
+    assert.equal(await page.locator('#live-mode-final-minutes').inputValue(), '20');
+    await page.locator('#live-mode-final-minutes').fill('7');
+    await page.locator('#live-mode-final-minutes').press('Enter');
+    await saved();
+    assert.equal(state.config.liveModeFinalMinutes, 7);
+    await page.locator('#live-mode-final-minutes').fill('1.5');
+    await page.locator('#live-mode-final-minutes').press('Enter');
+    assert.equal(await page.locator('#live-mode-final-minutes').evaluate(input => input.validity.valid), false);
+    assert.equal(state.config.liveModeFinalMinutes, 7, 'fractional minutes do not overwrite the saved setting');
+    await page.locator('#live-mode-final-minutes').fill('20');
+    await page.locator('#live-mode-final-minutes').press('Enter');
+    await saved();
     await page.locator('[data-sport="hockey"] .sport-enabled').uncheck();
     await saved();
     assert.equal(state.config.sports.find(group => group.sport === 'hockey').enabled, false);

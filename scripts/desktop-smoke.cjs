@@ -151,7 +151,44 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.some(entry => entry.candidate.sport === 'baseball' && entry.candidate.id === '3'));
     await admin.getByRole('button', { name: 'Live control', exact: true }).click();
     await admin.locator('#rotation-queue [data-game-key="baseball:3"]').waitFor();
+    // Live mode is session-only, filters the full rotation, and pauses game locks.
+    const liveModeButton = admin.locator('#live-mode');
+    assert.equal(await liveModeButton.getAttribute('aria-pressed'), 'false');
+    await admin.locator('#rotation-queue [data-game-key="baseball:3"] .lock-game').click();
+    await engine.waitForFunction(() => window.SportsOverlay.engine.describe().currentGameKey === 'baseball:3');
+    await liveModeButton.click();
+    await engine.waitForFunction(() => window.SportsOverlay.engine.describe().liveMode.active
+      && window.SportsOverlay.engine.describe().queue.length === 1
+      && window.SportsOverlay.engine.describe().currentGameKey === 'baseball:1');
+    assert.equal(await liveModeButton.getAttribute('aria-pressed'), 'true');
+    assert.equal(await admin.locator('#rotation-mode').isDisabled(), true);
+    assert.equal(await admin.locator('#rotation-queue .lock-game').first().isDisabled(), true);
+    await admin.locator('#rotation-queue [data-game-key="baseball:1"]').waitFor();
+    assert.equal(await admin.locator('#rotation-queue [data-game-key="baseball:3"]').count(), 0);
+    assert.deepEqual(await engine.evaluate(() => window.SportsOverlay.config.loadConfig().lockedGameKeys), ['baseball:3']);
+    assert.equal(await admin.locator('#available-games [data-game-key="baseball:3"]').count(), 0, 'filtered upcoming games remain selected, not available to add again');
+    await admin.screenshot({ path: path.join(directory, 'live-mode.png') });
+    await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
+      .find(win => win.webContents.getURL().includes('/admin/')).setSize(700, 500));
+    assert.equal(await admin.evaluate(() => document.body.scrollWidth <= innerWidth), true, 'Live mode fits the minimum settings window width');
+    await admin.screenshot({ path: path.join(directory, 'live-mode-small.png') });
+    await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
+      .find(win => win.webContents.getURL().includes('/admin/')).setSize(1120, 820));
+    await liveModeButton.click();
+    await engine.waitForFunction(() => !window.SportsOverlay.engine.describe().liveMode.active
+      && window.SportsOverlay.engine.describe().currentGameKey === 'baseball:3');
+    await admin.locator('#rotation-mode').selectOption('curated');
+    await engine.waitForFunction(() => !window.SportsOverlay.engine.describe().liveMode.canActivate);
+    await admin.waitForFunction(() => document.querySelector('#live-mode').disabled);
+    assert.equal(await liveModeButton.getAttribute('aria-pressed'), 'false');
+    await assert.rejects(admin.evaluate(() => window.sportsDesktop.action('live-mode', true)), /No live games in rotation/);
+    await admin.locator('#rotation-mode').selectOption('automatic');
+    await engine.waitForFunction(() => window.SportsOverlay.engine.describe().currentGameKey === 'baseball:3');
+    await admin.locator('#rotation-queue [data-game-key="baseball:3"] .lock-game').click();
     await admin.getByRole('button', { name: 'Settings', exact: true }).click();
+    await admin.locator('#live-mode-final-minutes').fill('7');
+    await admin.locator('#live-mode-final-minutes').press('Enter');
+    await engine.waitForFunction(() => window.SportsOverlay.config.loadConfig().liveModeFinalMinutes === 7);
     await admin.locator('[data-team-key="mlb:135"] .remove-team').click();
     await engine.waitForFunction(() => !window.SportsOverlay.engine.describe().queue.some(entry => entry.candidate.sport === 'baseball' && entry.candidate.id === '3'));
     await admin.getByRole('button', { name: 'Live control', exact: true }).click();
@@ -248,8 +285,13 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     assert.equal(await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
       .find(win => win.webContents.getURL().includes('/admin/')).isVisible()), true);
     assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame, 'right-click Settings does not skip');
+    await liveModeButton.click();
+    await engine.waitForFunction(() => window.SportsOverlay.engine.describe().liveMode.active);
     await admin.locator('#rotation-queue [data-game-key="baseball:2"] .remove-game').click();
     await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 1);
+    await liveModeButton.click();
+    await engine.waitForFunction(() => !window.SportsOverlay.engine.describe().liveMode.active
+      && window.SportsOverlay.engine.describe().queue.length === 1);
     await admin.locator('[data-tab="settings"]').click();
     await banner.screenshot({ path: path.join(directory, 'banner.png'), omitBackground: true });
     await admin.screenshot({ path: path.join(directory, 'settings.png') });
@@ -335,6 +377,8 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     await doubleClickBanner(1);
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).scale), 1.25);
     await admin.evaluate(async () => { await window.sportsDesktop.action('lock'); await window.sportsDesktop.action('hide'); });
+    await admin.evaluate(() => window.sportsDesktop.action('live-mode', true));
+    await engine.waitForFunction(() => window.SportsOverlay.engine.describe().liveMode.active);
     await application.close();
     ({ admin, banner, engine } = await launch());
     assert.equal(await admin.evaluate(() => window.SportsOverlay.config.loadConfig().displayMode), 'top-favorite');
@@ -343,6 +387,8 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     assert.equal(await admin.locator('[data-desktop="toggle-lock"]').innerText(), 'Unlock');
     assert.equal(await admin.locator('[data-desktop="toggle-visibility"]').innerText(), 'Show');
     assert.equal(restored.override, null);
+    assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().liveMode.active), false, 'Live mode does not survive app restart');
+    assert.equal(await admin.locator('#live-mode-final-minutes').inputValue(), '7', 'final retention setting survives app restart');
     await admin.locator('[data-desktop="recover"]').click();
     await application.close();
     ({ admin, banner, engine } = await launch(true));

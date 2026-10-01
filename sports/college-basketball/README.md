@@ -25,10 +25,11 @@ Division I media format, teams start with three 30-second and one 60-second time
 only two unused 30-second timeouts carry into the second half. Unused timeouts
 carry into overtime, with one extra 30-second timeout for each overtime. These
 allocations differ from NBA rules and may depend on the game's media format.
-Therefore the display uses an explicit remaining count (`TO n`), never a fixed
-NBA-style row or an estimate from timeouts used/partial play logs. Missing counts
-remain hidden. We do not infer foul bonuses, shot clocks, or possession arrows from
-incomplete data.
+The display uses the same bar symbols as NBA, with one bright bar per explicitly
+reported remaining timeout. Zero remaining shows a single dim bar; missing counts
+remain hidden. The row has no fixed allocation and does not estimate remaining
+timeouts from timeouts used/partial play logs. We do not infer foul bonuses, shot
+clocks, or possession arrows from incomplete data.
 
 Rules references:
 - [NCAA men's playing rules and current rule book](https://www.ncaa.org/championships/playing-rules/mens-basketball-playing-rules/)

@@ -21,6 +21,7 @@
     if (command.type === 'refresh') window.SportsOverlay.engine?.refresh();
     if (command.type === 'next') window.SportsOverlay.engine?.next();
     if (command.type === 'previous') window.SportsOverlay.engine?.previous();
+    if (command.type === 'live-mode') window.SportsOverlay.engine?.setLiveMode(command.active);
     publish();
   });
   setInterval(publish, 100);

@@ -49,6 +49,36 @@ const root = path.resolve(__dirname, '../..');
         assert.equal(await page.locator('#sports-overlay').evaluate(el => el.scrollWidth <= el.clientWidth), true, `${sport} ${state} fits banner`);
       }
       for (const state of ['pregame', 'final']) {
+        if (sport === 'football') {
+          for (const chargersSide of ['away', 'home']) {
+            await page.evaluate(({ state, chargersSide }) => {
+              window.testEvent.state = state;
+              for (const side of ['away', 'home']) {
+                const team = window.testEvent.teams[side];
+                team.name = side === chargersSide ? 'Los Angeles Chargers' : 'Tampa Bay Buccaneers';
+                team.abbreviation = side === chargersSide ? 'LAC' : 'TB';
+                team.score = side === 'away' ? 27 : 24;
+              }
+              window.testLayout.render(window.testEvent);
+            }, { state, chargersSide });
+            for (const [index, side] of ['away', 'home'].entries()) {
+              const label = page.locator(ids[index]);
+              assert.equal(await label.innerText(), side === chargersSide ? 'Los Angeles Chargers' : 'Tampa Bay Buccaneers', `${state} longer ${side} name expands`);
+              assert.equal(await label.evaluate(el => el.scrollWidth <= el.clientWidth), true, `${state} longer ${side} name fits`);
+            }
+          }
+          // Adjustments travel with the engine snapshot used by desktop and OBS.
+          const html = await page.locator('#sports-overlay').evaluate(el => el.outerHTML);
+          const output = await context.newPage();
+          await output.goto('http://overlay.test/display.html');
+          await output.locator('#sports-overlay').evaluate((el, html) => { el.outerHTML = html; }, html);
+          for (const [index, name] of ['Tampa Bay Buccaneers', 'Los Angeles Chargers'].entries()) {
+            assert.equal(await output.locator(ids[index]).innerText(), name);
+            assert.equal(await output.locator(ids[index]).evaluate(el => el.scrollWidth <= el.clientWidth), true, `${state} longer output name fits`);
+          }
+          await output.close();
+          await page.screenshot({ path: `/tmp/sportsover-chargers-${state}.png` });
+        }
         await page.evaluate(state => {
           window.testEvent.state = state;
           window.testEvent.teams.away.name = 'An Extremely Long City and Team Name That Cannot Fit';
@@ -57,6 +87,7 @@ const root = path.resolve(__dirname, '../..');
         }, state);
         for (const [index, side] of ['away', 'home'].entries()) {
           assert.equal(await page.locator(ids[index]).innerText(), await page.evaluate(side => window.testEvent.teams[side].abbreviation, side), `${sport} long ${side} falls back`);
+          assert.equal(await page.locator(ids[index]).evaluate(el => el.style.fontSize + el.style.letterSpacing), '', `${sport} fallback restores typography`);
         }
       }
       // A new matchup must remeasure names; outputs consume the chosen label verbatim.
@@ -65,6 +96,9 @@ const root = path.resolve(__dirname, '../..');
         window.testEvent.teams.home.name = 'Seattle Kraken';
         window.testLayout.render(window.testEvent);
       });
+      for (const id of ids) {
+        assert.equal(await page.locator(id).evaluate(el => el.style.fontSize + el.style.letterSpacing), '', `${sport} shorter matchup restores typography`);
+      }
       const html = await page.locator('#sports-overlay').evaluate(el => el.outerHTML);
       const output = await context.newPage();
       output.on('pageerror', error => errors.push(error.message));

@@ -38,6 +38,7 @@
     rotationSeconds: 10,
     timeZone: "local",
     rotationMode: "automatic",
+    liveModeFinalMinutes: 20,
     includedGames: Object.freeze([]),
     excludedGames: Object.freeze([]),
     rotationOrder: Object.freeze([]),
@@ -127,6 +128,8 @@
         ? Math.min(300, Math.max(5, Math.round(rotationSeconds)))
         : DEFAULT_CONFIG.rotationSeconds,
       rotationMode: ROTATION_MODES.has(source.rotationMode) ? source.rotationMode : DEFAULT_CONFIG.rotationMode,
+      liveModeFinalMinutes: typeof source.liveModeFinalMinutes === "number" && Number.isFinite(source.liveModeFinalMinutes)
+        ? Math.min(1440, Math.max(0, Math.round(source.liveModeFinalMinutes))) : DEFAULT_CONFIG.liveModeFinalMinutes,
       includedGames: normalizeGameKeys(source.includedGames),
       excludedGames: normalizeGameKeys(source.excludedGames),
       rotationOrder: normalizeGameKeys(source.rotationOrder),

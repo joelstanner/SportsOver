@@ -3,6 +3,26 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.12.0 — 2026-10-01
+
+### Added
+
+- Live Mode filters the selected rotation to live games and temporarily pauses
+  queue mode and game locks. Turning it off restores those choices; it starts off
+  after app restart.
+- Finished games stay in Live Mode for a configurable time after SportsOver
+  detects the finish, defaulting to 20 minutes. Set 0 to remove them immediately.
+
+### Changed
+
+- College basketball timeouts use bright bars for the reported remaining count,
+  a dim bar for zero, and no markers when the count is unavailable.
+
+### Fixed
+
+- Longer pregame and final team names adjust spacing and font size before
+  falling back to abbreviations, preserving full names when they fit.
+
 ## 0.11.2 — 2026-10-01
 
 ### Changed
