@@ -44,7 +44,7 @@ function layoutFixture() {
     return elements.get(id);
   }
   const root = { querySelector: element, querySelectorAll: () => [element('dot1'), element('dot2')] };
-  const scope = { SportsOverlay: { model: { EVENT_STATES: { LIVE:'live', FINAL:'final', PREGAME:'pregame', INTERRUPTED:'interrupted' }, formatGameTime:()=> '1 PM' },
+  const scope = { SportsOverlay: { model: { ...globalThis.SportsOverlay.model, formatGameTime:()=> '1 PM' },
     teamTheme: { apply() {} }, scrolling: { render(view, node, text) { node.textContent = text; } } },
     setTimeout: (fn, ms) => { timers.set(++timerId, { fn, ms }); return timerId; }, clearTimeout: id => timers.delete(id), requestAnimationFrame: fn => fn(), console };
   scope.window = scope;

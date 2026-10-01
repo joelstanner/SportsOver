@@ -34,3 +34,27 @@ test("today is determined in the chosen zone, not the machine zone", () => {
   assert.equal(format("2026-07-01T23:00:00Z", now, "America/Los_Angeles"), "4:00 PM PDT");
   assert.equal(format("2026-07-02T08:00:00Z", now, "America/Los_Angeles"), "Thu, Jul 2 · 1:00 AM PDT");
 });
+
+test("finals identify yesterday in the selected zone and date older games", () => {
+  const format = global.SportsOverlay.model.formatFinalStatus;
+  const now = new Date("2026-10-01T08:00:00Z");
+  const zone = "America/Los_Angeles";
+  assert.equal(format("2026-10-01T02:00:00Z", "FINAL", now, zone), "FINAL · YESTERDAY");
+  assert.equal(format("2026-10-01T07:30:00Z", "FINAL", now, zone), "FINAL");
+  assert.equal(format("2026-10-01T02:00:00Z", "FINAL", now, "UTC"), "FINAL");
+  assert.equal(format("2026-09-29T02:00:00Z", "FINAL", now, zone), "FINAL · SEP 28");
+  assert.equal(format("2025-09-29T02:00:00Z", "FINAL", now, zone), "FINAL · SEP 28, 2025");
+  assert.equal(format("2026-10-01T02:00:00Z", "FINAL / OT", now, zone), "FINAL / OT · YESTERDAY");
+  for (const date of [null, undefined, "invalid"]) assert.equal(format(date, "FULL TIME", now, zone), "FULL TIME");
+});
+
+test("yesterday follows calendar boundaries across DST and the new year", () => {
+  const format = global.SportsOverlay.model.formatFinalStatus;
+  for (const [start, now] of [
+    ["2026-03-08T08:30:00Z", "2026-03-09T07:15:00Z"],
+    ["2026-11-01T07:30:00Z", "2026-11-02T08:15:00Z"],
+    ["2026-12-31T20:00:00Z", "2027-01-01T09:00:00Z"],
+  ]) {
+    assert.equal(format(start, "FINAL", new Date(now), "America/Los_Angeles"), "FINAL · YESTERDAY");
+  }
+});

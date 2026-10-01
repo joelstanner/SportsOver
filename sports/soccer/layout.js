@@ -113,7 +113,7 @@
   }
 
   function statusText(event) {
-    if (event.state === EVENT_STATES.FINAL) return "FULL TIME";
+    if (event.state === EVENT_STATES.FINAL) return global.SportsOverlay.model.formatFinalStatus(event.startTime, "FULL TIME");
     if (event.state === EVENT_STATES.INTERRUPTED) return event.detailedState;
     return formatPregameStart(event.startTime) || event.detailedState;
   }

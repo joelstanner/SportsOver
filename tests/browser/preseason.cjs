@@ -37,6 +37,7 @@ const root = path.resolve(__dirname, '../..');
         await page.evaluate(({ sport, state }) => {
           const api = window.SportsOverlay;
           window.testEvent = api.registry.getDemo(sport, state);
+          window.testEvent.startTime = new Date().toISOString();
           window.testEvent.details.preseason = true;
           window.testLayout?.dispose?.();
           window.testLayout = api.registry.getLayout(sport === 'college-football' ? 'football' : sport).createLayout();
@@ -46,6 +47,18 @@ const root = path.resolve(__dirname, '../..');
         assert.equal(await page.locator('#sports-overlay').evaluate(el => getComputedStyle(el, '::before').content), '"PRESEASON"');
         assert.match(await page.locator('#sports-overlay').getAttribute('aria-label'), /preseason/);
         assert.equal(await page.locator('#sports-overlay').evaluate(el => el.scrollWidth <= el.clientWidth), true);
+        if (state === 'final') {
+          await page.evaluate(() => {
+            const config = window.SportsOverlay.config;
+            config.saveConfig({ ...config.loadConfig(), timeZone: 'UTC' });
+            window.testEvent.startTime = new Date(Date.now() - 86400000).toISOString();
+            window.testLayout.render(window.testEvent);
+          });
+          const status = page.locator(sport === 'baseball' ? '#status' : `#${sport === 'college-football' ? 'football' : sport === 'college-basketball' ? 'basketball' : sport}-status-text`);
+          assert.match(await status.innerText(), / · YESTERDAY$/);
+          assert.equal(await page.locator('#sports-overlay').evaluate(el => el.scrollWidth <= el.clientWidth), true, `${sport} yesterday final fits`);
+          await page.screenshot({ path: `/tmp/sports-yesterday-${sport}.png` });
+        }
         if (state === 'live') await page.screenshot({ path: `/tmp/sports-preseason-${sport}.png` });
         await page.evaluate(() => { window.testEvent.details.preseason = false; window.testLayout.render(window.testEvent); });
         assert.equal(await page.locator('#sports-overlay').evaluate(el => getComputedStyle(el, '::before').content), 'none');
@@ -70,7 +83,7 @@ const root = path.resolve(__dirname, '../..');
         });
         assert.equal(await page.locator('#basketball-away-timeouts').innerText(), 'TO 5', 'overtime counts are not capped at the NBA limit');
         assert.equal(await page.locator('#basketball-home-timeouts').isHidden(), true);
-        await page.evaluate(() => { window.testEvent.state = 'final'; window.testLayout.render(window.testEvent); });
+        await page.evaluate(() => { window.testEvent.state = 'final'; window.testEvent.startTime = new Date().toISOString(); window.testLayout.render(window.testEvent); });
         assert.equal(await page.locator('#basketball-status-text').innerText(), 'FINAL / OT2');
       }
       await page.close();

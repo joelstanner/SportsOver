@@ -168,7 +168,7 @@
       } else if (event.state === EVENT_STATES.FINAL) {
         hideExtendedDetails();
         setScores(event);
-        renderStatus(event, "FINAL", false);
+        renderStatus(event, global.SportsOverlay.model.formatFinalStatus(event.startTime), false);
       } else {
         hideExtendedDetails();
         els.awayScore.textContent = "";

@@ -3,6 +3,14 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.5.1 — 2026-09-30
+
+### Fixed
+
+- Final scores from yesterday now show “YESTERDAY” in all sports; older results
+  show their date. Labels follow the configured time zone and preserve overtime
+  and full-time status text.
+
 ## 0.5.0 — 2026-09-30
 
 ### Added

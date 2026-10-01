@@ -133,7 +133,7 @@
   }
 
   function statusText(event) {
-    if (event.state === EVENT_STATES.FINAL) return "FINAL";
+    if (event.state === EVENT_STATES.FINAL) return global.SportsOverlay.model.formatFinalStatus(event.startTime);
     if (event.state === EVENT_STATES.INTERRUPTED) return event.detailedState;
     return formatPregameStart(event.startTime) || event.detailedState;
   }

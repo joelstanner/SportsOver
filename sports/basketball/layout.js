@@ -125,8 +125,9 @@
 
   function statusText(event) {
     if (event.state === EVENT_STATES.FINAL) {
-      return event.sport === "college-basketball" && /^OT/.test(event.details.period || "")
+      const label = event.sport === "college-basketball" && /^OT/.test(event.details.period || "")
         ? `FINAL / ${event.details.period}` : "FINAL";
+      return global.SportsOverlay.model.formatFinalStatus(event.startTime, label);
     }
     if (event.state === EVENT_STATES.INTERRUPTED) return event.detailedState;
     return formatPregameStart(event.startTime) || event.detailedState;

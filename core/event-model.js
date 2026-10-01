@@ -85,6 +85,25 @@
     return `${day} · ${time}`;
   }
 
+  function formatFinalStatus(isoDate, label = "FINAL", now = new Date(), timeZone = selectedTimeZone()) {
+    const date = new Date(isoDate || "invalid");
+    if (Number.isNaN(date.getTime())) return label;
+    // Compare calendar days in the display zone, including 23/25-hour DST days.
+    const calendar = new Intl.DateTimeFormat("en-US", { timeZone, year: "numeric", month: "numeric", day: "numeric" });
+    const dayNumber = value => {
+      const parts = Object.fromEntries(calendar.formatToParts(value).map(part => [part.type, part.value]));
+      return Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)) / 86400000;
+    };
+    const age = dayNumber(now) - dayNumber(date);
+    if (age <= 0) return label;
+    const day = age === 1 ? "YESTERDAY" : new Intl.DateTimeFormat("en-US", {
+      timeZone, month: "short", day: "numeric",
+      ...(calendar.formatToParts(date).find(part => part.type === "year").value
+        !== calendar.formatToParts(now).find(part => part.type === "year").value ? { year: "numeric" } : {}),
+    }).format(date).toUpperCase();
+    return `${label} · ${day}`;
+  }
+
   global.SportsOverlay = global.SportsOverlay || {};
-  global.SportsOverlay.model = Object.freeze({ EVENT_STATES, createEvent, validateEvent, espnPreseason, formatPregameStart, formatGameTime });
+  global.SportsOverlay.model = Object.freeze({ EVENT_STATES, createEvent, validateEvent, espnPreseason, formatPregameStart, formatGameTime, formatFinalStatus });
 })(typeof window === "undefined" ? globalThis : window);
