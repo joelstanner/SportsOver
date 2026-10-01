@@ -1,6 +1,10 @@
 # SportsOver application artwork
 
-`SportsOver.png` is a 1024 × 1024 navy/cyan scoreboard icon derived from the existing status-item design. It is used for the running Dock icon, About panel, and Settings window where supported. It may be replaced with approved branding at the same path.
+`SportsOver.png` is the approved 1254 × 1254 retro Pong-style football icon:
+navy background, cyan court and center line, white pixel paddles, a brown
+football, and a 6–9 score. It is used for the running Dock icon, About panel,
+and Settings window where supported. macOS builds generate the required icon
+sizes from this source image.
 
 The status item keeps the compact 1×/2× monochrome scoreboard glyph. Extra text is intentionally omitted to save room near MacBook camera notches.
 

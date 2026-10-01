@@ -3,6 +3,14 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.13.1 — 2026-10-01
+
+### Changed
+
+- Replaced the app icon with the approved retro Pong-style football artwork,
+  featuring pixel paddles, a cyan court, and a 6–9 score. The new artwork is
+  included in the desktop app and macOS installers.
+
 ## 0.13.0 — 2026-10-01
 
 ### Added

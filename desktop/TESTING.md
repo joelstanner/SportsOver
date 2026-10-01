@@ -62,3 +62,14 @@ Native Intel execution, the minimum macOS version on actual hardware,
 browser-download quarantine/first-launch approval, and upgrading a real prior
 installation still require manual verification. Signing and disk-image integrity
 checks do not prove Gatekeeper acceptance or Apple notarization.
+
+## Icon release verification — 0.13.1, 2026-10-01
+
+- All 173 unit tests passed; the local app and both DMGs were rebuilt at 0.13.1.
+- Both mounted installers contained the exact approved football PNG, with
+  matching generated macOS icons. The extracted 1024-pixel icon was visually
+  checked for the football artwork and 6–9 score.
+- Installer checksums, signatures, bundle metadata, architecture, and content
+  checks passed. The Apple Silicon copy installed from the DMG passed the
+  desktop/shared-engine smoke suite after ejecting the disk images.
+- The platform and downloaded-app manual checks listed above remain pending.
