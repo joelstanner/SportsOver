@@ -3,6 +3,14 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.7.2 — 2026-09-30
+
+### Fixed
+
+- Banner dragging validates native coordinate limits and normalizes negative
+  zero before moving the window. Invalid gestures cancel without moving the
+  banner or skipping a game.
+
 ## 0.7.1 — 2026-09-30
 
 ### Changed

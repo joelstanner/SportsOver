@@ -125,6 +125,26 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     const afterDrag = await bannerBounds();
     assert.ok(afterDrag.x !== beforeDrag.x || afterDrag.y !== beforeDrag.y, 'dragging moves the native window');
     assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame, 'drag release does not skip');
+    await banner.evaluate(async origin => {
+      const send = value => window.sportsDesktop.action('banner-pointer', value);
+      await send({ phase: 'start', x: 0, y: 0 });
+      await send({ phase: 'move', x: -origin.x - 0.2, y: -origin.y - 0.2 });
+      await send({ phase: 'end', x: -origin.x - 0.2, y: -origin.y - 0.2 });
+    }, afterDrag);
+    const fractionalBounds = await bannerBounds();
+    assert.equal(fractionalBounds.x, 0, 'fractional drag reaches x=0 without a native conversion error');
+    // macOS may constrain y=0 below its menu bar.
+    await banner.evaluate(async () => {
+      const send = value => window.sportsDesktop.action('banner-pointer', value);
+      for (const point of [{ x: Number.MAX_VALUE, y: 0 }, { x: 0, y: Number.MAX_VALUE }]) {
+        await send({ phase: 'start', x: 0, y: 0 });
+        await send({ phase: 'move', ...point });
+        await send({ phase: 'end', x: 0, y: 0 });
+      }
+    });
+    const safeBounds = await bannerBounds();
+    assert.deepEqual(safeBounds, fractionalBounds, 'invalid coordinates do not move the native window');
+    assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame, 'invalid gestures never skip');
     await application.evaluate(({ Menu, BrowserWindow }) => {
       const build = Menu.buildFromTemplate;
       Menu.buildFromTemplate = function(template) {

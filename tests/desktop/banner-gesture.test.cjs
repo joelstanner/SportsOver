@@ -35,3 +35,41 @@ test('cancellation prevents advancement and a new gesture still works', () => {
   f.send('start'); f.send('end');
   assert.equal(f.skips.length, 1);
 });
+
+test('invalid pointer coordinates cancel the gesture without a native move or skip', () => {
+  for (const invalid of [NaN, Infinity, -Infinity, Number.MAX_VALUE, 2147483648, -2147483649, '10', null]) {
+    for (const axis of ['x', 'y']) {
+      const moves = [], skips = [];
+      const gesture = createBannerGesture({ bounds: () => ({ x: 0, y: 0 }),
+        move: (...point) => moves.push(point), next: () => skips.push(true) });
+      gesture({ phase: 'start', x: 0, y: 0 });
+      gesture({ phase: 'move', x: 10, y: 10, [axis]: invalid });
+      gesture({ phase: 'end', x: 0, y: 0 });
+      assert.deepEqual(moves, []);
+      assert.deepEqual(skips, []);
+      gesture({ phase: 'start', x: 0, y: 0 });
+      gesture({ phase: 'end', x: 0, y: 0 });
+      assert.equal(skips.length, 1);
+    }
+  }
+});
+
+test('derived coordinates cannot overflow the native integer range', () => {
+  for (const origin of [{ x: 2147483640, y: 0 }, { x: 0, y: -2147483640 }, { x: undefined, y: 0 }]) {
+    const moves = [], skips = [];
+    const gesture = createBannerGesture({ bounds: () => origin, move: (...point) => moves.push(point), next: () => skips.push(true) });
+    gesture({ phase: 'start', x: 0, y: 0 });
+    gesture({ phase: 'move', x: 20, y: -20 });
+    gesture({ phase: 'end', x: 0, y: 0 });
+    assert.deepEqual(moves, []);
+    assert.deepEqual(skips, []);
+  }
+});
+
+test('fractional drag coordinates round to integers and canonicalize negative zero', () => {
+  const moves = [];
+  const gesture = createBannerGesture({ bounds: () => ({ x: -10, y: -10 }), move: (...point) => moves.push(point), next() {} });
+  gesture({ phase: 'start', x: 0, y: 0 });
+  gesture({ phase: 'move', x: 9.8, y: 9.6 });
+  assert.deepEqual(moves, [[0, 0]]);
+});
