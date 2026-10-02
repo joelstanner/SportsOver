@@ -12,6 +12,8 @@ const bundle = path.join(staging, 'SportsOver.app');
 try {
   const runtime = path.resolve(require('electron'), '../../..');
   execFileSync('/usr/bin/ditto', [runtime, bundle]);
+  fs.renameSync(path.join(bundle, 'Contents', 'MacOS', 'Electron'),
+    path.join(bundle, 'Contents', 'MacOS', 'SportsOver'));
   const resources = path.join(bundle, 'Contents', 'Resources');
   const appRoot = path.join(resources, 'app');
   fs.mkdirSync(appRoot, { recursive: true });
@@ -28,7 +30,7 @@ try {
   }
   execFileSync('/usr/bin/iconutil', ['-c', 'icns', iconset, '-o', path.join(resources, 'SportsOver.icns')]);
   const plist = path.join(bundle, 'Contents', 'Info.plist');
-  for (const [key, value] of Object.entries({ CFBundleName: 'SportsOver', CFBundleDisplayName: 'SportsOver', CFBundleIdentifier: 'com.sportsover.desktop', CFBundleIconFile: 'SportsOver.icns', CFBundleShortVersionString: require('../package.json').version, CFBundleVersion: require('../package.json').version })) {
+  for (const [key, value] of Object.entries({ CFBundleName: 'SportsOver', CFBundleDisplayName: 'SportsOver', CFBundleExecutable: 'SportsOver', CFBundleIdentifier: 'com.sportsover.desktop', CFBundleIconFile: 'SportsOver.icns', CFBundleShortVersionString: require('../package.json').version, CFBundleVersion: require('../package.json').version, LSApplicationCategoryType: 'public.app-category.sports' })) {
     execFileSync('/usr/libexec/PlistBuddy', ['-c', `Set :${key} ${value}`, plist]);
   }
   execFileSync('/usr/bin/codesign', ['--force', '--deep', '--sign', '-', bundle], { stdio: 'inherit' });

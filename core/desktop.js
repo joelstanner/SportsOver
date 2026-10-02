@@ -4,7 +4,7 @@
   if (!api || window.top !== window) return;
   if (new URLSearchParams(location.search).has('desktop')) {
     document.body.classList.add('desktop-banner');
-    document.body.title = 'Left 20%: previous game · Elsewhere: next game · Double-click left half: smaller / right half: bigger · Drag to move · Right-click for Settings';
+    document.body.title = 'Left 20%: previous game · Elsewhere: next game · When unlocked: double-click left half to shrink / right half to enlarge, drag to move · Right-click for Settings and position lock';
     let pointerId = null;
     const sendPointer = (phase, event) => api.action('banner-pointer', {
       phase, x: event.screenX, y: event.screenY,
@@ -65,12 +65,12 @@
       <label class="field">Banner size<select id="desktop-size"><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option><option value="3">300%</option></select></label>
     </div>
     <div class="desktop-info-guide">
-      <h3>When the banner is unlocked</h3>
+      <h3>Banner controls</h3>
       <dl class="desktop-gestures">
         <div><dt>Browse games <span>Click</span></dt><dd>Leftmost 20%: previous item. Anywhere else: next item.</dd></div>
-        <div><dt>Resize <span>Double-click</span></dt><dd>Left half: smaller. Right half: bigger. Size ranges from 50% to 300%.</dd></div>
-        <div><dt>Move <span>Drag</span></dt><dd>Click anywhere and drag to reposition. Dragging and resizing keep the current game.</dd></div>
-        <div><dt>Open Settings <span>Right-click</span></dt><dd>Right-click the banner, then choose Settings to reopen this window.</dd></div>
+        <div><dt>Resize <span>Double-click</span></dt><dd>When unlocked: left half makes it smaller; right half makes it bigger. Size ranges from 50% to 300%.</dd></div>
+        <div><dt>Move <span>Drag</span></dt><dd>When unlocked: click anywhere and drag to reposition. Dragging and resizing keep the current game.</dd></div>
+        <div><dt>Banner menu <span>Right-click</span></dt><dd>Open Settings, lock or unlock the banner position, or hide the banner.</dd></div>
       </dl>
       <p class="desktop-info-note">Browsing wraps around and restarts the display timer. Clicks pause briefly to detect double-clicks. Game locks and temporary overrides still apply.</p>
     </div>
@@ -102,12 +102,12 @@
     const lockState = section.querySelector('#desktop-lock-state');
     lockState.textContent = value.locked ? 'Locked' : 'Unlocked';
     lockState.dataset.state = value.locked ? 'locked' : 'unlocked';
-    section.querySelector('#desktop-lock-hint').textContent = value.locked ? 'Clicks pass through to the app beneath.' : 'Lock the banner to let clicks pass through.';
+    section.querySelector('#desktop-lock-hint').textContent = value.locked ? 'Position locked. Click to browse games or right-click for the menu.' : 'Lock the banner to prevent dragging and double-click resizing.';
     section.querySelector('#desktop-recovery').innerHTML = value.shortcut ? 'Recover position <kbd>Ctrl/Cmd + Shift + U</kbd>' : 'Recovery shortcut unavailable. Use Recover position or the tray menu.';
     showWarning(value.warning);
     lockButton.textContent = value.locked ? 'Unlock' : 'Lock';
     lockButton.dataset.state = value.locked ? 'locked' : 'unlocked';
-    lockButton.title = value.locked ? 'Banner locked. Unlock to move, resize, and navigate games.' : 'Banner unlocked. Lock so clicks pass through to the app beneath.';
+    lockButton.title = value.locked ? 'Banner position locked. Unlock to drag or double-click to resize.' : 'Lock banner position. Game browsing and the right-click menu remain available.';
     visibilityButton.textContent = value.visible ? 'Hide' : 'Show';
     visibilityButton.dataset.state = value.visible ? 'visible' : 'hidden';
     visibilityButton.title = value.visible ? 'Banner visible. Hide the desktop banner; OBS continues displaying games.' : 'Banner hidden. Show the desktop banner.';

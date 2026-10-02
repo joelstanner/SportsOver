@@ -3,14 +3,23 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
-## 0.15.1 — 2026-10-01
+## 0.16.0 — 2026-10-01
 
 ### Changed
 
+- The desktop lock now holds banner position and prevents double-click resizing
+  while keeping game browsing and the right-click menu available. It no longer
+  passes clicks through to the application underneath.
+- The banner's right-click menu includes a position-lock checkbox and Hide banner.
 - The rotation-list item currently shown in the banner has a subtle teal glow
   that follows the rendered game and clears when the engine is unavailable.
 - Live and final team games show scores in the game lists, including live
   games outside the rotation. Missing scores are omitted.
+
+### Fixed
+
+- The local Mac app uses the SportsOver executable name as well as the
+  SportsOver bundle name, matching the downloadable installers.
 
 ## 0.15.0 — 2026-10-01
 

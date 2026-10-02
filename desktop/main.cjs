@@ -21,10 +21,10 @@ let appIcon, trayIcon, outputServer, engineWindow, obsUrl, integrationToken, las
 let banner, settings, tray, store, quitting = false, locked = false, shortcut = false, saveTimer;
 const bannerGesture = createBannerGesture({
   bounds: () => banner.getBounds(),
-  move: (x, y) => banner.setPosition(x, y),
+  move: (x, y) => { if (!locked) banner.setPosition(x, y); },
   next: () => engineWindow.webContents.send('engine:command', { type: 'next' }),
   previous: () => engineWindow.webContents.send('engine:command', { type: 'previous' }),
-  resize: direction => resize(stepBannerScale(banner.getBounds().width / 472, direction)),
+  resize: direction => { if (!locked) resize(stepBannerScale(banner.getBounds().width / 472, direction)); },
 });
 const root = path.resolve(__dirname, '..');
 const trusted = url => url.startsWith(`${ORIGIN}/sports/`);
@@ -42,11 +42,11 @@ function persist(patch) {
 function lock(value) {
   bannerGesture({ phase: 'cancel' });
   locked = !!value;
-  banner.setIgnoreMouseEvents(locked, { forward: true });
   persist({ locked });
   menus();
 }
 function showBanner() { backgroundStartup = false; banner.showInactive(); persist({ visible: true }); menus(); }
+function hideBanner() { banner.hide(); persist({ visible: false }); menus(); }
 function recover() {
   if (banner.webContents.isCrashed()) banner.webContents.reload();
   lock(false);
@@ -66,8 +66,8 @@ function menus() {
   const updateItem = updateChecker.menuItem();
   const controls = [
     { id: 'settings', label: 'Settings…', accelerator: 'CommandOrControl+,', click: openSettings },
-    { id: 'toggle-banner', label: banner?.isVisible() ? 'Hide banner' : 'Show banner', click: () => { if (banner.isVisible()) { banner.hide(); persist({ visible: false }); menus(); } else showBanner(); } },
-    { id: 'lock-banner', label: 'Lock / click through', type: 'checkbox', checked: locked, click: item => lock(item.checked) },
+    { id: 'toggle-banner', label: banner?.isVisible() ? 'Hide banner' : 'Show banner', click: () => { if (banner.isVisible()) hideBanner(); else showBanner(); } },
+    { id: 'lock-banner', label: 'Lock banner position', type: 'checkbox', checked: locked, click: item => lock(item.checked) },
     { id: 'recover-banner', label: 'Recover banner (unlock and reposition)', accelerator: 'CommandOrControl+Shift+U', click: recover },
     { label: 'Banner size', submenu: [0.75, 1, 1.25, 1.5, 2].map(scale => ({ label: `${Math.round(scale * 100)}%`, click: () => resize(scale) })) },
     { type: 'separator' }, updateItem,
@@ -154,12 +154,16 @@ else {
     banner.on('hide', () => bannerGesture({ phase: 'cancel' }));
     banner.webContents.on('context-menu', () => {
       bannerGesture({ phase: 'cancel' });
-      if (locked) return;
-      Menu.buildFromTemplate([{ label: 'Settings…', click: openSettings }, updateChecker.menuItem()]).popup({ window: banner });
+      Menu.buildFromTemplate([
+        { label: 'Settings…', click: openSettings },
+        { id: 'lock-banner', label: 'Lock banner position', type: 'checkbox', checked: locked, click: item => lock(item.checked) },
+        { id: 'hide-banner', label: 'Hide banner', click: hideBanner },
+        updateChecker.menuItem(),
+      ]).popup({ window: banner });
     });
     banner.setAlwaysOnTop(true, 'floating');
     if (process.platform === 'darwin') banner.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
-    banner.on('close', event => { if (!quitting) { event.preventDefault(); banner.hide(); persist({ visible: false }); menus(); } });
+    banner.on('close', event => { if (!quitting) { event.preventDefault(); hideBanner(); } });
     const saveBounds = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => persist({ bounds: banner.getBounds() }), 250); };
     banner.on('move', saveBounds);
     banner.on('resize', saveBounds);
@@ -209,20 +213,20 @@ else {
       else if (action === 'lock') lock(true);
       else if (action === 'toggle-lock') lock(!locked);
       else if (action === 'toggle-visibility') {
-        if (banner.isVisible()) { banner.hide(); persist({ visible: false }); menus(); }
+        if (banner.isVisible()) hideBanner();
         else showBanner();
       }
       else if (action === 'show') showBanner();
-      else if (action === 'hide') { banner.hide(); persist({ visible: false }); menus(); }
+      else if (action === 'hide') hideBanner();
       else if (action === 'recover') recover();
       else if (action === 'size') resize(value);
       else if (action === 'settings') openSettings();
       else if (action === 'banner-pointer') {
         if (event.sender !== banner.webContents) throw Error('Banner access required');
-        if (!locked) bannerGesture(value);
+        bannerGesture(value);
       }
       else if (action === 'next') {
-        if (!locked) engineWindow.webContents.send('engine:command', { type: 'next' });
+        engineWindow.webContents.send('engine:command', { type: 'next' });
       }
       else if (action === 'copy-obs') { if (obsUrl) clipboard.writeText(obsUrl); }
       else if (action === 'copy-token') {
@@ -258,7 +262,6 @@ else {
     await engineWindow.loadURL(`${ORIGIN}/sports/index.html?engine=1`);
     await banner.loadURL(`${ORIGIN}/sports/display.html?desktop=1`);
     locked = !!store.value.desktop.locked;
-    banner.setIgnoreMouseEvents(locked, { forward: true });
     if (!backgroundStartup && store.value.desktop.visible !== false) banner.showInactive();
     menus();
     if (!backgroundStartup) openSettings();
