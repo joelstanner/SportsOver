@@ -215,6 +215,12 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey === key, skippedGame);
 
     const doubleClickBanner = async direction => {
+      const width = await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
+        .find(win => win.webContents.getURL().includes('display.html?desktop')).getContentBounds().width);
+      // Native resizing completes before the renderer necessarily receives it.
+      // Measure click coordinates only after its viewport and CSS zoom catch up.
+      await banner.waitForFunction(width => window.innerWidth === width
+        && Math.abs(Number(document.body.style.zoom) - width / 472) < 0.001, width);
       const box = await banner.locator('.scorebug').boundingBox();
       await banner.locator('.scorebug').dblclick({ position: { x: box.width * (direction > 0 ? 0.75 : 0.25), y: box.height / 2 } });
       // Let any incorrectly retained single-click timer fire before checking.
