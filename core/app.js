@@ -27,6 +27,7 @@ let lastEventState = "idle";
 let pollGeneration = 0;
 let rotationGeneration = 0;
 
+const pdgaSession = window.SportsOverlay.pdga?.createSession();
 let sportContexts = savedConfig.sports
   .filter(group => !requestedSport || group.sport === requestedSport)
   .map(group => createSportContext(group))
@@ -56,6 +57,7 @@ const liveMode = window.SportsOverlay.liveMode.create();
 // The desktop host is the sole live engine. Outputs receive rendered snapshots.
 window.SportsOverlay.engine = {
   describe: () => ({
+    discoveryFailures: (cachedDiscoveries || []).reduce((total, result) => total + (result.failures || 0), 0),
     availableEntries: (cachedDiscoveries || []).flatMap(result => result.availableEntries).map(publicEntry),
     automaticEntries: automaticRotationEntries.map(publicEntry),
     queue: rotationQueue.map(publicEntry),
@@ -77,7 +79,7 @@ window.SportsOverlay.engine = {
     const previousKey = entryKey(rotationQueue[currentIndex]);
     rotationQueue = selectedRotationQueue((cachedDiscoveries || []).flatMap(result => result.availableEntries));
     currentIndex = Math.max(0, rotationQueue.findIndex(entry => entryKey(entry) === previousKey));
-    return discoverGames(false);
+    return discoverGames(sportContexts.some(context => context.sport === "disc-golf"));
   },
   override(value) {
     overrideEntry = value ? (cachedDiscoveries || []).flatMap(result => result.availableEntries)
@@ -109,7 +111,7 @@ function createSportContext(group) {
   if (group.sport === "disc-golf") {
     const providerModule = window.SportsOverlay.registry.getProvider("pdga");
     return { sport: group.sport, league: "PDGA", providerModule,
-      provider: providerModule.createClient({ watches: group.events, requestTimeoutMs: CONFIG.requestTimeoutMs,
+      provider: providerModule.createClient({ watches: group.events, autoFollow: group.autoFollow, autoDivisions: group.autoDivisions, session: pdgaSession, requestTimeoutMs: CONFIG.requestTimeoutMs,
         fetchImpl: refresh.fetchFor(group.sport, providerModule) }) };
   }
   const favoriteTeams = group.favorites
@@ -298,7 +300,9 @@ function selectedRotationQueue(availableEntries) {
 
 async function discoverSport(context) {
   if (context.sport === "disc-golf") {
-    const result = await context.provider.discover({ topFavoriteOnly: savedConfig.displayMode === "top-favorite" });
+    const result = await context.provider.discover({ topFavoriteOnly: savedConfig.displayMode === "top-favorite",
+      fallbackMode: savedConfig.fallbackMode, excludedKeys: savedConfig.excludedGames,
+      retentionMs: liveMode.isActive() ? savedConfig.liveModeFinalMinutes * 60_000 : 60 * 60_000 });
     return { failures: result.failures, automaticEntries: result.automaticEntries.map(entry => ({ ...entry, context })),
       availableEntries: result.availableEntries.map(entry => ({ ...entry, context })) };
   }
@@ -479,7 +483,7 @@ function scheduleDiscovery() {
     .filter(delay => Number.isFinite(delay) && delay > 0), Infinity);
   const delay = Math.min(providerDelay, expiryDelay);
   clearTimeout(discoveryTimer);
-  discoveryTimer = setTimeout(() => discoverGames(expiryDelay > providerDelay), delay);
+  discoveryTimer = setTimeout(() => discoverGames(expiryDelay > providerDelay || sportContexts.some(context => context.sport === "disc-golf")), delay);
 }
 
 function entryKey(entry) {
@@ -500,7 +504,9 @@ if (!staticPreview) {
     const timingChanged = JSON.stringify(savedConfig.gameDurations) !== JSON.stringify(snapshot.config.gameDurations)
       || JSON.stringify(savedConfig.defaultGameDurations) !== JSON.stringify(snapshot.config.defaultGameDurations);
     const teamsChanged = JSON.stringify(savedConfig.sports) !== JSON.stringify(snapshot.config.sports);
-    const selectionChanged = savedConfig.fallbackMode !== snapshot.config.fallbackMode || savedConfig.displayMode !== snapshot.config.displayMode;
+    const pdgaSelectionChanged = savedConfig.liveModeFinalMinutes !== snapshot.config.liveModeFinalMinutes
+      || JSON.stringify(savedConfig.excludedGames) !== JSON.stringify(snapshot.config.excludedGames);
+    const selectionChanged = pdgaSelectionChanged || savedConfig.fallbackMode !== snapshot.config.fallbackMode || savedConfig.displayMode !== snapshot.config.displayMode;
     Object.assign(savedConfig, window.SportsOverlay.config.normalizeConfig(snapshot.config));
     CONFIG.includeSpotlight = savedConfig.displayMode !== "top-favorite";
     CONFIG.showNoGameMessage = savedConfig.fallbackMode !== "hide";
@@ -528,7 +534,8 @@ if (!staticPreview) {
       clearTimeout(pollTimer); pollGeneration++;
       const separator = renderedGameKey?.indexOf(":");
       if (renderedGameKey && !window.SportsOverlay.config.isCandidateEnabled(savedConfig,
-        { sport: renderedGameKey.slice(0, separator), id: renderedGameKey.slice(separator + 1) })) {
+        (cachedDiscoveries || []).flatMap(result => result.availableEntries).find(entry => entryKey(entry) === renderedGameKey)?.candidate
+          || { sport: renderedGameKey.slice(0, separator), id: renderedGameKey.slice(separator + 1) })) {
         renderedGameKey = null;
         layout.renderNoEvent(sportContexts.length ? "Updating selected sports…" : "No sports enabled", CONFIG.showNoGameMessage);
       }

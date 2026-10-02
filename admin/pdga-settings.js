@@ -13,6 +13,19 @@
   }
   function render(container, group, changed, fetchImpl) {
     const client = global.SportsOverlay.pdga.createClient({ fetchImpl });
+    const automatic = document.createElement("div");
+    automatic.className = "pdga-watch-card";
+    automatic.innerHTML = `<label class="toggle"><input type="checkbox" class="pdga-auto-follow">Automatically follow the pro tour</label>
+      <p>Follow one Elite Series or Major tournament through live rounds and round breaks. Manual watches keep their saved views. With nothing live, your fallback setting applies.</p>
+      <div class="pdga-watch-controls"><label class="toggle"><input type="checkbox" class="pdga-auto-division" value="MPO">MPO</label><label class="toggle"><input type="checkbox" class="pdga-auto-division" value="FPO">FPO</label></div>
+      <p>Discovered divisions are labeled Automatic in Live control. Exclude them there, or choose Watch division to keep them in your watch list.</p>`;
+    const toggle = automatic.querySelector(".pdga-auto-follow");
+    toggle.checked = group.autoFollow;
+    toggle.onchange = () => { group.autoFollow = toggle.checked; changed(); };
+    automatic.querySelectorAll(".pdga-auto-division").forEach(input => {
+      input.checked = group.autoDivisions.includes(input.value);
+      input.onchange = () => { group.autoDivisions = [...automatic.querySelectorAll(".pdga-auto-division:checked")].map(item => item.value); changed(); };
+    });
     const list = document.createElement("div");
     const builder = document.createElement("div");
     builder.className = "pdga-watch-builder";
@@ -114,7 +127,7 @@
         updateView(); list.append(row);
       });
     }
-    container.replaceChildren(list, builder); renderList();
+    container.replaceChildren(automatic, list, builder); renderList();
   }
   global.SportsOverlay.pdgaSettings = { render, tournamentId };
 })(typeof window === "undefined" ? globalThis : window);

@@ -46,7 +46,8 @@
     const current = roundState(round.scores);
     // A completed intermediate round is a break, not a finished tournament.
     const finalRound = number(metadata.FinalRound) || number(metadata.Rounds);
-    const state = current === "final" && (!finalRound || roundNumber < finalRound) ? "interrupted" : current;
+    const state = (current === "final" && (!finalRound || roundNumber < finalRound))
+      || (current === "pregame" && roundNumber > 1) ? "interrupted" : current;
     return global.SportsOverlay.model.createEvent({
       id: `${watch.tournamentId}:${watch.division}`, sport: "disc-golf", league: "PDGA", competitionType: "individual",
       state, detailedState: state === "interrupted" ? "Round complete" : state === "pregame" ? "Awaiting scores" : state === "final" ? "Final" : "Live",
@@ -57,7 +58,7 @@
         tournamentId: watch.tournamentId, division: watch.division, round: roundNumber,
         name: metadata.SimpleName || metadata.Name || watch.name, dateRange: metadata.DateRange || metadata.StartDate || "",
         view: watch.view || "leaderboard", playerId: watch.playerId || "", layouts: round.layouts || [],
-        stale: false,
+        stale: false, automatic: watch.automatic === true,
       },
     });
   }
@@ -65,19 +66,52 @@
     return { id: event.id, sport: "disc-golf", competitionType: "individual", state: event.state, startTime: null,
       teamKeys: [], competitorKeys: event.competitors.map(player => player.pdgaNumber).filter(Boolean),
       raw: { name: event.details.name, division: event.details.division, round: event.details.round,
-        dateRange: event.details.dateRange, stale: event.details.stale, detailedState: event.detailedState } };
+        dateRange: event.details.dateRange, stale: event.details.stale, automatic: event.details.automatic, detailedState: event.detailedState } };
   }
-  function createClient({ watches = [], fetchImpl = global.fetch.bind(global), requestTimeoutMs = 8000 } = {}) {
+  const DIRECTORY_INTERVAL = 15 * 60_000;
+  function createSession() {
+    return { directory: [], directoryAt: -Infinity, directoryPending: null,
+      selected: null, watches: new Map(), requests: new Map(), active: 0, waiting: [] };
+  }
+  function proTourEvents(directory, now) {
+    const day = 86400_000;
+    return directory.filter(item => /^[1-9]\d{0,8}$/.test(String(item.tournId))
+      && ["ES", "M"].includes(String(item.tier).toUpperCase())
+      && (!item.eventType || ["S", "E"].includes(item.eventType))
+      && Date.parse(item.startDate) <= now + 7 * day
+      && Date.parse(item.endDate || item.startDate) >= now - 7 * day)
+      .sort((a, b) => (a.tier === "M" ? 0 : 1) - (b.tier === "M" ? 0 : 1)
+        || Math.abs(Date.parse(a.startDate) - now) - Math.abs(Date.parse(b.startDate) - now)
+        || String(a.tournId).localeCompare(String(b.tournId))).slice(0, 12);
+  }
+  function createClient({ watches = [], autoFollow = false, autoDivisions = ["MPO", "FPO"],
+    session = createSession(), now = Date.now, fetchImpl = global.fetch.bind(global), requestTimeoutMs = 8000 } = {}) {
+    // Share in-flight metadata across divisions and bound all requests, including
+    // rendering requests that overlap discovery, to three per engine session.
     async function get(url) {
-      const response = await fetchImpl(url, { signal: AbortSignal.timeout(requestTimeoutMs) });
-      if (!response.ok) { const error = Error(`PDGA returned HTTP ${response.status}`); error.status = response.status; throw error; }
-      return response.json();
+      if (session.requests.has(url)) return session.requests.get(url);
+      const pending = (async () => {
+        if (session.active >= 3) await new Promise(resolve => session.waiting.push(resolve));
+        else session.active++;
+        try {
+          const response = await fetchImpl(url, { signal: AbortSignal.timeout(requestTimeoutMs) });
+          if (!response.ok) { const error = Error(`PDGA returned HTTP ${response.status}`); error.status = response.status; throw error; }
+          return await response.json();
+        } finally {
+          const next = session.waiting.shift();
+          if (next) next(); else session.active--;
+        }
+      })();
+      session.requests.set(url, pending);
+      try { return await pending; } finally { session.requests.delete(url); }
     }
     async function getMetadata(tournamentId) {
       if (!/^[1-9]\d{0,8}$/.test(String(tournamentId))) throw Error("Enter a valid PDGA tournament ID");
       const response = await get(`${BASE}live_results_fetch_event?TournID=${tournamentId}`);
       if (!Array.isArray(response.data?.Divisions)) throw Error("PDGA tournament not found");
-      if (response.data.ScoringFormat && response.data.ScoringFormat !== "S") throw Error("Only individual stroke-play PDGA events are supported");
+      if (response.data.ScoringFormat && response.data.ScoringFormat !== "S") {
+        const error = Error("Only individual stroke-play PDGA events are supported"); error.unsupported = true; throw error;
+      }
       return response.data;
     }
     async function getRound(tournamentId, division, round) {
@@ -87,12 +121,17 @@
       return response.data;
     }
     async function getEvent(id) {
-      const watch = watches.find(item => `${item.tournamentId}:${item.division}` === id);
-      if (!watch) throw Error("PDGA tournament/division is not watched");
+      const manual = watches.find(item => `${item.tournamentId}:${item.division}` === id);
+      const watch = manual || (autoFollow && session.watches.get(id));
+      if (!watch || watch.enabled === false || (!manual && !autoDivisions.includes(watch.division))) throw Error("PDGA tournament/division is not watched");
+      return loadEvent(watch);
+    }
+    async function loadEvent(watch, metadataPromise) {
+      const id = `${watch.tournamentId}:${watch.division}`;
       try {
-        const metadata = await getMetadata(watch.tournamentId);
+        const metadata = await (metadataPromise || getMetadata(watch.tournamentId));
         const division = metadata.Divisions.find(item => item.Division === watch.division);
-        if (!division) throw Error("Selected PDGA division is unavailable");
+        if (!division) { const error = Error("Selected PDGA division is unavailable"); error.unsupported = true; throw error; }
         const roundNumber = Math.max(1, number(division.LatestRound) || number(metadata.LatestRound) || 1);
         let round;
         try { round = await getRound(watch.tournamentId, watch.division, roundNumber); }
@@ -108,33 +147,129 @@
         return event;
       } catch (error) {
         const cached = lastGood.get(id);
-        if (!cached) throw error;
+        if (!cached || error.unsupported) throw error;
         // Upcoming fields may have tee times but no scores to go stale. Keep
         // their normal status until a routine refresh detects play starting.
-        return { ...cached, details: { ...cached.details, stale: cached.state !== "pregame", view: watch.view, playerId: watch.playerId } };
+        return { ...cached, details: { ...cached.details, stale: cached.state !== "pregame", unavailable: true, automatic: watch.automatic === true, view: watch.view, playerId: watch.playerId } };
       }
     }
-    async function discover({ topFavoriteOnly = false } = {}) {
-      const enabled = watches.filter(watch => watch.enabled !== false);
-      const results = [];
-      // Limit concurrency for watched tournaments; UI normalization caps at 30.
-      for (let index = 0; index < enabled.length; index += 3) {
-        results.push(...await Promise.allSettled(enabled.slice(index, index + 3).map(watch => getEvent(`${watch.tournamentId}:${watch.division}`))));
+    async function listCurrentEvents() {
+      if (!session.directoryPending && now() >= session.directoryAt + DIRECTORY_INTERVAL) {
+        session.directoryPending = (async () => {
+          try {
+            const value = await get(CURRENT);
+            if (!Array.isArray(value)) throw Error("PDGA event directory unavailable");
+            session.directory = value; session.directoryError = null;
+          } catch (error) { session.directoryError = error; }
+          finally { session.directoryAt = now(); session.directoryPending = null; }
+        })();
       }
-      const availableEntries = results.flatMap(result => result.status === "fulfilled" ? [{ kind: "watched-event", candidate: toCandidate(result.value) }] : []);
-      const firstId = enabled[0] && `${enabled[0].tournamentId}:${enabled[0].division}`;
-      return { availableEntries, automaticEntries: topFavoriteOnly ? availableEntries.filter(entry => entry.candidate.id === firstId) : availableEntries,
-        failures: results.filter(result => result.status === "rejected" || result.value.details.stale).length };
+      if (session.directoryPending) await session.directoryPending;
+      if (session.directoryError) throw session.directoryError;
+      return session.directory;
     }
-    return { getEvent, discover, getMetadata, getRound,
-      async listCurrentEvents() {
-        const value = await get(CURRENT);
-        if (!Array.isArray(value)) throw Error("PDGA event directory unavailable");
-        return value;
-      },
-    };
+    async function discover({ topFavoriteOnly = false, fallbackMode = "up-next", excludedKeys = [], retentionMs = 60 * 60_000 } = {}) {
+      let failures = 0;
+      const excluded = new Set(excludedKeys);
+      const eligible = watch => !excluded.has(`disc-golf:${watch.tournamentId}:${watch.division}`)
+        && !watches.some(item => item.tournamentId === watch.tournamentId && item.division === watch.division && item.enabled === false);
+      const divisions = ["MPO", "FPO"].filter(division => autoDivisions.includes(division));
+      let candidates = [];
+      if (autoFollow && divisions.length) {
+        try { await listCurrentEvents(); } catch (_) { failures++; }
+        candidates = proTourEvents(session.directory, now());
+        // Keep following a selected event even when the directory rolls over.
+        const retainedSelection = session.selected?.active && (session.selected.finishedAt === null
+          || now() < session.selected.finishedAt + retentionMs);
+        if (retainedSelection && !candidates.some(item => String(item.tournId) === session.selected.id)) candidates.unshift(session.selected.directory);
+      } else { session.selected = null; session.watches.clear(); }
+      const metadata = new Map();
+      const metadataFor = id => {
+        if (!metadata.has(id)) metadata.set(id, getMetadata(id));
+        return metadata.get(id);
+      };
+      const manualResults = await Promise.allSettled(watches.filter(watch => watch.enabled !== false)
+        .map(watch => loadEvent(watch, metadataFor(watch.tournamentId))));
+      const manual = manualResults.flatMap(result => result.status === "fulfilled" ? [result.value] : []);
+      failures += manualResults.filter(result => result.status === "rejected" || result.value.details.stale).length;
+      const manualById = new Map(manual.map(event => [event.id, event]));
+      session.watches.clear();
+      const tournaments = await Promise.all(candidates.map(async directory => {
+        const id = String(directory.tournId);
+        let info, metadataError;
+        try { info = await metadataFor(id); }
+        catch (error) {
+          if (error.unsupported) return { id, directory, events: [], unavailable: false };
+          failures++; metadataError = error;
+        }
+        // A failed metadata refresh is not an empty division list. Keep cached
+        // divisions for every eligible directory candidate, including finals
+        // offered in Available games but not selected for automatic rotation.
+        const targets = divisions.filter(division => info
+          ? info.Divisions.some(item => item.Division === division) : lastGood.has(`${id}:${division}`))
+          .map(division => ({ tournamentId: id, division, name: info?.SimpleName || info?.Name || directory.officialName,
+            automatic: true, view: "leaderboard", playerId: "" }))
+          .filter(watch => !watches.some(item => item.tournamentId === id && item.division === watch.division && item.enabled === false));
+        for (const watch of targets) session.watches.set(`${id}:${watch.division}`, watch);
+        const results = await Promise.allSettled(targets.map(watch => manualById.get(`${id}:${watch.division}`)
+          || loadEvent(watch, metadataError ? Promise.reject(metadataError) : Promise.resolve(info))));
+        failures += results.filter(result => result.status === "rejected" || result.value.details.stale).length;
+        const allEvents = results.flatMap(result => result.status === "fulfilled" ? [result.value] : []);
+        return { id, directory, allEvents, events: allEvents.filter(event => eligible({ tournamentId: id, division: event.details.division })),
+          unavailable: Boolean(metadataError) || results.some((result, index) => eligible(targets[index]) && (result.status === "rejected" || result.value.details.unavailable)) };
+      }));
+      const active = tournament => tournament.events.some(event => ["live", "interrupted"].includes(event.state));
+      const hasFinalScores = tournament => tournament.events.length > 0 && tournament.events.every(event => event.state === "final");
+      const complete = tournament => !tournament.unavailable && hasFinalScores(tournament);
+      let selected = tournaments.find(item => item.id === session.selected?.id);
+      // Outages cannot prove completion or cause an active tournament to switch.
+      // Reuse only eligible prior divisions if metadata itself is unavailable.
+      if (selected?.unavailable && !selected.events.length) {
+        selected.events = (session.selected.events || []).filter(event => divisions.includes(event.details.division)
+          && eligible({ tournamentId: selected.id, division: event.details.division }))
+          .map(event => ({ ...event, details: { ...event.details, unavailable: true, stale: event.state !== "pregame" } }));
+        selected.allEvents = selected.events;
+        for (const event of selected.events) session.watches.set(event.id, { tournamentId: selected.id, division: event.details.division,
+          name: event.details.name, automatic: true, view: "leaderboard", playerId: "" });
+      }
+      let keep = false;
+      if (selected && selected.events.length && session.selected.active) {
+        if (complete(selected)) session.selected.finishedAt ??= now();
+        else if (!selected.unavailable) session.selected.finishedAt = null;
+        keep = session.selected.finishedAt === null || now() < session.selected.finishedAt + retentionMs;
+      }
+      if (!keep) {
+        selected = tournaments.find(item => item.events.some(event => event.state === "live"))
+          || tournaments.find(active)
+          || (fallbackMode === "up-next" ? tournaments.filter(item => item.events.some(event => event.state === "pregame"))
+            .sort((a, b) => Date.parse(a.directory.startDate) - Date.parse(b.directory.startDate))[0]
+            : fallbackMode === "recent-final" ? tournaments.filter(hasFinalScores)
+              .sort((a, b) => Date.parse(b.directory.endDate || b.directory.startDate) - Date.parse(a.directory.endDate || a.directory.startDate))[0] : null);
+        session.selected = selected ? { id: selected.id, directory: selected.directory, active: active(selected), finishedAt: null } : null;
+      }
+      if (selected) {
+        session.selected.active ||= active(selected);
+        session.selected.events = selected.events;
+      }
+      const asEntry = event => ({ kind: event.details.automatic ? "automatic-event" : "watched-event", candidate: toCandidate(event) });
+      const available = new Map(manual.map(event => [event.id, asEntry(event)]));
+      for (const tournament of tournaments) for (const event of tournament.allEvents || tournament.events) {
+        if (!available.has(event.id)) available.set(event.id, asEntry(event));
+      }
+      const firstWatch = watches.find(watch => watch.enabled !== false);
+      const automatic = new Map((topFavoriteOnly ? manual.filter(event => event.id === `${firstWatch?.tournamentId}:${firstWatch?.division}`) : manual)
+        .map(event => [event.id, asEntry(event)]));
+      for (const event of selected?.events || []) {
+        automatic.set(event.id, { ...(automatic.get(event.id) || asEntry(event)),
+          ...(session.selected.finishedAt !== null ? { autoRetainUntil: session.selected.finishedAt + retentionMs } : {}) });
+      }
+      return { availableEntries: [...available.values()], automaticEntries: [...automatic.values()], failures };
+    }
+    return { getEvent, discover, getMetadata, getRound, listCurrentEvents };
   }
-  const provider = { createClient, normalizeEvent, normalizePlayer, toCandidate, roundState,
+
+  const provider = { createClient, createSession, proTourEvents,
+    refreshIntervalMs: url => String(url) === CURRENT ? DIRECTORY_INTERVAL : undefined, normalizeEvent, normalizePlayer, toCandidate, roundState,
     failureBackoff: state => state === "live",
     refreshState(payload, url) {
       if (String(url).includes("live_results_fetch_round")) return payload ? roundState(payload.data?.scores) : "pregame";

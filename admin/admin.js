@@ -8,6 +8,7 @@
   let workingConfig = configApi.loadConfig();
   const shared = global.SportsOverlay.shared;
   const providerRefresh = global.SportsOverlay.providerRefresh.create({ config: () => configApi.loadConfig() });
+  const pdgaSession = global.SportsOverlay.pdga.createSession();
   let baseline = structuredClone(workingConfig);
   let baseRevision = shared?.snapshot()?.revision;
   let baseInstance = shared?.snapshot()?.instance;
@@ -550,7 +551,10 @@
         automaticRotationEntries = state.automaticEntries;
         availableRotationEntries = state.availableEntries;
         renderRotationControls();
-        document.querySelector('#rotation-status').textContent = state.ready ? 'Shared engine games' : 'Sports engine starting…';
+        const status = document.querySelector('#rotation-status');
+        status.textContent = !state.ready ? 'Sports engine starting…' : state.discoveryFailures
+          ? 'Some score feeds are unavailable. Keeping received games and retrying automatically.' : 'Shared engine games';
+        status.className = state.discoveryFailures ? 'save-status is-error' : 'save-status is-saved';
       } catch (error) { document.querySelector('#rotation-status').textContent = error.message; }
       gameDiscoveryTimer = setTimeout(discoverRotationGames, 2000);
       return;
@@ -584,9 +588,10 @@
 
   async function discoverSportGames(group) {
     if (group.enabled === false) return { automaticEntries: [], availableEntries: [] };
-    if (group.sport === "disc-golf") return global.SportsOverlay.pdga.createClient({ watches: group.events,
+    if (group.sport === "disc-golf") return global.SportsOverlay.pdga.createClient({ watches: group.events, autoFollow: group.autoFollow, autoDivisions: group.autoDivisions, session: pdgaSession,
       fetchImpl: providerRefresh.fetchFor("disc-golf", global.SportsOverlay.pdga),
-    }).discover({ topFavoriteOnly: workingConfig.displayMode === "top-favorite" });
+    }).discover({ topFavoriteOnly: workingConfig.displayMode === "top-favorite", fallbackMode: workingConfig.fallbackMode,
+      excludedKeys: workingConfig.excludedGames, retentionMs: liveModeActive() ? workingConfig.liveModeFinalMinutes * 60_000 : 60 * 60_000 });
     const watchedTeams = group.favorites
       .filter(favorite => favorite.enabled)
       .map(favorite => configApi.findTeam(favorite.teamKey))
@@ -666,7 +671,9 @@
       .filter(entry => !search || gameName(entry.candidate).toLowerCase().includes(search))
       .sort((a, b) => gameStateRank(a.candidate.state) - gameStateRank(b.candidate.state)
         || new Date(a.candidate.startTime || 0) - new Date(b.candidate.startTime || 0));
-    if (!available.length) appendRotationEmpty(availableList, availableRotationEntries.length ? "No matching current games." : "No games loaded yet.");
+    if (!available.length) appendRotationEmpty(availableList, sportFilter === "disc-golf" && !search
+      ? "No additional PDGA divisions available. Divisions already in rotation are listed above."
+      : availableRotationEntries.length ? "No matching current games." : "No games loaded yet.");
     available.forEach(entry => renderAvailableGame(entry, availableList));
     if (!global.sportsDesktop && active) {
       const expiry = localLiveMode.nextExpiry(workingConfig.liveModeFinalMinutes);
@@ -744,7 +751,29 @@
     const sport = configApi.findSport(entry.candidate.sport);
     card.dataset.gameKey = rotationEntryKey(entry);
     card.classList.toggle("is-live", entry.candidate.state === "live");
-    card.querySelector(".game-sport").textContent = sport?.league || entry.candidate.sport.toUpperCase();
+    card.querySelector(".game-sport").textContent = `${sport?.league || entry.candidate.sport.toUpperCase()}${entry.candidate.raw?.automatic ? " · Automatic" : ""}`;
+    if (entry.candidate.raw?.automatic) {
+      const watch = document.createElement("button");
+      watch.type = "button"; watch.className = "lock-game pdga-watch-automatic"; watch.textContent = "Watch division";
+      watch.onclick = () => {
+        const group = workingConfig.sports.find(item => item.sport === "disc-golf");
+        if (group.events.length >= 30) { showSettingsError("Remove a watched division before adding another (limit 30)."); return; }
+        const [tournamentId, division] = entry.candidate.id.split(":");
+        if (!group.events.some(item => item.tournamentId === tournamentId && item.division === division)) {
+          group.events.push({ tournamentId, division, name: entry.candidate.raw.name, enabled: true, view: "leaderboard", playerId: "" });
+          scheduleSettingsSave("sports"); renderSettings();
+        }
+      };
+      let actions = card.querySelector(".game-actions");
+      if (!actions) {
+        actions = document.createElement("div"); actions.className = "game-actions";
+        const add = card.querySelector(".add-game");
+        add.replaceWith(actions); actions.append(add);
+      }
+      actions.append(watch);
+      const remove = card.querySelector(".remove-game");
+      if (remove) remove.textContent = "Exclude";
+    }
     renderGameLogos(card.querySelector(".game-logos"), entry.candidate);
     card.querySelector(".game-name").textContent = gameName(entry.candidate);
     card.querySelector(".game-meta").textContent = gameMeta(entry.candidate);

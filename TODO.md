@@ -2,5 +2,6 @@
 
 ## Ideas
 
+- Add a **Hide banner** option to the banner’s right-click menu.
 - Fullscreen mode with a dedicated layout for displaying games across the entire screen.
-- Auto-populate PDGA tournaments with the event the top touring pros are playing each week.
+- Enhance automatic pro-tour discovery by confirming favorite touring pros are entered.

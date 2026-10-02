@@ -3,6 +3,32 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.15.0 — 2026-10-01
+
+### Added
+
+- **Automatically follow the pro tour** discovers one Elite Series or Major
+  tournament with selectable MPO/FPO divisions. Discovery starts off; both
+  divisions are selected by default when enabled. No migration is required.
+- Discovered divisions are labeled **Automatic**, with controls to exclude them
+  or save them as manual watches. Manual player-view preferences take precedence.
+
+### Changed
+
+- Automatic tournament selection follows scorecard status, stays through round
+  breaks, and honors final retention and upcoming/recent-final/hide behavior.
+- The shared engine checks the PDGA directory every 15 minutes, reuses tournament
+  metadata, and limits concurrent PDGA requests to three.
+- Tightened hockey banner spacing to fit odds, power-play, and preseason details.
+
+### Fixed
+
+- Discovered PDGA divisions retain last received data during temporary feed
+  failures instead of disappearing from Available games. Recent-final selections
+  also remain stable through outages and recover automatically.
+- Shared-engine status reports unavailable score feeds, and the PDGA empty-list
+  message explains that divisions already in rotation are listed separately.
+
 ## 0.14.2 — 2026-10-01
 
 ### Fixed

@@ -28,9 +28,10 @@
         }
         const failureBackoff = typeof provider.failureBackoff === "function"
           ? provider.failureBackoff(record.state) : provider.failureBackoff;
+        const baseDelay = provider.refreshIntervalMs?.(url) ?? interval(sport, record.state);
         const delay = failureBackoff && record.failures
-          ? Math.max(interval(sport, record.state), Math.min(300000, 30000 * 2 ** (record.failures - 1)))
-          : interval(sport, record.state);
+          ? Math.max(baseDelay, Math.min(300000, 30000 * 2 ** (record.failures - 1)))
+          : baseDelay;
         if (!record.pending && now() >= record.completed + delay) {
           record.pending = Promise.resolve().then(async () => {
             try {

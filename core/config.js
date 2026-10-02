@@ -33,7 +33,7 @@
       frozenSport("soccer", ["mls:9726"]),
       frozenSport("basketball", ["nba:det"]),
       frozenSport("college-basketball", ["ncaam:158", "ncaam:264", "ncaam:2547"]),
-      Object.freeze({ sport: "disc-golf", enabled: true, favorites: Object.freeze([]), events: Object.freeze([]) }),
+      Object.freeze({ sport: "disc-golf", enabled: true, favorites: Object.freeze([]), events: Object.freeze([]), autoFollow: false, autoDivisions: Object.freeze(["MPO", "FPO"]) }),
     ]),
     providerRefreshSeconds: Object.freeze(Object.fromEntries(SPORT_CATALOG.map(({ key: sport }) =>
       [sport, Object.freeze({ live: sport === "disc-golf" ? 30 : 12, pregame: 60, idle: 300, final: 300 })]))),
@@ -115,11 +115,12 @@
       if (!findSport(sport) || seenSports.has(sport)) return;
       seenSports.add(sport);
       sports.push({ sport, enabled: group.enabled !== false, favorites: normalizeFavorites(group.favorites, sport),
-        ...(sport === "disc-golf" ? { events: normalizePdgaEvents(group.events) } : {}) });
+        ...(sport === "disc-golf" ? { events: normalizePdgaEvents(group.events), autoFollow: group.autoFollow === true,
+          autoDivisions: Array.isArray(group.autoDivisions) ? ["MPO", "FPO"].filter(division => group.autoDivisions.includes(division)) : ["MPO", "FPO"] } : {}) });
     });
     SPORT_CATALOG.forEach(sport => {
       if (!seenSports.has(sport.key)) sports.push({ sport: sport.key, enabled: true, favorites: [],
-        ...(sport.key === "disc-golf" ? { events: [] } : {}) });
+        ...(sport.key === "disc-golf" ? { events: [], autoFollow: false, autoDivisions: ["MPO", "FPO"] } : {}) });
     });
 
     const rotationSeconds = Number(source.rotationSeconds);
@@ -300,8 +301,11 @@
   function isCandidateEnabled(config, candidate) {
     const group = config.sports.find(group => group.sport === candidate?.sport);
     if (!group || group.enabled === false) return false;
-    return candidate.sport !== "disc-golf" || group.events.some(event => event.enabled !== false
-      && `${event.tournamentId}:${event.division}` === candidate.id);
+    if (candidate.sport !== "disc-golf") return true;
+    const watch = group.events.find(event => `${event.tournamentId}:${event.division}` === candidate.id);
+    if (watch) return watch.enabled !== false;
+    return group.autoFollow === true && candidate.raw?.automatic === true
+      && group.autoDivisions.includes(candidate.raw.division);
   }
 
   function browserStorage() {
