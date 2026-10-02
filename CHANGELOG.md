@@ -3,6 +3,28 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.20.0 — 2026-10-02
+
+### Added
+
+- Separate tournament and followed-player banners for the same disc-golf
+  division or chess broadcast, with independent rotation controls.
+- Top-10 tournament leaderboards scroll vertically within the compact banner;
+  a static top-three option remains available. Chess uses published tournament
+  points and tiebreak ranks from Lichess.
+
+### Fixed
+
+- Player lists load automatically when opening saved banners. Failed or empty
+  lists offer a retry while preserving the saved player selection.
+- Hovering or focusing a leaderboard pauses scrolling in place instead of
+  resetting it. Scrolling resumes when the pointer or focus leaves.
+- Player banners stay out of rotation until a player is selected, preventing
+  duplicate leaderboards from unfinished player watches.
+
+Existing watches and player selections are preserved. No migration is required.
+Chess broadcasts without published tournament scores show an unavailable message.
+
 ## 0.19.2 — 2026-10-02
 
 ### Fixed
