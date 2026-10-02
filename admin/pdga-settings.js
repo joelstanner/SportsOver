@@ -18,7 +18,7 @@
     automatic.innerHTML = `<label class="toggle"><input type="checkbox" class="pdga-auto-follow">Automatically follow the pro tour</label>
       <p>Follow one Elite Series or Major tournament through live rounds and round breaks. Manual watches keep their saved views. With nothing live, your fallback setting applies.</p>
       <div class="pdga-watch-controls"><label class="toggle"><input type="checkbox" class="pdga-auto-division" value="MPO">MPO</label><label class="toggle"><input type="checkbox" class="pdga-auto-division" value="FPO">FPO</label></div>
-      <p>Discovered divisions are labeled Automatic in Live control. Exclude them there, or choose Watch division to keep them in your watch list.</p>`;
+      <p>Elite event search repeats every 15 minutes while SportsOver is running. Discovered divisions appear in the automatic watch list below and are labeled Automatic in Live control. Exclude them there, or choose Watch division to keep them in your watch list.</p>`;
     const toggle = automatic.querySelector(".pdga-auto-follow");
     toggle.checked = group.autoFollow;
     toggle.onchange = () => { group.autoFollow = toggle.checked; changed(); };

@@ -6,7 +6,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 require("../../core/config.js");
 
-async function fixture(extraFavorites = [], gameCount = 2, useRealSelection = false) {
+async function fixture(extraFavorites = [], gameCount = 2, useRealSelection = false, discoveryIntervalMs) {
   let now = 0, timerId = 0, notify, visibility;
   const timers = new Map(), calls = [], renders = [];
   let release = null, holdNext = false;
@@ -17,7 +17,7 @@ async function fixture(extraFavorites = [], gameCount = 2, useRealSelection = fa
     teamKeys: [useRealSelection ? "TEAM" : "team"], ...(useRealSelection ? { startTime: new Date(0).toISOString() } : {}) }));
   const response = data => ({ ok: true, clone: () => response(data), json: async () => data });
   const provider = { toCandidate: game => game, normalizeEvent: event => event,
-    createClient: ({ fetchImpl, teamId }) => ({
+    createClient: ({ fetchImpl, teamId }) => ({ discoveryIntervalMs,
       findGames: async () => (await (await fetchImpl(teamId === "team" ? "schedule" : `schedule/${teamId}`)).json()).events,
       findLeagueGames: async () => (await (await fetchImpl("schedule")).json()).events,
       getEvent: async id => (await fetchImpl(`game/${id}`)).json(),
@@ -333,4 +333,10 @@ test('activating during a pending refresh publishes a filtered queue immediately
   assert.deepEqual(Array.from(app.engine.describe().queue, entry => entry.candidate.id), ['2']);
   await app.release(); await refresh; await activation; await app.flush();
   assert.deepEqual(Array.from(app.engine.describe().queue, entry => entry.candidate.id), ['2']);
+});
+
+test("recurring directory discovery is capped independently of long score refresh intervals", async () => {
+  const f = await fixture([], 1, false, 900000);
+  await f.update(3600);
+  assert.ok([...f.timers.values()].some(timer => timer.at === 900000), "directory discovery remains scheduled at fifteen minutes");
 });

@@ -1,5 +1,9 @@
 # Project instructions
 
+## User shorthand
+
+- `gst` means `git status`. When requested, show the current Git status.
+
 ## Version bumps
 
 After completing a change that warrants a version bump, ask the user whether to

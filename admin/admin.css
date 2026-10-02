@@ -284,3 +284,9 @@ iframe { max-width: 100%; border: 0; background: transparent; }
 .pdga-watch-builder p,.pdga-row-status { color:#aebbc6; font-size:12px; }
 .pdga-current-label { margin:12px 0; }
 .pdga-watch-builder [hidden],.pdga-watch-card [hidden] { display:none !important; }
+.chess-watch-name { flex:1; min-width:160px; color:#dcc0ff; font-weight:650; }
+.chess-watch-builder p,.chess-row-status { color:#aebbc6; font-size:12px; }
+.chess-current-label { margin:12px 0; }
+.automatic-watch-list { margin-top:16px; }
+.automatic-watch-name { flex:1; min-width:160px; color:#a9d9dc; font-weight:650; }
+.automatic-watch-badge { color:#b3ecd5; font-size:10px; padding:3px 6px; border:1px solid #b3ecd555; border-radius:4px; }

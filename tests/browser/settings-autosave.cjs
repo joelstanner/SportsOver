@@ -7,7 +7,7 @@ const root = path.resolve(__dirname, '../..');
   const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
   try {
     let state = { initialized: false, config: null, revision: 0, instance: 'autosave-test', catalogRevision: 0 };
-    let hold = false, release, failed = false, conflict = false;
+    let hold = false, release, failed = false, conflict = false, discoveryConflict = false;
     const requests = [], errors = [];
     const context = await browser.newContext();
     context.setDefaultTimeout(15000);
@@ -23,6 +23,11 @@ const root = path.resolve(__dirname, '../..');
           if (conflict) {
             conflict = false;
             state = { ...state, revision: state.revision + 1, config: { ...state.config, timeZone: 'UTC' } };
+          }
+          if (discoveryConflict) {
+            discoveryConflict = false;
+            state = { ...state, revision: state.revision + 1, config: { ...state.config,
+              automaticWatchLists: { ...state.config.automaticWatchLists, chess: [{ tournamentId: 'Elite001', roundId: '', name: 'Elite Masters', enabled: true, view: 'overview', playerId: '' }] } } };
           }
           if (body.expectedRevision !== state.revision) return route.fulfill({ status: 409, json: { detail: state } });
           state = { ...state, initialized: true, revision: state.revision + 1, config: { ...state.config, ...body.config } };
@@ -127,6 +132,13 @@ const root = path.resolve(__dirname, '../..');
     await saved();
     assert.equal(state.config.displayMode, 'automatic');
     assert.equal(state.config.timeZone, 'UTC');
+    // A discovery-owned watch list update must not require a manual retry.
+    discoveryConflict = true;
+    await page.locator('#display-mode').selectOption('rotate');
+    await saved();
+    assert.equal(state.config.displayMode, 'rotate');
+    assert.equal(state.config.automaticWatchLists.chess[0].tournamentId, 'Elite001');
+    assert.equal(await page.locator('#save-settings').isVisible(), false);
     assert.deepEqual(errors, []);
     assert.ok(requests.slice(1).every(request => Object.keys(request.config).length < Object.keys(state.config).length), 'autosaves only send changed fields');
     // Opening or dismissing the confirmation must never reset or save settings.

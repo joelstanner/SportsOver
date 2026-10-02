@@ -13,6 +13,10 @@
     "test:desktop": "node scripts/desktop-smoke.cjs",
     "build:mac": "node scripts/build-mac.cjs",
     "dist:mac": "node scripts/dist-mac.cjs",
+    "test:elite": "node tests/browser/elite-auto-follow.cjs",
+    "test:elite:desktop": "ELITE_DESKTOP=1 node tests/browser/elite-auto-follow.cjs",
+    "test:chess": "node tests/browser/chess.cjs",
+    "test:chess:desktop": "node scripts/chess-desktop-smoke.cjs",
     "test:pdga": "node tests/browser/pdga.cjs",
     "test:pdga:live": "node scripts/pdga-desktop-smoke.cjs"
   },

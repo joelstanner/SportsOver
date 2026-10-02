@@ -10,6 +10,7 @@
   let workingConfig = configApi.loadConfig();
   const shared = global.SportsOverlay.shared;
   const providerRefresh = global.SportsOverlay.providerRefresh.create({ config: () => configApi.loadConfig() });
+  const chessSession = global.SportsOverlay.lichess.createSession();
   const pdgaSession = global.SportsOverlay.pdga.createSession();
   let baseline = structuredClone(workingConfig);
   let baseRevision = shared?.snapshot()?.revision;
@@ -28,6 +29,7 @@
   function persist(config, fields) {
     const submitted = structuredClone(config);
     const operation = saveQueue.then(async () => {
+      const expectedConfig = structuredClone(baseline), expectedInstance = baseInstance;
       saving = true;
       try {
         const result = await configApi.saveConfig(submitted, shared ? {
@@ -39,6 +41,17 @@
         if (error.conflict) {
           baseRevision = shared.snapshot().revision;
           baseInstance = shared.snapshot().instance;
+          const incoming = configApi.loadConfig();
+          // Discovery owns a separate field. Its intervening update must not
+          // interrupt a player choice or another manual Settings edit.
+          const discoveryOnly = expectedInstance === baseInstance && !fields.includes("automaticWatchLists")
+            && Object.keys(expectedConfig).every(key => key === "automaticWatchLists"
+              || JSON.stringify(expectedConfig[key]) === JSON.stringify(incoming[key]));
+          if (discoveryOnly) {
+            const result = await configApi.saveConfig(submitted, { fields, revision: baseRevision, instance: baseInstance });
+            acknowledge();
+            return result;
+          }
         }
         throw error;
       } finally { saving = false; }
@@ -296,6 +309,13 @@
     if (name === "demo") updateDemo();
   }
 
+  function renderAutomaticWatchList(container, group) {
+    global.SportsOverlay.automaticWatchSettings.render(container, group, workingConfig, key => {
+      scheduleSettingsSave(key);
+      if (key === "sports") renderSettings();
+    });
+  }
+
   function renderSettings() {
     const refreshFields = document.querySelector("#provider-refresh-fields");
     // Keep number inputs mounted so background saves never interrupt typing.
@@ -338,7 +358,7 @@
       const section = document.querySelector("#sport-template").content.firstElementChild.cloneNode(true);
       section.dataset.sport = sport.key;
       section.querySelector(".sport-rank").textContent = `#${sportIndex + 1}`;
-      section.querySelector(".sport-icon").textContent = { baseball: "⚾", football: "🏈", "college-football": "🏈", hockey: "🏒", soccer: "⚽", basketball: "🏀", "college-basketball": "🏀", "disc-golf": "🥏" }[sport.key] || "";
+      section.querySelector(".sport-icon").textContent = { baseball: "⚾", football: "🏈", "college-football": "🏈", hockey: "🏒", soccer: "⚽", basketball: "🏀", "college-basketball": "🏀", "disc-golf": "🥏", chess: "♟" }[sport.key] || "";
       section.querySelector(".sport-name").textContent = sport.name;
       section.querySelector(".sport-league").textContent = sport.league;
       const enabled = section.querySelector(".sport-enabled");
@@ -358,9 +378,12 @@
       const favoriteList = section.querySelector(".sport-favorites");
       favoriteList.hidden = !enabled.checked;
       if (sport.competitionType === "individual") {
-        global.SportsOverlay.pdgaSettings.render(favoriteList, group, () => {
+        const renderAutomaticWatches = () => renderAutomaticWatchList(favoriteList, group);
+        global.SportsOverlay[sport.key === "chess" ? "chessSettings" : "pdgaSettings"].render(favoriteList, group, () => {
           scheduleSettingsSave("sports");
-        }, providerRefresh.fetchFor("disc-golf", global.SportsOverlay.pdga));
+          renderAutomaticWatches();
+        }, providerRefresh.fetchFor(sport.key, global.SportsOverlay[sport.key === "chess" ? "lichess" : "pdga"]), sport.key === "chess" ? chessSession : undefined);
+        renderAutomaticWatches();
         sportsList.append(section);
         return;
       }
@@ -496,9 +519,9 @@
         .find(Boolean);
       const option = document.createElement("option");
       option.value = group.sport;
-      option.textContent = `${sport.name} · ${sport.competitionType === "individual" ? `${group.events.filter(event => event.enabled).length} watched divisions` : topFavorite?.name || "no included team"}`;
+      option.textContent = `${sport.name} · ${sport.competitionType === "individual" ? `${group.events.filter(event => event.enabled).length} watched ${sport.key === "chess" ? "broadcasts" : "divisions"}` : topFavorite?.name || "no included team"}`;
       picker.append(option);
-      filter.append(new Option(sport.league, group.sport));
+      filter.append(new Option(sport.key === "chess" ? sport.name : sport.league, group.sport));
     });
     if (enabledSports.some(group => group.sport === selectedSport)) picker.value = selectedSport;
     filter.value = enabledSports.some(group => group.sport === selectedFilter) ? selectedFilter : "";
@@ -591,7 +614,7 @@
       return;
     }
     clearTimeout(gameDiscoveryTimer);
-    gameDiscoveryTimer = setTimeout(discoverRotationGames, 60 * 60 * 1_000);
+    gameDiscoveryTimer = setTimeout(discoverRotationGames, workingConfig.sports.some(group => group.enabled && group.autoFollow) ? 15 * 60_000 : 60 * 60_000);
     const revision = ++gameDiscoveryRevision;
     const rotationStatus = document.querySelector("#rotation-status");
     rotationStatus.textContent = "Loading games…";
@@ -600,6 +623,18 @@
 
     const results = await Promise.allSettled(workingConfig.sports.map(discoverSportGames));
     if (revision !== gameDiscoveryRevision) return;
+    const synchronized = await global.SportsOverlay.automaticWatches.sync(results.flatMap((result, index) => result.status === "fulfilled"
+      ? [{ sport: workingConfig.sports[index].sport, ...result.value }] : []));
+    if (revision !== gameDiscoveryRevision) return;
+    if (synchronized) {
+      workingConfig.automaticWatchLists = synchronized.automaticWatchLists;
+      baseline.automaticWatchLists = structuredClone(synchronized.automaticWatchLists);
+      // Discovery updates its own list without replacing an active player picker.
+      workingConfig.sports.filter(group => ["chess", "disc-golf"].includes(group.sport)).forEach(group => {
+        const container = sportsList.querySelector(`.sport-card[data-sport="${group.sport}"] .sport-favorites`);
+        if (container) renderAutomaticWatchList(container, group);
+      });
+    }
     const discoveredAutomaticEntries = results.flatMap(result => result.status === "fulfilled" ? result.value.automaticEntries : []);
     availableRotationEntries = results.flatMap(result => result.status === "fulfilled" ? result.value.availableEntries : []);
     automaticRotationEntries = selectionApi.retainAutoFinals(
@@ -627,6 +662,9 @@
       fetchImpl: providerRefresh.fetchFor("disc-golf", global.SportsOverlay.pdga),
     }).discover({ topFavoriteOnly: workingConfig.displayMode === "top-favorite", fallbackMode: workingConfig.fallbackMode,
       excludedKeys: workingConfig.excludedGames, retentionMs: liveModeActive() ? workingConfig.liveModeFinalMinutes * 60_000 : 60 * 60_000 });
+    if (group.sport === "chess") return global.SportsOverlay.lichess.createClient({ watches: group.events, autoFollow: group.autoFollow, session: chessSession,
+      fetchImpl: providerRefresh.fetchFor("chess", global.SportsOverlay.lichess),
+    }).discover({ topFavoriteOnly: workingConfig.displayMode === "top-favorite", fallbackMode: workingConfig.fallbackMode, excludedKeys: workingConfig.excludedGames, retentionMs: liveModeActive() ? workingConfig.liveModeFinalMinutes * 60_000 : 60 * 60_000 });
     const watchedTeams = group.favorites
       .filter(favorite => favorite.enabled)
       .map(favorite => configApi.findTeam(favorite.teamKey))
@@ -793,10 +831,18 @@
     card.querySelector(".game-sport").textContent = `${sport?.league || entry.candidate.sport.toUpperCase()}${entry.candidate.raw?.automatic ? " · Automatic" : ""}`;
     if (entry.candidate.raw?.automatic) {
       const watch = document.createElement("button");
-      watch.type = "button"; watch.className = "lock-game pdga-watch-automatic"; watch.textContent = "Watch division";
+      watch.type = "button"; watch.className = `lock-game ${entry.candidate.sport === "chess" ? "chess-watch-automatic" : "pdga-watch-automatic"}`; watch.textContent = entry.candidate.sport === "chess" ? "Watch broadcast" : "Watch division";
       watch.onclick = () => {
-        const group = workingConfig.sports.find(item => item.sport === "disc-golf");
+        const group = workingConfig.sports.find(item => item.sport === entry.candidate.sport);
         if (group.events.length >= 30) { showSettingsError("Remove a watched division before adding another (limit 30)."); return; }
+        if (entry.candidate.sport === "chess") {
+          const tournamentId = entry.candidate.id.split(":")[0];
+          if (!group.events.some(item => item.tournamentId === tournamentId && !item.roundId)) {
+            group.events.push({ tournamentId, roundId: "", name: entry.candidate.raw.name, enabled: true, view: "overview", playerId: "" });
+            scheduleSettingsSave("sports"); renderSettings();
+          }
+          return;
+        }
         const [tournamentId, division] = entry.candidate.id.split(":");
         if (!group.events.some(item => item.tournamentId === tournamentId && item.division === division)) {
           group.events.push({ tournamentId, division, name: entry.candidate.raw.name, enabled: true, view: "leaderboard", playerId: "" });
@@ -890,6 +936,7 @@
   }
 
   function gameName(candidate) {
+    if (candidate.sport === "chess") return `${candidate.raw?.name || "Chess tournament"} · ${candidate.raw?.roundName || "Round"}`;
     if (candidate.sport === "disc-golf") return `${candidate.raw?.name || "PDGA tournament"} · ${candidate.raw?.division || ""}`;
     if (candidate.sport === "baseball") {
       const teams = candidate.raw?.teams;
@@ -904,6 +951,7 @@
   }
 
   function gameMeta(candidate) {
+    if (candidate.sport === "chess") return `${candidate.raw?.stale ? "Last received · " : ""}${candidate.state === "live" ? "Live now" : candidate.state === "interrupted" ? "Round complete" : candidate.state === "final" ? "Final" : "Upcoming"}${candidate.state === "pregame" && candidate.startTime ? ` · ${global.SportsOverlay.model.formatPregameStart(candidate.startTime)}` : ""}`;
     if (candidate.sport === "disc-golf") return `${candidate.raw?.stale ? "Last received · " : ""}${candidate.state === "final" ? "Final" : candidate.state === "live" ? "Live now" : candidate.state === "interrupted" ? "Round complete" : "Upcoming"} · R${candidate.raw?.round || 1} · ${candidate.raw?.dateRange || ""}`;
     const preseason = candidate.sport === "baseball"
       ? ["S", "E"].includes(candidate.raw?.gameType)
@@ -1078,7 +1126,7 @@
   }
 
   function isCurrentGame(candidate) {
-    if (candidate.sport === "disc-golf") return true;
+    if (["disc-golf", "chess"].includes(candidate.sport)) return true;
     if (candidate.state === "live") return true;
     const start = new Date(candidate.startTime || 0).getTime();
     if (!Number.isFinite(start)) return false;
@@ -1159,11 +1207,15 @@
   function updateDemo() {
     const sportPicker = document.querySelector("#demo-sport");
     const sport = sportPicker.value;
-    const state = document.querySelector("#demo-state").value;
+    const statePicker = document.querySelector("#demo-state");
+    const playerOption = statePicker.querySelector('option[value="player"]');
+    playerOption.hidden = playerOption.disabled = sport !== "chess";
+    if (sport !== "chess" && statePicker.value === "player") statePicker.value = "live";
+    const state = statePicker.value;
     const isRotation = state === "rotation";
     sportPicker.disabled = isRotation;
     const params = new URLSearchParams(isRotation ? {} : { sport });
-    if (["pregame", "live", "interrupted", "final"].includes(state)) params.set("demo", state);
+    if (["pregame", "live", "interrupted", "final", "player"].includes(state)) params.set("demo", state);
     else params.set("scenario", state);
     document.querySelector("#demo-preview").src = `../index.html?${params}`;
   }

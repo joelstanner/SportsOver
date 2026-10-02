@@ -191,7 +191,8 @@
       const manualResults = await Promise.allSettled(watches.filter(watch => watch.enabled !== false)
         .map(watch => loadEvent(watch, metadataFor(watch.tournamentId))));
       const manual = manualResults.flatMap(result => result.status === "fulfilled" ? [result.value] : []);
-      failures += manualResults.filter(result => result.status === "rejected" || result.value.details.stale).length;
+      const manualFailures = manualResults.filter(result => result.status === "rejected" || result.value.details.stale).length;
+      failures += manualFailures;
       const manualById = new Map(manual.map(event => [event.id, event]));
       session.watches.clear();
       const tournaments = await Promise.all(candidates.map(async directory => {
@@ -263,9 +264,14 @@
         automatic.set(event.id, { ...(automatic.get(event.id) || asEntry(event)),
           ...(session.selected.finishedAt !== null ? { autoRetainUntil: session.selected.finishedAt + retentionMs } : {}) });
       }
-      return { availableEntries: [...available.values()], automaticEntries: [...automatic.values()], failures };
+      return { availableEntries: [...available.values()], automaticEntries: [...automatic.values()], failures,
+        automaticWatches: autoFollow && !session.directoryError ? [...session.watches.values()]
+          .filter(watch => !watches.some(item => item.tournamentId === watch.tournamentId && item.division === watch.division))
+          .map(watch => ({ tournamentId: watch.tournamentId, division: watch.division, name: watch.name, enabled: true, view: "leaderboard", playerId: "" })) : null,
+        automaticWatchesComplete: failures === manualFailures,
+      };
     }
-    return { getEvent, discover, getMetadata, getRound, listCurrentEvents };
+    return { getEvent, discover, getMetadata, getRound, listCurrentEvents, discoveryIntervalMs: autoFollow ? DIRECTORY_INTERVAL : Infinity };
   }
 
   const provider = { createClient, createSession, proTourEvents,

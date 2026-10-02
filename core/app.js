@@ -27,6 +27,7 @@ let lastEventState = "idle";
 let pollGeneration = 0;
 let rotationGeneration = 0;
 
+const chessSession = window.SportsOverlay.lichess?.createSession();
 const pdgaSession = window.SportsOverlay.pdga?.createSession();
 let sportContexts = savedConfig.sports
   .filter(group => !requestedSport || group.sport === requestedSport)
@@ -79,7 +80,7 @@ window.SportsOverlay.engine = {
     const previousKey = entryKey(rotationQueue[currentIndex]);
     rotationQueue = selectedRotationQueue((cachedDiscoveries || []).flatMap(result => result.availableEntries));
     currentIndex = Math.max(0, rotationQueue.findIndex(entry => entryKey(entry) === previousKey));
-    return discoverGames(sportContexts.some(context => context.sport === "disc-golf"));
+    return discoverGames(sportContexts.some(context => ["disc-golf", "chess"].includes(context.sport)));
   },
   override(value) {
     overrideEntry = value ? (cachedDiscoveries || []).flatMap(result => result.availableEntries)
@@ -112,6 +113,12 @@ function createSportContext(group) {
     const providerModule = window.SportsOverlay.registry.getProvider("pdga");
     return { sport: group.sport, league: "PDGA", providerModule,
       provider: providerModule.createClient({ watches: group.events, autoFollow: group.autoFollow, autoDivisions: group.autoDivisions, session: pdgaSession, requestTimeoutMs: CONFIG.requestTimeoutMs,
+        fetchImpl: refresh.fetchFor(group.sport, providerModule) }) };
+  }
+  if (group.sport === "chess") {
+    const providerModule = window.SportsOverlay.registry.getProvider("lichess");
+    return { sport: group.sport, league: "Lichess", providerModule,
+      provider: providerModule.createClient({ watches: group.events, autoFollow: group.autoFollow, session: chessSession, requestTimeoutMs: CONFIG.requestTimeoutMs,
         fetchImpl: refresh.fetchFor(group.sport, providerModule) }) };
   }
   const favoriteTeams = group.favorites
@@ -249,6 +256,9 @@ async function discoverGamesOnce(refresh = true) {
 
   const discoveries = !refresh && cachedDiscoveries ? cachedDiscoveries : await Promise.all(sportContexts.map(discoverSport));
   if (generation !== discoveryGeneration) return;
+  const synchronized = await window.SportsOverlay.automaticWatches?.sync(discoveries);
+  if (generation !== discoveryGeneration) return;
+  if (synchronized) savedConfig.automaticWatchLists = synchronized.automaticWatchLists;
   cachedDiscoveries = discoveries;
   const availableEntries = discoveries.flatMap(result => result.availableEntries);
   const watchedTeams = sportContexts.flatMap(context => {
@@ -304,11 +314,11 @@ function selectedRotationQueue(availableEntries) {
 }
 
 async function discoverSport(context) {
-  if (context.sport === "disc-golf") {
+  if (["disc-golf", "chess"].includes(context.sport)) {
     const result = await context.provider.discover({ topFavoriteOnly: savedConfig.displayMode === "top-favorite",
       fallbackMode: savedConfig.fallbackMode, excludedKeys: savedConfig.excludedGames,
       retentionMs: liveMode.isActive() ? savedConfig.liveModeFinalMinutes * 60_000 : 60 * 60_000 });
-    return { failures: result.failures, automaticEntries: result.automaticEntries.map(entry => ({ ...entry, context })),
+    return { sport: context.sport, automaticWatches: result.automaticWatches, automaticWatchesComplete: result.automaticWatchesComplete, failures: result.failures, automaticEntries: result.automaticEntries.map(entry => ({ ...entry, context })),
       availableEntries: result.availableEntries.map(entry => ({ ...entry, context })) };
   }
   let discovery;
@@ -492,9 +502,10 @@ function scheduleDiscovery() {
   const expiryDelay = Math.min(liveMode.nextExpiry(savedConfig.liveModeFinalMinutes) - Date.now(), ...automaticRotationEntries
     .map(entry => entry.autoRetainUntil - Date.now())
     .filter(delay => Number.isFinite(delay) && delay > 0), Infinity);
-  const delay = Math.min(providerDelay, expiryDelay);
+  const directoryDelay = Math.min(...sportContexts.map(context => context.provider.discoveryIntervalMs ?? Infinity));
+  const delay = Math.min(providerDelay, expiryDelay, directoryDelay);
   clearTimeout(discoveryTimer);
-  discoveryTimer = setTimeout(() => discoverGames(expiryDelay > providerDelay || sportContexts.some(context => context.sport === "disc-golf")), delay);
+  discoveryTimer = setTimeout(() => discoverGames(expiryDelay > providerDelay || sportContexts.some(context => ["disc-golf", "chess"].includes(context.sport))), delay);
 }
 
 function entryKey(entry) {

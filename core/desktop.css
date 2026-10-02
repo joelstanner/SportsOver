@@ -1,3 +1,4 @@
 .desktop-banner { cursor: grab; user-select: none; }
 .desktop-banner:active { cursor: grabbing; }
 .desktop-banner img { -webkit-user-drag: none; }
+.desktop-banner .chess-scorebug a[href] { cursor: pointer; }
