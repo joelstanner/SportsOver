@@ -3,6 +3,25 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.18.0 — 2026-10-02
+
+### Added
+
+- Live control game cards show available spreads and moneylines using the
+  banner's labels and pregame/live expiry rules.
+- Spread payout prices appear in parentheses when supplied by the feed.
+
+### Changed
+
+- Green highlights mark close matchups: spreads within 3 points for football
+  and basketball, or 0.5 goals for hockey and soccer; moneylines qualify when
+  both teams are within ±120 in the same market. Spread payout prices stay neutral.
+
+### Fixed
+
+- Empty odds entries no longer interrupt rendering of rotation or available games.
+- Priced puck lines and mixed pregame/live odds fit the NHL banner frame.
+
 ## 0.17.0 — 2026-10-02
 
 ### Changed

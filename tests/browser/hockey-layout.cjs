@@ -49,7 +49,7 @@ const root = path.resolve(__dirname, '../..');
         testEvent.startTime=new Date().toISOString();
         Object.assign(testEvent.details,{preseason,powerPlayActive:powerPlay,lastPlay:lastPlay ? 'A long play description that should scroll while keeping the complete odds footer visible.' : ''});
         if(odds!=='none') testEvent.details.odds={
-          spread:{pregame:odds==='mixed'?{away:-1.5,home:1.5}:{},live:odds==='mixed'?{away:-2.5}:{away:-1.5,home:1.5}},
+          spread:{pregame:odds==='mixed'?{away:-1.5,home:1.5}:{},live:odds==='mixed'?{away:-2.5}:{away:-1.5,home:1.5},prices:{pregame:{away:-120,home:121},live:{away:120,home:-121}}},
           moneyline:{pregame:odds==='mixed'?{away:-185,home:154}:{},live:odds==='mixed'?{home:220}:{away:-120,home:-110}},
         };
         testLayout.render(testEvent);

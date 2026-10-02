@@ -56,7 +56,9 @@
   // ESPN summaries and scoreboards embed both closing and explicitly live markets.
   function espnOdds(payload = {}) {
     const competition = payload.header?.competitions?.[0] ?? payload.competitions?.[0] ?? payload;
-    const sources = [payload.pickcenter, payload.odds, competition.odds].find(items => Array.isArray(items) && items.length) ?? [];
+    const sources = [payload.pickcenter, payload.odds, competition.odds]
+      .map(items => Array.isArray(items) ? items.filter(item => item && typeof item === "object" && !Array.isArray(item)) : [])
+      .find(items => items.length) ?? [];
     const source = sources.find(item => item.provider?.priority === 1) ?? sources[0];
     if (!source) return null;
     const number = value => (typeof value !== "number" && typeof value !== "string") || String(value).trim() === "" || !Number.isFinite(Number(value)) ? null : Number(value);
@@ -71,6 +73,10 @@
       return result;
     };
     const spread = market("pointSpread", "line", "spread");
+    const spreadPrices = market("pointSpread", "odds", "spreadOdds");
+    if (Object.values(spreadPrices.pregame).concat(Object.values(spreadPrices.live)).some(value => value !== null)) {
+      spread.prices = spreadPrices;
+    }
     // Legacy spread signs are inconsistent across sports. Only use a named team line.
     if (spread.pregame.away === null && spread.pregame.home === null) {
       const match = String(source.details || "").match(/^(.+?)\s+([+-]\d+(?:\.\d+)?)$/);

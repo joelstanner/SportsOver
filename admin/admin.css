@@ -166,6 +166,8 @@ select, input { border: 1px solid var(--line); border-radius: 8px; padding: 10px
 .game-logo + .game-logo { margin-left: -5px; }
 .game-logo img { width: 21px; height: 21px; object-fit: contain; }
 .game-copy { display: grid; gap: 3px; min-width: 0; }
+.game-copy .sports-odds { justify-content: flex-start; padding: 4px 0 0; background: transparent; column-gap: 12px; }
+.game-copy .sports-odds strong { white-space: normal; overflow-wrap: anywhere; }
 .game-name { overflow: hidden; font-size: 0.82rem; text-overflow: ellipsis; white-space: nowrap; }
 .game-meta, .game-source { color: var(--muted); font-size: 0.68rem; }
 .game-card.is-live .game-meta { color: #ff6b6b; font-weight: 800; }

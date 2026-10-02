@@ -5,6 +5,8 @@
   const configApi = global.SportsOverlay.config;
   const selectionApi = global.SportsOverlay.selection;
   const registryApi = global.SportsOverlay.registry;
+  const oddsApi = global.SportsOverlay.odds;
+  const gameOddsTracker = oddsApi.createTracker();
   let workingConfig = configApi.loadConfig();
   const shared = global.SportsOverlay.shared;
   const providerRefresh = global.SportsOverlay.providerRefresh.create({ config: () => configApi.loadConfig() });
@@ -685,6 +687,9 @@
     const queue = currentRotationQueue();
     const queueList = document.querySelector("#rotation-queue");
     const availableList = document.querySelector("#available-games");
+    for (const list of [queueList, availableList]) {
+      list.querySelectorAll(".game-copy").forEach(mount => oddsApi.clear(mount));
+    }
     queueList.replaceChildren();
     availableList.replaceChildren();
     document.querySelector("#rotation-count").textContent = `${queue.length} game${queue.length === 1 ? "" : "s"}`;
@@ -811,6 +816,17 @@
     renderGameLogos(card.querySelector(".game-logos"), entry.candidate);
     card.querySelector(".game-name").textContent = gameName(entry.candidate);
     card.querySelector(".game-meta").textContent = gameMeta(entry.candidate);
+    const candidate = entry.candidate;
+    const odds = global.SportsOverlay.model.espnOdds(candidate.raw || {});
+    const teams = gameTeams(candidate);
+    if (odds && teams.length === 2) {
+      oddsApi.render(card.querySelector(".game-copy"), {
+        id: candidate.id, sport: candidate.sport, state: candidate.state, startTime: candidate.startTime,
+        teams: { away: { ...teams[0], abbreviation: teams[0].abbreviation || catalogTeam(candidate.sport, teams[0])?.abbreviation || teams[0].name },
+          home: { ...teams[1], abbreviation: teams[1].abbreviation || catalogTeam(candidate.sport, teams[1])?.abbreviation || teams[1].name } },
+        details: { odds, inPlay: (candidate.raw?.competitions?.[0]?.status ?? candidate.raw?.status)?.type?.state === "in" },
+      }, gameOddsTracker);
+    }
     card.classList.toggle("is-final", entry.candidate.state === "final");
     if (entry.candidate.state === "final") {
       const label = document.createElement("span");
