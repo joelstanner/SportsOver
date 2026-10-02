@@ -3,6 +3,27 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.19.0 — 2026-10-02
+
+### Added
+
+- Lichess chess broadcasts with current-round or pinned-round watches, a
+  three-board overview, and followed-player pairings, results, and clock snapshots.
+- Automatic elite chess discovery, enabled by default, searches every 15 minutes.
+  Chess and PDGA discoveries have saved automatic watch lists with inclusion
+  controls and **Keep watch** to preserve manual player preferences.
+- Chess joins normal rotation, Live control, Live mode, and Demo lab. Desktop
+  broadcast links open in the browser while keeping the current banner selection.
+
+### Fixed
+
+- Automatic watch list updates no longer interrupt concurrent Settings saves.
+- Directory discovery stays on its 15-minute cadence with longer score refresh
+  intervals; temporary feed failures preserve saved automatic watches.
+
+Existing PDGA discovery preferences and manual watches are preserved. No migration
+steps are required; automatic chess discovery can be turned off in Settings.
+
 ## 0.18.0 — 2026-10-02
 
 ### Added
