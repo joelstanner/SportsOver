@@ -7,16 +7,15 @@ global.window = globalThis;
 require("../../core/event-model.js");
 
 test("shared non-baseball pregame formatter includes the date unless the game is today", () => {
-  const now = new Date(2026, 9, 24, 12, 0);
-  const today = new Date(2026, 9, 24, 17, 15);
-  const nextWeek = new Date(2026, 9, 31, 17, 15);
-  const timeFormatter = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit", timeZoneName: "short" });
-  const date = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" }).format(nextWeek);
+  const now = new Date("2026-10-24T19:00:00Z");
+  const today = "2026-10-25T00:15:00Z";
+  const nextWeek = "2026-11-01T00:15:00Z";
+  const zone = "America/Los_Angeles";
   const format = global.SportsOverlay.model.formatPregameStart;
 
-  assert.equal(format(today.toISOString(), now), timeFormatter.format(today));
-  assert.equal(format(nextWeek.toISOString(), now), `${date} · ${timeFormatter.format(nextWeek)}`);
-  assert.equal(format("invalid", now), "");
+  assert.equal(format(today, now, zone), "5:15 PM PDT");
+  assert.equal(format(nextWeek, now, zone), "Sat, Oct 31 · 5:15 PM PDT");
+  assert.equal(format("invalid", now, zone), "");
 });
 
 test("selected Pacific time has stable daylight/standard labels and DST boundaries", () => {
