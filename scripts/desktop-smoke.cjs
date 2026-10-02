@@ -229,8 +229,14 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame, 'shrinking does not navigate');
     for (const [scale, direction] of [[0.5, -1], [3, 1]]) {
       await admin.evaluate(scale => window.sportsDesktop.action('size', scale), scale);
+      const area = await application.evaluate(({ BrowserWindow, screen }) => {
+        const win = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('display.html?desktop'));
+        return screen.getDisplayMatching(win.getBounds()).workArea;
+      });
+      // Small CI displays cap the largest banner below the 300% setting.
+      const expectedScale = Math.round(Math.min(472 * scale, area.width, area.height * 472 / 100)) / 472;
       await doubleClickBanner(direction);
-      assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).scale), scale, 'size limit is respected');
+      assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).scale), expectedScale, 'size and display limits are respected');
       assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame, 'double-click at size limit does not navigate');
     }
     await admin.evaluate(() => window.sportsDesktop.action('size', 1));
