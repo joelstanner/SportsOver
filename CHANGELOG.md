@@ -19,9 +19,10 @@ publication to an app store or a GitHub release.
   dependency installation can complete with the pinned tool versions.
 
 The `npm install` / `npm start` workflow remains supported. Updates are manual;
-preferences are retained. No migration is required. Native Windows execution,
-physical interaction, always-on-top and actual OBS checks remain unverified;
-adding the workflow does not establish a successful Windows run.
+preferences are retained. No migration is required. Windows CI passed unit tests,
+installer and checksum verification, and automated desktop checks of unpacked
+and installed copies. Physical interaction, always-on-top and actual OBS checks
+remain unverified.
 
 ## 0.20.0 — 2026-10-02
 
