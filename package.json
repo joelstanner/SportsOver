@@ -18,7 +18,10 @@
     "test:chess": "node tests/browser/chess.cjs",
     "test:chess:desktop": "node scripts/chess-desktop-smoke.cjs",
     "test:pdga": "node tests/browser/pdga.cjs",
-    "test:pdga:live": "node scripts/pdga-desktop-smoke.cjs"
+    "test:pdga:live": "node scripts/pdga-desktop-smoke.cjs",
+    "build:win": "node scripts/build-win.cjs",
+    "dist:win": "node scripts/dist-win.cjs",
+    "verify:package": "node scripts/verify-package.cjs"
   },
   "devDependencies": {
     "electron": "44.5.0",

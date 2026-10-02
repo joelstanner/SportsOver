@@ -1,4 +1,4 @@
-# macOS packaging
+# Desktop packaging
 
 SportsOver can be distributed as a drag-to-Applications DMG without enrolling
 in the Apple Developer Program. The app uses an ad-hoc signature, which checks
@@ -10,7 +10,8 @@ and [Apple's guidance](https://support.apple.com/102445).
 The current Electron runtime requires macOS 13 Ventura or newer. The packaging
 configuration sets the same minimum. Apple Silicon and Intel use separate
 downloads. Do not advertise a platform as tested solely because its build passes.
-Windows retains its source-based `npm install` / `npm start` workflow.
+Windows also supports an unsigned x64 NSIS installer; see below. The source-based
+`npm install` / `npm start` workflow remains available.
 
 ## Build
 
@@ -101,4 +102,49 @@ release. Building locally does not create a Git tag, release, or upload.
 Updates are manual: quit SportsOver and replace the app in Applications.
 Preferences and refreshed catalogs remain under
 `~/Library/Application Support/SportsOver`. Uninstalling the app leaves this
-data in place. No automatic update service or Windows installer is included.
+data in place. No automatic update service is included.
+
+## Windows packaging
+
+On Windows 10 or newer (x64), with Node.js 22 or newer and internet access:
+
+```powershell
+npm ci
+npm test
+npm run build:win # Unpacked app for local testing
+npm run dist:win  # Per-user NSIS installer, x64 only
+npm run verify:package -- dist/windows/win-unpacked/resources/app.asar
+$env:SPORTSOVER_TEST_EXECUTABLE = "$PWD/dist/windows/win-unpacked/SportsOver.exe"
+npm run test:desktop
+```
+
+The pinned Electron and electron-builder versions are unchanged. The assisted
+NSIS installer permits choosing a destination, creates Start menu/desktop
+shortcuts, does not require elevation, and preserves app data on uninstall.
+`packaging/windows.cjs` shares the positive runtime-file allowlist with macOS.
+Build scripts reject non-Windows hosts and unsupported arguments. Signing is
+explicitly disabled and publishing is always disabled, even with credentials.
+
+`dist/windows/` contains `SportsOver-<version>-win-x64-setup.exe`, its matching
+`.exe.sha256`, `Install SportsOver Windows.txt`, and `win-unpacked/`. Publish only
+the matching installer, checksum and instructions, not the working directory or
+builder metadata. The instructions cover checksum comparison, unsigned-app
+warnings, installation, manual updates and retained `%APPDATA%\SportsOver` data.
+See [Windows installation instructions](../packaging/Install%20SportsOver%20Windows.txt).
+Rebuilding replaces those artifacts; checksums identify that build, not a
+byte-for-byte reproducible result. Never include stale assets in a release.
+
+The Windows Actions workflow runs unit tests, builds the installer, inspects the
+runtime ASAR, verifies the checksum, and runs the existing mocked desktop smoke
+suite against both the unpacked executable and a silently installed temporary
+copy. It uploads build artifacts without creating or publishing a release.
+A configured workflow is not evidence of a successful Windows run. Review its
+actual results before describing Windows execution as verified.
+
+Before release, test a browser-downloaded installer on a normal Windows account,
+including first install, replacement of an older installed version with settings
+retained, uninstall and reinstall. Check the executable version/icon, Start menu
+and desktop shortcuts, security prompts and every Windows native/OBS check in
+[TESTING.md](TESTING.md). CI does not prove physical mouse behavior, real OBS
+output, SmartScreen acceptance or operation across real displays and scaling.
+Windows ARM64, 32-bit and code signing are not provided by this path.

@@ -1,0 +1,53 @@
+name: Windows package and smoke
+on:
+  push:
+    branches: [main, 'feat/windows-packaging']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run dist:win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - run: npm run verify:package -- dist/windows/win-unpacked/resources/app.asar
+      - name: Smoke unpacked executable
+        shell: pwsh
+        run: |
+          $env:SPORTSOVER_TEST_EXECUTABLE = "$PWD/dist/windows/win-unpacked/SportsOver.exe"
+          npm run test:desktop
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify checksum and install into isolated directory
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          $installer = "$PWD/dist/windows/SportsOver-$version-win-x64-setup.exe"
+          $expected = (Get-Content "$installer.sha256").Split(' ')[0]
+          if ((Get-FileHash $installer -Algorithm SHA256).Hash.ToLower() -ne $expected) { throw 'Checksum mismatch' }
+          $destination = Join-Path $env:RUNNER_TEMP 'SportsOver-install'
+          $process = Start-Process -FilePath $installer -ArgumentList '/S', "/D=$destination" -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Installer failed: $($process.ExitCode)" }
+          npm run verify:package -- "$destination/resources/app.asar"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $env:SPORTSOVER_TEST_EXECUTABLE = "$destination/SportsOver.exe"
+          npm run test:desktop
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SportsOver-windows-x64
+          if-no-files-found: error
+          path: |
+            dist/windows/*-setup.exe
+            dist/windows/*.exe.sha256
+            dist/windows/Install SportsOver Windows.txt

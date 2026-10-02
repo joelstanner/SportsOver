@@ -4,7 +4,7 @@ const path = require('node:path');
 const { createHash } = require('node:crypto');
 
 async function main() {
-  if (process.platform !== 'darwin') throw Error('Build Mac installers on macOS. Windows still uses npm install and npm start.');
+  if (process.platform !== 'darwin') throw Error('Build Mac installers on macOS. Use dist:win on Windows.');
   const args = process.argv.slice(2);
   if (args.length > 1 || (args.length && !['--arm64', '--x64', '--all'].includes(args[0]))) {
     throw Error('Usage: npm run dist:mac -- [--arm64 | --x64 | --all]');

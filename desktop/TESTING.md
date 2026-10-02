@@ -23,9 +23,9 @@ The automated test invokes native APIs but does **not** establish that physical 
 5. Test macOS Spaces/fullscreen and Windows ordinary/maximized apps. Test tray visibility in light/dark modes and Windows taskbar overflow.
 6. Check operation when Ctrl/Cmd+Shift+U is already registered elsewhere. Settings should report shortcut unavailability; the tray and Settings buttons remain alternatives.
 7. Load the local URL in the actual OBS Browser Source on each target platform. Check reconnection after SportsOver restart and desktop-independent visibility. Test real MLB/ESPN requests and catalog refresh under offline/reconnect conditions.
-8. Check Windows source installation/start and all native behaviors. Linux is experimental, especially Wayland; exclusive-fullscreen and protected system screens are outside the always-on-top guarantee.
+8. Check Windows source installation/start, NSIS installation/update/uninstall, and all native behaviors. Linux is experimental, especially Wayland; exclusive-fullscreen and protected system screens are outside the always-on-top guarantee.
 
-The app intentionally uses explicit proportional size controls because transparent native-window resizing varies by platform. macOS DMG packaging is available with an ad-hoc signature; Developer ID signing, notarization, automatic updates, and Windows installers are not implemented. See [packaging and release checks](PACKAGING.md). The local development bundle is verified separately below.
+The app intentionally uses explicit proportional size controls because transparent native-window resizing varies by platform. macOS DMG packaging is available with an ad-hoc signature; Developer ID signing, notarization, and automatic updates are not implemented. An unsigned Windows x64 NSIS packaging path is available; no native Windows run is claimed by adding it. See [packaging and release checks](PACKAGING.md). The local development bundle is verified separately below.
 
 ## Native menus and icons
 
@@ -101,3 +101,13 @@ checks do not prove Gatekeeper acceptance or Apple notarization.
   checks passed. The Apple Silicon copy installed from the DMG passed the
   desktop/shared-engine smoke suite after ejecting the disk images.
 - The platform and downloaded-app manual checks listed above remain pending.
+
+## Windows packaging verification status
+
+Windows packaging and a Windows Actions build/install/smoke workflow have been
+added. No actual Windows build or execution was performed in the Linux editing
+environment. The workflow must pass on Windows before claiming automated native
+execution. Its mocked HTTP browser-source checks remain distinct from running
+OBS itself. All manual checks above remain required, especially real pointer and
+drag/lock interactions, always-on-top over ordinary/maximized apps, mixed-DPI
+monitors, tray overflow, recovery shortcuts, real feeds and OBS reconnection.

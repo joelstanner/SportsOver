@@ -5,19 +5,7 @@ module.exports = {
   appId: 'com.sportsover.desktop',
   productName: 'SportsOver',
   directories: { output: 'dist/installers', buildResources: 'packaging' },
-  // Positive patterns keep the checkout, tools, tests, credentials and local
-  // state out of the app. Only the catalog module is needed from scripts/.
-  files: [
-    'desktop/*.cjs',
-    'desktop/assets/SportsOver.png',
-    'core/**/*.{js,css,json,svg,html}',
-    'admin/**/*.{js,css,json,svg,html}',
-    'sports/**/*.{js,css,json,svg,html}',
-    'scripts/team-catalog.mjs',
-    'index.html', 'display.html', 'demo.html', 'package.json', 'LICENSE',
-    '!**/{settings,settings.*,integration,credentials*,secrets*}.json',
-    '!**/settings.json.*',
-  ],
+  files: require('./runtime-files.cjs'),
   asar: true,
   npmRebuild: false,
   publish: null,

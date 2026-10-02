@@ -1,0 +1,36 @@
+SportsOver for Windows (x64)
+
+Requires Windows 10 or newer, x64. Windows ARM64 and 32-bit builds are not
+provided. Live scores, logos and catalog refresh need internet access.
+
+1. Download SportsOver-<version>-win-x64-setup.exe and its .exe.sha256 file
+   from the matching official joelstanner/SportsOver GitHub release.
+2. In PowerShell, run Get-FileHash .\SportsOver-<version>-win-x64-setup.exe
+   -Algorithm SHA256 and compare it with the first value in the checksum file.
+   A checksum detects corruption; it does not establish publisher identity.
+3. Quit SportsOver before installation. Run the installer and choose a per-user
+   destination. No administrator access is required. Open SportsOver from the
+   Start menu or desktop shortcut after setup finishes.
+
+These builds are unsigned. Windows may show an unknown-publisher or SmartScreen
+warning. Check the release source and checksum before deciding to continue.
+Do not disable Windows security protections; managed PCs may block this app.
+
+Updates are manual. Check for updates opens the GitHub release page; it does
+not download or install an update. Download the newer installer, verify its
+checksum, quit SportsOver, and install over the same destination for the same
+Windows user. Settings and refreshed catalogs remain in %APPDATA%\SportsOver.
+
+Uninstall through Windows Settings > Apps. User data is retained. Remove
+%APPDATA%\SportsOver separately only if you want to erase settings, catalogs,
+and integration credentials. Keep that folder private.
+
+The system tray provides Settings, show/hide, lock, recovery and Quit. Check
+Windows taskbar overflow if the icon is not visible. Ctrl+Shift+U is the recovery
+shortcut; another application may already use it. Use the local URL shown in
+Settings for an OBS Browser Source. Native interaction, always-on-top and actual
+OBS behavior require the platform checks in desktop/TESTING.md.
+
+Source use remains supported: install Node.js 22 or newer, run npm install in
+the checkout, then npm start. Do not run source and installed copies together;
+they use the same SportsOver data directory and single-instance identity.
