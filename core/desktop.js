@@ -4,8 +4,8 @@
   if (!api || window.top !== window) return;
   if (new URLSearchParams(location.search).has('desktop')) {
     document.body.classList.add('desktop-banner');
-    document.body.title = 'Chess links open in your browser · Left 20%: previous game · Elsewhere: next game · When unlocked: double-click left half to shrink / right half to enlarge, drag to move · Right-click for Settings and position lock';
-    const broadcastLink = target => target.closest('.chess-scorebug a[href]');
+    document.body.title = 'PDGA and chess links open in your browser · Left 20%: previous game · Elsewhere: next game · When unlocked: double-click left half to shrink / right half to enlarge, drag to move · Right-click for Settings and position lock';
+    const bannerLink = target => target.closest('.chess-scorebug a[href], .pdga-scorebug a[href]');
     let pointerId = null;
     const sendPointer = (phase, event) => api.action('banner-pointer', {
       phase, x: event.screenX, y: event.screenY,
@@ -20,7 +20,7 @@
     }
     document.body.addEventListener('pointerdown', event => {
       if (event.button !== 0 || !event.isPrimary) return;
-      if (broadcastLink(event.target)) return;
+      if (bannerLink(event.target)) return;
       event.preventDefault();
       pointerId = event.pointerId;
       document.body.setPointerCapture(pointerId);
@@ -41,10 +41,10 @@
     document.body.addEventListener('pointercancel', cancelPointer);
     document.body.addEventListener('lostpointercapture', cancelPointer);
     document.body.addEventListener('click', event => {
-      const link = broadcastLink(event.target);
+      const link = bannerLink(event.target);
       if (!link) return;
       event.preventDefault();
-      api.action('open-broadcast', link.href).catch(console.error);
+      api.action('open-banner-link', link.href).catch(console.error);
     });
     document.body.addEventListener('dragstart', event => event.preventDefault());
     window.addEventListener('blur', cancelPointer);
@@ -75,7 +75,7 @@
     <div class="desktop-info-guide">
       <h3>Banner controls</h3>
       <dl class="desktop-gestures">
-        <div><dt>Browse games <span>Click</span></dt><dd>Leftmost 20%: previous item. Anywhere else: next item. Chess links open the broadcast in your browser.</dd></div>
+        <div><dt>Browse games <span>Click</span></dt><dd>Leftmost 20%: previous item. Anywhere else: next item. PDGA and chess links open in your browser.</dd></div>
         <div><dt>Resize <span>Double-click</span></dt><dd>When unlocked: left half makes it smaller; right half makes it bigger. Size ranges from 50% to 300%.</dd></div>
         <div><dt>Move <span>Drag</span></dt><dd>When unlocked: click anywhere and drag to reposition. Dragging and resizing keep the current game.</dd></div>
         <div><dt>Banner menu <span>Right-click</span></dt><dd>Open Settings, lock or unlock the banner position, or hide the banner.</dd></div>

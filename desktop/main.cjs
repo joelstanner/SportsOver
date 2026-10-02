@@ -6,7 +6,7 @@ const { startServer, credentials } = require('./server.cjs');
 const { Store, applyCatalog } = require('./store.cjs');
 const { fitBounds, stepBannerScale } = require('./bounds.cjs');
 const { createBannerGesture } = require('./banner-gesture.cjs');
-const { broadcastUrl } = require('./broadcast-link.cjs');
+const { bannerUrl } = require('./banner-link.cjs');
 const { createHandler, ORIGIN } = require('./protocol.cjs');
 const { createUpdateChecker } = require('./updates.cjs');
 const updateChecker = createUpdateChecker({ app, dialog, shell, onStateChange: menus,
@@ -226,9 +226,9 @@ else {
         if (event.sender !== banner.webContents) throw Error('Banner access required');
         bannerGesture(value);
       }
-      else if (action === 'open-broadcast') {
+      else if (action === 'open-banner-link') {
         if (event.sender !== banner.webContents) throw Error('Banner access required');
-        await shell.openExternal(broadcastUrl(value));
+        await shell.openExternal(bannerUrl(value));
       }
       else if (action === 'next') {
         engineWindow.webContents.send('engine:command', { type: 'next' });

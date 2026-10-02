@@ -3,6 +3,17 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.19.1 — 2026-10-02
+
+### Fixed
+
+- PDGA scores links open the displayed tournament, division, and round in the
+  browser. Tournament and player links also work from locked or unlocked desktop
+  banners without advancing rotation.
+- Cached score feeds survive the original request timeout, preventing false
+  stale-data warnings between scheduled refreshes while preserving normal
+  outage handling and request limits.
+
 ## 0.19.0 — 2026-10-02
 
 ### Added

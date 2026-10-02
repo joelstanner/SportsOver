@@ -15,7 +15,7 @@ async function fixture(extraFavorites = [], gameCount = 2, useRealSelection = fa
     gameDurations: {}, lockedGameKeys: [], fallbackMode: "up-next", displayMode: "automatic" };
   const games = Array.from({ length: gameCount }, (_, index) => ({ sport: "baseball", id: String(index + 1), state: "live",
     teamKeys: [useRealSelection ? "TEAM" : "team"], ...(useRealSelection ? { startTime: new Date(0).toISOString() } : {}) }));
-  const response = data => ({ ok: true, clone: () => response(data), json: async () => data });
+  const response = data => Response.json(data);
   const provider = { toCandidate: game => game, normalizeEvent: event => event,
     createClient: ({ fetchImpl, teamId }) => ({ discoveryIntervalMs,
       findGames: async () => (await (await fetchImpl(teamId === "team" ? "schedule" : `schedule/${teamId}`)).json()).events,
@@ -35,7 +35,7 @@ async function fixture(extraFavorites = [], gameCount = 2, useRealSelection = fa
       retainAutoFinals: (_previous, automaticEntries) => automaticEntries,
       applyGameLocks: entries => entries, gameDurationSeconds: (_entry, _overrides, _keyOf, defaults) => defaults?.live || 5 },
   };
-  const context = vm.createContext({ console, URLSearchParams, performance: { now: () => now },
+  const context = vm.createContext({ console, URLSearchParams, Response, performance: { now: () => now },
     Date: class extends Date { static now() { return now; } },
     setTimeout: (fn, delay) => { timers.set(++timerId, { fn, at: now + delay }); return timerId; },
     clearTimeout: id => timers.delete(id),
@@ -55,7 +55,7 @@ async function fixture(extraFavorites = [], gameCount = 2, useRealSelection = fa
   for (const file of ["provider-refresh.js", "provider-discovery.js", "live-mode.js", "app.js"]) {
     await vm.runInContext(fs.readFileSync(path.join(__dirname, "../../core", file), "utf8"), context);
   }
-  const flush = async () => { for (let i = 0; i < 100; i++) await Promise.resolve(); };
+  const flush = async () => { for (let i = 0; i < 10; i++) await new Promise(resolve => setImmediate(resolve)); };
   await flush();
   async function advance(ms) {
     const end = now + ms;

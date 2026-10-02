@@ -6,6 +6,37 @@ require("../../core/provider-refresh.js");
 const api = globalThis.SportsOverlay;
 const provider = { toCandidate: game => game, normalizeEvent: payload => payload };
 
+test("cached scores survive the original request signal expiring without extra requests", async () => {
+  const http = require('node:http');
+  const payload = { state: 'live', score: 7 };
+  let calls = 0;
+  const server = http.createServer((_request, response) => {
+    calls++;
+    response.writeHead(200, { 'Content-Type': 'application/json', 'X-Feed': 'scores' });
+    response.end(JSON.stringify(payload));
+  });
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  try {
+    const cache = api.providerRefresh.create({ config: () => api.config.normalizeConfig(), now: () => 0 });
+    const fetch = cache.fetchFor('baseball', provider);
+    const url = `http://127.0.0.1:${server.address().port}/scores`;
+    const controller = new AbortController();
+    assert.deepEqual(await (await fetch(url, { signal: controller.signal })).json(), payload);
+    controller.abort();
+    const cached = await fetch(url, { signal: new AbortController().signal });
+    assert.equal(cached.headers.get('X-Feed'), 'scores');
+    assert.deepEqual(await cached.json(), payload);
+    assert.deepEqual(await (await fetch(url)).json(), payload);
+    assert.equal(calls, 1);
+  } finally {
+    server.closeAllConnections();
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
 test("NHL situations use the live interval even after an initial failure", async () => {
   require('../../core/event-model.js');
   require('../../sports/hockey/providers/espn.js');

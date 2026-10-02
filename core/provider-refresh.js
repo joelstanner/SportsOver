@@ -37,9 +37,14 @@
             try {
               const response = await fetchImpl(url, options);
               if (!response.ok) { const error = new Error(`Score provider returned HTTP ${response.status}`); error.status = response.status; throw error; }
-              const state = classify(await response.clone().json(), provider, url);
+              // Detach cached bytes from the fetch signal. Its request timeout
+              // can still abort an unread Response body after a successful fetch.
+              const cached = new Response(await response.arrayBuffer(), {
+                status: response.status, statusText: response.statusText, headers: response.headers,
+              });
+              const state = classify(await cached.clone().json(), provider, url);
               record.state = ["live", "interrupted", "pregame", "final"].includes(state) ? state : "idle";
-              record.response = response;
+              record.response = cached;
               record.error = null;
               record.failures = 0;
             } catch (error) {
