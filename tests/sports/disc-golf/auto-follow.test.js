@@ -193,3 +193,19 @@ test('recent-final fallback does not move between rotation and available games d
   f.events.get(id).metadataOffline=false;
   assert.deepEqual(ids(await f.client.discover(options)),[`${id}:MPO`,`${id}:FPO`]);
 });
+
+test('unselected player banners stay out of discovery and cannot reappear as automatic leaderboards', async()=>{
+ const f=fixture(),id=f.add();
+ const pending={tournamentId:id,division:'MPO',enabled:true,view:'player',playerId:''};
+ const leaderboard={...pending,view:'leaderboard',bannerId:'leaders'};
+ const client=api.pdga.createClient({...f.options,autoDivisions:['MPO'],watches:[pending,leaderboard]});
+ let result=await client.discover({topFavoriteOnly:true});
+ assert.deepEqual(ids(result),[`${id}:MPO:banner:leaders`]);
+ assert.deepEqual(result.availableEntries.map(e=>e.candidate.id),[`${id}:MPO:banner:leaders`]);
+ await assert.rejects(client.getEvent(`${id}:MPO`),/not watched/);
+ pending.playerId='123';
+ result=await client.discover();assert.equal(result.automaticEntries.length,2);
+ assert.equal((await client.getEvent(`${id}:MPO`)).details.playerId,'123');
+ pending.playerId='';
+ result=await client.discover();assert.deepEqual(ids(result),[`${id}:MPO:banner:leaders`]);
+});

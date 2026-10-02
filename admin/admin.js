@@ -837,14 +837,14 @@
         if (group.events.length >= 30) { showSettingsError("Remove a watched division before adding another (limit 30)."); return; }
         if (entry.candidate.sport === "chess") {
           const tournamentId = entry.candidate.id.split(":")[0];
-          if (!group.events.some(item => item.tournamentId === tournamentId && !item.roundId)) {
+          if (!group.events.some(item => item.tournamentId === tournamentId && !item.roundId && !item.bannerId)) {
             group.events.push({ tournamentId, roundId: "", name: entry.candidate.raw.name, enabled: true, view: "overview", playerId: "" });
             scheduleSettingsSave("sports"); renderSettings();
           }
           return;
         }
         const [tournamentId, division] = entry.candidate.id.split(":");
-        if (!group.events.some(item => item.tournamentId === tournamentId && item.division === division)) {
+        if (!group.events.some(item => item.tournamentId === tournamentId && item.division === division && !item.bannerId)) {
           group.events.push({ tournamentId, division, name: entry.candidate.raw.name, enabled: true, view: "leaderboard", playerId: "" });
           scheduleSettingsSave("sports"); renderSettings();
         }
@@ -936,8 +936,8 @@
   }
 
   function gameName(candidate) {
-    if (candidate.sport === "chess") return `${candidate.raw?.name || "Chess tournament"} · ${candidate.raw?.roundName || "Round"}`;
-    if (candidate.sport === "disc-golf") return `${candidate.raw?.name || "PDGA tournament"} · ${candidate.raw?.division || ""}`;
+    if (candidate.sport === "chess") return `${candidate.raw?.name || "Chess tournament"} · ${candidate.raw?.roundName || "Round"}${candidate.raw?.bannerLabel ? ` · ${candidate.raw.bannerLabel}` : ""}`;
+    if (candidate.sport === "disc-golf") return `${candidate.raw?.name || "PDGA tournament"} · ${candidate.raw?.division || ""}${candidate.raw?.bannerLabel ? ` · ${candidate.raw.bannerLabel}` : ""}`;
     if (candidate.sport === "baseball") {
       const teams = candidate.raw?.teams;
       return [teams?.away?.team?.name, teams?.home?.team?.name].filter(Boolean).join(" at ") || `Game ${candidate.id}`;

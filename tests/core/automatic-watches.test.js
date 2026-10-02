@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict');
 require('../../core/config.js');require('../../core/automatic-watches.js');
-const api=global.SportsOverlay,watch={tournamentId:'Tour1234',roundId:'',name:'Elite Open',enabled:true,view:'overview',playerId:''};
+const api=global.SportsOverlay,watch={tournamentId:'Tour1234',roundId:'',name:'Elite Open',enabled:true,view:'overview',playerId:'',leaderboardSize:10};
 function config(){const c=api.config.normalizeConfig();c.sports.find(g=>g.sport==='disc-golf').autoFollow=true;return c;}
 test('automatic watches persist separately from manual choices, deduplicate, and retire after a healthy search',()=>{
  const c=config();c.sports.find(g=>g.sport==='chess').events=[{...watch,tournamentId:'Manual01',view:'player',playerId:'fide:123'}];

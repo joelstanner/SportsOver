@@ -73,3 +73,19 @@ test('automatic chess discovery defaults on for new configs while preserving an 
  assert.equal(api.config.normalizeConfig().sports.find(g=>g.sport==='chess').autoFollow,true);
  assert.equal(api.config.normalizeConfig({sports:[{sport:'chess',autoFollow:false}]}).sports[0].autoFollow,false);
 });
+
+test('unselected player banners stay out of discovery and cannot reappear as automatic standings', async()=>{
+ const f=fixture(),id=f.add('Best0001');
+ const pending={tournamentId:id,roundId:'',enabled:true,view:'player',playerId:''};
+ const leaderboard={...pending,view:'overview',bannerId:'leaders'};
+ const client=lichess.createClient({...f.options,watches:[pending,leaderboard]});
+ let result=await client.discover({topFavoriteOnly:true});
+ assert.deepEqual(ids(result),[`${id}:auto:banner:leaders`]);
+ assert.deepEqual(result.availableEntries.map(e=>e.candidate.id),[`${id}:auto:banner:leaders`]);
+ await assert.rejects(client.getEvent(`${id}:auto`),/not watched/);
+ pending.playerId='fide:123';
+ result=await client.discover();assert.equal(result.automaticEntries.length,2);
+ assert.equal((await client.getEvent(`${id}:auto`)).details.playerId,'fide:123');
+ pending.playerId='';
+ result=await client.discover();assert.deepEqual(ids(result),[`${id}:auto:banner:leaders`]);
+});

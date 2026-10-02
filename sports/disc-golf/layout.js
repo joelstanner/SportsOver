@@ -11,12 +11,12 @@
     global.SportsOverlay.odds?.clear(mount);
     mount.className = "pdga-scorebug is-loading";
     delete mount.dataset.preseason;
-    let lastEvent = null;
+    let lastEvent = null, scrollState = null;
     function render(event) {
       lastEvent = event;
       const { details, competitors } = event;
       const stale = details.stale && event.state !== "pregame";
-      const leaders = competitors.filter(player => !player.status).slice(0, 3);
+      const leaders = competitors.filter(player => !player.status).slice(0, details.leaderboardSize === 3 ? 3 : 10);
       const featured = details.view === "player" && competitors.find(player => player.pdgaNumber === details.playerId);
       const roundLabel = `R${details.round}`;
       const state = event.state === "final" ? "FINAL" : event.state === "interrupted" ? "BREAK" : event.state === "live" ? "LIVE" : "UPCOMING";
@@ -37,14 +37,15 @@
       mount.dataset.sport = "disc-golf"; mount.dataset.state = event.state; mount.dataset.stale = String(stale);
       mount.setAttribute("aria-label", `${details.name}, ${details.division}, round ${details.round}, ${event.detailedState}${stale ? ", stale scores" : ""}`);
       mount.innerHTML = `<div class="pdga-bar"><span class="pdga-brand">PDGA</span><a class="pdga-event" href="https://www.pdga.com/tour/event/${encodeURIComponent(details.tournamentId)}" target="_blank" rel="noopener" title="${escape(details.name)}">${escape(details.name)}</a><span class="pdga-state">${escape(details.division)} · ${roundLabel} · ${state}</span></div>
-        ${featured ? `<div class="pdga-focus"><span class="pdga-place">${place(featured)}</span><div class="pdga-person"><strong class="pdga-name">${playerName(featured)}</strong><span class="pdga-sub">${featured.wonPlayoff ? "Playoff winner" : `PDGA #${escape(featured.pdgaNumber)}`} · ${roundLabel}</span></div>${metric("TOTAL", signed(featured.total), "pdga-total")}${metric("ROUND", signed(featured.roundToPar))}${metric(!featured.started && featured.teeTime ? "TEE" : "THRU", through(featured))}</div><div class="pdga-chase"><span>LEADERS</span>${leaders.map(player => `<span>${place(player)} ${escape(player.shortName)} <b>${signed(player.total)}</b></span>`).join("")}</div>`
-        : `<div class="pdga-board"><div class="pdga-labels"><span>POS</span><span>PLAYER</span><span>TOTAL</span><span>ROUND</span><span>${event.state === "pregame" ? "TEE" : "THRU"}</span></div>${leaders.length ? leaders.map(player => `<div class="pdga-entry"><span class="pdga-place">${place(player)}</span><strong class="pdga-name">${playerName(player)}${player.wonPlayoff ? '<span class="pdga-playoff">PLAYOFF</span>' : ""}</strong><strong class="pdga-total">${signed(player.total)}</strong><span>${signed(player.roundToPar)}</span><span class="pdga-thru" title="${escape(!player.started && player.teeTime ? `Tee ${player.teeTime} (course local)` : through(player))}">${through(player)}</span></div>`).join("") : '<div class="pdga-empty">Awaiting player scores</div>'}</div>`}
+        ${featured ? `<div class="pdga-focus"><span class="pdga-place">${place(featured)}</span><div class="pdga-person"><strong class="pdga-name">${playerName(featured)}</strong><span class="pdga-sub">${featured.wonPlayoff ? "Playoff winner" : `PDGA #${escape(featured.pdgaNumber)}`} · ${roundLabel}</span></div>${metric("TOTAL", signed(featured.total), "pdga-total")}${metric("ROUND", signed(featured.roundToPar))}${metric(!featured.started && featured.teeTime ? "TEE" : "THRU", through(featured))}</div><div class="pdga-chase"><span>LEADERS</span>${leaders.slice(0, 3).map(player => `<span>${place(player)} ${escape(player.shortName)} <b>${signed(player.total)}</b></span>`).join("")}</div>`
+        : `<div class="pdga-board"><div class="pdga-labels"><span>POS</span><span>PLAYER</span><span>TOTAL</span><span>ROUND</span><span>${event.state === "pregame" ? "TEE" : "THRU"}</span></div><div class="scorebug-vertical-viewport"><div class="scorebug-vertical-track">${leaders.length ? leaders.map(player => `<div class="pdga-entry"><span class="pdga-place">${place(player)}</span><strong class="pdga-name">${playerName(player)}${player.wonPlayoff ? '<span class="pdga-playoff">PLAYOFF</span>' : ""}</strong><strong class="pdga-total">${signed(player.total)}</strong><span>${signed(player.roundToPar)}</span><span class="pdga-thru" title="${escape(!player.started && player.teeTime ? `Tee ${player.teeTime} (course local)` : through(player))}">${through(player)}</span></div>`).join("") : '<div class="pdga-empty">Awaiting player scores</div>'}</div></div></div>`}
         <div class="pdga-footer"><span class="scorebug-scroll-viewport"><span class="scorebug-scroll-text">${escape(footer)}</span></span><a href="https://www.pdga.com/live/event/${encodeURIComponent(details.tournamentId)}/${encodeURIComponent(details.division)}/scores?round=${encodeURIComponent(details.round)}" target="_blank" rel="noopener">Scores: PDGA ↗</a></div>`;
       global.SportsOverlay.scrolling?.render(mount.querySelector(".scorebug-scroll-viewport"), mount.querySelector(".scorebug-scroll-text"), footer);
+      scrollState = global.SportsOverlay.scrolling?.vertical(mount.querySelector(".scorebug-vertical-viewport"), event, scrollState);
       return event.state;
     }
     function renderNoEvent(message = "Choose a PDGA tournament in Settings", visible = true) {
-      lastEvent = null;
+      lastEvent = null; scrollState = null;
       mount.setAttribute("aria-label", `PDGA · ${message}`);
       delete mount.dataset.stale;
       mount.classList.remove("is-loading"); mount.classList.toggle("is-hidden", !visible);

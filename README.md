@@ -224,3 +224,9 @@ uploaded automatically. See [macOS packaging](desktop/PACKAGING.md) for build
 commands, verification, and the release checklist.
 
 The menu-bar scoreboard uses a compact template icon with a persistent position. Its initial position is near the right edge to avoid a crowded MacBook notch area; Cmd-drag can reposition it. Banner controls also remain available in the Banner application menu.
+
+### Tournament and player banners
+
+Disc golf and chess can each show a tournament leaderboard and a separate followed-player banner for the same event. Add the tournament in Settings, then choose **Add player banner** and select the player. Player banners stay out of rotation until a player is selected; clearing that selection removes the banner from rotation again. Each banner can be included, reordered, locked, or removed independently. A player banner also offers **Add tournament banner**.
+
+Tournament banners default to **Top 10 · scroll vertically**, showing three rows at a time in the existing compact banner. **Top 3 · static** is also available. Chess standings use Lichess's published tournament points and tiebreak order; broadcasts without published totals show an unavailable message. Hover or focus the list to pause it in place; it resumes when you leave. Reduced-motion mode uses manual scrolling.

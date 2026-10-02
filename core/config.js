@@ -168,15 +168,26 @@
     )]));
   }
 
+  // Keep legacy tournament keys stable; extra banners have their own identity.
+  function watchId(watch) {
+    return `${watch.tournamentId}:${watch.division || watch.roundId || "auto"}${watch.bannerId ? `:banner:${watch.bannerId}` : ""}`;
+  }
+
+  function bannerOptions(event) {
+    return { ...(/^[a-zA-Z0-9-]{1,64}$/.test(String(event?.bannerId || "")) ? { bannerId: String(event.bannerId) } : {}),
+      leaderboardSize: event?.leaderboardSize === 3 ? 3 : 10 };
+  }
+
   function normalizePdgaEvents(events) {
     const seen = new Set();
     return (Array.isArray(events) ? events : []).flatMap(event => {
       const tournamentId = String(event?.tournamentId || "");
       const division = String(event?.division || "").toUpperCase();
-      const key = `${tournamentId}:${division}`;
+      const options = bannerOptions(event);
+      const key = watchId({ tournamentId, division, ...options });
       if (!/^[1-9]\d{0,8}$/.test(tournamentId) || !/^[A-Z][A-Z0-9]{1,5}$/.test(division) || seen.has(key)) return [];
       seen.add(key);
-      return [{ tournamentId, division, name: String(event.name || `PDGA ${tournamentId}`).slice(0, 180),
+      return [{ tournamentId, division, ...options, name: String(event.name || `PDGA ${tournamentId}`).slice(0, 180),
         enabled: event.enabled !== false, view: event.view === "player" ? "player" : "leaderboard",
         playerId: /^[1-9]\d{0,8}$/.test(String(event.playerId || "")) ? String(event.playerId) : "" }];
     }).slice(0, 30);
@@ -187,10 +198,11 @@
     return (Array.isArray(events) ? events : []).flatMap(event => {
       const tournamentId = String(event?.tournamentId || "");
       const roundId = String(event?.roundId || "");
-      const key = `${tournamentId}:${roundId || "auto"}`;
+      const options = bannerOptions(event);
+      const key = watchId({ tournamentId, roundId, ...options });
       if (!/^[a-zA-Z0-9]{8}$/.test(tournamentId) || (roundId && !/^[a-zA-Z0-9]{8}$/.test(roundId)) || seen.has(key)) return [];
       seen.add(key);
-      return [{ tournamentId, roundId, name: String(event.name || `Chess ${tournamentId}`).slice(0, 180),
+      return [{ tournamentId, roundId, ...options, name: String(event.name || `Chess ${tournamentId}`).slice(0, 180),
         enabled: event.enabled !== false, view: event.view === "player" ? "player" : "overview",
         playerId: /^(fide:[1-9]\d{0,9}|name:.{1,180})$/.test(String(event.playerId || "")) ? String(event.playerId) : "" }];
     }).slice(0, 30);
@@ -321,16 +333,20 @@
       .filter(Boolean));
   }
 
+  function isWatchEnabled(watch) {
+    return Boolean(watch && watch.enabled !== false && (watch.view !== "player" || watch.playerId));
+  }
+
   function isCandidateEnabled(config, candidate) {
     const group = config.sports.find(group => group.sport === candidate?.sport);
     if (!group || group.enabled === false) return false;
     if (candidate.sport === "chess") {
-      const watch = group.events.find(event => `${event.tournamentId}:${event.roundId || "auto"}` === candidate.id);
-      return watch ? watch.enabled !== false : group.autoFollow === true && candidate.raw?.automatic === true;
+      const watch = group.events.find(event => watchId(event) === candidate.id);
+      return watch ? isWatchEnabled(watch) : group.autoFollow === true && candidate.raw?.automatic === true;
     }
     if (candidate.sport !== "disc-golf") return true;
-    const watch = group.events.find(event => `${event.tournamentId}:${event.division}` === candidate.id);
-    if (watch) return watch.enabled !== false;
+    const watch = group.events.find(event => watchId(event) === candidate.id);
+    if (watch) return isWatchEnabled(watch);
     return group.autoFollow === true && candidate.raw?.automatic === true
       && group.autoDivisions.includes(candidate.raw.division);
   }
@@ -359,5 +375,7 @@
     findTeam,
     enabledTeams,
     isCandidateEnabled,
+    isWatchEnabled,
+    watchId,
   });
 })(typeof window === "undefined" ? globalThis : window);

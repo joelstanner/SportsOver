@@ -76,3 +76,32 @@ test("configuration validates, deduplicates, preserves player selection, and gat
   assert.equal(enabled(config, { sport: "chess", id: "Tour1234:Round001" }), false);
   group.enabled = false; assert.equal(enabled(config, { sport: "chess", id: "Tour1234:auto" }), false);
 });
+
+test('standings use published tournament scores and tiebreak ranks, excluding unscored players', () => {
+  const standings = api.normalizeStandings([
+    { name: 'Unscored', rank: 1 }, { name: 'Zero', score: 0, rank: 4 },
+    { name: 'Tie second', score: 5.5, rank: 2, played: 7 },
+    { name: 'Leader', score: 6, rank: 1 }, { name: 'Tie third', score: 5.5, rank: 3 },
+  ]);
+  assert.deepEqual(standings.map(p => p.name), ['Leader', 'Tie second', 'Tie third', 'Zero']);
+  assert.equal(standings[1].played, 7);
+  assert.throws(() => api.normalizeStandings({ games: [] }), /unavailable/);
+});
+
+test('tournament standings and player banners remain independent through discovery and a standings outage', async () => {
+  let failed = false;
+  const watches = [watch, { ...watch, bannerId: 'follow-white', view: 'player', playerId: 'fide:123' }];
+  const client = api.createClient({ watches, session: api.createSession(), fetchImpl: async url => {
+    if (url.endsWith('/players')) return failed ? response({}, 503) : response([{name:'Leader', score:5.5, rank:1, played:7}]);
+    return response(url.includes('/-/-/') ? payload : metadata);
+  }});
+  const discovered = await client.discover();
+  assert.deepEqual(discovered.automaticEntries.map(e => e.candidate.id), ['Tour1234:auto', 'Tour1234:auto:banner:follow-white']);
+  assert.equal((await client.getEvent('Tour1234:auto')).details.standings[0].score, 5.5);
+  assert.equal((await client.getEvent('Tour1234:auto:banner:follow-white')).details.playerId, 'fide:123');
+  failed = true;
+  const retained = await client.getEvent('Tour1234:auto');
+  assert.equal(retained.details.standings[0].score, 5.5);
+  assert.equal(retained.details.standingsUnavailable, true);
+  assert.equal((await client.getEvent('Tour1234:auto:banner:follow-white')).details.stale, false);
+});

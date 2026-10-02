@@ -164,3 +164,12 @@ test('a missing first score feed uses upcoming checks rather than live retries',
     await assert.rejects(fetch(url)); assert.equal(calls,1+now/60000);
   }
 });
+
+test('leaderboard and player banners for one division survive discovery independently', async () => {
+  const watches = [watch, {...watch,bannerId:'kevin',view:'player',playerId:'41760'}];
+  const client = api.pdga.createClient({watches,fetchImpl:async url=>({ok:true,json:async()=>({data:url.includes('fetch_event')?metadata:round})})});
+  const result = await client.discover();
+  assert.deepEqual(result.automaticEntries.map(e=>e.candidate.id),['86076:MPO','86076:MPO:banner:kevin']);
+  assert.equal((await client.getEvent('86076:MPO:banner:kevin')).details.playerId,'41760');
+  assert.equal((await client.getEvent('86076:MPO')).details.view,'leaderboard');
+});

@@ -5,7 +5,8 @@
   const validId = value => /^[a-zA-Z0-9]{8}$/.test(String(value || ""));
   const numeric = value => typeof value === "number" && Number.isFinite(value) ? value : null;
   const completed = round => Boolean(round.finishedAt || round.finished);
-  const watchId = watch => `${watch.tournamentId}:${watch.roundId || "auto"}`;
+  const isWatchEnabled = watch => global.SportsOverlay.config.isWatchEnabled(watch);
+  const watchId = watch => global.SportsOverlay.config.watchId(watch);
   const iso = value => numeric(value) !== null && !Number.isNaN(new Date(value).getTime()) ? new Date(value).toISOString() : null;
   function reference(value) {
     const text = String(value || "").trim();
@@ -42,6 +43,15 @@
       name: String(player.name || "Player"), color, title: String(player.title || ""),
       rating: numeric(player.rating), federation: String(player.fed || ""), clock: numeric(player.clock) };
   }
+  // Published broadcast totals include Lichess custom scoring and tiebreak ranks.
+  // Never infer tournament standings by adding the currently visible boards.
+  function normalizeStandings(value) {
+    if (!Array.isArray(value)) throw Error("Lichess standings unavailable");
+    return value.filter(person => person && typeof person === "object" && numeric(person.score) !== null)
+      .map(person => ({ ...normalizePlayer(person), score: numeric(person.score),
+        rank: numeric(person.rank), played: numeric(person.played) }))
+      .sort((a, b) => b.score - a.score || (a.rank ?? Infinity) - (b.rank ?? Infinity));
+  }
   function normalizeEvent(metadata, payload, watch) {
     if (!validId(metadata?.tour?.id) || !validId(payload?.round?.id) || !Array.isArray(payload.games)) throw Error("Lichess returned an invalid broadcast feed");
     const round = payload.round;
@@ -57,14 +67,16 @@
       state, detailedState: state === "interrupted" ? "Round complete" : state === "final" ? "Final" : state === "live" ? "Live" : "Upcoming",
       startTime: iso(round.startsAt), competitors: games.flatMap(game => game.players),
       details: { tournamentId: metadata.tour.id, roundId: round.id, name: metadata.tour.name || watch.name,
-        roundName: round.name || "Round", games, view: watch.view || "overview", playerId: watch.playerId || "",
+        roundName: round.name || "Round", games, view: watch.view || "overview", playerId: watch.playerId || "", leaderboardSize: watch.leaderboardSize === 3 ? 3 : 10,
         timeControl: String(metadata.tour.info?.tc || ""), delay: numeric(round.delay), stale: false, automatic: watch.automatic === true,
         roundUrl: `https://lichess.org/broadcast/-/-/${round.id}`, lastPlay: "" } });
   }
   function toCandidate(event) {
     return { id: event.id, sport: "chess", competitionType: "individual", state: event.state, startTime: event.startTime,
       teamKeys: [], competitorKeys: event.competitors.map(player => player.id),
-      raw: { name: event.details.name, roundName: event.details.roundName, stale: event.details.stale, automatic: event.details.automatic } };
+      raw: { name: event.details.name, bannerLabel: event.details.view === "player"
+        ? `Player · ${event.competitors.find(player => (player.pdgaNumber || player.id) === event.details.playerId)?.name || "Choose a player"}`
+        : `Top ${event.details.leaderboardSize} players`, roundName: event.details.roundName, stale: event.details.stale, automatic: event.details.automatic } };
   }
   function createSession() { return { tail: Promise.resolve(), requests: new Map(), lastGood: new Map(), cooldownUntil: 0, directory: [], directoryAt: -Infinity, directoryPending: null, watches: new Map(), finishedAt: new Map(), activeWatches: new Set() }; }
   function eliteEvents(directory, now) {
@@ -83,7 +95,7 @@
   function createClient({ watches = [], autoFollow = false, session = defaultSession, fetchImpl = global.fetch.bind(global), now = Date.now, requestTimeoutMs = 8000 } = {}) {
     // Lichess asks clients to serialize requests and pause for a minute on 429.
     async function get(path) {
-      const url = BASE + path;
+      const url = path.startsWith("/broadcast/") ? `https://lichess.org${path}` : BASE + path;
       if (session.requests.has(url)) return session.requests.get(url);
       const pending = session.tail.catch(() => {}).then(async () => {
         if (now() < session.cooldownUntil) throw Error("Lichess rate limit · retrying after one minute");
@@ -108,6 +120,10 @@
       const value = await get(`-/-/${id}`);
       if (!validId(value.round?.id) || !validId(value.tour?.id) || !Array.isArray(value.games)) throw Error("Lichess round unavailable");
       return value;
+    }
+    async function getStandings(id) {
+      if (!validId(id)) throw Error("Invalid Lichess tournament ID");
+      return normalizeStandings(await get(`/broadcast/${id}/players`));
     }
     async function resolve(value) {
       const ref = reference(value);
@@ -144,24 +160,31 @@
         const round = selectRound(metadata, watch.roundId, now());
         if (!round) { const error = Error("Selected chess round is unavailable"); error.missingRound = true; throw error; }
         const event = normalizeEvent(metadata, await getRound(round.id), watch);
+        if (watch.view !== "player" || !event.competitors.some(person => person.id === watch.playerId)) {
+          try { event.details.standings = await getStandings(watch.tournamentId); }
+          catch (_) {
+            event.details.standings = session.lastGood.get(id)?.details.standings || [];
+            event.details.standingsUnavailable = true;
+          }
+        }
         session.lastGood.set(id, structuredClone(event));
         if (session.lastGood.size > 60) session.lastGood.delete(session.lastGood.keys().next().value);
         return event;
       } catch (error) {
         const cached = session.lastGood.get(id);
         if (!cached || error.missingRound) throw error;
-        return { ...cached, details: { ...cached.details, stale: true, automatic: watch.automatic === true, view: watch.view, playerId: watch.playerId } };
+        return { ...cached, details: { ...cached.details, stale: true, automatic: watch.automatic === true, view: watch.view, playerId: watch.playerId, leaderboardSize: watch.leaderboardSize === 3 ? 3 : 10 } };
       }
     }
     async function getEvent(id) {
       const manual = watches.find(item => watchId(item) === id);
       const watch = manual || (autoFollow && session.watches.get(id));
-      if (!watch || watch.enabled === false) throw Error("Chess tournament is not watched");
+      if (!isWatchEnabled(watch)) throw Error("Chess tournament is not watched");
       return loadEvent(watch);
     }
     async function discover({ topFavoriteOnly = false, fallbackMode = "up-next", excludedKeys = [], retentionMs = 60 * 60_000 } = {}) {
       const manual = [], automatic = [], excluded = new Set(excludedKeys); let failures = 0;
-      for (const watch of watches.filter(item => item.enabled !== false)) {
+      for (const watch of watches.filter(isWatchEnabled)) {
         try { const event = await loadEvent(watch); failures += Number(event.details.stale); manual.push(event); }
         catch (_) { failures++; }
       }
@@ -187,7 +210,7 @@
         const watch = { tournamentId: tour.id, roundId: "", name: tour.name, enabled: true, view: "overview", playerId: "", automatic: true };
         const id = watchId(watch), saved = watches.find(item => watchId(item) === id);
         session.watches.set(id, watch);
-        if (saved?.enabled === false) continue;
+        if (saved && !isWatchEnabled(saved)) continue;
         try {
           const event = manualById.get(id) || await loadEvent(watch);
           if (!manualById.has(id)) failures += Number(event.details.stale);
@@ -211,7 +234,7 @@
       if (!selected.length && fallbackMode === "recent-final") selected = eligible.filter(event => event.state === "final")
         .sort((a, b) => Date.parse(b.startTime || "") - Date.parse(a.startTime || "")).slice(0, 1);
       if (topFavoriteOnly) selected = selected.slice(0, 1);
-      const firstWatch = watches.find(watch => watch.enabled !== false);
+      const firstWatch = watches.find(isWatchEnabled);
       const rotation = new Map((topFavoriteOnly ? manual.filter(event => event.id === watchId(firstWatch || {})) : manual).map(event => [event.id, asEntry(event)]));
       for (const event of selected) {
         const finish = session.finishedAt.get(event.id);
@@ -223,11 +246,12 @@
         automaticWatches: autoFollow && !session.directoryError ? [...session.watches.values()].filter(watch => !watches.some(item => watchId(item) === watchId(watch))) : null,
         automaticWatchesComplete: failures === manualFailures };
     }
-    return { getMetadata, getRound, resolve, listCurrentEvents, getEvent, discover, discoveryIntervalMs: autoFollow ? DIRECTORY_INTERVAL : Infinity };
+    return { getMetadata, getRound, getStandings, resolve, listCurrentEvents, getEvent, discover, discoveryIntervalMs: autoFollow ? DIRECTORY_INTERVAL : Infinity };
   }
-  const provider = { createClient, createSession, eliteEvents, reference, watchId, selectRound, gameState, roundState, normalizeEvent, normalizePlayer, toCandidate,
+  const provider = { createClient, createSession, eliteEvents, reference, watchId, selectRound, gameState, roundState, normalizeEvent, normalizePlayer, normalizeStandings, toCandidate,
     failureBackoff: true, refreshIntervalMs: url => String(url).endsWith("/top") ? DIRECTORY_INTERVAL : undefined,
     refreshState(payload, url) {
+      if (String(url).endsWith("/players")) return "live";
       if (String(url).includes("/-/-/")) return payload ? roundState(payload) : "pregame";
       if (payload?.rounds) return payload.rounds.length && payload.rounds.every(completed) ? "final" : "live";
       return "pregame";

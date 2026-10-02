@@ -1,6 +1,6 @@
 "use strict";
 (function initializeAutomaticWatches(global) {
-  const keyOf = (sport, watch) => sport === "disc-golf" ? `${watch.tournamentId}:${watch.division}` : `${watch.tournamentId}:${watch.roundId || "auto"}`;
+  const keyOf = (sport, watch) => global.SportsOverlay.config.watchId(watch);
   function reconcile(config, discoveries) {
     const next = structuredClone(config);
     for (const result of discoveries) {

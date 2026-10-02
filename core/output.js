@@ -25,6 +25,13 @@
       current.replaceWith(next);
       return;
     }
+    // Restart with the engine's elapsed offset, rather than applying it twice
+    // to an already-running desktop/OBS animation.
+    if (current.classList.contains('scorebug-vertical-track')
+      && current.style.getPropertyValue('--vertical-delay') !== next.style.getPropertyValue('--vertical-delay')) {
+      current.replaceWith(next);
+      return;
+    }
     for (const attribute of [...current.attributes]) {
       if (!next.hasAttribute(attribute.name)) current.removeAttribute(attribute.name);
     }

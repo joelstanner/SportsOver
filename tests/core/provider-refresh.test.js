@@ -145,3 +145,20 @@ test("a synchronous transport failure releases the in-flight slot for retry", as
   await fetch("schedule");
   assert.equal(calls, 2);
 });
+
+test('explicit retry refreshes failed feeds only and preserves other sports and healthy caches', async () => {
+  const f = fixture();
+  await f.fetch('healthy');
+  const other = f.cache.fetchFor('chess', provider);
+  f.fail(true);
+  await assert.rejects(f.fetch('failed'), /offline/);
+  await assert.rejects(other('other-failed'), /offline/);
+  f.fail(false);
+  await assert.rejects(f.fetch('failed'), /offline/);
+  assert.equal(f.calls(), 3);
+  f.fetch.retryFailed();
+  await f.fetch('failed');
+  await f.fetch('healthy');
+  await assert.rejects(other('other-failed'), /offline/);
+  assert.equal(f.calls(), 4);
+});

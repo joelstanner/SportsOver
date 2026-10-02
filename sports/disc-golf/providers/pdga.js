@@ -3,6 +3,8 @@
 (function initializePdga(global) {
   const BASE = "https://www.pdga.com/apps/tournament/live-api/";
   const CURRENT = "https://www.pdga.com/api/v1/feat/current-events/tournaments";
+  const isWatchEnabled = watch => global.SportsOverlay.config.isWatchEnabled(watch);
+  const watchId = watch => global.SportsOverlay.config.watchId(watch);
   const lastGood = new Map();
   const number = value => value === null || value === undefined || String(value).trim() === "" || !Number.isFinite(Number(value)) ? null : Number(value);
   const flag = value => value === true || value === 1 || value === "1" || value === "yes";
@@ -49,7 +51,7 @@
     const state = (current === "final" && (!finalRound || roundNumber < finalRound))
       || (current === "pregame" && roundNumber > 1) ? "interrupted" : current;
     return global.SportsOverlay.model.createEvent({
-      id: `${watch.tournamentId}:${watch.division}`, sport: "disc-golf", league: "PDGA", competitionType: "individual",
+      id: watchId(watch), sport: "disc-golf", league: "PDGA", competitionType: "individual",
       state, detailedState: state === "interrupted" ? "Round complete" : state === "pregame" ? "Awaiting scores" : state === "final" ? "Final" : "Live",
       // PDGA provides dates without a guaranteed zone. Keep the date as display
       // metadata rather than inventing a UTC tee time for queue/preview labels.
@@ -57,7 +59,7 @@
       details: {
         tournamentId: watch.tournamentId, division: watch.division, round: roundNumber,
         name: metadata.SimpleName || metadata.Name || watch.name, dateRange: metadata.DateRange || metadata.StartDate || "",
-        view: watch.view || "leaderboard", playerId: watch.playerId || "", layouts: round.layouts || [],
+        view: watch.view || "leaderboard", playerId: watch.playerId || "", leaderboardSize: watch.leaderboardSize === 3 ? 3 : 10, layouts: round.layouts || [],
         stale: false, automatic: watch.automatic === true,
       },
     });
@@ -65,7 +67,9 @@
   function toCandidate(event) {
     return { id: event.id, sport: "disc-golf", competitionType: "individual", state: event.state, startTime: null,
       teamKeys: [], competitorKeys: event.competitors.map(player => player.pdgaNumber).filter(Boolean),
-      raw: { name: event.details.name, division: event.details.division, round: event.details.round,
+      raw: { name: event.details.name, bannerLabel: event.details.view === "player"
+        ? `Player · ${event.competitors.find(player => (player.pdgaNumber || player.id) === event.details.playerId)?.name || "Choose a player"}`
+        : `Top ${event.details.leaderboardSize} players`, division: event.details.division, round: event.details.round,
         dateRange: event.details.dateRange, stale: event.details.stale, automatic: event.details.automatic, detailedState: event.detailedState } };
   }
   const DIRECTORY_INTERVAL = 15 * 60_000;
@@ -121,13 +125,13 @@
       return response.data;
     }
     async function getEvent(id) {
-      const manual = watches.find(item => `${item.tournamentId}:${item.division}` === id);
+      const manual = watches.find(item => watchId(item) === id);
       const watch = manual || (autoFollow && session.watches.get(id));
-      if (!watch || watch.enabled === false || (!manual && !autoDivisions.includes(watch.division))) throw Error("PDGA tournament/division is not watched");
+      if (!isWatchEnabled(watch) || (!manual && !autoDivisions.includes(watch.division))) throw Error("PDGA tournament/division is not watched");
       return loadEvent(watch);
     }
     async function loadEvent(watch, metadataPromise) {
-      const id = `${watch.tournamentId}:${watch.division}`;
+      const id = watchId(watch);
       try {
         const metadata = await (metadataPromise || getMetadata(watch.tournamentId));
         const division = metadata.Divisions.find(item => item.Division === watch.division);
@@ -150,7 +154,7 @@
         if (!cached || error.unsupported) throw error;
         // Upcoming fields may have tee times but no scores to go stale. Keep
         // their normal status until a routine refresh detects play starting.
-        return { ...cached, details: { ...cached.details, stale: cached.state !== "pregame", unavailable: true, automatic: watch.automatic === true, view: watch.view, playerId: watch.playerId } };
+        return { ...cached, details: { ...cached.details, stale: cached.state !== "pregame", unavailable: true, automatic: watch.automatic === true, view: watch.view, playerId: watch.playerId, leaderboardSize: watch.leaderboardSize === 3 ? 3 : 10 } };
       }
     }
     async function listCurrentEvents() {
@@ -172,7 +176,7 @@
       let failures = 0;
       const excluded = new Set(excludedKeys);
       const eligible = watch => !excluded.has(`disc-golf:${watch.tournamentId}:${watch.division}`)
-        && !watches.some(item => item.tournamentId === watch.tournamentId && item.division === watch.division && item.enabled === false);
+        && !watches.some(item => watchId(item) === watchId(watch) && !isWatchEnabled(item));
       const divisions = ["MPO", "FPO"].filter(division => autoDivisions.includes(division));
       let candidates = [];
       if (autoFollow && divisions.length) {
@@ -188,7 +192,7 @@
         if (!metadata.has(id)) metadata.set(id, getMetadata(id));
         return metadata.get(id);
       };
-      const manualResults = await Promise.allSettled(watches.filter(watch => watch.enabled !== false)
+      const manualResults = await Promise.allSettled(watches.filter(isWatchEnabled)
         .map(watch => loadEvent(watch, metadataFor(watch.tournamentId))));
       const manual = manualResults.flatMap(result => result.status === "fulfilled" ? [result.value] : []);
       const manualFailures = manualResults.filter(result => result.status === "rejected" || result.value.details.stale).length;
@@ -210,7 +214,7 @@
           ? info.Divisions.some(item => item.Division === division) : lastGood.has(`${id}:${division}`))
           .map(division => ({ tournamentId: id, division, name: info?.SimpleName || info?.Name || directory.officialName,
             automatic: true, view: "leaderboard", playerId: "" }))
-          .filter(watch => !watches.some(item => item.tournamentId === id && item.division === watch.division && item.enabled === false));
+          .filter(watch => !watches.some(item => watchId(item) === watchId(watch) && !isWatchEnabled(item)));
         for (const watch of targets) session.watches.set(`${id}:${watch.division}`, watch);
         const results = await Promise.allSettled(targets.map(watch => manualById.get(`${id}:${watch.division}`)
           || loadEvent(watch, metadataError ? Promise.reject(metadataError) : Promise.resolve(info))));
@@ -257,8 +261,8 @@
       for (const tournament of tournaments) for (const event of tournament.allEvents || tournament.events) {
         if (!available.has(event.id)) available.set(event.id, asEntry(event));
       }
-      const firstWatch = watches.find(watch => watch.enabled !== false);
-      const automatic = new Map((topFavoriteOnly ? manual.filter(event => event.id === `${firstWatch?.tournamentId}:${firstWatch?.division}`) : manual)
+      const firstWatch = watches.find(isWatchEnabled);
+      const automatic = new Map((topFavoriteOnly ? manual.filter(event => event.id === watchId(firstWatch || {})) : manual)
         .map(event => [event.id, asEntry(event)]));
       for (const event of selected?.events || []) {
         automatic.set(event.id, { ...(automatic.get(event.id) || asEntry(event)),
@@ -266,7 +270,7 @@
       }
       return { availableEntries: [...available.values()], automaticEntries: [...automatic.values()], failures,
         automaticWatches: autoFollow && !session.directoryError ? [...session.watches.values()]
-          .filter(watch => !watches.some(item => item.tournamentId === watch.tournamentId && item.division === watch.division))
+          .filter(watch => !watches.some(item => watchId(item) === watchId(watch)))
           .map(watch => ({ tournamentId: watch.tournamentId, division: watch.division, name: watch.name, enabled: true, view: "leaderboard", playerId: "" })) : null,
         automaticWatchesComplete: failures === manualFailures,
       };
@@ -274,7 +278,7 @@
     return { getEvent, discover, getMetadata, getRound, listCurrentEvents, discoveryIntervalMs: autoFollow ? DIRECTORY_INTERVAL : Infinity };
   }
 
-  const provider = { createClient, createSession, proTourEvents,
+  const provider = { createClient, createSession, proTourEvents, watchId,
     refreshIntervalMs: url => String(url) === CURRENT ? DIRECTORY_INTERVAL : undefined, normalizeEvent, normalizePlayer, toCandidate, roundState,
     failureBackoff: state => state === "live",
     refreshState(payload, url) {

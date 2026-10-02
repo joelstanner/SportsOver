@@ -11,7 +11,12 @@
           { id: "DemoGme2", players: [{ name: "Magnus Carlsen", title: "GM", rating: 2839 }, { name: "Hikaru Nakamura", title: "GM", rating: 2802 }] },
           { id: "DemoGme3", players: [{ name: "Judit Polgar", title: "GM", rating: 2675 }, { name: "Viswanathan Anand", title: "GM", rating: 2750 }] },
         ].map((game, index) => ({ ...game, fen: "8/8/8/8/8/8/8/8 b - - 0 32", lastMove: state === "pregame" ? "" : "e2e4", status: finished ? ["1-0", "½-½", "0-1"][index] : "*" })) };
-      return global.SportsOverlay.lichess.normalizeEvent(metadata, payload, { tournamentId: "DemoTour", view: "overview" });
+      const event = global.SportsOverlay.lichess.normalizeEvent(metadata, payload, { tournamentId: "DemoTour", view: "overview" });
+      event.details.standings = global.SportsOverlay.lichess.normalizeStandings([
+        "Gukesh D", "Magnus Carlsen", "Fabiano Caruana", "Hikaru Nakamura", "Viswanathan Anand",
+        "Judit Polgar", "Anish Giri", "Wesley So", "Ding Liren", "Alireza Firouzja",
+      ].map((name, index) => ({ name, title: "GM", rank: index + 1, played: 7, score: 6 - Math.floor(index / 2) * 0.5 })));
+      return event;
     });
   }
   global.SportsOverlay.registry.registerDemo("chess", "player", () => {

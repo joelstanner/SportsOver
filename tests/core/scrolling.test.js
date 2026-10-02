@@ -37,3 +37,21 @@ test("unchanged live polling does not restart an active scroll", () => {
   assert.equal(classes.has("is-scrolling"), false);
   delete global.requestAnimationFrame;
 });
+
+test('vertical leaderboard keeps elapsed time on refresh and resets for a different banner', () => {
+  require('../../core/config.js');
+  require('../../core/game-selection.js');
+  const styles = {}, track = {children:Array(10),style:{setProperty(k,v){styles[k]=v;}},classList:{add(){}}};
+  const viewport = {firstElementChild:track,setAttribute(){}};
+  const event = {sport:'chess',id:'Tour1234:auto',state:'live'};
+  const scrolling = global.SportsOverlay.scrolling;
+  const state = scrolling.vertical(viewport,event,null);
+  state.started -= 5000;
+  assert.equal(scrolling.vertical(viewport,event,state),state);
+  assert.ok(parseFloat(styles['--vertical-delay']) <= -5);
+  assert.equal(styles['--vertical-distance'],'-105px');
+  assert.equal(styles['--vertical-duration'],'20s');
+  assert.notEqual(scrolling.vertical(viewport,{...event,id:'Other123:auto'},state),state);
+  track.children=Array(3);
+  assert.equal(scrolling.vertical(viewport,event,state),null);
+});

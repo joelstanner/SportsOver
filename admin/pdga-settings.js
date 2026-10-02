@@ -29,7 +29,7 @@
     const list = document.createElement("div");
     const builder = document.createElement("div");
     builder.className = "pdga-watch-builder";
-    builder.innerHTML = `<p>Watch a tournament and division. Watched events stay in rotation until removed, including finished events. Live mode includes live rounds and round breaks. Up to 30 divisions.</p>
+    builder.innerHTML = `<p>Watch a tournament and division. Watched events stay in rotation until removed, including finished events. Live mode includes live rounds and round breaks. Add a separate player banner to follow someone in the same division. Up to 30 banners.</p>
       <div class="pdga-watch-controls"><label class="field">PDGA tournament URL or ID<input class="pdga-tournament-input" placeholder="e.g. 86076" type="text"></label><button class="button button--secondary pdga-load" type="button">Load tournament</button><button class="button button--quiet pdga-browse" type="button">Browse current events</button></div>
       <label class="field pdga-current-label" hidden>Current events<select class="pdga-current"><option value="">Choose a tournament…</option></select></label>
       <div class="pdga-watch-controls pdga-division-controls" hidden><label class="field">Division<select class="pdga-division"></select></label><button class="button button--secondary pdga-watch" type="button">Watch division</button></div>
@@ -76,11 +76,11 @@
       const division = find(".pdga-division").value;
       if (!metadata || !division) return;
       if (group.events.length >= 30) { note.textContent = "Remove a watched division before adding another (limit 30)."; return; }
-      if (group.events.some(item => item.tournamentId === loadedId && item.division === division)) { note.textContent = "That division is already watched."; return; }
+      if (group.events.some(item => item.tournamentId === loadedId && item.division === division && !item.bannerId)) { note.textContent = "That division is already watched."; return; }
       group.events.push({ tournamentId: loadedId, division, name: metadata.SimpleName || metadata.Name, enabled: true, view: "leaderboard", playerId: "" });
       changed(); renderList(); note.textContent = `${division} added to the banner rotation.`;
     };
-    function renderList() {
+    function renderList(addedWatch) {
       list.replaceChildren();
       if (!group.events.length) {
         const empty = document.createElement("p"); empty.className = "empty-state";
@@ -88,7 +88,7 @@
       }
       group.events.forEach((watch, index) => {
         const row = document.createElement("article"); row.className = "pdga-watch-card";
-        row.innerHTML = `<div class="pdga-watch-heading"><a class="pdga-watch-name" target="_blank" rel="noopener"></a><label class="toggle"><input type="checkbox" class="pdga-enabled">Included</label><button type="button" class="icon-button pdga-up" aria-label="Move division up">↑</button><button type="button" class="icon-button pdga-down" aria-label="Move division down">↓</button><button type="button" class="remove-team pdga-remove">Remove</button></div><div class="pdga-watch-controls"><label class="field">Banner view<select class="pdga-view"><option value="leaderboard">Leaderboard · top three</option><option value="player">Followed player</option></select></label><label class="field pdga-player-label" hidden>Player<select class="pdga-player"></select></label><button type="button" class="button button--quiet pdga-players" hidden>Load players</button></div><span class="pdga-row-status" role="status"></span>`;
+        row.innerHTML = `<div class="pdga-watch-heading"><a class="pdga-watch-name" target="_blank" rel="noopener"></a><label class="toggle"><input type="checkbox" class="pdga-enabled">Included</label><button type="button" class="icon-button pdga-up" aria-label="Move division up">↑</button><button type="button" class="icon-button pdga-down" aria-label="Move division down">↓</button><button type="button" class="remove-team pdga-remove">Remove</button></div><div class="pdga-watch-controls"><label class="field">Banner view<select class="pdga-view"><option value="leaderboard">Tournament leaderboard</option><option value="player">Followed player</option></select></label><label class="field pdga-size-label">Players shown<select class="pdga-size"><option value="10">Top 10 · scroll vertically</option><option value="3">Top 3 · static</option></select></label><button class="button button--secondary pdga-add-banner" type="button">Add player banner</button><span class="pdga-pending" hidden>Select a player to include this banner in rotation.</span><label class="field pdga-player-label" hidden>Player<select class="pdga-player"></select></label><button type="button" class="button button--quiet pdga-players" hidden>Retry loading players</button></div><span class="pdga-row-status" role="status"></span>`;
         const q = selector => row.querySelector(selector);
         q(".pdga-watch-name").textContent = `${watch.name} · ${watch.division}`;
         q(".pdga-watch-name").href = `https://www.pdga.com/tour/event/${watch.tournamentId}`;
@@ -100,10 +100,22 @@
         q(".pdga-up").onclick = () => move(-1); q(".pdga-down").onclick = () => move(1);
         q(".pdga-remove").onclick = () => { group.events.splice(index, 1); changed(); renderList(); };
         q(".pdga-view").value = watch.view;
+        q(".pdga-size").value = String(watch.leaderboardSize === 3 ? 3 : 10);
+        q(".pdga-size").onchange = event => { watch.leaderboardSize = Number(event.target.value); changed(); };
+        q(".pdga-add-banner").onclick = () => {
+          if (group.events.length >= 30) { q(".pdga-row-status").textContent = "Remove a banner before adding another (limit 30)."; return; }
+          const added = { ...watch, bannerId: [...global.crypto.getRandomValues(new Uint32Array(4))].join("-"), enabled: true,
+            view: watch.view === "player" ? "leaderboard" : "player", playerId: "" };
+          group.events.splice(index + 1, 0, added); changed(); renderList(added);
+        };
         const picker = q(".pdga-player");
         picker.append(new Option(watch.playerId ? `PDGA #${watch.playerId}` : "Choose a player…", watch.playerId));
-        picker.onchange = () => { watch.playerId = picker.value; changed(); };
+        picker.onchange = () => { watch.playerId = picker.value; changed(); updateView(); };
+        let loadingPlayers = false, retryPlayers = false;
         async function loadPlayers() {
+          if (loadingPlayers) return;
+          loadingPlayers = true; retryPlayers = false; picker.disabled = true;
+          updateView();
           q(".pdga-players").disabled = true; q(".pdga-row-status").textContent = "Loading players…";
           try {
             const event = await client.getMetadata(watch.tournamentId);
@@ -114,17 +126,27 @@
             picker.replaceChildren(new Option("Choose a player…", ""), ...players.map(score => new Option(`${score.Name} · #${score.PDGANum}`, String(score.PDGANum))));
             if (watch.playerId && !players.some(score => String(score.PDGANum) === watch.playerId)) picker.add(new Option(`PDGA #${watch.playerId} · not in current round`, watch.playerId));
             picker.value = watch.playerId;
+            retryPlayers = players.length === 0;
             q(".pdga-row-status").textContent = players.length ? "If the selected player is absent, the banner shows the leaders." : "No players posted yet. The banner will show the leaderboard until a player is selected.";
-          } catch (_) { q(".pdga-row-status").textContent = "Player list unavailable. Saved selection is retained; retry Load players."; }
-          finally { q(".pdga-players").disabled = false; }
+          } catch (_) {
+            retryPlayers = true;
+            if (row.isConnected) q(".pdga-row-status").textContent = "Player list unavailable. Your saved selection is retained. Retry loading players.";
+          } finally {
+            loadingPlayers = false; picker.disabled = false;
+            q(".pdga-players").disabled = false; updateView();
+          }
         }
-        function updateView() {
+        function updateView() { q(".pdga-pending").hidden = watch.view !== "player" || Boolean(watch.playerId);
+          q(".pdga-size-label").hidden = watch.view === "player";
+          q(".pdga-add-banner").textContent = watch.view === "player" ? "Add tournament banner" : "Add player banner";
           q(".pdga-player-label").hidden = watch.view !== "player";
-          q(".pdga-players").hidden = watch.view !== "player";
+          q(".pdga-players").hidden = watch.view !== "player" || !retryPlayers;
         }
         q(".pdga-view").onchange = event => { watch.view = event.target.value; changed(); updateView(); if (watch.view === "player") loadPlayers(); };
-        q(".pdga-players").onclick = loadPlayers;
+        q(".pdga-players").onclick = () => { fetchImpl?.retryFailed?.(); loadPlayers(); };
         updateView(); list.append(row);
+        if (watch.view === "player") loadPlayers();
+        if (watch === addedWatch) row.querySelector("select").focus();
       });
     }
     container.replaceChildren(automatic, list, builder); renderList();

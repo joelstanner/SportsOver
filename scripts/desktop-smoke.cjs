@@ -439,7 +439,7 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     });
     assert.equal(native.engineCount, 1);
     assert.ok(native.requests.length > 0);
-    assert.ok(native.requests.every(request => request.id === native.engineId), 'only engine makes provider requests');
+    assert.ok(native.requests.every(request => request.id === native.engineId), `only engine makes provider requests: ${JSON.stringify(native.requests.filter(request => request.id !== native.engineId))}`);
     assert.equal(native.top, true);
     assert.equal(native.preferences.sandbox, true);
     assert.equal(native.preferences.contextIsolation, true);

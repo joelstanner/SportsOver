@@ -19,7 +19,7 @@
       return (provider.normalizeFeed || provider.normalizeEvent)(payload).state;
     }
     function fetchFor(sport, provider) {
-      return async (url, options) => {
+      const fetchCached = async (url, options) => {
         const key = `${sport}:${url}`;
         let record = records.get(key);
         if (!record) {
@@ -64,6 +64,14 @@
         if (record.error) throw record.error;
         return record.response.clone();
       };
+      // An explicit retry may retry failed feeds immediately. Successful feeds
+      // keep their cached interval; provider-level rate-limit cooldowns remain.
+      fetchCached.retryFailed = () => {
+        for (const record of records.values()) {
+          if (record.sport === sport && record.error && !record.pending) record.completed = -Infinity;
+        }
+      };
+      return fetchCached;
     }
     return { fetchFor, interval };
   }

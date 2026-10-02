@@ -21,7 +21,7 @@ require('../core/config.js');
    await session.defaultSession.protocol.handle('https',request=>{
     if(new URL(request.url).hostname!=='lichess.org') return new Response(JSON.stringify({events:[],dates:[]}),{headers:{'Content-Type':'application/json'}});
     globalThis.chessTest.calls++;
-    return new Response(JSON.stringify(request.url.includes('/-/-/')?globalThis.chessTest.round:globalThis.chessTest.metadata),{headers:{'Content-Type':'application/json'}});
+    return new Response(JSON.stringify(request.url.endsWith('/players') ? [{name:'Gukesh D',fideId:123,rank:1,score:5.5,played:7}] : request.url.includes('/-/-/')?globalThis.chessTest.round:globalThis.chessTest.metadata),{headers:{'Content-Type':'application/json'}});
    });
   },{metadata,round});
   let pages;
@@ -30,7 +30,7 @@ require('../core/config.js');
   assert.ok(admin&&engine&&banner);
   await engine.reload();
   await banner.locator('.chess-entry').first().waitFor({timeout:30000});
-  assert.match(await banner.locator('.chess-entry').innerText(),/Gukesh D.*Fabiano Caruana/s);
+  assert.match(await banner.locator('.chess-entry').innerText(),/Gukesh D.*7.*5\.5/s);
   const status=await admin.evaluate(()=>window.sportsDesktop.action('size',2));
   await banner.waitForFunction(()=>document.querySelector('#sports-overlay')?.getBoundingClientRect().width===920);
   const box=await banner.locator('#sports-overlay').boundingBox();assert.equal(box.width,920);assert.equal(box.height,176);
