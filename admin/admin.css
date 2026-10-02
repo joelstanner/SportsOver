@@ -171,6 +171,14 @@ select, input { border: 1px solid var(--line); border-radius: 8px; padding: 10px
 .game-card.is-live .game-meta { color: #ff6b6b; font-weight: 800; }
 .game-card.is-final { background: #121b29; border-color: #41516a; }
 .game-card.is-final .game-meta { color: #a8b9d1; font-weight: 800; }
+#rotation-queue .game-card { transition: border-color 160ms ease, box-shadow 160ms ease; }
+#rotation-queue .game-card.is-on-banner {
+  border-color: rgba(49, 198, 179, 0.8);
+  box-shadow: inset 0 0 18px rgba(49, 198, 179, 0.1), 0 0 9px rgba(49, 198, 179, 0.24);
+}
+@media (prefers-reduced-motion: reduce) {
+  #rotation-queue .game-card { transition: none; }
+}
 .game-final-label { color: var(--amber); }
 .game-source { border: 1px solid var(--line); border-radius: 999px; padding: 4px 6px; white-space: nowrap; }
 .duration-control { display: grid; grid-template-columns: 26px 42px 26px; align-items: center; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }

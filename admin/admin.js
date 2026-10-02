@@ -62,6 +62,7 @@
   let gameDiscoveryTimer = null;
   const localLiveMode = global.SportsOverlay.liveMode.create();
   let engineRotationState = null;
+  let bannerGameKey = null;
   let changingLiveMode = false;
   const liveModeButton = document.querySelector("#live-mode");
   const liveModeFinalMinutes = document.querySelector("#live-mode-final-minutes");
@@ -248,6 +249,34 @@
   status.before(migration);
   renderSettings();
   updateDemo();
+  if (global.sportsDesktop || shared) pollBannerGame();
+
+  async function pollBannerGame() {
+    let connected = false;
+    let nextGameKey = null;
+    try {
+      const response = await fetch("/api/output", { cache: "no-store", signal: AbortSignal.timeout(3000) });
+      if (!response.ok) throw new Error("Banner unavailable");
+      const frame = await response.json();
+      connected = frame.ready === true;
+      // Follow the rendered frame, not the next game selected during a transition.
+      nextGameKey = connected ? frame.gameKey || null : null;
+    } catch (_) { /* Clear the glow while disconnected. */ }
+    if (bannerGameKey !== nextGameKey) {
+      bannerGameKey = nextGameKey;
+      highlightBannerGame();
+    }
+    setTimeout(pollBannerGame, connected ? 200 : 1000);
+  }
+
+  function highlightBannerGame() {
+    document.querySelectorAll("#rotation-queue .game-card").forEach(card => {
+      const showing = Boolean(bannerGameKey && card.dataset.gameKey === bannerGameKey);
+      card.classList.toggle("is-on-banner", showing);
+      if (showing) card.setAttribute("aria-current", "true");
+      else card.removeAttribute("aria-current");
+    });
+  }
 
   function selectTab(name) {
     document.querySelectorAll(".tab").forEach(tab => {
@@ -659,6 +688,7 @@
     if (!queue.length) appendRotationEmpty(queueList, active ? "No live games in rotation. Live mode is still on."
       : availableRotationEntries.length ? "No games selected for the banner." : "Refresh games to build the live queue.");
     queue.forEach((entry, index) => renderQueueGame(entry, index, queue, queueList));
+    highlightBannerGame();
 
     const queuedKeys = new Set([...normalRotationQueue(), ...queue].map(rotationEntryKey));
     const sportFilter = document.querySelector("#available-sport-filter").value;
@@ -812,11 +842,12 @@
   function gameTeams(candidate) {
     if (candidate.sport === "baseball") {
       const teams = candidate.raw?.teams || {};
-      return [teams.away?.team, teams.home?.team].filter(Boolean).map(team => ({
-        id: team.id,
-        name: team.name,
-        abbreviation: team.abbreviation,
-        logoUrl: team.logoUrl,
+      return ["away", "home"].filter(side => teams[side]?.team).map(side => ({
+        id: teams[side].team.id,
+        name: teams[side].team.name,
+        abbreviation: teams[side].team.abbreviation,
+        logoUrl: teams[side].team.logoUrl,
+        score: teams[side].score ?? candidate.raw?.linescore?.teams?.[side]?.runs,
       }));
     }
     const competitors = candidate.raw?.competitions?.[0]?.competitors ?? [];
@@ -827,6 +858,7 @@
       name: competitor.team?.displayName || competitor.team?.name,
       abbreviation: competitor.team?.abbreviation,
       logoUrl: competitor.team?.logo || competitor.team?.logos?.[0]?.href,
+      score: competitor.score?.value ?? competitor.score,
     }));
   }
 
@@ -857,7 +889,16 @@
       ? ["S", "E"].includes(candidate.raw?.gameType)
       : global.SportsOverlay.model.espnPreseason(candidate.raw || {}, candidate.sport !== "soccer");
     const gameState = candidate.state === "live" ? "Live now" : candidate.state === "final" ? "Final" : "Upcoming";
-    const state = preseason ? `PRESEASON · ${gameState}` : gameState;
+    let state = preseason ? `PRESEASON · ${gameState}` : gameState;
+    if (candidate.state === "final" || candidate.state === "live") {
+      const teams = gameTeams(candidate);
+      if (teams.length === 2 && teams.every(team =>
+        ["number", "string"].includes(typeof team.score)
+        && String(team.score).trim() !== "" && Number.isFinite(Number(team.score)))) {
+        const scores = teams.map(team => `${team.abbreviation || catalogTeam(candidate.sport, team)?.abbreviation || team.name || "Team"} ${Number(team.score)}`);
+        state += ` · ${scores.join(" – ")}`;
+      }
+    }
     if (candidate.state === "live" || !candidate.startTime) return state;
     return `${state} · ${global.SportsOverlay.model.formatPregameStart(candidate.startTime, new Date(), workingConfig.timeZone === "local" ? undefined : workingConfig.timeZone)}`;
   }
