@@ -3,6 +3,15 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.15.1 — 2026-10-01
+
+### Changed
+
+- The rotation-list item currently shown in the banner has a subtle teal glow
+  that follows the rendered game and clears when the engine is unavailable.
+- Live and final team games show scores in the game lists, including live
+  games outside the rotation. Missing scores are omitted.
+
 ## 0.15.0 — 2026-10-01
 
 ### Added
