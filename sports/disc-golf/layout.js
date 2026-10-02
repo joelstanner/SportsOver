@@ -10,6 +10,7 @@
     const mount = root.querySelector("#sports-overlay");
     global.SportsOverlay.odds?.clear(mount);
     mount.className = "pdga-scorebug is-loading";
+    delete mount.dataset.preseason;
     let lastEvent = null;
     function render(event) {
       lastEvent = event;

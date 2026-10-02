@@ -3,6 +3,13 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.19.2 — 2026-10-02
+
+### Fixed
+
+- Chess and PDGA banners clear the previous sport's preseason label when
+  switching games, including navigating backward from an NBA preseason banner.
+
 ## 0.19.1 — 2026-10-02
 
 ### Fixed
