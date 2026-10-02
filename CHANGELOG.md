@@ -3,6 +3,26 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.21.0 — 2026-10-02
+
+### Added
+
+- Unsigned Windows x64 NSIS installer with per-user installation, Start menu and
+  desktop shortcuts, SHA-256 checksums, and manual install/update instructions.
+- Windows build scripts and CI for unit tests, runtime archive inspection,
+  checksum verification, and smoke tests of unpacked and installed copies.
+- Shared runtime-file allowlist for Windows and macOS packages.
+
+### Fixed
+
+- Restored missing optional packaging dependencies in the lockfile so clean
+  dependency installation can complete with the pinned tool versions.
+
+The `npm install` / `npm start` workflow remains supported. Updates are manual;
+preferences are retained. No migration is required. Native Windows execution,
+physical interaction, always-on-top and actual OBS checks remain unverified;
+adding the workflow does not establish a successful Windows run.
+
 ## 0.20.0 — 2026-10-02
 
 ### Added
