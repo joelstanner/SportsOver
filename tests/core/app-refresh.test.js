@@ -6,14 +6,15 @@ const fs = require("node:fs");
 const path = require("node:path");
 require("../../core/config.js");
 
-async function fixture(extraFavorites = [], gameCount = 2) {
+async function fixture(extraFavorites = [], gameCount = 2, useRealSelection = false) {
   let now = 0, timerId = 0, notify, visibility;
   const timers = new Map(), calls = [], renders = [];
   let release = null, holdNext = false;
   const config = { sports: [{ sport: "baseball", favorites: [{ teamKey: "team", enabled: true }, ...extraFavorites] }],
     providerRefreshSeconds: { baseball: { live: 12, pregame: 60, idle: 300, final: 300 } },
     gameDurations: {}, lockedGameKeys: [], fallbackMode: "up-next", displayMode: "automatic" };
-  const games = Array.from({ length: gameCount }, (_, index) => ({ sport: "baseball", id: String(index + 1), state: "live", teamKeys: ["team"] }));
+  const games = Array.from({ length: gameCount }, (_, index) => ({ sport: "baseball", id: String(index + 1), state: "live",
+    teamKeys: [useRealSelection ? "TEAM" : "team"], ...(useRealSelection ? { startTime: new Date(0).toISOString() } : {}) }));
   const response = data => ({ ok: true, clone: () => response(data), json: async () => data });
   const provider = { toCandidate: game => game, normalizeEvent: event => event,
     createClient: ({ fetchImpl, teamId }) => ({
@@ -49,7 +50,8 @@ async function fixture(extraFavorites = [], gameCount = 2) {
   context.window = context;
   const mockedSelection = api.selection;
   await vm.runInContext(fs.readFileSync(path.join(__dirname, "../../core/game-selection.js"), "utf8"), context);
-  api.selection = { ...api.selection, buildRotationQueue: mockedSelection.buildRotationQueue, gameDurationSeconds: mockedSelection.gameDurationSeconds };
+  api.selection = { ...api.selection, ...(useRealSelection ? {} : { buildRotationQueue: mockedSelection.buildRotationQueue }),
+    gameDurationSeconds: mockedSelection.gameDurationSeconds };
   for (const file of ["provider-refresh.js", "provider-discovery.js", "live-mode.js", "app.js"]) {
     await vm.runInContext(fs.readFileSync(path.join(__dirname, "../../core", file), "utf8"), context);
   }
@@ -118,6 +120,34 @@ test("disabled sports cannot return through an in-flight discovery", async () =>
   await f.release(); await pending; await f.flush();
   assert.equal(f.engine.describe().queue.length, 0);
   assert.equal(f.engine.describe().availableEntries.length, 0);
+});
+
+test("watched-team finals stay beside their next game and expire at the 24-hour boundary", async () => {
+  const f = await fixture([], 1, true);
+  f.games[0].state = "final";
+  f.games.push({ sport: "baseball", id: "2", state: "pregame", teamKeys: ["TEAM"],
+    startTime: new Date(2 * 86_400_000).toISOString() });
+  await f.advance(12_000);
+  assert.deepEqual(Array.from(f.engine.describe().queue, entry => [entry.candidate.id, entry.candidate.state]),
+    [["2", "pregame"], ["1", "final"]]);
+  const deadline = f.engine.describe().queue.find(entry => entry.candidate.id === "1").autoRetainUntil;
+  assert.equal(deadline, 12_000 + 86_400_000);
+  f.time(deadline - 1); await f.engine.refresh(); await f.flush();
+  assert.equal(f.engine.describe().queue.length, 2);
+  f.time(deadline); await f.engine.refresh(); await f.flush();
+  assert.deepEqual(Array.from(f.engine.describe().queue, entry => entry.candidate.id), ["2"]);
+});
+
+test("starting the next watched game removes its preceding final before 24 hours", async () => {
+  const f = await fixture([], 1, true);
+  f.games[0].state = "final";
+  f.games.push({ sport: "baseball", id: "2", state: "pregame", teamKeys: ["TEAM"],
+    startTime: new Date(3_600_000).toISOString() });
+  await f.advance(12_000);
+  assert.equal(f.engine.describe().queue.length, 2);
+  f.time(3_600_000); f.games[1].state = "live";
+  await f.engine.refresh(); await f.flush();
+  assert.deepEqual(Array.from(f.engine.describe().queue, entry => [entry.candidate.id, entry.candidate.state]), [["2", "live"]]);
 });
 
 test("actual banner rotation and discovery obey request limits and update without reload", async () => {

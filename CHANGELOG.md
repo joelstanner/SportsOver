@@ -3,6 +3,16 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.17.0 — 2026-10-02
+
+### Changed
+
+- Watched-team finals remain in normal rotation alongside upcoming games for
+  up to 24 hours after the detected finish, ending when the next game starts.
+  Spotlight finals retain one hour; Live mode keeps its separate retention setting.
+- Fresh launches without a known finish time recover recent watched finals
+  using a conservative cutoff of 24 hours from the reported game start.
+
 ## 0.16.0 — 2026-10-01
 
 ### Changed

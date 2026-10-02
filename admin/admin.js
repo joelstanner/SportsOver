@@ -604,7 +604,11 @@
       automaticRotationEntries,
       discoveredAutomaticEntries,
       availableRotationEntries,
-      { keyOf: rotationEntryKey },
+      { keyOf: rotationEntryKey, watchedTeams: workingConfig.sports.filter(group => group.enabled !== false)
+        .flatMap(group => {
+          const teams = group.favorites.filter(favorite => favorite.enabled).map(favorite => configApi.findTeam(favorite.teamKey)).filter(Boolean);
+          return workingConfig.displayMode === "top-favorite" ? teams.slice(0, 1) : teams;
+        }) },
     );
     const failed = results.filter(result => result.status === "rejected").length;
     const partial = results.filter(result => result.status === "fulfilled" && result.value.failures).length;

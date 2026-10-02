@@ -33,6 +33,10 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
         if (url.pathname.includes('/feed/live')) {
           body = structuredClone(fixture);
           if (url.pathname.includes('/game/2/')) body.liveData.linescore.teams.home.runs = 9;
+          if (url.pathname.includes('/game/3/')) {
+            body.gameData.status = { abstractGameState: 'Preview', detailedState: 'Scheduled' };
+            body.gameData.teams.away = { id: 135, name: 'San Diego Padres', abbreviation: 'SD' };
+          }
         }
         return new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } });
       });

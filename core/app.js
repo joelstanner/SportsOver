@@ -251,11 +251,16 @@ async function discoverGamesOnce(refresh = true) {
   if (generation !== discoveryGeneration) return;
   cachedDiscoveries = discoveries;
   const availableEntries = discoveries.flatMap(result => result.availableEntries);
+  const watchedTeams = sportContexts.flatMap(context => {
+    const teams = context.favoriteTeams || [];
+    return (savedConfig.displayMode === "top-favorite" ? teams.slice(0, 1) : teams)
+      .map(team => ({ sport: context.sport, teamId: team.teamId }));
+  });
   automaticRotationEntries = window.SportsOverlay.selection.retainAutoFinals(
     automaticRotationEntries,
     discoveries.flatMap(result => result.automaticEntries),
     availableEntries,
-    { keyOf: entryKey },
+    { keyOf: entryKey, watchedTeams },
   );
   const previousKey = entryKey(rotationQueue[currentIndex]);
   normalRotationQueue = window.SportsOverlay.selection.applyRotationControls({
@@ -368,19 +373,25 @@ async function renderGame(entry, revision, { animate = false } = {}) {
       event.details.odds ??= window.SportsOverlay.model.espnOdds(discovered?.candidate.raw ?? entry.candidate.raw);
     }
     if (revision !== requestRevision) return;
-    if (liveMode.isActive() && !overrideEntry) {
-      const observed = { ...entry, candidate: { ...entry.candidate, state: event.state } };
-      liveMode.observe(observed);
+    const watchedTeams = savedConfig.displayMode === "top-favorite" ? entry.context.favoriteTeams?.slice(0, 1) : entry.context.favoriteTeams;
+    const watchedGame = watchedTeams?.some(team => entry.candidate.teamKeys
+      ?.some(id => String(id).toUpperCase() === String(team.teamId).toUpperCase()));
+    if (!overrideEntry && (liveMode.isActive() || watchedGame)) {
+      const observed = { ...entry, candidate: { ...entry.candidate, state: event.state },
+        ...(event.state === "final" ? { autoFinalDetectedAt: entry.autoFinalDetectedAt ?? Date.now() } : {}) };
+      if (liveMode.isActive()) liveMode.observe(observed);
       // Keep metadata and queue timing in step with the freshly polled score.
       for (const result of cachedDiscoveries || []) {
         result.availableEntries = result.availableEntries.map(item => entryKey(item) === entryKey(entry) ? observed : item);
         result.automaticEntries = result.automaticEntries.map(item => entryKey(item) === entryKey(entry) ? observed : item);
       }
       normalRotationQueue = normalRotationQueue.map(item => entryKey(item) === entryKey(entry) ? observed : item);
+      automaticRotationEntries = automaticRotationEntries.map(item => entryKey(item) === entryKey(entry) ? observed : item);
       rotationQueue[currentIndex] = observed;
-      scheduleDiscovery();
-      if (!["live", "interrupted", "final"].includes(event.state)
-        || (event.state === "final" && savedConfig.liveModeFinalMinutes === 0)) {
+      if (liveMode.isActive() || entry.candidate.state !== event.state
+        || event.state === "final" && !Number.isFinite(entry.autoFinalDetectedAt)) scheduleDiscovery();
+      if (liveMode.isActive() && (!["live", "interrupted", "final"].includes(event.state)
+        || (event.state === "final" && savedConfig.liveModeFinalMinutes === 0))) {
         setTimeout(() => discoverGames(false), 0);
         return;
       }

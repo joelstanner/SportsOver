@@ -123,21 +123,51 @@
 
   function retainAutoFinals(previousEntries = [], automaticEntries = [], availableEntries = [], {
     keyOf = defaultEntryKey, now = Date.now(), retentionMs = 60 * 60 * 1_000,
+    watchedTeams = null,
   } = {}) {
-    const retained = [...automaticEntries];
-    const selectedKeys = new Set(retained.map(keyOf));
+    const previousByKey = new Map(previousEntries.map(entry => [keyOf(entry), entry]));
     const availableByKey = new Map(availableEntries.map(entry => [keyOf(entry), entry]));
-    previousEntries.forEach(previous => {
-      const key = keyOf(previous);
-      const current = availableByKey.get(key);
+    const watchedRetentionMs = 24 * 60 * 60 * 1_000;
+    const watchedIds = entry => (watchedTeams || []).filter(team => team.sport === entry.candidate?.sport
+      && entry.candidate.teamKeys?.some(id => String(id).toUpperCase() === String(team.teamId).toUpperCase()));
+    const retained = automaticEntries.map(entry => {
+      const previous = previousByKey.get(keyOf(entry));
+      return watchedIds(entry).length && Number.isFinite(previous?.autoFinalDetectedAt)
+        ? { ...entry, autoFinalDetectedAt: previous.autoFinalDetectedAt } : entry;
+    });
+    const selectedKeys = new Set(retained.map(keyOf));
+    // Include recent watched finals discovered on startup, as well as games
+    // whose live-to-final transition this engine observed.
+    const candidates = new Map([...previousEntries, ...availableEntries].map(entry => [keyOf(entry), entry]));
+    candidates.forEach((discovered, key) => {
+      const previous = previousByKey.get(key);
+      const current = availableByKey.get(key) || (watchedIds(discovered).length ? discovered : null);
       if (!current || current.candidate?.state !== "final" || selectedKeys.has(key)) return;
-      const wasLive = ["live", "interrupted"].includes(previous.candidate?.state);
-      const retainUntil = wasLive ? now + retentionMs : previous.autoRetainUntil;
+      const watched = watchedIds(current).filter(team => !availableEntries.some(entry =>
+        keyOf(entry) !== key && ["live", "interrupted", "final"].includes(entry.candidate?.state)
+        && entry.candidate.sport === team.sport
+        && (dateValue(entry.candidate.startTime) > dateValue(current.candidate.startTime)
+          || !entry.candidate.startTime && entry.candidate.state !== "final")
+        && entry.candidate.teamKeys?.some(id => String(id).toUpperCase() === String(team.teamId).toUpperCase())));
+      if (watchedTeams && !watched.length && (watchedIds(current).length
+        || previous?.kind?.startsWith("favorite"))) return;
+      const wasLive = ["live", "interrupted"].includes(previous?.candidate?.state);
+      const detectedAt = previous?.autoFinalDetectedAt;
+      let retainUntil = previous?.autoRetainUntil;
+      if (!Number.isFinite(retainUntil) && (wasLive || Number.isFinite(detectedAt))) {
+        retainUntil = (detectedAt ?? now) + (watched.length ? watchedRetentionMs : retentionMs);
+      }
+      if (!Number.isFinite(retainUntil) && watched.length && current.candidate.startTime) {
+        // ESPN/MLB schedules do not provide a reliable finish timestamp. On a
+        // fresh launch, use the start time for a conservative, fixed deadline.
+        retainUntil = dateValue(current.candidate.startTime) + watchedRetentionMs;
+      }
       if (!Number.isFinite(retainUntil) || retainUntil <= now) return;
       retained.push({
         ...current,
-        kind: previous.kind,
-        featuredTeamId: previous.featuredTeamId,
+        kind: watched.length ? "favorite" : previous?.kind,
+        featuredTeamId: watched[0]?.teamId ?? previous?.featuredTeamId,
+        ...(Number.isFinite(detectedAt) ? { autoFinalDetectedAt: detectedAt } : {}),
         autoRetainUntil: retainUntil,
       });
       selectedKeys.add(key);

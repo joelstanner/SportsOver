@@ -128,6 +128,79 @@ test("auto-added live games remain for one hour after becoming final", () => {
   assert.deepEqual(selection.retainAutoFinals(first, [], [final], { now: 3_601_000 }), []);
 });
 
+test("watched finals rotate with the next game for 24 hours while spotlight finals keep one hour", () => {
+  const now = Date.parse("2026-10-02T04:00:00Z");
+  const entry = (id, state, away, home, date) => ({
+    kind: id === "kraken" ? "favorite-live" : "spotlight", featuredTeamId: id === "kraken" ? "SEA" : null,
+    candidate: selection.espnCandidate(espnGame(id, state, away, home, { date }), "hockey"),
+  });
+  const live = entry("kraken", "in", "SEA", "CGY", "2026-10-02T01:00:00Z");
+  const final = entry("kraken", "post", "SEA", "CGY", "2026-10-02T01:00:00Z");
+  const next = entry("next", "pre", "SEA", "EDM", "2026-10-03T23:00:00Z");
+  const spotlight = entry("other", "in", "CHI", "UTA", "2026-10-02T01:00:00Z");
+  const otherFinal = entry("other", "post", "CHI", "UTA", "2026-10-02T01:00:00Z");
+  const watchedTeams = [{ sport: "hockey", teamId: "SEA" }];
+  const available = [final, next, otherFinal];
+  const retained = selection.retainAutoFinals([live, spotlight], [next], available, { now, watchedTeams });
+  assert.deepEqual(retained.map(item => item.candidate.id), ["next", "kraken", "other"]);
+  assert.equal(retained[1].featuredTeamId, "SEA");
+  assert.equal(retained[1].autoRetainUntil, now + 86_400_000);
+  assert.equal(retained[2].autoRetainUntil, now + 3_600_000);
+  const afterHour = selection.retainAutoFinals(retained, [next], available, { now: now + 3_600_000, watchedTeams });
+  assert.deepEqual(afterHour.map(item => item.candidate.id), ["next", "kraken"]);
+  assert.equal(afterHour[1].autoRetainUntil, retained[1].autoRetainUntil, "refreshes do not extend the deadline");
+  assert.equal(selection.retainAutoFinals(afterHour, [next], available, { now: now + 86_399_999, watchedTeams }).length, 2);
+  assert.deepEqual(selection.retainAutoFinals(afterHour, [next], available, { now: now + 86_400_000, watchedTeams }), [next]);
+});
+
+test("a watched final leaves when the next match starts, including finals discovered after both matches finished", () => {
+  const now = Date.parse("2026-10-02T04:00:00Z");
+  const watchedTeams = [{ sport: "hockey", teamId: "SEA" }];
+  const final = { kind: "favorite", featuredTeamId: "SEA", autoRetainUntil: now + 86_400_000,
+    candidate: selection.espnCandidate(espnGame("old", "post", "SEA", "CGY", { date: "2026-10-02T01:00:00Z" }), "hockey") };
+  for (const state of ["pre", "in", "post"]) {
+    const next = { kind: "favorite", candidate: selection.espnCandidate(
+      espnGame("next", state, "SEA", "EDM", { date: "2026-10-02T03:00:00Z" }), "hockey") };
+    const result = selection.retainAutoFinals([final], [next], [final, next], { now, watchedTeams });
+    assert.deepEqual(result.map(item => item.candidate.id), state === "pre" ? ["next", "old"] : ["next"]);
+  }
+});
+
+test("recent watched finals recover on startup without recovering unrelated or expired finals", () => {
+  const now = Date.parse("2026-10-02T04:00:00Z");
+  const final = (id, away, date) => ({ candidate: selection.espnCandidate(espnGame(id, "post", away, "CGY", { date }), "hockey") });
+  const recent = final("recent", "SEA", "2026-10-02T01:00:00Z");
+  const old = final("old", "SEA", "2026-09-30T01:00:00Z");
+  const unrelated = final("unrelated", "CHI", "2026-10-02T01:00:00Z");
+  const watchedTeams = [{ sport: "hockey", teamId: "SEA" }];
+  const result = selection.retainAutoFinals([], [], [old, recent, unrelated], { now, watchedTeams });
+  assert.deepEqual(result.map(item => item.candidate.id), ["recent"]);
+  assert.equal(result[0].autoRetainUntil, Date.parse("2026-10-03T01:00:00Z"));
+  assert.deepEqual(selection.retainAutoFinals(result, [], [recent], { now: result[0].autoRetainUntil, watchedTeams }), []);
+  assert.deepEqual(selection.retainAutoFinals(result, [], [recent], { now, watchedTeams: [] }), [], "unwatching removes automatic retention");
+});
+
+test("watched finals survive missing discovery data and respect exclusions and curated queues", () => {
+  const final = { kind: "favorite", featuredTeamId: "SEA", autoRetainUntil: 100_000,
+    candidate: selection.espnCandidate(espnGame("final", "post", "SEA", "CGY"), "hockey") };
+  const watchedTeams = [{ sport: "hockey", teamId: "SEA" }];
+  const result = selection.retainAutoFinals([final], [], [], { now: 10_000, watchedTeams });
+  assert.equal(result.length, 1);
+  assert.deepEqual(selection.applyRotationControls({ automaticEntries: result, excludedGameKeys: ["hockey:final"] }), []);
+  assert.deepEqual(selection.applyRotationControls({ automaticEntries: result, mode: "curated" }), []);
+});
+
+test("freshly polled watched finish times survive subsequent automatic selections", () => {
+  const observed = { kind: "favorite-live", autoFinalDetectedAt: 1000,
+    candidate: selection.espnCandidate(espnGame("final", "post", "SEA", "CGY"), "hockey") };
+  const stale = { ...observed, autoFinalDetectedAt: undefined, candidate: { ...observed.candidate, state: "live" } };
+  const watchedTeams = [{ sport: "hockey", teamId: "SEA" }];
+  const refreshed = selection.retainAutoFinals([observed], [stale], [stale], { now: 10_000, watchedTeams });
+  assert.equal(refreshed[0].autoFinalDetectedAt, 1000);
+  const result = selection.retainAutoFinals(refreshed, [], [{ candidate: observed.candidate }], { now: 30_000, watchedTeams });
+  assert.equal(result[0].autoRetainUntil, 1000 + 86_400_000);
+});
+
 test("game timing uses state defaults and five-second overrides", () => {
   const live = { candidate: candidate(espnGame("live", "in", "SEA", "SF")) };
   const upcoming = { candidate: candidate(espnGame("upcoming", "pre", "SEA", "SF")) };
