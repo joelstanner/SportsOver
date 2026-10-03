@@ -177,7 +177,7 @@ const directory = [{tournId:86076,officialName:'Disc Golf Championship with a ve
     const lockedPlayer = page.locator('#rotation-queue [data-game-key="disc-golf:86076:MPO"]');
     await lockedPlayer.locator('.lock-game.is-locked').waitFor();
     assert.equal(await lockedPlayer.locator('.game-name').innerText(), 'Player · Lucas Oberholtzer Hess');
-    assert.match(await lockedPlayer.locator('.game-meta').innerText(), /Live now · R1 · Pos 1 · Total −2 · Round −2 · Thru 2/);
+    assert.match(await lockedPlayer.locator('.game-meta').innerText(), /Live · R1 · Pos 1 · Total −2 · Round −2 · Thru 2/);
     assert.equal(await lockedPlayer.locator('.game-tournament').innerText(), `${metadata.SimpleName} · MPO`);
     await lockedPlayer.screenshot({path:'/tmp/sportsover-pdga-player-card.png'});
     await page.getByRole('button',{name:'Settings',exact:true}).click();

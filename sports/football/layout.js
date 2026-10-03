@@ -121,6 +121,7 @@
   }
 
   function setTeam(mark, abbreviation, record, team) {
+    mark.title = team.name?.trim() || team.abbreviation;
     const logo = mark.querySelector("img");
     const fallback = mark.querySelector("span");
     fallback.textContent = team.abbreviation;

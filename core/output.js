@@ -73,14 +73,23 @@
   const motionBlurAnimation = motionBlur.querySelector('animate');
   async function applyFrame(frame) {
     if (engineInstance === frame.instance && frame.sequence <= displayedSequence) return;
+    const mount = document.querySelector('#sports-overlay');
+    let gameChanged = engineInstance === frame.instance && displayedGameKey
+      && frame.gameKey && displayedGameKey !== frame.gameKey;
+    let quick = frame.transition === 'quick';
+    const outgoing = gameChanged && !quick;
+    if (outgoing) await animate(mount, 'is-rotating-out');
+    // Finish the exit once, then use the newest snapshot. Restarting the exit
+    // for each update flashes the old banner back to full opacity.
+    if (pendingFrame?.instance === frame.instance && pendingFrame.sequence > frame.sequence) {
+      frame = pendingFrame;
+      pendingFrame = null;
+      gameChanged = engineInstance === frame.instance && displayedGameKey
+        && frame.gameKey && displayedGameKey !== frame.gameKey;
+      quick = frame.transition === 'quick';
+    }
     const template = document.createElement('template');
     template.innerHTML = frame.html;
-    const mount = document.querySelector('#sports-overlay');
-    const gameChanged = engineInstance === frame.instance && displayedGameKey
-      && frame.gameKey && displayedGameKey !== frame.gameKey;
-    const quick = frame.transition === 'quick';
-    if (gameChanged && !quick) await animate(mount, 'is-rotating-out');
-    if (pendingFrame?.instance === frame.instance && pendingFrame.sequence > frame.sequence) return;
     const quickAnimation = quick && (gameChanged || interruptedTransition);
     interruptedTransition = false;
     const scrolling = window.SportsOverlay?.scrolling;
@@ -91,7 +100,7 @@
     displayedGameKey = frame.gameKey;
     engineInstance = frame.instance;
     displayedSequence = frame.sequence;
-    if (gameChanged || quickAnimation) await animate(document.querySelector('#sports-overlay'), quick ? 'is-rotating-quick' : 'is-rotating-in');
+    if (gameChanged || quickAnimation || outgoing && !quick) await animate(document.querySelector('#sports-overlay'), quick ? 'is-rotating-quick' : 'is-rotating-in');
     document.body.dataset.sequence = String(frame.sequence);
   }
   function receiveFrame(frame) {

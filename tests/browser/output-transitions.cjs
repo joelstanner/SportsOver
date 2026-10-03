@@ -55,6 +55,16 @@ const frame = (sequence, transition = 'normal') => ({ instance: 'output-test', s
     await page.evaluate(value => window.deliverFrame(value), frame(7, 'quick'));
     await page.waitForFunction(() => document.body.dataset.sequence === '7');
     assert.equal(await page.evaluate(() => window.transitions.length), count, 'reduced motion skips the quick animation');
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.evaluate(() => { window.transitions = []; });
+    await page.evaluate(value => window.deliverFrame(value), frame(8));
+    await page.waitForFunction(() => window.transitions.some(item => item.name === 'sports-rotate-out'));
+    // A refreshed snapshot of the destination arrives while the old game exits.
+    await page.evaluate(value => window.deliverFrame(value), { ...frame(9), gameKey: 'game:8' });
+    await page.waitForFunction(() => document.body.dataset.sequence === '9');
+    assert.equal(await page.locator('#sports-overlay').innerText(), 'Game 9');
+    assert.deepEqual(await page.evaluate(() => window.transitions.map(item => item.name)),
+      ['sports-rotate-out', 'sports-rotate-in'], 'a newer snapshot must not restart the outgoing fade and flash the old game');
     assert.deepEqual(errors, []);
     console.log('Output transitions passed: 100 ms arrows, stale polling, interrupted animation, and reduced motion.');
   } finally { await browser.close(); }

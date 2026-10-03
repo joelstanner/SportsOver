@@ -1093,9 +1093,9 @@
   }
 
   function gameMeta(candidate) {
-    if (candidate.sport === "chess") return `${candidate.raw?.stale ? "Last received · " : ""}${candidate.state === "live" ? "Live now" : candidate.state === "interrupted" ? candidate.raw?.detailedState || "Break" : candidate.state === "final" ? "Final" : "Upcoming"}${candidate.state === "pregame" && candidate.startTime ? ` · ${global.SportsOverlay.model.formatPregameStart(candidate.startTime)}` : ""}`;
+    if (candidate.sport === "chess") return `${candidate.raw?.stale ? "Last received · " : ""}${candidate.state === "live" ? "Live" : candidate.state === "interrupted" ? candidate.raw?.detailedState || "Break" : candidate.state === "final" ? "Final" : "Upcoming"}${candidate.state === "pregame" && candidate.startTime ? ` · ${global.SportsOverlay.model.formatPregameStart(candidate.startTime)}` : ""}`;
     if (candidate.sport === "disc-golf") {
-      const state = `${candidate.raw?.stale ? "Last received · " : ""}${candidate.state === "final" ? "Final" : candidate.state === "live" ? "Live now" : candidate.state === "interrupted" ? candidate.raw?.detailedState || "Break" : "Upcoming"}`;
+      const state = `${candidate.raw?.stale ? "Last received · " : ""}${candidate.state === "final" ? "Final" : candidate.state === "live" ? "Live" : candidate.state === "interrupted" ? candidate.raw?.detailedState || "Break" : "Upcoming"}`;
       const player = candidate.raw?.view === "player" && candidate.raw.player;
       const signed = value => value == null ? "—" : value === 0 ? "E" : value > 0 ? `+${value}` : String(value).replace("-", "−");
       const stats = !player ? [] : player.status ? [player.status] : [
@@ -1108,7 +1108,7 @@
     const preseason = candidate.sport === "baseball"
       ? ["S", "E"].includes(candidate.raw?.gameType)
       : global.SportsOverlay.model.espnPreseason(candidate.raw || {}, candidate.sport !== "soccer");
-    const gameState = candidate.state === "live" ? "Live now" : candidate.state === "final" ? "Final" : "Upcoming";
+    const gameState = candidate.state === "live" ? "Live" : candidate.state === "final" ? "Final" : "Upcoming";
     let state = preseason ? `PRESEASON · ${gameState}` : gameState;
     if (candidate.state === "final" || candidate.state === "live") {
       const teams = gameTeams(candidate);
@@ -1119,7 +1119,26 @@
         state += ` · ${scores.join(" – ")}`;
       }
     }
-    if (candidate.state === "live" || !candidate.startTime) return state;
+    if (candidate.state === "live") {
+      if (candidate.sport === "baseball") {
+        const linescore = candidate.raw?.linescore || {};
+        const inning = linescore.currentInningOrdinal || (Number(linescore.currentInning) > 0 ? String(linescore.currentInning) : "");
+        const inningState = String(linescore.inningState || linescore.inningHalf || "").toLowerCase();
+        const half = { top: "Top", bottom: "Bottom", middle: "Mid", end: "End" }[inningState]
+          || (typeof linescore.isTopInning === "boolean" ? linescore.isTopInning ? "Top" : "Bottom" : "Inning");
+        if (inning) state += ` · ${half} ${inning}`;
+        return state;
+      }
+      const status = candidate.raw?.competitions?.[0]?.status ?? candidate.raw?.status;
+      const clock = String(status?.displayClock ?? "").trim();
+      const providerName = configApi.TEAM_CATALOG.find(team => team.sport === candidate.sport)?.provider;
+      const provider = providerName ? registryApi.getProvider(providerName) : null;
+      const period = provider?.periodLabel?.(status?.period, status?.type?.description || status?.type?.detail) || "";
+      const progress = [period, clock].filter(Boolean).join(" · ");
+      if (progress) state += ` · ${progress}`;
+      return state;
+    }
+    if (!candidate.startTime) return state;
     return `${state} · ${global.SportsOverlay.model.formatPregameStart(candidate.startTime, new Date(), workingConfig.timeZone === "local" ? undefined : workingConfig.timeZone)}`;
   }
 

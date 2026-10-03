@@ -286,6 +286,7 @@
   }
 
   function setTeam(container, logo, abbreviation, team) {
+    logo.title = team.name?.trim() || team.abbreviation;
     abbreviation.textContent = team.abbreviation;
     container.classList.toggle("is-featured", team.featured);
     if (!team.logoUrl) {
