@@ -308,6 +308,12 @@
   } else connection.textContent = "Local preview — settings here do not control the desktop banner. Export them to import into shared control.";
   migration.append(connection);
   status.closest(".actions").before(migration);
+  if (global.sportsDesktop) global.addEventListener("sports-settings-backup", ({ detail: action }) => {
+    document.querySelector('[data-tab="settings"]').click();
+    migration.scrollIntoView({ block: "center" });
+    if (action === "export") exportButton.click();
+    else if (action === "import") backupActions.querySelector('input[type="file"]').click();
+  });
   renderSettings();
   updateDemo();
   if (global.sportsDesktop || shared) pollBannerGame();

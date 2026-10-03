@@ -124,6 +124,23 @@ function openSettings() {
   settings.on('closed', () => { settings = null; });
   settings.loadURL(`${ORIGIN}/sports/admin/`);
 }
+function settingsBackup(action) {
+  openSettings();
+  const contents = settings.webContents;
+  const run = async () => {
+    try {
+      if (contents.isDestroyed()) return;
+      await contents.executeJavaScript('window.SportsOverlay.config.ready.then(() => undefined)');
+      if (contents.isDestroyed()) return;
+      // Native menu clicks must grant user activation to open the file picker.
+      await contents.executeJavaScript(`window.dispatchEvent(new CustomEvent('sports-settings-backup', { detail: ${JSON.stringify(action)} }))`, true);
+    } catch (error) {
+      if (!contents.isDestroyed()) dialog.showErrorBox('SportsOver settings backup failed', error.message);
+    }
+  };
+  if (contents.isLoading()) contents.once('did-finish-load', run);
+  else void run();
+}
 function menus() {
   const updateItem = updateChecker.menuItem();
   const controls = [
@@ -148,7 +165,12 @@ function menus() {
       { role: 'hide' }, { role: 'hideOthers' }, { role: 'unhide' },
       { type: 'separator' }, quitItem,
     ] }] : []),
-    { label: 'File', submenu: [...(mac ? [] : [settingsItem, updateItem, { type: 'separator' }]), { role: 'close' }, ...(mac ? [] : [quitItem])] },
+    { label: 'File', submenu: [
+      ...(mac ? [] : [settingsItem, updateItem, { type: 'separator' }]),
+      { id: 'export-settings', label: 'Export settings…', click: () => settingsBackup('export') },
+      { id: 'import-settings', label: 'Import settings…', click: () => settingsBackup('import') },
+      { type: 'separator' }, { role: 'close' }, ...(mac ? [] : [quitItem]),
+    ] },
     { label: 'Edit', submenu: [{ role: 'undo' }, { role: 'redo' }, { type: 'separator' }, { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }] },
     { label: 'Banner', submenu: bannerControls },
     { role: 'windowMenu' },
