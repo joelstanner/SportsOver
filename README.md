@@ -2,7 +2,7 @@
 
 See [CHANGELOG.md](CHANGELOG.md) for version history.
 
-A standalone Electron sports banner for your desktop. Transparent, borderless, draggable, and always on top of ordinary application windows, with separate settings and tray/menu-bar controls. SportsOver owns one sports engine and serves two outputs: the floating desktop banner and an optional local OBS browser source. OBS and Twitchbot are not required to run the app.
+A standalone Electron sports banner for your desktop. Transparent, borderless, draggable, and always on top of ordinary application windows, with separate settings and tray/menu-bar controls. SportsOver owns one sports engine and serves two outputs: the floating desktop banner and an optional local OBS browser source. OBS is not required to run the app.
 
 ## Install on macOS
 
@@ -174,8 +174,6 @@ The listener binds only to IPv4 loopback on port 17843. If that port is occupied
 ## Optional integrations
 
 The secured local API accepts temporary game-selection commands and owns their duration and restoration. See [desktop/API.md](desktop/API.md) for authentication, schemas, retry rules and examples. Copy the integration token from Settings. No Twitch reward mapping or live Twitchbot integration is configured here.
-
-SportsOver is the destination for future sports development. The original `sports-obs-overlay` and Twitchbot sports implementations remain untouched and operational during migration; their retirement requires a later explicit migration decision.
 
 ## Storage and recovery
 
