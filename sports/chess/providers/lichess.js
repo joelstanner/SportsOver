@@ -24,19 +24,22 @@
     const rounds = metadata.rounds || [];
     if (roundId) return rounds.find(round => round.id === roundId) || null;
     const dated = rounds.filter(round => numeric(round.startsAt) !== null && round.startsAt <= now);
-    return [...rounds].reverse().find(round => round.ongoing)
+    return [...rounds].reverse().find(round => round.ongoing && !completed(round))
       || [...dated].sort((a, b) => b.startsAt - a.startsAt).find(round => !completed(round))
       || [...rounds].reverse().find(completed)
       || rounds.find(round => round.id === metadata.defaultRoundId) || rounds[0] || null;
   }
   function gameState(game, round) {
     if (completed(round) || ["1-0", "0-1", "½-½", "1/2-1/2"].includes(game.status)) return "final";
-    return game.lastMove || round.ongoing ? "live" : "pregame";
+    // An ongoing round can contain only unstarted pairings. A recorded move
+    // on an unfinished board is evidence of play; the round flag alone isn't.
+    return game.lastMove ? "live" : "pregame";
   }
   function roundState(payload) {
     const round = payload?.round || {}, games = payload?.games || [];
     if (completed(round) || (games.length && games.every(game => gameState(game, round) === "final"))) return "final";
-    return round.ongoing || games.some(game => gameState(game, round) === "live") ? "live" : "pregame";
+    if (games.some(game => gameState(game, round) === "live")) return "live";
+    return games.some(game => gameState(game, round) === "final") ? "interrupted" : "pregame";
   }
   function normalizePlayer(player = {}, color) {
     return { id: player.fideId ? `fide:${player.fideId}` : `name:${String(player.name || "Player")}`,
@@ -62,9 +65,13 @@
       move: Number(String(game.fen || "").split(" ")[5]) || null, lastMove: String(game.lastMove || ""),
     }));
     const current = roundState(payload), index = metadata.rounds.findIndex(item => item.id === round.id);
-    const state = !watch.roundId && current === "final" && index < metadata.rounds.length - 1 ? "interrupted" : current;
+    const betweenRounds = !watch.roundId && ((current === "final" && index >= 0 && index < metadata.rounds.length - 1)
+      || (current === "pregame" && metadata.rounds.slice(0, Math.max(0, index)).some(completed)));
+    const state = betweenRounds ? "interrupted" : current;
+    const breakReason = current === "final" ? "Round complete"
+      : current === "pregame" ? `Awaiting ${round.name || "next round"}` : "Awaiting remaining games";
     return global.SportsOverlay.model.createEvent({ id: watchId(watch), sport: "chess", league: "Lichess", competitionType: "individual",
-      state, detailedState: state === "interrupted" ? "Round complete" : state === "final" ? "Final" : state === "live" ? "Live" : "Upcoming",
+      state, detailedState: state === "interrupted" ? breakReason : state === "final" ? "Final" : state === "live" ? "Live" : "Upcoming",
       startTime: iso(round.startsAt), competitors: games.flatMap(game => game.players),
       details: { tournamentId: metadata.tour.id, roundId: round.id, name: metadata.tour.name || watch.name,
         roundName: round.name || "Round", games, view: watch.view || "overview", playerId: watch.playerId || "", leaderboardSize: watch.leaderboardSize === 3 ? 3 : 10,
@@ -76,7 +83,7 @@
       teamKeys: [], competitorKeys: event.competitors.map(player => player.id),
       raw: { name: event.details.name, bannerLabel: event.details.view === "player"
         ? `Player · ${event.competitors.find(player => (player.pdgaNumber || player.id) === event.details.playerId)?.name || "Choose a player"}`
-        : `Top ${event.details.leaderboardSize} players`, roundName: event.details.roundName, stale: event.details.stale, automatic: event.details.automatic } };
+        : `Top ${event.details.leaderboardSize} players`, roundName: event.details.roundName, stale: event.details.stale, automatic: event.details.automatic, detailedState: event.detailedState } };
   }
   function createSession() { return { tail: Promise.resolve(), requests: new Map(), lastGood: new Map(), cooldownUntil: 0, directory: [], directoryAt: -Infinity, directoryPending: null, watches: new Map(), finishedAt: new Map(), activeWatches: new Set() }; }
   function eliteEvents(directory, now) {

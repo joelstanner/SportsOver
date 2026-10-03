@@ -3,6 +3,24 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.22.0 — 2026-10-02
+
+### Changed
+
+- Game locks now work in Live mode: hold one eligible game or rotate among
+  several, with other live games still available to lock in Live control.
+- Vertical leaderboards pause for the first quarter of each rotation cycle
+  before scrolling (five seconds with the default twenty-second duration).
+
+### Fixed
+
+- Disc golf no longer treats completed or withdrawn scorecards as active play.
+- Chess requires a recorded move on an unfinished board to show Live; unstarted
+  pairings and an ongoing round flag alone no longer qualify.
+- Tournament breaks show the waiting reason, including an upcoming round.
+  Individual tournaments leave Live mode during breaks and return when play
+  resumes, even when locked. Team-sport breaks remain eligible.
+
 ## 0.21.3 — 2026-10-02
 
 ### Fixed

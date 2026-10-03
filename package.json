@@ -1,6 +1,6 @@
 {
   "name": "sportsover",
-  "version": "0.21.3",
+  "version": "0.22.0",
   "private": true,
   "description": "Standalone desktop sports banner",
   "main": "desktop/main.cjs",

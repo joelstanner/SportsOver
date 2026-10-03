@@ -80,6 +80,20 @@ const payload = {tour:metadata.tour,round:metadata.rounds[0],games:[game('Game00
   assert.match(await banner.locator('.chess-footer').innerText(),/absent/);
   assert.equal(await banner.locator('.chess-event img').count(),0);
   await banner.screenshot({path:'/tmp/sportsover-chess-overview.png'});
+  // Standings must preserve the break explanation when the next round has
+  // pairings and an ongoing flag, but no moves on any board yet.
+  await banner.evaluate(({metadata,payload})=>{
+   const api=window.SportsOverlay;
+   metadata.rounds[0].finishedAt=Date.now()-1000;
+   metadata.rounds[1].ongoing=true;
+   payload.round=metadata.rounds[1];
+   payload.games=payload.games.map(game=>({...game,lastMove:'',status:'*'}));
+   const event=api.lichess.normalizeEvent(metadata,payload,{tournamentId:'Tour1234',view:'overview'});
+   api.registry.getLayout('chess').createLayout().render(event);
+  },{metadata,payload});
+  assert.match(await banner.locator('.chess-state').innerText(),/Round 2.*BREAK/);
+  assert.match(await banner.locator('.chess-footer').innerText(),/Awaiting Round 2/);
+  assert.doesNotMatch(await banner.locator('.chess-footer').innerText(),/complete/);
   // The new sport participates in demo rotation with existing team layouts.
   await banner.evaluate(()=>{const c=JSON.parse(localStorage.getItem('sports-overlay.config.v1'));c.sports.forEach(g=>g.enabled=['basketball','chess'].includes(g.sport));localStorage.setItem('sports-overlay.config.v1',JSON.stringify(c));});
   await banner.goto('http://overlay.test/index.html?scenario=rotation');

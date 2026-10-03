@@ -42,7 +42,8 @@ async function fixture(extraFavorites = [], gameCount = 2, useRealSelection = fa
     fetch: async url => {
       calls.push({ url, at: now });
       if (holdNext) { holdNext = false; await new Promise(resolve => { release = resolve; }); }
-      return response(url.startsWith("schedule") ? { events: structuredClone(games) } : { id: url, state: games.find(game => `game/${game.id}` === url)?.state || "live" });
+      const game = games.find(game => `game/${game.id}` === url);
+      return response(url.startsWith("schedule") ? { events: structuredClone(games) } : { id: url, state: game?.state || "live", competitionType: game?.competitionType });
     },
     SportsOverlay: api, location: { search: "" }, addEventListener: () => {},
     document: { querySelector: () => null, addEventListener: (_, fn) => { visibility = fn; } },
@@ -264,7 +265,7 @@ test("previous respects temporary overrides and queues with fewer than two items
   assert.equal(single.engine.describe().currentGameKey, null);
 });
 
-test('Live mode filters the selected rotation, bypasses locks, then restores saved mode and locks', async () => {
+test('Live mode ignores locks on upcoming games, then restores the full rotation and locks', async () => {
   const app = await fixture([], 3);
   app.games[0].state = 'pregame';
   await app.save({ rotationMode: 'curated', includedGames: ['baseball:1', 'baseball:2'], lockedGameKeys: ['baseball:1'] });
@@ -278,6 +279,28 @@ test('Live mode filters the selected rotation, bypasses locks, then restores sav
   await app.engine.setLiveMode(false); await app.flush();
   assert.deepEqual(Array.from(app.engine.describe().queue, entry => entry.candidate.id), ['1']);
   assert.deepEqual(app.config, saved);
+});
+
+test('Live mode honors single and multiple locks while keeping all eligible games available to controls', async () => {
+  const app = await fixture([], 3);
+  await app.engine.setLiveMode(true); await app.flush();
+  const ids = key => Array.from(app.engine.describe()[key], entry => entry.candidate.id);
+  await app.save({lockedGameKeys:['baseball:2']});
+  assert.deepEqual(ids('queue'), ['2']);
+  assert.deepEqual(ids('liveQueue'), ['1','2','3']);
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:2');
+  await app.save({lockedGameKeys:['baseball:2','baseball:3']});
+  assert.deepEqual(ids('queue'), ['2','3']);
+  await app.engine.next();
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:3');
+  await app.save({lockedGameKeys:[]});
+  assert.deepEqual(ids('queue'), ['1','2','3']);
+  await app.save({lockedGameKeys:['baseball:2'],liveModeFinalMinutes:0});
+  app.games[1].state = 'final';
+  await app.advance(12000);
+  assert.deepEqual(ids('queue'), ['1','3'], 'expired locked finals cannot block remaining live games');
+  assert.deepEqual(ids('liveQueue'), ['1','3']);
+  assert.deepEqual(app.config.lockedGameKeys, ['baseball:2']);
 });
 
 test('Live mode expiry drops the last final, stays latched, and allows deactivation with no live games', async () => {
@@ -333,6 +356,25 @@ test('activating during a pending refresh publishes a filtered queue immediately
   assert.deepEqual(Array.from(app.engine.describe().queue, entry => entry.candidate.id), ['2']);
   await app.release(); await refresh; await activation; await app.flush();
   assert.deepEqual(Array.from(app.engine.describe().queue, entry => entry.candidate.id), ['2']);
+});
+
+test('a polled individual break leaves Live mode immediately and returns when play resumes', async () => {
+  const app = await fixture([], 1);
+  app.games[0].competitionType = 'individual';
+  await app.advance(12000);
+  await app.engine.setLiveMode(true); await app.flush();
+  assert.equal(app.engine.describe().queue.length, 1);
+  await app.save({lockedGameKeys:['baseball:1']});
+  const renders = app.renders.length;
+  app.games[0].state = 'interrupted';
+  await app.advance(12000);
+  assert.equal(app.engine.describe().queue.length, 0);
+  assert.equal(app.engine.describe().liveMode.active, true);
+  assert.equal(app.engine.describe().liveMode.canActivate, false);
+  assert.equal(app.renders.length, renders, 'the paused banner must not render in Live mode');
+  app.games[0].state = 'live';
+  await app.advance(60000);
+  assert.equal(app.engine.describe().queue.length, 1);
 });
 
 test("recurring directory discovery is capped independently of long score refresh intervals", async () => {

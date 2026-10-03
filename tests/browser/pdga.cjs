@@ -82,6 +82,19 @@ const scores = require('../sports/disc-golf/round.json');
     assert.doesNotMatch(await banner.locator('.pdga-footer').innerText(),/STALE|retrying/);
     assert.doesNotMatch(await banner.locator('#sports-overlay').getAttribute('aria-label'),/stale/);
     offline = false;
+    // A next-round DNF must not make waiting players live, and its footer
+    // must not incorrectly claim that the unplayed round is complete.
+    await banner.evaluate(metadata=>{
+      const api = window.SportsOverlay;
+      const event = api.pdga.normalizeEvent(metadata,{roundNumber:2,scores:[
+        {Name:'Waiting player',PDGANum:41760,Round:2,RoundStarted:0,HasRoundScore:0,Played:null,Completed:0,ToPar:-10,RunningPlace:1,TeeTime:'15:00:00'},
+        {Name:'DNF player',Round:2,RoundStarted:0,HasRoundScore:0,Played:18,Completed:1,RoundScore:'999'},
+      ]},{tournamentId:'86076',division:'MPO',view:'player',playerId:'41760'});
+      api.registry.getLayout('disc-golf').createLayout().render(event);
+    },metadata);
+    assert.match(await banner.locator('.pdga-state').innerText(),/R2.*BREAK/);
+    assert.match(await banner.locator('.pdga-footer').innerText(),/Awaiting round 2/);
+    assert.doesNotMatch(await banner.locator('.pdga-footer').innerText(),/complete/);
     // Existing layouts still activate after an individual event.
     await banner.goto('http://overlay.test/index.html?sport=basketball&demo=live');
     await banner.locator('.basketball-scorebug[data-state="live"]').waitFor();

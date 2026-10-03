@@ -38,7 +38,11 @@
   function roundState(scores = []) {
     if (!scores.length) return "pregame";
     if (scores.every(score => flag(score.Completed) || playerStatus(score))) return "final";
-    return scores.some(score => flag(score.RoundStarted) || flag(score.HasRoundScore) || number(score.Played) > 0) ? "live" : "pregame";
+    // Finished/DNF cards can still carry Played and RoundStarted (including
+    // a DNF entered before the next round). Only unfinished players count.
+    if (scores.some(score => !flag(score.Completed) && !playerStatus(score)
+      && (flag(score.RoundStarted) || flag(score.HasRoundScore) || number(score.Played) > 0))) return "live";
+    return scores.some(score => flag(score.Completed) && !playerStatus(score)) ? "interrupted" : "pregame";
   }
   function normalizeEvent(metadata, round, watch) {
     if (!metadata || !Array.isArray(round?.scores)) throw Error("PDGA returned an invalid score feed");
@@ -50,9 +54,11 @@
     const finalRound = number(metadata.FinalRound) || number(metadata.Rounds);
     const state = (current === "final" && (!finalRound || roundNumber < finalRound))
       || (current === "pregame" && roundNumber > 1) ? "interrupted" : current;
+    const breakReason = current === "final" ? "Round complete"
+      : current === "pregame" ? `Awaiting round ${roundNumber}` : "Awaiting remaining players";
     return global.SportsOverlay.model.createEvent({
       id: watchId(watch), sport: "disc-golf", league: "PDGA", competitionType: "individual",
-      state, detailedState: state === "interrupted" ? "Round complete" : state === "pregame" ? "Awaiting scores" : state === "final" ? "Final" : "Live",
+      state, detailedState: state === "interrupted" ? breakReason : state === "pregame" ? "Awaiting scores" : state === "final" ? "Final" : "Live",
       // PDGA provides dates without a guaranteed zone. Keep the date as display
       // metadata rather than inventing a UTC tee time for queue/preview labels.
       startTime: null, competitors,

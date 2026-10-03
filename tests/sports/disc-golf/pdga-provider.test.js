@@ -48,6 +48,37 @@ test('null, ties, DNF, withdrawn and unplayed players never become numeric score
   assert.equal(api.pdga.normalizePlayer({...round.scores[0],ToPar:null}).total,null);
   assert.equal(api.pdga.normalizePlayer({...round.scores[0],ToPar:0}).total,0);
 });
+test('Buffalo Run round 2 DNF card cannot make an unstarted field live', () => {
+  // Public feed for 103574/MPO, checked October 2, 2026: the DNF has
+  // Played=18 despite RoundStarted=0 and all remaining players awaiting tees.
+  const scores = [
+    { Name:'Waiting player', Round:2, RoundStarted:0, HasRoundScore:0, Played:null, Holes:18, Completed:0, RoundScore:0, ToPar:-10, RunningPlace:1 },
+    { Name:'DNF player', Round:2, RoundStarted:0, HasRoundScore:0, Played:18, Holes:18, Completed:1, RoundStatus:'', RoundScore:'999' },
+  ];
+  const event = normalize({scores}, {...metadata, FinalRound:3});
+  assert.equal(event.state, 'interrupted');
+  assert.equal(event.detailedState, 'Awaiting round 2');
+  assert.equal(event.competitors[0].total, -10);
+  assert.equal(event.competitors[0].roundScore, null);
+  assert.equal(api.pdga.toCandidate(event).raw.detailedState, 'Awaiting round 2');
+  assert.equal(api.pdga.refreshState({data:{scores}}, 'live_results_fetch_round'), 'pregame');
+  for (const status of ['WD','DNS','DQ','DNF']) {
+    scores[1] = {...scores[1], Completed:0, RoundScore:0, RoundStatus:status, RoundStarted:1};
+    assert.equal(normalize({scores}).state, 'interrupted');
+  }
+  scores[0].Played = 1;
+  assert.equal(normalize({scores}).state, 'live');
+});
+test('finished cards and unstarted players show a gap, while an unfinished player keeps play live', () => {
+  const done = {...round.scores[0], Round:1};
+  const waiting = {Round:1, RoundStarted:0, HasRoundScore:0, Played:0, Completed:0};
+  const event = normalize({scores:[done,waiting]});
+  assert.equal(event.state, 'interrupted');
+  assert.equal(event.detailedState, 'Awaiting remaining players');
+  assert.equal(normalize({scores:[done,{...waiting,RoundStarted:1}]}).state, 'live');
+  assert.equal(normalize({scores:[done]}).detailedState, 'Round complete');
+  assert.equal(normalize({scores:[waiting]}).state, 'pregame');
+});
 test('settings preserve teams and normalize saved divisions and view preferences', () => {
   const config = api.config.normalizeConfig({sports:[{sport:'disc-golf',events:[watch,{...watch}, {...watch,division:'fpo',view:'player',playerId:123}, {...watch,tournamentId:'bad'}]}]});
   assert.equal(config.sports[0].events.length,2);

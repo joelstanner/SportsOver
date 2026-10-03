@@ -23,13 +23,14 @@
       const winner = competitors.find(player => player.wonPlayoff);
       let footer = `${competitors.length} players · ${details.dateRange}`;
       if (winner) footer = `${winner.shortName} wins playoff · ${details.dateRange}`;
-      if (event.state === "interrupted") footer = `Round ${details.round} complete · awaiting next round`;
       if (event.state === "pregame") footer = `${details.dateRange} · Tee times are course local`;
       if (details.view === "player" && !featured) footer = "Followed player unavailable · showing leaders";
       if (featured) {
         const course = details.layouts.find(layout => Number(layout.LayoutID) === featured.layoutId)?.CourseName;
         footer = [course, featured.status || (featured.started ? `${featured.roundScore ?? "—"} strokes · ${featured.holes ?? "—"} holes` : featured.teeTime ? `Tee ${featured.teeTime} (course local)` : "Awaiting tee time")].filter(Boolean).join(" · ");
       }
+      if (event.state === "interrupted") footer = event.detailedState === "Round complete"
+        ? `Round ${details.round} complete · awaiting next round` : event.detailedState;
       if (stale) footer = event.state === "live"
         ? "STALE · Last received scores · retrying automatically"
         : "Last received scores · awaiting scheduled update";

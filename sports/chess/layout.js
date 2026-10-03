@@ -23,7 +23,6 @@
       const state = { live: "LIVE", pregame: "UPCOMING", interrupted: "BREAK", final: "FINAL" }[event.state];
       let footer = `${games.filter(game => game.state === "live").length} live · ${games.filter(game => game.state === "final").length}/${games.length} finished${d.timeControl ? ` · ${d.timeControl}` : ""}`;
       if (event.state === "pregame") footer = event.startTime ? global.SportsOverlay.model.formatPregameStart(event.startTime) : "Awaiting pairings and round start";
-      if (event.state === "interrupted") footer = "Round complete · following the next round automatically";
       if (featured) footer = featured.result ? `Board ${featured.board} · ${featured.result === "½-½" ? "Draw" : featured.result === "1-0" ? "White wins" : "Black wins"}`
         : `Board ${featured.board} · ${featured.state === "live" ? `${featured.turn ? `${featured.turn === "white" ? "White" : "Black"} to move` : "Live"}${featured.move ? ` · move ${featured.move}` : ""}` : "Awaiting start"} · Clocks: last broadcast update`;
       if (d.view === "player" && !featured) footer = "Followed player absent · showing tournament standings";
@@ -31,6 +30,8 @@
       if (!featured && !shown.length) footer = "Tournament scores are not published for this broadcast yet";
       if (!featured && d.standingsUnavailable) footer = shown.length ? "STALE standings · Last received tournament scores" : "Tournament standings unavailable · retrying automatically";
       if (d.lastPlay) footer = d.lastPlay;
+      if (event.state === "interrupted") footer = event.detailedState === "Round complete"
+        ? "Round complete · awaiting next round" : event.detailedState;
       if (d.delay) footer += ` · ${d.delay}s broadcast delay`;
       if (d.stale) footer = "STALE · Last received broadcast · awaiting scheduled update";
       mount.classList.remove("is-loading", "is-hidden");

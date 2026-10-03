@@ -56,6 +56,37 @@ test("public resolution, watch discovery, top watch, and cached stale recovery",
   assert.equal((await client.discover()).failures, 2);
   await assert.rejects(client.getEvent("Missing1:auto"), /not watched/);
 });
+test('ongoing round flags and unplayed pairings do not imply live chess', () => {
+  const next = {...payload, games:[]};
+  assert.equal(api.roundState(next), 'pregame');
+  next.games = [{id:'Game0001',status:'*'}];
+  assert.equal(api.normalizeEvent(metadata,next,watch).state, 'pregame');
+  assert.equal(api.gameState(next.games[0],next.round), 'pregame');
+  next.games.push({id:'Game0002',status:'1-0',lastMove:'e2e4'});
+  let event = api.normalizeEvent(metadata,next,watch);
+  assert.equal(event.state, 'interrupted');
+  assert.equal(event.detailedState, 'Awaiting remaining games');
+  assert.equal(api.toCandidate(event).raw.detailedState, event.detailedState);
+  next.games[0].lastMove = 'd2d4';
+  assert.equal(api.roundState(next), 'live');
+  next.round = {...next.round,ongoing:false};
+  assert.equal(api.roundState(next), 'live', 'a long think or absent round flag cannot prove a pause');
+  next.games[0].status = '0-1';
+  assert.equal(api.roundState(next), 'final');
+});
+test('a posted next round stays on break until a board actually starts', () => {
+  const meta = structuredClone(metadata);
+  meta.rounds[0].finishedAt = 4000;
+  // Completion wins over a lingering ongoing flag in metadata.
+  assert.equal(api.selectRound(meta,'',11000).id, 'Round002');
+  const next = {tour:meta.tour,round:meta.rounds[1],games:[{id:'Game0003',status:'*'}]};
+  const event = api.normalizeEvent(meta,next,watch);
+  assert.equal(event.state, 'interrupted');
+  assert.equal(event.detailedState, 'Awaiting Round 2');
+  assert.equal(api.normalizeEvent(meta,next,{...watch,roundId:'Round002'}).state, 'pregame');
+  next.games[0].lastMove = 'e2e4';
+  assert.equal(api.normalizeEvent(meta,next,watch).state, 'live');
+});
 test("Lichess requests are serialized, deduplicated, and paused for 60 seconds after 429", async () => {
   let active = 0, maximum = 0, calls = 0, now = 0, limited = false;
   const session = api.createSession(), client = api.createClient({ session, now: () => now,

@@ -53,6 +53,7 @@ let overrideEntry = null;
 let discoveryPending = null;
 let rediscover = false;
 let normalRotationQueue = [];
+let liveRotationQueue = [];
 const liveMode = window.SportsOverlay.liveMode.create();
 
 // The desktop host is the sole live engine. Outputs receive rendered snapshots.
@@ -63,6 +64,7 @@ window.SportsOverlay.engine = {
     automaticEntries: automaticRotationEntries.map(publicEntry),
     queue: rotationQueue.map(publicEntry),
     normalQueue: normalRotationQueue.map(publicEntry),
+    liveQueue: liveRotationQueue.map(publicEntry),
     liveMode: { active: liveMode.isActive(), canActivate: normalRotationQueue.some(window.SportsOverlay.liveMode.isLive) },
     currentGameKey: entryKey(overrideEntry || rotationQueue[currentIndex]) || null,
     renderedGameKey,
@@ -244,7 +246,7 @@ async function discoverGamesOnce(refresh = true) {
   clearTimeout(pollTimer);
   pollGeneration += 1;
   if (!sportContexts.length) {
-    rotationQueue = []; normalRotationQueue = []; automaticRotationEntries = []; cachedDiscoveries = [];
+    rotationQueue = []; normalRotationQueue = []; liveRotationQueue = []; automaticRotationEntries = []; cachedDiscoveries = [];
     liveMode.update({ enabledSports: [] });
     overrideEntry = null; currentIndex = 0;
     requestRevision++; rotationGeneration++;
@@ -304,13 +306,17 @@ async function discoverGamesOnce(refresh = true) {
 }
 
 function selectedRotationQueue(availableEntries) {
-  return liveMode.isActive() ? liveMode.update({
+  liveRotationQueue = liveMode.isActive() ? liveMode.update({
     rotation: normalRotationQueue, available: availableEntries,
     excludedKeys: savedConfig.excludedGames,
     enabledSports: sportContexts.map(context => context.sport),
     rotationOrder: savedConfig.rotationOrder, retentionMinutes: savedConfig.liveModeFinalMinutes,
     allows: entry => window.SportsOverlay.config.isCandidateEnabled(savedConfig, entry.candidate),
-  }) : window.SportsOverlay.selection.applyGameLocks(normalRotationQueue, savedConfig.lockedGameKeys, entryKey);
+  }) : [];
+  // Filter for live eligibility before applying locks, so a paused tournament
+  // or expired final cannot be kept on screen by its saved lock.
+  return window.SportsOverlay.selection.applyGameLocks(liveMode.isActive() ? liveRotationQueue : normalRotationQueue,
+    savedConfig.lockedGameKeys, entryKey);
 }
 
 async function discoverSport(context) {
@@ -387,7 +393,8 @@ async function renderGame(entry, revision, { animate = false } = {}) {
     const watchedGame = watchedTeams?.some(team => entry.candidate.teamKeys
       ?.some(id => String(id).toUpperCase() === String(team.teamId).toUpperCase()));
     if (!overrideEntry && (liveMode.isActive() || watchedGame)) {
-      const observed = { ...entry, candidate: { ...entry.candidate, state: event.state },
+      const observed = { ...entry, candidate: { ...entry.candidate, state: event.state,
+        competitionType: event.competitionType || entry.candidate.competitionType },
         ...(event.state === "final" ? { autoFinalDetectedAt: entry.autoFinalDetectedAt ?? Date.now() } : {}) };
       if (liveMode.isActive()) liveMode.observe(observed);
       // Keep metadata and queue timing in step with the freshly polled score.
@@ -400,7 +407,7 @@ async function renderGame(entry, revision, { animate = false } = {}) {
       rotationQueue[currentIndex] = observed;
       if (liveMode.isActive() || entry.candidate.state !== event.state
         || event.state === "final" && !Number.isFinite(entry.autoFinalDetectedAt)) scheduleDiscovery();
-      if (liveMode.isActive() && (!["live", "interrupted", "final"].includes(event.state)
+      if (liveMode.isActive() && ((!window.SportsOverlay.liveMode.isLive(observed) && event.state !== "final")
         || (event.state === "final" && savedConfig.liveModeFinalMinutes === 0))) {
         setTimeout(() => discoverGames(false), 0);
         return;
@@ -547,6 +554,7 @@ if (!staticPreview) {
       const allowed = entry => window.SportsOverlay.config.isCandidateEnabled(savedConfig, entry.candidate);
       const previousKey = entryKey(rotationQueue[currentIndex]);
       rotationQueue = rotationQueue.filter(allowed);
+      liveRotationQueue = liveRotationQueue.filter(allowed);
       automaticRotationEntries = automaticRotationEntries.filter(allowed);
       cachedDiscoveries = cachedDiscoveries?.map(result => ({ ...result,
         automaticEntries: result.automaticEntries.filter(allowed), availableEntries: result.availableEntries.filter(allowed),

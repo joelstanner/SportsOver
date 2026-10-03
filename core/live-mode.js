@@ -1,7 +1,8 @@
 "use strict";
 
 (function initializeLiveMode(global) {
-  const isLive = entry => ["live", "interrupted"].includes(entry?.candidate?.state);
+  const isLive = entry => entry?.candidate?.state === "live"
+    || (entry?.candidate?.state === "interrupted" && entry.candidate.competitionType !== "individual");
   const keyOf = entry => `${entry.candidate.sport}:${entry.candidate.id}`;
 
   // Session-only state. Saved queue settings and locks remain untouched.

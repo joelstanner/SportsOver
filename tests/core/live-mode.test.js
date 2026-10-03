@@ -13,6 +13,26 @@ test('Live mode starts only with a live game from the rotation, including games 
   assert.deepEqual(ids(mode.update({ rotation: [halftime], enabledSports: ['baseball'] })), ['half']);
 });
 
+test('individual round breaks cannot activate Live mode and leave its queue until play resumes', () => {
+  for (const sport of ['disc-golf', 'chess', 'future-individual-sport']) {
+    const mode = create();
+    const tournament = state => ({candidate:{id:'tournament',sport,state,competitionType:'individual'}});
+    const paused = tournament('interrupted'), live = tournament('live');
+    assert.equal(mode.setActive(true, [paused]), false);
+    assert.equal(mode.setActive(true, [live]), true);
+    const input = {enabledSports:[sport],retentionMinutes:20};
+    assert.equal(mode.update({...input,rotation:[live]}).length, 1);
+    mode.observe(paused);
+    assert.deepEqual(mode.update({...input,rotation:[paused],available:[paused]}), []);
+    assert.deepEqual(mode.update({...input,rotation:[],available:[]}), []);
+    assert.equal(mode.isActive(), true);
+    assert.equal(mode.update({...input,rotation:[live],available:[live]}).length, 1);
+    assert.equal(mode.update({...input,rotation:[tournament('final')]}).length, 1, 'actual finals retain the configured grace period');
+    mode.setActive(false);
+    assert.deepEqual(mode.update({rotation:[paused]}), [paused], 'normal rotation keeps the tournament');
+  }
+});
+
 test('only rotation games can enter, while previously admitted live games survive suggestion changes', () => {
   const mode = create();
   const live = entry('live'), next = entry('next', 'pregame'), outside = entry('outside');

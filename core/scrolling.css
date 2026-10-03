@@ -12,7 +12,7 @@
 .scorebug-vertical-viewport { height:45px; overflow:hidden; }
 .scorebug-vertical-track.is-scrolling-vertically { animation: scorebug-vertical var(--vertical-duration,20s) linear infinite; animation-delay:var(--vertical-delay,0s); }
 @keyframes scorebug-vertical {
-  0%, 12% { transform:translateY(0); }
+  0%, 25% { transform:translateY(0); }
   85%, 100% { transform:translateY(var(--vertical-distance)); }
 }
 .scorebug-vertical-viewport:hover .is-scrolling-vertically, .scorebug-vertical-viewport:focus-within .is-scrolling-vertically { animation-play-state:paused; }

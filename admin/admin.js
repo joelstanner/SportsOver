@@ -715,12 +715,12 @@
     const canActivate = global.sportsDesktop ? engineRotationState?.ready && engineRotationState?.liveMode?.canActivate
       : normalRotationQueue().some(global.SportsOverlay.liveMode.isLive);
     liveModeButton.disabled = changingLiveMode || (!active && !canActivate);
-    liveModeButton.title = active ? "Turn off Live mode and restore your queue mode and game locks."
+    liveModeButton.title = active ? "Turn off Live mode and restore your full rotation."
       : canActivate ? "Show only live games from your rotation." : "No live games in rotation.";
     document.querySelector("#rotation-mode").disabled = active;
     document.querySelector("#reset-rotation").disabled = active;
     document.querySelector("#live-mode-note").textContent = active
-      ? `Live mode is on. Queue mode and locks are paused. Finished games stay for ${workingConfig.liveModeFinalMinutes} minutes. Turn off to restore your choices.`
+      ? `Live mode is on. Game locks apply to eligible live games. Finished games stay for ${workingConfig.liveModeFinalMinutes} minutes. Turn off to restore your full rotation.`
       : "Show only live games from your rotation. Finished games stay for the time set in Settings.";
     const queue = currentRotationQueue();
     const queueList = document.querySelector("#rotation-queue");
@@ -770,7 +770,7 @@
   }
 
   function currentRotationQueue() {
-    if (global.sportsDesktop && liveModeActive()) return (engineRotationState?.queue || [])
+    if (global.sportsDesktop && liveModeActive()) return (engineRotationState?.liveQueue || engineRotationState?.queue || [])
       .filter(isSportEnabled).filter(entry => !workingConfig.excludedGames.includes(rotationEntryKey(entry)));
     return localLiveMode.update({
       rotation: normalRotationQueue(), available: availableRotationEntries,
@@ -814,8 +814,8 @@
     lockButton.textContent = locked ? "Locked" : "Lock";
     lockButton.classList.toggle("is-locked", locked);
     lockButton.setAttribute("aria-pressed", String(locked));
-    lockButton.disabled = liveModeActive();
-    if (liveModeActive()) lockButton.title = "Game locks resume when Live mode is turned off.";
+    lockButton.title = locked ? "Unlock this game to resume the rest of the rotation."
+      : "Rotate only locked games that are eligible in the current mode.";
     lockButton.addEventListener("click", () => toggleGameLock(entry));
     card.querySelector(".remove-game").addEventListener("click", () => removeRotationGame(entry));
     list.append(card);
@@ -955,8 +955,8 @@
   }
 
   function gameMeta(candidate) {
-    if (candidate.sport === "chess") return `${candidate.raw?.stale ? "Last received · " : ""}${candidate.state === "live" ? "Live now" : candidate.state === "interrupted" ? "Round complete" : candidate.state === "final" ? "Final" : "Upcoming"}${candidate.state === "pregame" && candidate.startTime ? ` · ${global.SportsOverlay.model.formatPregameStart(candidate.startTime)}` : ""}`;
-    if (candidate.sport === "disc-golf") return `${candidate.raw?.stale ? "Last received · " : ""}${candidate.state === "final" ? "Final" : candidate.state === "live" ? "Live now" : candidate.state === "interrupted" ? "Round complete" : "Upcoming"} · R${candidate.raw?.round || 1} · ${candidate.raw?.dateRange || ""}`;
+    if (candidate.sport === "chess") return `${candidate.raw?.stale ? "Last received · " : ""}${candidate.state === "live" ? "Live now" : candidate.state === "interrupted" ? candidate.raw?.detailedState || "Break" : candidate.state === "final" ? "Final" : "Upcoming"}${candidate.state === "pregame" && candidate.startTime ? ` · ${global.SportsOverlay.model.formatPregameStart(candidate.startTime)}` : ""}`;
+    if (candidate.sport === "disc-golf") return `${candidate.raw?.stale ? "Last received · " : ""}${candidate.state === "final" ? "Final" : candidate.state === "live" ? "Live now" : candidate.state === "interrupted" ? candidate.raw?.detailedState || "Break" : "Upcoming"} · R${candidate.raw?.round || 1} · ${candidate.raw?.dateRange || ""}`;
     const preseason = candidate.sport === "baseball"
       ? ["S", "E"].includes(candidate.raw?.gameType)
       : global.SportsOverlay.model.espnPreseason(candidate.raw || {}, candidate.sport !== "soccer");

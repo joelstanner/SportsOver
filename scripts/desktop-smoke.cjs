@@ -162,7 +162,7 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.some(entry => entry.candidate.sport === 'baseball' && entry.candidate.id === '3'));
     await admin.getByRole('button', { name: 'Live control', exact: true }).click();
     await admin.locator('#rotation-queue [data-game-key="baseball:3"]').waitFor();
-    // Live mode is session-only, filters the full rotation, and pauses game locks.
+    // Live mode is session-only and applies locks after filtering live eligibility.
     const liveModeButton = admin.locator('#live-mode');
     assert.equal(await liveModeButton.getAttribute('aria-pressed'), 'false');
     await admin.locator('#rotation-queue [data-game-key="baseball:3"] .lock-game').click();
@@ -173,11 +173,29 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
       && window.SportsOverlay.engine.describe().currentGameKey === 'baseball:1');
     assert.equal(await liveModeButton.getAttribute('aria-pressed'), 'true');
     assert.equal(await admin.locator('#rotation-mode').isDisabled(), true);
-    assert.equal(await admin.locator('#rotation-queue .lock-game').first().isDisabled(), true);
+    assert.equal(await admin.locator('#rotation-queue .lock-game').first().isDisabled(), false);
     await admin.locator('#rotation-queue [data-game-key="baseball:1"]').waitFor();
     assert.equal(await admin.locator('#rotation-queue [data-game-key="baseball:3"]').count(), 0);
     assert.deepEqual(await engine.evaluate(() => window.SportsOverlay.config.loadConfig().lockedGameKeys), ['baseball:3']);
     assert.equal(await admin.locator('#available-games [data-game-key="baseball:3"]').count(), 0, 'filtered upcoming games remain selected, not available to add again');
+    await admin.locator('#available-games [data-game-key="baseball:2"] .add-game').click();
+    await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 2);
+    const liveCard = id => admin.locator(`#rotation-queue [data-game-key="baseball:${id}"]`);
+    await liveCard(2).locator('.lock-game').click();
+    await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 1
+      && window.SportsOverlay.engine.describe().currentGameKey === 'baseball:2');
+    await liveCard(1).waitFor();
+    assert.equal(await liveCard(1).locator('.lock-game').isEnabled(), true, 'other live games remain available to lock');
+    await liveCard(1).locator('.lock-game').click();
+    await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 2);
+    await liveCard(2).locator('.lock-game').click();
+    await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 1
+      && window.SportsOverlay.engine.describe().currentGameKey === 'baseball:1');
+    await liveCard(1).locator('.lock-game').click();
+    await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 2);
+    await liveCard(2).locator('.remove-game').click();
+    await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 1);
+    assert.deepEqual(await engine.evaluate(() => window.SportsOverlay.config.loadConfig().lockedGameKeys), ['baseball:3']);
     await admin.screenshot({ path: path.join(directory, 'live-mode.png') });
     await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
       .find(win => win.webContents.getURL().includes('/admin/')).setSize(700, 500));
