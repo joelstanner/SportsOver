@@ -2,9 +2,11 @@
 (() => {
   if (!new URLSearchParams(location.search).has('engine') || !window.sportsDesktop) return;
   let last = '', lastSent = 0, refreshResult = null;
+  let bannerHovered = false;
   function publish() {
     const mount = document.querySelector('#sports-overlay');
     if (!mount || !window.SportsOverlay.engine) return;
+    window.SportsOverlay.engine.setHovered(bannerHovered);
     const copy = mount.cloneNode(true);
     // Outputs run their own complete transitions when the rendered game changes;
     // short-lived engine animation classes can be missed by output polling.
@@ -17,6 +19,7 @@
     window.sportsDesktop.publish(frame);
   }
   window.sportsDesktop.onEngineCommand(async command => {
+    if (command.type === 'hover') bannerHovered = command.value === true;
     if (command.type === 'override') window.SportsOverlay.engine?.override(command.value);
     if (command.type === 'refresh') {
       try {

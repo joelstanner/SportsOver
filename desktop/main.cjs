@@ -23,6 +23,11 @@ const engineState = new EngineState();
 let appIcon, trayIcon, outputServer, engineWindow, obsUrl, integrationToken;
 let banner, settings, tray, store, quitting = false, locked = false, shortcut = false, saveTimer;
 let normalBounds = null, fullscreenDisplayId = null;
+let bannerHovered = false;
+function setBannerHovered(value) {
+  bannerHovered = value;
+  if (engineWindow && !engineWindow.isDestroyed()) engineWindow.webContents.send('engine:command', { type: 'hover', value });
+}
 function fullscreenDisplay() {
   return screen.getAllDisplays().find(display => display.id === fullscreenDisplayId)
     || screen.getDisplayMatching(banner.getBounds());
@@ -220,6 +225,7 @@ else {
     } catch (error) { store.warning += ` OBS/API listener unavailable: ${error.message}. Free port 17843 and restart.`; }
     engineWindow = new BrowserWindow({ width: 472, height: 100, show: false, webPreferences: { ...preferences(), backgroundThrottling: false } });
     secure(engineWindow);
+    engineWindow.webContents.on('did-finish-load', () => setBannerHovered(bannerHovered));
     engineWindow.webContents.on('render-process-gone', () => {
       engineState.stop();
       if (!quitting) setTimeout(() => { if (!engineWindow.isDestroyed()) engineWindow.reload(); }, 1000);
@@ -241,6 +247,9 @@ else {
     banner.webContents.on('did-finish-load', () => banner.webContents.send('desktop:fullscreen', !!normalBounds));
     banner.on('blur', () => bannerGesture({ phase: 'cancel' }));
     banner.on('hide', () => bannerGesture({ phase: 'cancel' }));
+    banner.on('hide', () => setBannerHovered(false));
+    banner.webContents.on('did-start-loading', () => setBannerHovered(false));
+    banner.webContents.on('render-process-gone', () => setBannerHovered(false));
     banner.webContents.on('context-menu', () => {
       bannerGesture({ phase: 'cancel' });
       Menu.buildFromTemplate([
@@ -320,6 +329,11 @@ else {
       else if (action === 'recover') recover();
       else if (action === 'size') resize(value);
       else if (action === 'settings') openSettings();
+      else if (action === 'banner-hover') {
+        if (event.sender !== banner.webContents) throw Error('Banner access required');
+        if (typeof value !== 'boolean') throw Error('Banner hover requires a boolean');
+        setBannerHovered(value && banner.isVisible());
+      }
       else if (action === 'banner-pointer') {
         if (event.sender !== banner.webContents) throw Error('Banner access required');
         bannerGesture(value);

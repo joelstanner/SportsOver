@@ -229,6 +229,64 @@ test("banner discovers secondary included teams and skips excluded teams", async
   assert.equal(f.calls.filter(call => call.url === "schedule").length, 1);
 });
 
+test('hover keeps the original rotation deadline when the pointer leaves early', async () => {
+  const app = await fixture();
+  await app.advance(1000);
+  app.engine.setHovered(true);
+  await app.advance(3000);
+  await app.engine.setHovered(false);
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:1');
+  await app.advance(999);
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:1');
+  await app.advance(1);
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:2');
+});
+
+test('expired rotation waits through hover and discovery while scores continue polling', async () => {
+  const app = await fixture();
+  app.engine.setHovered(true);
+  await app.advance(30000);
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:1');
+  assert.ok(app.calls.filter(call => call.url === 'game/1').length >= 3);
+  await app.engine.setHovered(false);
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:2');
+  await app.advance(4999);
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:2');
+  await app.advance(1);
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:1');
+});
+
+test('manual browsing during hover discards the expired dwell and starts a full new one', async () => {
+  const app = await fixture();
+  app.engine.setHovered(true);
+  await app.advance(6000);
+  await app.engine.next();
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:2');
+  await app.engine.setHovered(false);
+  await app.advance(4999);
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:2');
+  await app.advance(1);
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:1');
+});
+
+test('an override invalidates any rotation waiting for hover to end', async () => {
+  const app = await fixture();
+  app.engine.setHovered(true);
+  await app.advance(6000);
+  app.engine.override({ gameKey: 'baseball:2' });
+  await app.engine.setHovered(false);
+  await app.flush();
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:2');
+  await app.advance(10000);
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:2');
+  app.engine.override(null);
+  await app.flush();
+  await app.advance(4999);
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:1');
+  await app.advance(1);
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:2');
+});
+
 test("default timing changes immediately reschedule banner rotation", async () => {
   const app = await fixture();
   await app.advance(1000);

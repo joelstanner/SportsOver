@@ -6,6 +6,20 @@
     document.body.classList.add('desktop-banner');
     const bannerHint = 'Click: browse · Drag: move · Double-click: resize · Right-click: menu';
     document.body.title = bannerHint;
+    let hovered = false;
+    const setHovered = value => {
+      if (hovered === value) return;
+      hovered = value;
+      api.action('banner-hover', value).catch(console.error);
+    };
+    const trackHover = event => {
+      if (event.pointerType !== 'mouse') return;
+      setHovered(!!document.elementFromPoint(event.clientX, event.clientY)?.closest('#sports-overlay'));
+    };
+    document.addEventListener('pointerover', trackHover);
+    document.addEventListener('pointermove', trackHover);
+    document.documentElement.addEventListener('pointerleave', () => setHovered(false));
+    document.addEventListener('visibilitychange', () => { if (document.hidden) setHovered(false); });
     let cursorTimer;
     const clearCursorIdle = () => {
       clearTimeout(cursorTimer);
@@ -117,7 +131,7 @@
         <div><dt>Fullscreen <span>Ctrl/Cmd + Shift + F</span></dt><dd>Show only the banner, centered across a black screen. The cursor hides after 3 seconds of inactivity; move it to show it again. Press Escape or choose Exit fullscreen to restore the previous size and position. Moving and resizing pause in fullscreen. Opening Settings also exits fullscreen.</dd></div>
         <div><dt>Banner menu <span>Right-click</span></dt><dd>Open Settings, choose a banner size, lock or unlock the banner position, toggle fullscreen, or hide the banner.</dd></div>
       </dl>
-      <p class="desktop-info-note">Browsing wraps around and restarts the display timer. Clicks pause briefly to detect double-clicks. Game locks and temporary overrides still apply.</p>
+      <p class="desktop-info-note">Browsing wraps around and restarts the display timer. Hovering lets the timer run down, then holds the banner until the pointer leaves. Clicks pause briefly to detect double-clicks. Game locks and temporary overrides still apply.</p>
     </div>
     <footer class="desktop-info-footer">
       <div id="desktop-status" class="desktop-info-status" role="status">

@@ -42,6 +42,8 @@ let currentIndex = 0;
 let requestRevision = 0;
 let pollTimer = null;
 let rotationTimer = null;
+let bannerHovered = false;
+let pendingRotation = null;
 let discoveryTimer = null;
 let transitionCleanupTimer = null;
 let renderChain = Promise.resolve();
@@ -77,6 +79,14 @@ window.SportsOverlay.engine = {
   refresh: () => discoverGames(),
   next: () => stepRotation(1),
   previous: () => stepRotation(-1),
+  setHovered(value) {
+    bannerHovered = value === true;
+    if (!bannerHovered && pendingRotation) {
+      const advance = pendingRotation;
+      pendingRotation = null;
+      return advance();
+    }
+  },
   setLiveMode(active) {
     if (typeof active !== "boolean") return;
     liveMode.setActive(active, normalRotationQueue);
@@ -100,6 +110,7 @@ window.SportsOverlay.engine = {
 };
 async function stepRotation(direction) {
   if (overrideEntry || rotationQueue.length < 2) return;
+  pendingRotation = null;
   clearTimeout(rotationTimer); rotationTimer = null;
   const generation = ++rotationGeneration;
   clearTimeout(pollTimer); pollGeneration++;
@@ -490,12 +501,20 @@ function schedulePoll() {
 function scheduleRotation() {
   clearTimeout(rotationTimer);
   rotationTimer = null;
+  pendingRotation = null;
   const generation = ++rotationGeneration;
   if (overrideEntry || rotationQueue.length < 2) return;
-  rotationTimer = setTimeout(async () => {
+  const advance = async () => {
+    if (generation !== rotationGeneration) return;
+    pendingRotation = null;
     currentIndex = (currentIndex + 1) % rotationQueue.length;
     await renderCurrentGame({ animate: true });
     if (generation === rotationGeneration) { schedulePoll(); scheduleRotation(); }
+  };
+  rotationTimer = setTimeout(() => {
+    // Keep the elapsed timer registered so discovery does not start a new dwell.
+    if (bannerHovered) pendingRotation = advance;
+    else void advance();
   }, window.SportsOverlay.selection.gameDurationSeconds(rotationQueue[currentIndex], savedConfig.gameDurations, entryKey, savedConfig.defaultGameDurations) * 1_000);
 }
 
