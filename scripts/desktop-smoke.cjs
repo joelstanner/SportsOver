@@ -279,6 +279,11 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
       return win.getBounds();
     }, expected);
     const beforeDrag = await bannerBounds();
+    await application.evaluate(({ BrowserWindow }) => {
+      const win = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('display.html?desktop'));
+      globalThis.bannerFullscreenEntered = false;
+      win.once('enter-full-screen', () => { globalThis.bannerFullscreenEntered = true; });
+    });
     await application.evaluate(({ Menu }) => Menu.getApplicationMenu().getMenuItemById('fullscreen-banner').click());
     const fullBounds = await bannerBounds();
     const fullDisplay = await application.evaluate(({ screen }, bounds) => screen.getDisplayMatching(bounds).bounds, beforeDrag);
@@ -301,8 +306,12 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     assert.ok(Math.abs(presentation.centerY - presentation.height / 2) < 2, 'banner centered vertically');
     assert.equal(await application.evaluate(({ BrowserWindow }) => {
       const win = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('display.html?desktop'));
+      // Electron 44's transparent Windows path emits enter-full-screen and
+      // covers the monitor, but does not set the widget's isFullScreen flag.
+      // The monitor bounds and opaque background are checked above.
+      if (process.platform === 'win32') return globalThis.bannerFullscreenEntered && win.isAlwaysOnTop();
       return process.platform === 'darwin' ? win.isSimpleFullScreen() : win.isFullScreen();
-    }), true, 'native fullscreen hides desktop chrome');
+    }), true, 'platform fullscreen entered with the banner covering desktop chrome');
     await admin.waitForFunction(() => document.querySelector('#desktop-size').disabled);
     await doubleClickBanner(1);
     assert.deepEqual(await bannerBounds(), fullBounds, 'fullscreen ignores double-click resizing');
