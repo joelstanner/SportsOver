@@ -18,7 +18,7 @@ app.setName('SportsOver');
 if (process.env.SPORTSOVER_TEST_DATA) app.setPath('userData', process.env.SPORTSOVER_TEST_DATA);
 protocol.registerSchemesAsPrivileged([{ scheme: 'sportsover', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
 const engineState = new EngineState();
-let appIcon, trayIcon, outputServer, engineWindow, obsUrl, integrationToken, lastRefresh = 0;
+let appIcon, trayIcon, outputServer, engineWindow, obsUrl, integrationToken;
 let banner, settings, tray, store, quitting = false, locked = false, shortcut = false, saveTimer;
 let normalBounds = null, fullscreenDisplayId = null;
 function fullscreenDisplay() {
@@ -324,7 +324,8 @@ else {
         });
       }
       else if (action === 'refresh') {
-        if (Date.now() - lastRefresh > 5000) { lastRefresh = Date.now(); engineWindow.webContents.send('engine:command', { type: 'refresh' }); }
+        const engine = await engineState.refresh(command => engineWindow.webContents.send('engine:command', command));
+        return { ...status(), engine };
       }
       else throw Error('Unknown action');
       return status();

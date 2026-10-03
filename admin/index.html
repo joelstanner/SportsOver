@@ -139,9 +139,10 @@
               <option value="curated">Only games I choose</option>
             </select>
           </label>
-          <div class="field">
+          <div class="field game-refresh-controls">
             <span>Game data</span>
-            <button id="refresh-games" class="button button--secondary" type="button">Refresh games</button>
+            <button id="refresh-games" class="button button--secondary" type="button" title="Check enabled sports for new games and tournament updates, then update Available games and the rotation using your existing settings. Feed refresh limits still apply." aria-describedby="refresh-games-status">Refresh games</button>
+            <span id="refresh-games-status" class="save-status" role="status" aria-live="polite"></span>
           </div>
         </div>
         <div class="live-mode-controls">

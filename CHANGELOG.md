@@ -3,6 +3,21 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.24.1 — 2026-10-02
+
+### Fixed
+
+- Refresh games waits for the desktop engine to finish and reports updated
+  lists, no available updates, or feed failures beside the button. Feedback
+  remains visible during background polling.
+
+### Changed
+
+- Added a Refresh games tooltip explaining discovery, rotation updates, and
+  feed refresh limits.
+- Renamed the chess watch action to Watch tournament and added tooltips to it
+  and Watch division explaining what each follows and saves.
+
 ## 0.24.0 — 2026-10-02
 
 ### Added

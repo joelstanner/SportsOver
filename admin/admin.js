@@ -75,6 +75,7 @@
   let automaticRotationEntries = [];
   let gameDiscoveryRevision = 0;
   let gameDiscoveryTimer = null;
+  let refreshingGames = false;
   const localLiveMode = global.SportsOverlay.liveMode.create();
   let engineRotationState = null;
   let bannerGameKey = null;
@@ -123,7 +124,7 @@
   document.querySelector("#display-mode").addEventListener("change", readBehaviorFields);
   document.querySelector("#fallback-mode").addEventListener("change", readBehaviorFields);
   document.querySelector("#rotation-mode").addEventListener("change", updateRotationControls);
-  document.querySelector("#refresh-games").addEventListener("click", discoverRotationGames);
+  document.querySelector("#refresh-games").addEventListener("click", refreshGames);
   liveModeButton.addEventListener("click", toggleLiveMode);
   liveModeFinalMinutes.addEventListener("keydown", event => {
     if (event.key === "Enter") {
@@ -598,12 +599,49 @@
     } finally { changingLiveMode = false; renderRotationControls(); }
   }
 
-  async function discoverRotationGames(event) {
+  function gameListSnapshot() {
+    return JSON.stringify({ available: availableRotationEntries, automatic: automaticRotationEntries,
+      queue: currentRotationQueue().map(rotationEntryKey) });
+  }
+
+  async function refreshGames() {
+    if (refreshingGames) return;
+    refreshingGames = true;
+    const button = document.querySelector("#refresh-games");
+    const message = document.querySelector("#refresh-games-status");
+    const before = gameListSnapshot();
+    button.disabled = true;
+    button.textContent = "Refreshing…";
+    button.setAttribute("aria-busy", "true");
+    message.textContent = "Checking for game updates…";
+    message.className = "save-status";
+    try {
+      const result = await discoverRotationGames(true);
+      const changed = before !== gameListSnapshot();
+      message.textContent = result.failures
+        ? changed ? "Game lists updated. Some feeds are unavailable; updates may be incomplete."
+          : "Some feeds are unavailable. Could not check for all updates."
+        : changed ? "Game lists updated." : "No updates available. Game lists are already up to date.";
+      message.className = result.failures ? "save-status is-error" : "save-status is-saved";
+    } catch (error) {
+      const reason = error.message.replace(/^Error invoking remote method '[^']+': (?:Error: )?/, "");
+      message.textContent = `Could not refresh games. ${reason}`;
+      message.className = "save-status is-error";
+    } finally {
+      refreshingGames = false;
+      button.disabled = false;
+      button.textContent = "Refresh games";
+      button.removeAttribute("aria-busy");
+    }
+  }
+
+  async function discoverRotationGames(manual = false) {
+    if (refreshingGames && !manual) return;
     if (global.sportsDesktop) {
       clearTimeout(gameDiscoveryTimer);
       try {
-        if (event?.type === 'click') await global.sportsDesktop.action('refresh');
-        const state = await global.sportsDesktop.engine();
+        const state = manual ? (await global.sportsDesktop.action('refresh')).engine : await global.sportsDesktop.engine();
+        if (manual && !state?.ready) throw Error('Sports engine is not ready. Try again.');
         engineRotationState = state;
         automaticRotationEntries = state.automaticEntries;
         availableRotationEntries = state.availableEntries;
@@ -612,8 +650,11 @@
         status.textContent = !state.ready ? 'Sports engine starting…' : state.discoveryFailures
           ? 'Some score feeds are unavailable. Keeping received games and retrying automatically.' : 'Shared engine games';
         status.className = state.discoveryFailures ? 'save-status is-error' : 'save-status is-saved';
-      } catch (error) { document.querySelector('#rotation-status').textContent = error.message; }
-      gameDiscoveryTimer = setTimeout(discoverRotationGames, 2000);
+        return { failures: state.discoveryFailures || 0 };
+      } catch (error) {
+        document.querySelector('#rotation-status').textContent = error.message;
+        if (manual) throw error;
+      } finally { gameDiscoveryTimer = setTimeout(discoverRotationGames, 2000); }
       return;
     }
     clearTimeout(gameDiscoveryTimer);
@@ -657,6 +698,7 @@
       ? `${failed} sports unavailable · ${partial} sports partially loaded. Refresh to retry.` : "Games refreshed";
     rotationStatus.className = failed || partial ? "save-status is-error" : "save-status is-saved";
     renderRotationControls();
+    return { failures: failed + partial };
   }
 
   async function discoverSportGames(group) {
@@ -844,7 +886,10 @@
     card.querySelector(".game-sport").textContent = `${sport?.league || entry.candidate.sport.toUpperCase()}${entry.candidate.raw?.automatic ? " · Automatic" : ""}`;
     if (entry.candidate.raw?.automatic) {
       const watch = document.createElement("button");
-      watch.type = "button"; watch.className = `lock-game ${entry.candidate.sport === "chess" ? "chess-watch-automatic" : "pdga-watch-automatic"}`; watch.textContent = entry.candidate.sport === "chess" ? "Watch broadcast" : "Watch division";
+      watch.type = "button"; watch.className = `lock-game ${entry.candidate.sport === "chess" ? "chess-watch-automatic" : "pdga-watch-automatic"}`; watch.textContent = entry.candidate.sport === "chess" ? "Watch tournament" : "Watch division";
+      watch.title = entry.candidate.sport === "chess"
+        ? "Save this tournament to your watch list and follow its current round automatically. It stays watched until you remove it."
+        : "Save this tournament division (such as MPO or FPO) to your watch list and follow its leaderboard across rounds. It stays watched until you remove it.";
       watch.onclick = () => {
         const group = workingConfig.sports.find(item => item.sport === entry.candidate.sport);
         if (group.events.length >= 30) { showSettingsError("Remove a watched division before adding another (limit 30)."); return; }

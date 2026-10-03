@@ -9,6 +9,7 @@ const root = path.resolve(__dirname, '../..');
 const config = global.SportsOverlay.config.normalizeConfig();
 config.sports.forEach(group => { group.enabled = group.sport === 'football'; });
 config.rotationMode = 'curated';
+config.providerRefreshSeconds.football = { live: 5, pregame: 5, final: 5, idle: 5 };
 config.includedGames = Array.from({ length: 16 }, (_, index) => `football:${1000 + index}`);
 const events = Array.from({ length: 32 }, (_, index) => ({
   id: String(1000 + index), date: new Date().toISOString(),
@@ -26,9 +27,10 @@ const events = Array.from({ length: 32 }, (_, index) => ({
     await context.addInitScript(config => {
       if (!localStorage.getItem('sports-overlay.config.v1')) localStorage.setItem('sports-overlay.config.v1', JSON.stringify(config));
     }, config);
+    let feedsOffline = false;
     await context.route('**/*', async route => {
       const url = new URL(route.request().url());
-      if (url.hostname !== 'overlay.test') return route.fulfill({ json: { events, dates: [] } });
+      if (url.hostname !== 'overlay.test') return feedsOffline ? route.fulfill({ status: 503, json: {} }) : route.fulfill({ json: { events, dates: [] } });
       const relative = url.pathname.endsWith('/') ? `${url.pathname}index.html` : url.pathname;
       try {
         await route.fulfill({ body: await fs.readFile(path.join(root, relative)),
@@ -72,9 +74,25 @@ const events = Array.from({ length: 32 }, (_, index) => ({
       const durations = await page.evaluate(() => window.SportsOverlay.config.loadConfig().gameDurations);
       assert.equal(durations[key] ?? initial, seconds, 'timing change is saved');
     }
-    await page.locator('#refresh-games').click();
-    await page.getByText('Games refreshed', { exact: true }).waitFor();
+    const refresh = page.locator('#refresh-games'), feedback = page.locator('#refresh-games-status');
+    assert.match(await refresh.getAttribute('title'), /enabled sports.*refresh limits/);
+    await refresh.click();
+    await feedback.getByText('No updates available. Game lists are already up to date.', { exact: true }).waitFor();
     assert.deepEqual(await positions(), before, 'discovery refresh preserves both list scroll positions');
+    await page.locator('.rotation-toolbar').screenshot({ path: '/tmp/sportsover-refresh-feedback.png' });
+    const added = structuredClone(events[0]);
+    added.id = '2000'; events.push(added);
+    await page.waitForTimeout(5100); // Let the configured feed cache expire.
+    await refresh.click();
+    await feedback.getByText('Game lists updated.', { exact: true }).waitFor();
+    assert.equal(await page.locator('#available-games .game-card').count(), 17);
+    assert.equal(await refresh.isEnabled(), true);
+    feedsOffline = true;
+    await page.waitForTimeout(5100);
+    await refresh.click();
+    await page.waitForFunction(() => document.querySelector('#refresh-games-status').textContent.includes('feeds are unavailable'));
+    assert.equal(await feedback.evaluate(el => el.classList.contains('is-error')), true);
+    assert.equal(await refresh.isEnabled(), true);
     assert.deepEqual(errors, []);
     console.log('Rotation scroll passed: increment, decrement, saved timing, and discovery refresh.');
   } finally { await browser.close(); }

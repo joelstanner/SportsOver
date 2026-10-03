@@ -19,6 +19,29 @@ class EngineState extends EventEmitter {
   }
   output() { return { ...this.frame, instance: this.instance, ready: this.ready && this.now() - this.lastSeen < 10000, override: this.override }; }
   state() { return { ...this.metadata, ready: this.output().ready, override: this.override }; }
+  refresh(send) {
+    if (this.pendingRefresh) return this.pendingRefresh;
+    const requestId = randomUUID();
+    const operation = new Promise((resolve, reject) => {
+      let timer;
+      const finish = error => {
+        this.clearTimer(timer);
+        this.off('frame', changed);
+        if (error) reject(error);
+        else resolve(this.state());
+      };
+      const changed = () => {
+        const result = this.metadata.refreshResult;
+        if (result?.requestId === requestId) finish(result.error ? Error(result.error) : null);
+      };
+      this.on('frame', changed);
+      timer = this.setTimer(() => finish(Error('Refresh did not finish. Try again.')), 60000);
+      try { send({ type: 'refresh', requestId }); }
+      catch (error) { finish(error); }
+    });
+    this.pendingRefresh = operation.finally(() => { this.pendingRefresh = null; });
+    return this.pendingRefresh;
+  }
   command(body) {
     const fail = (message, status = 400) => { const error = new Error(message); error.status = status; throw error; };
     if (!body || typeof body !== 'object' || Array.isArray(body)) fail('Expected a command object');

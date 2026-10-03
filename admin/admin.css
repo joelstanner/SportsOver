@@ -139,6 +139,9 @@ select, input { border: 1px solid var(--line); border-radius: 8px; padding: 10px
 .live-mode-button:disabled { border-color: var(--line); color: var(--muted); background: var(--panel); }
 .live-mode-button:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
 .rotation-toolbar { display: grid; grid-template-columns: minmax(240px, 1fr) auto; gap: 14px; align-items: end; }
+.game-refresh-controls { max-width: 360px; }
+.game-refresh-controls .save-status { margin-left: 0; font-weight: 400; line-height: 1.4; }
+#refresh-games-status:empty { display: none; }
 .timing-defaults { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0 0; color: var(--muted); font-size: 0.72rem; }
 .timing-defaults { align-items: center; }
 .timing-defaults label { display: flex; align-items: center; gap: 6px; color: var(--ink); font-weight: 700; }

@@ -66,3 +66,40 @@ test('public output and command server restrict hosts, origins, credentials, pat
   assert.equal((await fetch(`${base}/api/v1/commands`, { method: 'POST', headers, body: '{' })).status, 400);
   assert.equal((await fetch(`${base}/api/v1/commands`, { method: 'POST', headers, body: JSON.stringify({ requestId: 'test', type: 'show-game', gameKey: 'baseball:2', durationSeconds: 5 }) })).status, 200);
 });
+
+test('refresh waits for its completion reply, shares pending requests, and returns updated state', async () => {
+  const engine = new EngineState();
+  engine.publish({ html: '<main>old</main>', metadata: { availableEntries } });
+  const sent = [];
+  const pending = engine.refresh(command => sent.push(command));
+  assert.equal(engine.refresh(command => sent.push(command)), pending);
+  assert.equal(sent.length, 1);
+  let finished = false;
+  pending.then(() => { finished = true; });
+  engine.publish({ html: '<main>unrelated score update</main>', metadata: { availableEntries,
+    refreshResult: { requestId: 'older-request', error: null } } });
+  await Promise.resolve();
+  assert.equal(finished, false, 'ordinary output and old replies cannot complete a refresh');
+  const updated = [...availableEntries, { candidate: { sport: 'chess', id: 'tournament' } }];
+  engine.publish({ html: '<main>updated</main>', metadata: { availableEntries: updated,
+    refreshResult: { requestId: sent[0].requestId, error: null } } });
+  assert.deepEqual((await pending).availableEntries, updated);
+  assert.equal(engine.listenerCount('frame'), 0);
+  assert.equal(engine.pendingRefresh, null);
+});
+
+test('refresh surfaces engine errors and timeout, cleans up, and can retry', async () => {
+  let expire;
+  const engine = new EngineState({ setTimer: callback => { expire = callback; return 1; }, clearTimer: () => {} });
+  let request;
+  const failed = engine.refresh(command => { request = command; });
+  engine.publish({ html: '<main>error</main>', metadata: { availableEntries,
+    refreshResult: { requestId: request.requestId, error: 'Feed unavailable' } } });
+  await assert.rejects(failed, /Feed unavailable/);
+  const timeout = engine.refresh(() => {});
+  expire();
+  await assert.rejects(timeout, /Refresh did not finish/);
+  assert.equal(engine.listenerCount('frame'), 0);
+  await assert.rejects(engine.refresh(() => { throw Error('Engine closed'); }), /Engine closed/);
+  assert.equal(engine.listenerCount('frame'), 0);
+});

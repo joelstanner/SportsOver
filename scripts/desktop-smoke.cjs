@@ -163,6 +163,33 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.some(entry => entry.candidate.sport === 'baseball' && entry.candidate.id === '3'));
     await admin.getByRole('button', { name: 'Live control', exact: true }).click();
     await admin.locator('#rotation-queue [data-game-key="baseball:3"]').waitFor();
+    // Manual refresh acknowledges engine completion, not an intermediate frame.
+    await engine.evaluate(() => {
+      const api = window.SportsOverlay.engine;
+      window.realRefresh = api.refresh;
+      window.realDescribe = api.describe;
+      // Other sports intentionally have no fixtures in this desktop scenario.
+      api.describe = () => ({ ...window.realDescribe(), discoveryFailures: 0 });
+      api.refresh = () => new Promise(resolve => { window.finishTestRefresh = resolve; });
+    });
+    const refreshButton = admin.locator('#refresh-games');
+    const refreshStatus = admin.locator('#refresh-games-status');
+    await refreshButton.click();
+    await engine.waitForFunction(() => !!window.finishTestRefresh);
+    assert.equal(await refreshButton.isDisabled(), true);
+    assert.equal(await refreshButton.innerText(), 'Refreshing…');
+    assert.equal(await refreshStatus.innerText(), 'Checking for game updates…');
+    await engine.evaluate(() => window.finishTestRefresh());
+    await admin.waitForFunction(() => !document.querySelector('#refresh-games').disabled);
+    assert.equal(await refreshStatus.innerText(), 'No updates available. Game lists are already up to date.');
+    await admin.waitForTimeout(2200);
+    assert.equal(await refreshStatus.innerText(), 'No updates available. Game lists are already up to date.', 'background polling preserves refresh feedback');
+    await engine.evaluate(() => { window.SportsOverlay.engine.refresh = async () => { throw Error('Test refresh failure'); }; });
+    await refreshButton.click();
+    await admin.waitForFunction(() => !document.querySelector('#refresh-games').disabled);
+    assert.equal(await refreshStatus.innerText(), 'Could not refresh games. Test refresh failure');
+    assert.equal(await refreshButton.isEnabled(), true);
+    await engine.evaluate(() => { window.SportsOverlay.engine.refresh = window.realRefresh; window.SportsOverlay.engine.describe = window.realDescribe; });
     // Live mode is session-only and applies locks after filtering live eligibility.
     const liveModeButton = admin.locator('#live-mode');
     assert.equal(await liveModeButton.getAttribute('aria-pressed'), 'false');

@@ -32,7 +32,7 @@
     builder.innerHTML = `<p>Watch a tournament and division. Watched events stay in rotation until removed, including finished events. Live mode includes live rounds and round breaks. Add a separate player banner to follow someone in the same division. Up to 30 banners.</p>
       <div class="pdga-watch-controls"><label class="field">PDGA tournament URL or ID<input class="pdga-tournament-input" placeholder="e.g. 86076" type="text"></label><button class="button button--secondary pdga-load" type="button">Load tournament</button><button class="button button--quiet pdga-browse" type="button">Browse current events</button></div>
       <label class="field pdga-current-label" hidden>Current events<select class="pdga-current"><option value="">Choose a tournament…</option></select></label>
-      <div class="pdga-watch-controls pdga-division-controls" hidden><label class="field">Division<select class="pdga-division"></select></label><button class="button button--secondary pdga-watch" type="button">Watch division</button></div>
+      <div class="pdga-watch-controls pdga-division-controls" hidden><label class="field">Division<select class="pdga-division"></select></label><button class="button button--secondary pdga-watch" type="button" title="Add the selected tournament division (such as MPO or FPO) to your watch list and follow its leaderboard across rounds. It stays watched until you remove it.">Watch division</button></div>
       <p class="pdga-settings-status" role="status"></p>`;
     const find = selector => builder.querySelector(selector);
     const note = find(".pdga-settings-status");
