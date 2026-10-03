@@ -145,6 +145,13 @@
     return `${time} ${label}`;
   }
 
+  function formatPregameCountdown(isoDate, now = new Date()) {
+    const remaining = new Date(isoDate || "invalid").getTime() - now.getTime();
+    if (!Number.isFinite(remaining) || remaining <= 0 || remaining >= 3_600_000) return "";
+    const seconds = Math.ceil(remaining / 1000);
+    return `Starts in ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+  }
+
   function formatPregameStart(isoDate, now = new Date(), timeZone = selectedTimeZone()) {
     const date = new Date(isoDate || "invalid");
     if (Number.isNaN(date.getTime())) return "";
@@ -175,5 +182,5 @@
   }
 
   global.SportsOverlay = global.SportsOverlay || {};
-  global.SportsOverlay.model = Object.freeze({ EVENT_STATES, createEvent, validateEvent, gameUrl, espnGameUrl, espnPreseason, espnOdds, formatPregameStart, formatGameTime, formatFinalStatus });
+  global.SportsOverlay.model = Object.freeze({ EVENT_STATES, createEvent, validateEvent, gameUrl, espnGameUrl, espnPreseason, espnOdds, formatPregameCountdown, formatPregameStart, formatGameTime, formatFinalStatus });
 })(typeof window === "undefined" ? globalThis : window);

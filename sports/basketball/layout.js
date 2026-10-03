@@ -89,10 +89,14 @@
       }
       global.SportsOverlay.odds?.render(els.bug, event);
       global.SportsOverlay.teamNames.render(event, els.awayAbbr, els.homeAbbr, els.awayMark, els.homeMark);
+      if (event.state === EVENT_STATES.PREGAME) {
+        global.SportsOverlay.countdown?.render(els.statusText, event.startTime, { fallback: event.detailedState });
+      } else global.SportsOverlay.countdown?.clear(els.statusText);
       return event.state;
     }
 
     function renderNoEvent(message = "No selected basketball game", visible = true) {
+      global.SportsOverlay.countdown?.clear(els.statusText);
       global.SportsOverlay.teamNames.clearLinks(els.awayAbbr, els.homeAbbr, els.awayMark, els.homeMark);
       global.SportsOverlay.odds?.clear(els.bug);
       delete els.bug.dataset.preseason;

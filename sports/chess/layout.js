@@ -75,6 +75,9 @@
         : `<div class="chess-board"><div class="chess-labels"><span>POS</span><span>PLAYER</span><span>PLAYED</span><span>POINTS</span></div><div class="scorebug-vertical-viewport"><div class="scorebug-vertical-track">${shown.length ? shown.map(person => `<div class="chess-entry"><span class="chess-board-number">${person.rank ?? "—"}</span><span class="chess-person">${playerName(person, d.roundId)}</span><span class="chess-played">${person.played ?? "—"}</span><strong class="chess-result">${escape(person.score)}</strong></div>`).join("") : '<div class="chess-empty">Tournament standings unavailable</div>'}</div></div></div>`}
         <div class="chess-footer"><span class="scorebug-scroll-viewport"><span class="scorebug-scroll-text">${escape(footer)}</span></span><a href="${href}" target="_blank" rel="noopener">Lichess ↗</a></div>`;
       global.SportsOverlay.scrolling?.render(mount.querySelector(".scorebug-scroll-viewport"), mount.querySelector(".scorebug-scroll-text"), footer);
+      if (event.state === "pregame" && !d.stale) {
+        global.SportsOverlay.countdown?.replace(mount.querySelector(".scorebug-scroll-text"), event.startTime);
+      }
       scrollState = global.SportsOverlay.scrolling?.vertical(mount.querySelector(".scorebug-vertical-viewport"), event, scrollState);
       global.SportsOverlay.scrolling?.restore(mount, scrollSnapshot);
       return event.state;

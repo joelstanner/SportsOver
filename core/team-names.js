@@ -17,7 +17,10 @@
         }
       }
     }
-    const expand = event.state === "pregame" || event.state === "final";
+    const hasHalftime = ["football", "college-football", "basketball", "college-basketball", "soccer"].includes(event.sport);
+    const halftime = hasHalftime && /\bhalf[\s-]?time\b|^HT$/i.test(event.detailedState || "");
+    const expand = event.state === "pregame" || event.state === "final" || halftime;
+    awayLabel.closest("#sports-overlay").dataset.teamNames = expand ? "full" : "short";
     for (const [side, label] of [["away", awayLabel], ["home", homeLabel]]) {
       const team = event.teams[side];
       const name = team.name?.trim() || team.abbreviation;

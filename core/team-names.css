@@ -1,25 +1,25 @@
-/* Pre-game and final layouts can give the unused clock area to team names. */
-#sports-overlay:is([data-state="pregame"], [data-state="final"]) :is(.basketball-main, .football-main, .hockey-main, .soccer-main) {
+/* Pre-game, halftime, and final layouts give the unused clock area to names. */
+#sports-overlay[data-team-names="full"] :is(.basketball-main, .football-main, .hockey-main, .soccer-main) {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   column-gap: 12px;
 }
-#sports-overlay:is([data-state="pregame"], [data-state="final"]) :is(.basketball-center, .football-center, .hockey-center, .soccer-center) {
+#sports-overlay[data-team-names="full"] :is(.basketball-center, .football-center, .hockey-center, .soccer-center) {
   display: none;
 }
-#sports-overlay:is([data-state="pregame"], [data-state="final"]) .team-name-slot {
+#sports-overlay[data-team-names="full"] .team-name-slot {
   flex: 1;
   min-width: 0;
 }
-#sports-overlay:is([data-state="pregame"], [data-state="final"]) .team-name-label {
+#sports-overlay[data-team-names="full"] .team-name-label {
   display: block;
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
 }
-#sports-overlay:is([data-state="pregame"], [data-state="final"]) .football-team-name {
+#sports-overlay[data-team-names="full"] .football-team-name {
   display: block;
 }
-#sports-overlay:is([data-state="pregame"], [data-state="final"]) :is(.team__score, .basketball-score, .football-score, .hockey-score, .soccer-score) {
+#sports-overlay[data-team-names="full"] :is(.team__score, .basketball-score, .football-score, .hockey-score, .soccer-score) {
   flex-shrink: 0;
 }
 #sports-overlay[data-state="pregame"] :is(.team__score, .basketball-score, .football-score, .hockey-score, .soccer-score) {

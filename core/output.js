@@ -97,6 +97,7 @@
     updateNode(mount, template.content.firstElementChild);
     scrolling?.restore(document.querySelector('#sports-overlay'),
       gameChanged || engineInstance !== frame.instance ? null : scrollSnapshot);
+    window.SportsOverlay.countdown?.refresh();
     displayedGameKey = frame.gameKey;
     engineInstance = frame.instance;
     displayedSequence = frame.sequence;

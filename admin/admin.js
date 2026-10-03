@@ -1000,6 +1000,10 @@
       else name.removeAttribute("title");
     });
     card.querySelector(".game-meta").textContent = [gameMeta(entry.candidate), entry.candidate.raw?.discoveryReason].filter(Boolean).join(" · ");
+    if (entry.candidate.state === "pregame") {
+      global.SportsOverlay.countdown.replace(card.querySelector(".game-meta"), entry.candidate.startTime,
+        workingConfig.timeZone === "local" ? undefined : workingConfig.timeZone);
+    }
     const candidate = entry.candidate;
     const odds = global.SportsOverlay.model.espnOdds(candidate.raw || {});
     const teams = gameTeams(candidate);
@@ -1093,7 +1097,7 @@
   }
 
   function gameMeta(candidate) {
-    if (candidate.sport === "chess") return `${candidate.raw?.stale ? "Last received · " : ""}${candidate.state === "live" ? "Live" : candidate.state === "interrupted" ? candidate.raw?.detailedState || "Break" : candidate.state === "final" ? "Final" : "Upcoming"}${candidate.state === "pregame" && candidate.startTime ? ` · ${global.SportsOverlay.model.formatPregameStart(candidate.startTime)}` : ""}`;
+    if (candidate.sport === "chess") return `${candidate.raw?.stale ? "Last received · " : ""}${candidate.state === "live" ? "Live" : candidate.state === "interrupted" ? candidate.raw?.detailedState || "Break" : candidate.state === "final" ? "Final" : "Upcoming"}${candidate.state === "pregame" && candidate.startTime ? ` · ${global.SportsOverlay.model.formatPregameStart(candidate.startTime, new Date(), workingConfig.timeZone === "local" ? undefined : workingConfig.timeZone)}` : ""}`;
     if (candidate.sport === "disc-golf") {
       const state = `${candidate.raw?.stale ? "Last received · " : ""}${candidate.state === "final" ? "Final" : candidate.state === "live" ? "Live" : candidate.state === "interrupted" ? candidate.raw?.detailedState || "Break" : "Upcoming"}`;
       const player = candidate.raw?.view === "player" && candidate.raw.player;

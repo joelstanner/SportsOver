@@ -6,6 +6,17 @@ const assert = require("node:assert/strict");
 global.window = globalThis;
 require("../../core/event-model.js");
 
+test("pregame countdown is limited to the final hour and rounds remaining seconds up", () => {
+  const now = new Date("2026-10-03T19:00:00Z");
+  const format = global.SportsOverlay.model.formatPregameCountdown;
+  for (const [offset, expected] of [[3_600_001, ""], [3_600_000, ""],
+    [3_599_000, "Starts in 59:59"], [65_000, "Starts in 1:05"],
+    [1001, "Starts in 0:02"], [1, "Starts in 0:01"], [0, ""], [-1000, ""]]) {
+    assert.equal(format(new Date(now.getTime() + offset).toISOString(), now), expected);
+  }
+  for (const value of [null, undefined, "invalid"]) assert.equal(format(value, now), "");
+});
+
 test("shared pregame formatter includes the date unless the game is today", () => {
   const now = new Date("2026-10-24T19:00:00Z");
   const today = "2026-10-25T00:15:00Z";

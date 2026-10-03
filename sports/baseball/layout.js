@@ -179,6 +179,9 @@
       }
       updateFooter(event);
       global.SportsOverlay.teamNames.render(event, els.awayAbbr, els.homeAbbr, els.awayMark, els.homeMark);
+      if (event.state === EVENT_STATES.PREGAME) {
+        global.SportsOverlay.countdown?.render(els.status, event.startTime, { fallback: event.detailedState });
+      } else global.SportsOverlay.countdown?.clear(els.status);
       return event.state;
     }
 
@@ -256,6 +259,7 @@
     }
 
     function renderNoEvent(message = "No selected game today", visible = true) {
+      global.SportsOverlay.countdown?.clear(els.status);
       global.SportsOverlay.teamNames.clearLinks(els.awayAbbr, els.homeAbbr, els.awayMark, els.homeMark);
       delete els.bug.dataset.preseason;
       dispose();

@@ -36,25 +36,37 @@ const root = path.resolve(__dirname, '../..');
         };
         window.setNameTestTeams();
       }, sport);
-      for (const state of ['pregame', 'final', 'live', 'interrupted', 'pregame']) {
-        await page.evaluate(({ state, sport }) => {
+      const hasHalftime = ['football', 'college-football', 'basketball', 'college-basketball', 'soccer'].includes(sport);
+      const cases = [
+        { state: 'pregame', detail: 'Scheduled', expanded: true },
+        { state: 'final', detail: 'Final', expanded: true },
+        { state: 'live', detail: 'In Progress', expanded: false },
+        ...['Halftime', 'Half-time', 'Half Time', 'HT'].map(detail => ({ state: 'interrupted', detail, expanded: hasHalftime })),
+        { state: 'interrupted', detail: 'End of quarter', expanded: false },
+        { state: 'interrupted', detail: 'Weather delay', expanded: false },
+        { state: 'live', detail: 'In Progress', expanded: false },
+        { state: 'pregame', detail: 'Scheduled', expanded: true },
+      ];
+      for (const { state, detail, expanded } of cases) {
+        await page.evaluate(({ state, detail }) => {
           window.testEvent.state = state;
+          window.testEvent.detailedState = detail;
           window.testLayout.render(window.testEvent);
-        }, { state, sport });
+        }, { state, detail });
         assert.equal(await page.evaluate(() => window.testEvent.teams.home.score > window.testEvent.teams.away.score), true, 'Seattle always leads');
-        const expanded = ['pregame', 'final'].includes(state);
         for (const [index, side] of ['away', 'home'].entries()) {
           const expected = await page.evaluate(({ side, expanded }) => window.testEvent.teams[side][expanded ? 'name' : 'abbreviation'], { side, expanded });
-          assert.equal(await page.locator(ids[index]).innerText(), expected, `${sport} ${state} ${side}`);
+          assert.equal(await page.locator(ids[index]).innerText(), expected, `${sport} ${state} ${detail} ${side}`);
           assert.equal(await page.locator(ids[index]).evaluate(el => el.scrollWidth <= el.clientWidth), true, `${sport} ${state} name fits`);
         }
         assert.equal(await page.locator('#sports-overlay').evaluate(el => el.scrollWidth <= el.clientWidth), true, `${sport} ${state} fits banner`);
       }
-      for (const state of ['pregame', 'final']) {
+      for (const state of ['pregame', 'final', ...(hasHalftime ? ['interrupted'] : [])]) {
         if (sport === 'football') {
           for (const chargersSide of ['away', 'home']) {
             await page.evaluate(({ state, chargersSide }) => {
               window.testEvent.state = state;
+              window.testEvent.detailedState = state === 'interrupted' ? 'Halftime' : state;
               for (const side of ['away', 'home']) {
                 const team = window.testEvent.teams[side];
                 team.name = side === chargersSide ? 'Los Angeles Chargers' : 'Tampa Bay Buccaneers';
@@ -84,6 +96,7 @@ const root = path.resolve(__dirname, '../..');
         }
         await page.evaluate(state => {
           window.testEvent.state = state;
+          window.testEvent.detailedState = state === 'interrupted' ? 'Halftime' : state;
           window.testEvent.teams.away.name = 'An Extremely Long City and Team Name That Cannot Fit';
           window.testEvent.teams.home.name = 'Another Extremely Long City and Team Name That Cannot Fit';
           window.testLayout.render(window.testEvent);
