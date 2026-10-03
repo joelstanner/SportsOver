@@ -26,7 +26,7 @@ jobs:
         shell: pwsh
         run: |
           $env:SPORTSOVER_TEST_EXECUTABLE = "$PWD/dist/windows/win-unpacked/SportsOver.exe"
-          npm run test:desktop
+          npm run test:desktop -- --visible
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify checksum and install into isolated directory
         shell: pwsh
@@ -41,7 +41,7 @@ jobs:
           npm run verify:package -- "$destination/resources/app.asar"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $env:SPORTSOVER_TEST_EXECUTABLE = "$destination/SportsOver.exe"
-          npm run test:desktop
+          npm run test:desktop -- --visible
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@v4
         with:

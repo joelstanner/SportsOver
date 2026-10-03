@@ -22,3 +22,6 @@ PROJECT-HANDOFF.txt
 
 # Local macOS app bundles.
 dist/
+
+# Developer-only desktop test visibility preference.
+.sportsover-tests.json

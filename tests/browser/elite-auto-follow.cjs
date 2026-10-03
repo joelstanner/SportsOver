@@ -1,5 +1,6 @@
 // Shared recurring discovery and saved automatic watch list, using fixture feeds.
-const { chromium, _electron: electron }=require('playwright');
+const { chromium }=require('playwright');
+const { electron } = require('../../scripts/test-mode.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=require('node:path'),os=require('node:os');
 require('../../core/config.js');
 const root=path.resolve(__dirname,'../..'),config=global.SportsOverlay.config.normalizeConfig();

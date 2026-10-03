@@ -3,6 +3,23 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.28.2 — 2026-10-03
+
+### Fixed
+
+- Banner transitions no longer restart their exit animation when a newer score
+  frame arrives mid-transition, reducing stutter and flashes.
+- Live-control game cards use a shorter Live label and include available
+  period/clock or baseball inning details.
+
+### Changed
+
+- Local desktop tests default to hidden windows, with a saved quiet/visible
+  preference and one-run overrides. Quiet runs report skipped native checks;
+  release CI always runs the full visible suite.
+
+Existing settings are preserved. No migration is required.
+
 ## 0.28.1 — 2026-10-03
 
 ### Fixed

@@ -1,5 +1,5 @@
 // Isolated native/OBS check using deterministic public-broadcast-shaped feeds.
-const { _electron: electron } = require('playwright');
+const { electron } = require('./test-mode.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises'), os = require('node:os'), path = require('node:path');
 require('../core/config.js');

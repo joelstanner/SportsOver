@@ -1,5 +1,5 @@
 // Real native windows, one live engine, mocked upstream feeds and isolated app data.
-const { _electron: electron } = require('playwright');
+const { electron, testMode } = require('./test-mode.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const os = require('node:os');
@@ -10,6 +10,7 @@ require('../core/registry.js');
 require('../sports/baseball/providers/mlb.js');
 require('../sports/baseball/demo-data.js');
 const feed = globalThis.MARINERS_DEMO_FEEDS.live;
+const quiet = testMode() === 'quiet';
 (async () => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'sportsover-smoke-'));
   let application;
@@ -85,7 +86,7 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     const banner = pages.find(page => page.url().includes('display.html?desktop'));
     const engine = pages.find(page => page.url().includes('engine=1'));
     assert.ok(admin && banner && engine, 'settings, passive banner, and sole engine exist');
-    if (process.platform === 'darwin') {
+    if (!quiet && process.platform === 'darwin') {
       assert.equal(await application.evaluate(({ app }) => app.dock.isVisible()), true,
         'SportsOver stays in the Dock and Cmd-Tab after banner startup');
       assert.equal(await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
@@ -101,6 +102,14 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
   }
   try {
     let { admin, banner, engine } = await launch();
+    if (quiet) {
+      await require('./desktop-quiet-smoke.cjs')({
+        pages: { admin, banner, engine }, directory, launch, application: () => application,
+      });
+      assert.deepEqual(errors, []);
+      console.log(`Quiet desktop smoke passed. Native window checks skipped. Screenshots and isolated data: ${directory}`);
+      return;
+    }
     const desktopStatus = await admin.evaluate(() => window.sportsDesktop.status());
     assert.deepEqual(await admin.evaluate(() => window.SportsOverlay.config.loadConfig().sports.flatMap(group => group.favorites.map(team => team.teamKey))),
       ['mlb:136', 'nfl:sea', 'ncaaf:158', 'ncaaf:264', 'nhl:sea', 'mls:9726', 'nba:det', 'ncaam:158', 'ncaam:264', 'ncaam:2547'], 'clean app startup uses Nebraska and Seattle favorites, plus the Pistons');

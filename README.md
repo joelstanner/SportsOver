@@ -204,7 +204,20 @@ node tests/browser/pdga-auto-follow.cjs
 npm run test:pdga:live
 ```
 
-`npm test` runs the provider/rotation/configuration suite and desktop persistence, recovery, bounds, and protocol tests. `npm run test:desktop` launches real Electron windows with isolated temporary app data and mocked provider responses. It checks shared rendering, authenticated API access, override expiry/restoration, independent desktop visibility, shared settings, desktop controls and secure preferences, then restarts to verify persistence. It also asserts that one engine owns rotation and only the desktop request coordinator contacts the mocked sports APIs while desktop, Settings and an HTTP browser-source client are connected. It leaves screenshots and test data in the temporary directory printed at completion. It does not alter your normal preferences.
+`npm test` runs the provider/rotation/configuration suite and desktop persistence, recovery, bounds, and protocol tests without windows. Desktop smoke commands default to **quiet** locally: real Electron renderers stay hidden, with no Dock entry, tray icon, or global recovery shortcut. `npm run test:desktop` checks shared rendering, settings, live mode, authenticated API access, override expiry/restoration, sandboxing, one-engine/provider ownership, and persistence after restart. Screenshots and isolated test data are left in the printed temporary directory; normal app preferences are untouched.
+
+Choose a saved local preference or override it for one run:
+
+```sh
+npm run test:mode -- visible        # Save full visible mode for this checkout
+npm run test:mode -- quiet          # Save quiet mode again
+npm run test:desktop -- --visible   # Full visible suite once
+npm run test:desktop -- --quiet     # Quiet suite once
+```
+
+The preference is stored in Git-ignored `.sportsover-tests.json`, separate from app settings. Desktop commands (including chess, PDGA, and desktop auto-follow scripts) share it. Precedence is CI (always visible), `--visible`/`--quiet`, `SPORTSOVER_TEST_MODE`, saved preference, then quiet. CI ignores local preferences and overrides and runs the full desktop smoke suite. Browser-only tests remain headless.
+
+Quiet runs print the native coverage they skip: actual show/hide/recovery, focus and native keyboard routing, Dock/tray/shortcut behavior, fullscreen, context menus, and native dragging/gesture checks. Run visible mode for those changes and before release verification. Packaged-app tests using `SPORTSOVER_TEST_EXECUTABLE` require visible mode: older installed apps may not support hidden tests, so quiet mode stops before launching them.
 
 `npm run test:pdga` uses Chrome with fixture scores to check PDGA settings, persistence, player selection, locks, stale data, and mixed-sport rendering. `npm run test:pdga:live` is an optional network check using a completed PDGA tournament in an isolated Electron instance; it verifies the native 200% banner and OBS, then simulates an active round to check removal from Live mode. Set `SPORTSOVER_TEST_EXECUTABLE` to test a built app instead of the source launcher. `node tests/browser/pdga-auto-follow.cjs` checks automatic discovery, division choices, exclusions, explicit watches, player preferences, and disabling during Live mode with fixture feeds. With `SPORTSOVER_TEST_EXECUTABLE` set, it runs the same flow in the packaged app and checks shared native/OBS output and directory request counts.
 

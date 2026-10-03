@@ -1,0 +1,33 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { resolveMode, saveMode } = require('../../scripts/test-mode.cjs');
+
+test('local preference round trip, command/environment overrides, and CI enforcement', t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'sportsover-test-mode-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const file = path.join(directory, 'preference.json');
+  const mode = (argv = [], env = {}) => resolveMode({ argv, env, file });
+  assert.equal(mode(), 'quiet');
+  saveMode('visible', file);
+  assert.equal(mode(), 'visible');
+  assert.equal(mode(['--quiet']), 'quiet');
+  assert.equal(mode([], { SPORTSOVER_TEST_MODE: 'quiet' }), 'quiet');
+  assert.equal(mode(['--visible'], { SPORTSOVER_TEST_MODE: 'quiet' }), 'visible');
+  saveMode('quiet', file);
+  assert.equal(mode(), 'quiet');
+  assert.equal(mode(['--quiet'], { CI: 'true', SPORTSOVER_TEST_MODE: 'quiet' }), 'visible');
+  assert.equal(mode(['--quiet'], { GITHUB_ACTIONS: 'true' }), 'visible');
+  assert.equal(mode([], { CI: 'false' }), 'quiet');
+  assert.equal(mode([], { CI: '0' }), 'quiet');
+  assert.throws(() => mode(['--quiet', '--visible']), /either/);
+  assert.throws(() => mode([], { SPORTSOVER_TEST_MODE: 'typo' }), /quiet.*visible/);
+  assert.throws(() => saveMode('typo', file), /quiet.*visible/);
+  assert.equal(mode(), 'quiet', 'invalid updates do not overwrite the saved preference');
+  fs.writeFileSync(file, 'bad JSON');
+  assert.throws(() => mode(), /Cannot read test preference/);
+  assert.equal(mode(['--visible']), 'visible', 'explicit override can bypass a malformed preference');
+  assert.equal(mode([], { CI: 'true' }), 'visible', 'CI ignores local files entirely');
+});

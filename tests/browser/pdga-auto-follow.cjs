@@ -1,5 +1,6 @@
 // Run with Chrome, or SPORTSOVER_TEST_EXECUTABLE for the packaged desktop engine.
-const { chromium, _electron: electron } = require('playwright');
+const { chromium } = require('playwright');
+const { electron } = require('../../scripts/test-mode.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');

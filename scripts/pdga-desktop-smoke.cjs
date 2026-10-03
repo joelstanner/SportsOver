@@ -1,5 +1,5 @@
 // Optional real-network PDGA check with isolated preferences and native output.
-const { _electron: electron } = require('playwright');
+const { electron } = require('./test-mode.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const os = require('node:os');

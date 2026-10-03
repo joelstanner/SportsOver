@@ -16,6 +16,11 @@ const updateChecker = createUpdateChecker({ app, dialog, shell, onStateChange: m
   saveRateLimit: value => store.desktop({ updateRateLimit: value }),
 });
 let backgroundStartup = process.argv.includes('--background');
+// Only isolated test processes can suppress native UI. Normal app launches and
+// CI retain the real window behavior exercised by the visible smoke suite.
+const quietTest = !!process.env.SPORTSOVER_TEST_DATA && process.env.SPORTSOVER_TEST_QUIET === '1'
+  && !process.env.GITHUB_ACTIONS && (!process.env.CI || ['0', 'false'].includes(process.env.CI.toLowerCase()));
+if (quietTest && process.platform === 'darwin') app.setActivationPolicy('accessory');
 app.setName('SportsOver');
 if (process.env.SPORTSOVER_TEST_DATA) app.setPath('userData', process.env.SPORTSOVER_TEST_DATA);
 protocol.registerSchemesAsPrivileged([{ scheme: 'sportsover', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
@@ -62,10 +67,14 @@ function secure(win) {
   win.webContents.on('will-attach-webview', event => event.preventDefault());
   win.webContents.on('render-process-gone', () => { if (!quitting) { lock(false); openSettings(); } });
 }
-function preferences() { return { preload: path.join(__dirname, 'preload.cjs'), sandbox: true, contextIsolation: true, nodeIntegration: false, webSecurity: true }; }
+function preferences() { return { preload: path.join(__dirname, 'preload.cjs'), sandbox: true, contextIsolation: true, nodeIntegration: false, webSecurity: true, ...(quietTest ? { backgroundThrottling: false } : {}) }; }
+function showError(title, message) {
+  if (quietTest) console.error(`${title}: ${message}`);
+  else dialog.showErrorBox(title, message);
+}
 function persist(patch) {
   try { store.desktop(patch); }
-  catch (error) { dialog.showErrorBox('SportsOver could not save preferences', error.message); }
+  catch (error) { showError('SportsOver could not save preferences', error.message); }
 }
 function lock(value) {
   bannerGesture({ phase: 'cancel' });
@@ -73,9 +82,10 @@ function lock(value) {
   persist({ locked });
   menus();
 }
-function showBanner() { backgroundStartup = false; banner.showInactive(); persist({ visible: true }); menus(); }
+function showBanner() { backgroundStartup = false; if (!quietTest) banner.showInactive(); persist({ visible: true }); menus(); }
 function hideBanner() { setFullscreen(false); banner.hide(); persist({ visible: false }); menus(); }
 function setFullscreen(value) {
+  if (quietTest && value) throw Error('Fullscreen requires a visible test run.');
   if (value === !!normalBounds) return;
   bannerGesture({ phase: 'cancel' });
   clearTimeout(saveTimer);
@@ -130,8 +140,8 @@ function recover() {
 function openSettings() {
   setFullscreen(false);
   backgroundStartup = false;
-  if (settings && !settings.isDestroyed()) { if (settings.webContents.isCrashed()) settings.webContents.reload(); settings.show(); settings.focus(); return; }
-  settings = new BrowserWindow({ icon: appIcon, title: 'SportsOver Settings', width: 1120, height: 820, minWidth: 700, minHeight: 500, backgroundColor: '#0b1620', webPreferences: preferences() });
+  if (settings && !settings.isDestroyed()) { if (settings.webContents.isCrashed()) settings.webContents.reload(); if (!quietTest) { settings.show(); settings.focus(); } return; }
+  settings = new BrowserWindow({ icon: appIcon, title: 'SportsOver Settings', width: 1120, height: 820, minWidth: 700, minHeight: 500, show: !quietTest, backgroundColor: '#0b1620', webPreferences: preferences() });
   secure(settings);
   settings.on('closed', () => { settings = null; });
   settings.loadURL(`${ORIGIN}/sports/admin/`);
@@ -147,7 +157,7 @@ function settingsBackup(action) {
       // Native menu clicks must grant user activation to open the file picker.
       await contents.executeJavaScript(`window.dispatchEvent(new CustomEvent('sports-settings-backup', { detail: ${JSON.stringify(action)} }))`, true);
     } catch (error) {
-      if (!contents.isDestroyed()) dialog.showErrorBox('SportsOver settings backup failed', error.message);
+      if (!contents.isDestroyed()) showError('SportsOver settings backup failed', error.message);
     }
   };
   if (contents.isLoading()) contents.once('did-finish-load', run);
@@ -262,6 +272,7 @@ else {
     banner.webContents.on('did-start-loading', () => setBannerHovered(false));
     banner.webContents.on('render-process-gone', () => setBannerHovered(false));
     banner.webContents.on('context-menu', () => {
+      if (quietTest) return;
       bannerGesture({ phase: 'cancel' });
       Menu.buildFromTemplate([
         { label: 'Settings…', click: openSettings },
@@ -303,7 +314,7 @@ else {
     }
     trayIcon.addRepresentation({ scaleFactor: 2, buffer: nativeImage.createFromBitmap(retina, { width: 40, height: 40 }).toPNG() });
     trayIcon.setTemplateImage(process.platform === 'darwin');
-    try {
+    if (!quietTest) try {
       if (trayIcon.isEmpty()) throw Error('The status icon is empty');
       const trayId = '671bb5a6-24fd-45f6-a087-9a51fd74f13b';
       if (process.platform === 'darwin') {
@@ -323,7 +334,7 @@ else {
       store.warning += ` Tray unavailable: ${error.message}`;
       console.error('SportsOver status item unavailable:', error);
     }
-    shortcut = globalShortcut.register('CommandOrControl+Shift+U', recover);
+    shortcut = !quietTest && globalShortcut.register('CommandOrControl+Shift+U', recover);
     ipcMain.handle('desktop:status', event => { authorize(event); return status(); });
     ipcMain.handle('desktop:action', async (event, action, value) => {
       authorize(event);
@@ -391,12 +402,12 @@ else {
     await engineWindow.loadURL(`${ORIGIN}/sports/index.html?engine=1`);
     await banner.loadURL(`${ORIGIN}/sports/display.html?desktop=1`);
     locked = !!store.value.desktop.locked;
-    if (!backgroundStartup && store.value.desktop.visible !== false) banner.showInactive();
+    if (!quietTest && !backgroundStartup && store.value.desktop.visible !== false) banner.showInactive();
     menus();
     if (!backgroundStartup) openSettings();
     // Do not hold startup open while GitHub responds; launch checks handle errors silently.
-    void updateChecker.checkOnLaunch({ background: backgroundStartup });
-  }).catch(error => { dialog.showErrorBox('SportsOver could not start', error.stack || error.message); app.quit(); });
+    void updateChecker.checkOnLaunch({ background: backgroundStartup || quietTest });
+  }).catch(error => { showError('SportsOver could not start', error.stack || error.message); app.quit(); });
 }
 function authorize(event) {
   if (event.senderFrame !== event.sender.mainFrame || !trusted(event.senderFrame.url)) throw Error('Untrusted sender');
