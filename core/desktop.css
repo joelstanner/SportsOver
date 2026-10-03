@@ -1,7 +1,7 @@
 .desktop-banner { cursor: grab; user-select: none; }
 .desktop-banner:active { cursor: grabbing; }
 .desktop-banner img { -webkit-user-drag: none; }
-.desktop-banner .chess-scorebug a[href], .desktop-banner .pdga-scorebug a[href] { cursor: pointer; }
+.desktop-banner .chess-scorebug a[href], .desktop-banner .pdga-scorebug a[href], .desktop-banner a.team-game-link[href] { cursor: pointer; }
 html.desktop-fullscreen, .desktop-banner.desktop-fullscreen { background: #000; }
 .desktop-banner.desktop-fullscreen { display: flex; align-items: center; justify-content: center; cursor: default; }
 .desktop-banner.desktop-fullscreen #sports-overlay { flex: none; cursor: pointer; }

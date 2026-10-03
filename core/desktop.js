@@ -35,7 +35,7 @@
       window.addEventListener(type, showCursor, { passive: true });
     }
     window.addEventListener('blur', clearCursorIdle);
-    const bannerLink = target => target.closest('.chess-scorebug a[href], .pdga-scorebug a[href]');
+    const bannerLink = target => target.closest('.chess-scorebug a[href], .pdga-scorebug a[href], #sports-overlay a.team-game-link[href]');
     let pointerId = null;
     const sendPointer = (phase, event) => api.action('banner-pointer', {
       phase, x: event.screenX, y: event.screenY,
@@ -124,7 +124,7 @@
     <div class="desktop-info-guide">
       <h3>Banner controls</h3>
       <dl class="desktop-gestures">
-        <div><dt>Browse games <span>Click</span></dt><dd>Leftmost 20%: previous item. Anywhere else: next item. PDGA and chess links open in your browser.</dd></div>
+        <div><dt>Browse games <span>Click</span></dt><dd>Leftmost 20%: previous item. Anywhere else: next item. Team names and logos open the game in your browser. PDGA and chess links also open in your browser.</dd></div>
         <div><dt>Browse games <span>Left / Right arrows</span></dt><dd>With the banner focused, press Left for the previous item or Right for the next item, with a quick transition. Works in fullscreen and while the banner position is locked.</dd></div>
         <div><dt>Scroll lists <span>Wheel or trackpad</span></dt><dd>Scroll PDGA and chess rows while hovering to pause automatic movement. Touch swipes also work. With the list focused, use Up/Down arrows, Page Up/Down, or Home/End. Automatic scrolling resumes after you leave and move keyboard focus away.</dd></div>
         <div><dt>Resize <span>Double-click</span></dt><dd>When unlocked: left half makes it smaller; right half makes it bigger. Size ranges from 50% to 300%.</dd></div>

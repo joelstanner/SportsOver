@@ -12,15 +12,15 @@
     mount.innerHTML = `
       <section class="soccer-main">
         <div class="soccer-team">
-          <span id="soccer-home-mark" class="soccer-mark"><img alt="" hidden><span>HME</span></span>
-          <div class="team-name-slot"><strong class="team-name-label" id="soccer-home-abbr">HME</strong><span id="soccer-home-record" class="soccer-record"></span></div>
+          <a id="soccer-home-mark" class="soccer-mark"><img alt="" hidden><span>HME</span></a>
+          <div class="team-name-slot"><a class="team-name-label" id="soccer-home-abbr">HME</a><span id="soccer-home-record" class="soccer-record"></span></div>
           <strong id="soccer-home-score" class="soccer-score">—</strong>
         </div>
         <div class="soccer-center"><strong id="soccer-clock">—</strong><span id="soccer-period">—</span></div>
         <div class="soccer-team soccer-team--away">
           <strong id="soccer-away-score" class="soccer-score">—</strong>
-          <div class="team-name-slot"><strong class="team-name-label" id="soccer-away-abbr">AWY</strong><span id="soccer-away-record" class="soccer-record"></span></div>
-          <span id="soccer-away-mark" class="soccer-mark"><img alt="" hidden><span>AWY</span></span>
+          <div class="team-name-slot"><a class="team-name-label" id="soccer-away-abbr">AWY</a><span id="soccer-away-record" class="soccer-record"></span></div>
+          <a id="soccer-away-mark" class="soccer-mark"><img alt="" hidden><span>AWY</span></a>
         </div>
       </section>
       <section id="soccer-status" class="soccer-status" hidden><span id="soccer-matchup"></span><strong id="soccer-status-text"></strong></section>
@@ -77,11 +77,12 @@
         show(els.status);
       }
       global.SportsOverlay.odds?.render(els.bug, event);
-      global.SportsOverlay.teamNames.render(event, els.awayAbbr, els.homeAbbr);
+      global.SportsOverlay.teamNames.render(event, els.awayAbbr, els.homeAbbr, els.awayMark, els.homeMark);
       return event.state;
     }
 
     function renderNoEvent(message = "No selected soccer match", visible = true) {
+      global.SportsOverlay.teamNames.clearLinks(els.awayAbbr, els.homeAbbr, els.awayMark, els.homeMark);
       global.SportsOverlay.odds?.clear(els.bug);
       delete els.bug.dataset.preseason;
       els.bug.classList.remove("is-loading");

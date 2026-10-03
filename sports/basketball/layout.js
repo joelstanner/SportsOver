@@ -12,15 +12,15 @@
     mount.innerHTML = `
       <section class="basketball-main">
         <div class="basketball-team">
-          <span id="basketball-away-mark" class="basketball-mark"><img alt="" hidden><span>AWY</span></span>
-          <div class="team-name-slot"><strong class="team-name-label" id="basketball-away-abbr">AWY</strong><span id="basketball-away-record" class="basketball-record"></span><span id="basketball-away-timeouts" class="timeout-markers basketball-timeouts" hidden></span></div>
+          <a id="basketball-away-mark" class="basketball-mark"><img alt="" hidden><span>AWY</span></a>
+          <div class="team-name-slot"><a class="team-name-label" id="basketball-away-abbr">AWY</a><span id="basketball-away-record" class="basketball-record"></span><span id="basketball-away-timeouts" class="timeout-markers basketball-timeouts" hidden></span></div>
           <strong id="basketball-away-score" class="basketball-score">—</strong>
         </div>
         <div class="basketball-center"><strong id="basketball-clock">—</strong><span id="basketball-period">—</span></div>
         <div class="basketball-team basketball-team--home">
           <strong id="basketball-home-score" class="basketball-score">—</strong>
-          <div class="team-name-slot"><strong class="team-name-label" id="basketball-home-abbr">HME</strong><span id="basketball-home-record" class="basketball-record"></span><span id="basketball-home-timeouts" class="timeout-markers timeout-markers--home basketball-timeouts" hidden></span></div>
-          <span id="basketball-home-mark" class="basketball-mark"><img alt="" hidden><span>HME</span></span>
+          <div class="team-name-slot"><a class="team-name-label" id="basketball-home-abbr">HME</a><span id="basketball-home-record" class="basketball-record"></span><span id="basketball-home-timeouts" class="timeout-markers timeout-markers--home basketball-timeouts" hidden></span></div>
+          <a id="basketball-home-mark" class="basketball-mark"><img alt="" hidden><span>HME</span></a>
         </div>
       </section>
       <section id="basketball-status" class="basketball-status" hidden><span id="basketball-matchup"></span><strong id="basketball-status-text"></strong></section>
@@ -88,11 +88,12 @@
         show(els.status);
       }
       global.SportsOverlay.odds?.render(els.bug, event);
-      global.SportsOverlay.teamNames.render(event, els.awayAbbr, els.homeAbbr);
+      global.SportsOverlay.teamNames.render(event, els.awayAbbr, els.homeAbbr, els.awayMark, els.homeMark);
       return event.state;
     }
 
     function renderNoEvent(message = "No selected basketball game", visible = true) {
+      global.SportsOverlay.teamNames.clearLinks(els.awayAbbr, els.homeAbbr, els.awayMark, els.homeMark);
       global.SportsOverlay.odds?.clear(els.bug);
       delete els.bug.dataset.preseason;
       els.bug.classList.remove("is-loading");

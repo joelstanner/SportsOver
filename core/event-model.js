@@ -41,6 +41,30 @@
     return event;
   }
 
+  function gameUrl(value) {
+    if (typeof value !== "string") return "";
+    try {
+      const url = new URL(value);
+      if (url.protocol !== "https:" || url.port || url.username || url.password) return "";
+      const espn = url.hostname === "www.espn.com"
+        && /^\/(?:nfl|college-football|nba|mens-college-basketball|nhl|soccer)\/(?:game|match|boxscore)\/_\/gameId\/[1-9]\d*(?:\/[a-zA-Z0-9-]+)?\/?$/.test(url.pathname);
+      const mlb = url.hostname === "www.mlb.com" && /^\/gameday\/[1-9]\d*\/?$/.test(url.pathname);
+      return espn || mlb ? url.href : "";
+    } catch (_) { return ""; }
+  }
+
+  function espnGameUrl(payload) {
+    const links = [payload.header?.links, payload.links,
+      payload.header?.competitions?.[0]?.links, payload.competitions?.[0]?.links]
+      .flatMap(items => Array.isArray(items) ? items : []);
+    for (const type of ["summary", "boxscore"]) {
+      const link = links.find(link => Array.isArray(link?.rel) && link.rel.includes(type) && link.rel.includes("desktop")
+        && gameUrl(link.href) && new URL(link.href).hostname === "www.espn.com");
+      if (link) return gameUrl(link.href);
+    }
+    return "";
+  }
+
   // Read game-level metadata only; league metadata may describe a different season.
   function espnPreseason(payload, numericType = true) {
     const season = payload.header?.season ?? payload.season
@@ -151,5 +175,5 @@
   }
 
   global.SportsOverlay = global.SportsOverlay || {};
-  global.SportsOverlay.model = Object.freeze({ EVENT_STATES, createEvent, validateEvent, espnPreseason, espnOdds, formatPregameStart, formatGameTime, formatFinalStatus });
+  global.SportsOverlay.model = Object.freeze({ EVENT_STATES, createEvent, validateEvent, gameUrl, espnGameUrl, espnPreseason, espnOdds, formatPregameStart, formatGameTime, formatFinalStatus });
 })(typeof window === "undefined" ? globalThis : window);

@@ -18,7 +18,7 @@
 .hockey-mark { display: grid; place-items: center; width: 27px; height: 27px; flex: 0 0 27px; border-radius: 50%; background: rgba(var(--team-accent-rgb, 75, 180, 197), 0.2); color: var(--team-accent-text, #8de4ef); font-size: 8px; font-weight: 900; }
 .hockey-mark img { width: 26px; height: 26px; object-fit: contain; }
 .hockey-mark img:not([hidden]) + span { display: none; }
-.hockey-team strong { display: block; font-size: 0.82em; line-height: 16px; letter-spacing: 0.075em; }
+.hockey-team :is(strong, .team-name-label) { display: block; font-weight: bold; font-size: 0.82em; line-height: 16px; letter-spacing: 0.075em; }
 .hockey-record { display: block; margin-top: 1px; color: #aebbc6; font-size: 0.6em; line-height: 11px; }
 .hockey-score { min-width: 20px; font-size: 1.32em !important; line-height: 1.1 !important; letter-spacing: 0 !important; }
 .hockey-center { display: grid; justify-items: center; gap: 0; padding: 0 7px; border-right: 1px solid var(--hockey-line); border-left: 1px solid var(--hockey-line); }

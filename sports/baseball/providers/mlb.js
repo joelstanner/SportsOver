@@ -118,6 +118,7 @@
       startTime: gameData.datetime?.dateTime ?? null,
       teams: { away, home },
       details: {
+        gameUrl: global.SportsOverlay.model.gameUrl(`https://www.mlb.com/gameday/${gameData.game?.pk ?? fallbackId}`),
         preseason: ["S", "E"].includes(gameData.game?.type),
         inningNumber: linescore.currentInning ?? null,
         inningOrdinal: linescore.currentInningOrdinal ?? null,

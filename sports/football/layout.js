@@ -12,15 +12,15 @@
     mount.innerHTML = `
       <section class="football-main">
         <div class="football-team">
-          <span id="football-away-mark" class="football-mark"><img alt="" hidden><span>DET</span></span>
-          <div class="team-name-slot"><span class="football-team-name"><span id="football-away-abbr" class="football-abbr team-name-label">DET</span><span id="football-away-possession" class="football-possession" aria-label="Possession" hidden>🏈</span></span><span id="football-away-record" class="football-record"></span><span id="football-away-timeouts" class="timeout-markers football-timeouts" hidden></span></div>
+          <a id="football-away-mark" class="football-mark"><img alt="" hidden><span>DET</span></a>
+          <div class="team-name-slot"><span class="football-team-name"><a id="football-away-abbr" class="football-abbr team-name-label">DET</a><span id="football-away-possession" class="football-possession" aria-label="Possession" hidden>🏈</span></span><span id="football-away-record" class="football-record"></span><span id="football-away-timeouts" class="timeout-markers football-timeouts" hidden></span></div>
           <strong id="football-away-score" class="football-score">—</strong>
         </div>
         <div class="football-center"><span id="football-clock" class="football-clock">—</span><span id="football-quarter" class="football-quarter">—</span></div>
         <div class="football-team football-team--home">
           <strong id="football-home-score" class="football-score">—</strong>
-          <div class="team-name-slot"><span class="football-team-name"><span id="football-home-abbr" class="football-abbr team-name-label">SEA</span><span id="football-home-possession" class="football-possession" aria-label="Possession" hidden>🏈</span></span><span id="football-home-record" class="football-record"></span><span id="football-home-timeouts" class="timeout-markers timeout-markers--home football-timeouts" hidden></span></div>
-          <span id="football-home-mark" class="football-mark football-mark--home"><img alt="" hidden><span>SEA</span></span>
+          <div class="team-name-slot"><span class="football-team-name"><a id="football-home-abbr" class="football-abbr team-name-label">SEA</a><span id="football-home-possession" class="football-possession" aria-label="Possession" hidden>🏈</span></span><span id="football-home-record" class="football-record"></span><span id="football-home-timeouts" class="timeout-markers timeout-markers--home football-timeouts" hidden></span></div>
+          <a id="football-home-mark" class="football-mark football-mark--home"><img alt="" hidden><span>SEA</span></a>
         </div>
       </section>
       <section id="football-status" class="football-status" hidden><span id="football-matchup"></span><strong id="football-status-text"></strong></section>
@@ -93,11 +93,12 @@
         show(els.status);
       }
       global.SportsOverlay.odds?.render(els.bug, event);
-      global.SportsOverlay.teamNames.render(event, els.awayAbbr, els.homeAbbr);
+      global.SportsOverlay.teamNames.render(event, els.awayAbbr, els.homeAbbr, els.awayMark, els.homeMark);
       return event.state;
     }
 
     function renderNoEvent(message = "No selected football game", visible = true) {
+      global.SportsOverlay.teamNames.clearLinks(els.awayAbbr, els.homeAbbr, els.awayMark, els.homeMark);
       global.SportsOverlay.odds?.clear(els.bug);
       delete els.bug.dataset.preseason;
       els.bug.classList.remove("is-loading");

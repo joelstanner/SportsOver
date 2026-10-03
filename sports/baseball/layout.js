@@ -12,13 +12,13 @@
     mount.innerHTML = `
       <section id="game-view" class="game-view">
         <div id="away-team" class="team">
-          <img id="away-logo" class="team__logo" alt="" hidden>
-          <span id="away-abbr" class="team__abbr team-name-label">SEA</span>
+          <a id="away-mark" class="team-logo-link"><img id="away-logo" class="team__logo" alt="" hidden></a>
+          <a id="away-abbr" class="team__abbr team-name-label">SEA</a>
           <span id="away-score" class="team__score">–</span>
         </div>
         <div id="home-team" class="team">
-          <img id="home-logo" class="team__logo" alt="" hidden>
-          <span id="home-abbr" class="team__abbr team-name-label">OPP</span>
+          <a id="home-mark" class="team-logo-link"><img id="home-logo" class="team__logo" alt="" hidden></a>
+          <a id="home-abbr" class="team__abbr team-name-label">OPP</a>
           <span id="home-score" class="team__score">–</span>
         </div>
         <div class="divider" aria-hidden="true"></div>
@@ -71,6 +71,7 @@
       noGame: root.querySelector("#no-game"),
       awayTeam: root.querySelector("#away-team"),
       homeTeam: root.querySelector("#home-team"),
+      awayMark: root.querySelector("#away-mark"), homeMark: root.querySelector("#home-mark"),
       awayLogo: root.querySelector("#away-logo"),
       homeLogo: root.querySelector("#home-logo"),
       awayAbbr: root.querySelector("#away-abbr"),
@@ -177,7 +178,7 @@
         renderStatus(event, formatLocalTime(event.startTime) || event.detailedState);
       }
       updateFooter(event);
-      global.SportsOverlay.teamNames.render(event, els.awayAbbr, els.homeAbbr);
+      global.SportsOverlay.teamNames.render(event, els.awayAbbr, els.homeAbbr, els.awayMark, els.homeMark);
       return event.state;
     }
 
@@ -255,6 +256,7 @@
     }
 
     function renderNoEvent(message = "No selected game today", visible = true) {
+      global.SportsOverlay.teamNames.clearLinks(els.awayAbbr, els.homeAbbr, els.awayMark, els.homeMark);
       delete els.bug.dataset.preseason;
       dispose();
       showElement(els.seriesDetails, false);

@@ -93,6 +93,7 @@
         home: normalizeTeam(homeSource, homeStats?.team, featuredTeamId),
       },
       details: {
+        gameUrl: global.SportsOverlay.model.espnGameUrl(payload),
         odds: global.SportsOverlay.model.espnOdds(payload),
         inPlay: statusType.state === "in",
         preseason: global.SportsOverlay.model.espnPreseason(payload),

@@ -12,15 +12,15 @@
     mount.innerHTML = `
       <section class="hockey-main">
         <div class="hockey-team">
-          <span id="hockey-away-mark" class="hockey-mark"><img alt="" hidden><span>AWY</span></span>
-          <div class="team-name-slot"><strong class="team-name-label" id="hockey-away-abbr">AWY</strong><span id="hockey-away-record" class="hockey-record"></span></div>
+          <a id="hockey-away-mark" class="hockey-mark"><img alt="" hidden><span>AWY</span></a>
+          <div class="team-name-slot"><a class="team-name-label" id="hockey-away-abbr">AWY</a><span id="hockey-away-record" class="hockey-record"></span></div>
           <strong id="hockey-away-score" class="hockey-score">—</strong>
         </div>
         <div class="hockey-center"><strong id="hockey-clock">—</strong><span id="hockey-period">—</span></div>
         <div class="hockey-team hockey-team--home">
           <strong id="hockey-home-score" class="hockey-score">—</strong>
-          <div class="team-name-slot"><strong class="team-name-label" id="hockey-home-abbr">HME</strong><span id="hockey-home-record" class="hockey-record"></span></div>
-          <span id="hockey-home-mark" class="hockey-mark"><img alt="" hidden><span>HME</span></span>
+          <div class="team-name-slot"><a class="team-name-label" id="hockey-home-abbr">HME</a><span id="hockey-home-record" class="hockey-record"></span></div>
+          <a id="hockey-home-mark" class="hockey-mark"><img alt="" hidden><span>HME</span></a>
         </div>
       </section>
       <section id="hockey-status" class="hockey-status" hidden><span id="hockey-matchup"></span><strong id="hockey-status-text"></strong></section>
@@ -85,11 +85,12 @@
         show(els.status);
       }
       global.SportsOverlay.odds?.render(els.bug, event);
-      global.SportsOverlay.teamNames.render(event, els.awayAbbr, els.homeAbbr);
+      global.SportsOverlay.teamNames.render(event, els.awayAbbr, els.homeAbbr, els.awayMark, els.homeMark);
       return event.state;
     }
 
     function renderNoEvent(message = "No selected hockey game", visible = true) {
+      global.SportsOverlay.teamNames.clearLinks(els.awayAbbr, els.homeAbbr, els.awayMark, els.homeMark);
       global.SportsOverlay.odds?.clear(els.bug);
       delete els.bug.dataset.preseason;
       hide(els.advantage);

@@ -46,3 +46,10 @@
   min-height: 26px;
   border-top: 1px solid var(--line);
 }
+
+/* Native links retain the banner typography and offer a visible keyboard focus. */
+a.team-name-label { color: inherit; text-decoration: none; }
+a.team-game-link { text-decoration: none; }
+#sports-overlay a.team-game-link[href]:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 2px; }
+.team-logo-link { display: flex; flex: 0 0 auto; }
+.team-logo-link:has(img[hidden]) { display: none; }
