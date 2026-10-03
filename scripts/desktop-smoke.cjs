@@ -287,8 +287,10 @@ const quiet = testMode() === 'quiet';
     }, skippedGame);
     await banner.evaluate(() => {
       window.arrowTransitions = [];
-      document.addEventListener('animationstart', event => {
-        if (event.animationName === 'sports-rotate-quick') window.arrowTransitions.push(getComputedStyle(event.target).animationDuration);
+      // The completion event retains timing after output.js removes the CSS
+      // class. Reading computed style in a delayed start event can report 0s.
+      document.addEventListener('animationend', event => {
+        if (event.animationName === 'sports-rotate-quick') window.arrowTransitions.push(event.elapsedTime);
       });
     });
     await nativeKey(banner, 'Right');
@@ -297,7 +299,7 @@ const quiet = testMode() === 'quiet';
     await nativeKey(banner, 'Left');
     await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey === key, skippedGame);
     await banner.waitForFunction(() => window.arrowTransitions.length >= 2);
-    assert.deepEqual(await banner.evaluate(() => window.arrowTransitions.slice(0, 2)), ['0.1s', '0.1s'], 'arrows use a 100 ms transition');
+    assert.deepEqual(await banner.evaluate(() => window.arrowTransitions.slice(0, 2)), [0.1, 0.1], 'arrows use a 100 ms transition');
     await nativeKey(banner, 'Right', ['control']);
     await nativeKey(admin, 'Right');
     await admin.waitForTimeout(250);

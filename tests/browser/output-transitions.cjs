@@ -15,8 +15,10 @@ const frame = (sequence, transition = 'normal') => ({ instance: 'output-test', s
     await page.addInitScript(() => {
       window.sportsDesktop = { onFrame: listener => { window.deliverFrame = listener; } };
       window.transitions = [];
-      document.addEventListener('animationstart', event => window.transitions.push({
-        name: event.animationName, duration: getComputedStyle(event.target).animationDuration,
+      window.completedTransitions = [];
+      document.addEventListener('animationstart', event => window.transitions.push({ name: event.animationName }));
+      document.addEventListener('animationend', event => window.completedTransitions.push({
+        name: event.animationName, duration: event.elapsedTime,
       }));
     });
     await page.route('**/*', async route => {
@@ -32,7 +34,8 @@ const frame = (sequence, transition = 'normal') => ({ instance: 'output-test', s
     await page.waitForFunction(() => document.body.dataset.sequence === '1');
     await page.evaluate(value => window.deliverFrame(value), frame(2, 'quick'));
     await page.waitForFunction(() => document.body.dataset.sequence === '2');
-    assert.deepEqual(await page.evaluate(() => window.transitions), [{ name: 'sports-rotate-quick', duration: '0.1s' }]);
+    await page.waitForFunction(() => window.completedTransitions.length === 1);
+    assert.deepEqual(await page.evaluate(() => window.completedTransitions), [{ name: 'sports-rotate-quick', duration: 0.1 }]);
     await page.waitForTimeout(300);
     assert.equal(await page.locator('#sports-overlay').innerText(), 'Game 2', 'stale polling cannot undo arrow navigation');
     await page.evaluate(value => window.deliverFrame(value), frame(3));
