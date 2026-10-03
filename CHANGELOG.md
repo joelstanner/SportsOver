@@ -3,6 +3,23 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.28.0 — 2026-10-03
+
+### Added
+
+- Left and Right arrow navigation through the rotation when the desktop
+  banner is focused, including fullscreen and locked-position banners.
+
+### Changed
+
+- Arrow navigation uses a 100 ms slide with horizontal motion blur. Loaded
+  games appear immediately while scores refresh, and rapid presses interrupt
+  older transitions. Reduced-motion preferences are respected.
+- Desktop frames arrive directly from the engine, reducing display latency;
+  older polling responses cannot replace a newer displayed game.
+
+Existing settings are preserved. No migration is required.
+
 ## 0.27.0 — 2026-10-03
 
 ### Added
