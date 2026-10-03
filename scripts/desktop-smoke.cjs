@@ -374,7 +374,8 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
       await send({ phase: 'move', x: -origin.x - 0.2, y: -origin.y - 0.2 });
       await send({ phase: 'end', x: -origin.x - 0.2, y: -origin.y - 0.2 });
     }, afterDrag);
-    const fractionalBounds = await bannerBounds();
+    // Native movement can complete after the pointer IPC resolves on CI.
+    const fractionalBounds = await waitBannerBounds({ x: 0 });
     assert.equal(fractionalBounds.x, 0, 'fractional drag reaches x=0 without a native conversion error');
     // macOS may constrain y=0 below its menu bar.
     await banner.evaluate(async () => {
