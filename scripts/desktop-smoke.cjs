@@ -261,12 +261,20 @@ const quiet = testMode() === 'quiet';
     await admin.locator('#available-games [data-game-key="baseball:2"] .add-game').click();
     await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 2);
     const initialGame = await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey);
-    await banner.locator('.scorebug').click();
+    // Names and logos open game links. Browse and resize on the unlinked top
+    // padding, using proportions so the target stays valid at every zoom.
+    const browseBanner = async direction => {
+      const box = await banner.locator('.scorebug').boundingBox();
+      await banner.locator('.scorebug').click({ position: {
+        x: box.width * (direction < 0 ? 0.05 : 0.75), y: box.height * 0.05,
+      } });
+    };
+    await browseBanner(1);
     await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey !== key, initialGame);
     const skippedGame = await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey);
-    await banner.locator('.scorebug').click({ position: { x: 15, y: 20 } });
+    await browseBanner(-1);
     await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey === key, initialGame);
-    await banner.locator('.scorebug').click();
+    await browseBanner(1);
     await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey === key, skippedGame);
 
     const nativeKey = async (page, keyCode, modifiers = []) => {
@@ -314,7 +322,7 @@ const quiet = testMode() === 'quiet';
       await banner.waitForFunction(width => window.innerWidth === width
         && Math.abs(Number(document.body.style.zoom) - width / 472) < 0.001, width);
       const box = await banner.locator('.scorebug').boundingBox();
-      await banner.locator('.scorebug').dblclick({ position: { x: box.width * (direction > 0 ? 0.75 : 0.25), y: box.height / 2 } });
+      await banner.locator('.scorebug').dblclick({ position: { x: box.width * (direction > 0 ? 0.75 : 0.25), y: box.height * 0.05 } });
       // Let any incorrectly retained single-click timer fire before checking.
       await banner.waitForTimeout(450);
     };
@@ -409,9 +417,9 @@ const quiet = testMode() === 'quiet';
     assert.deepEqual(await bannerBounds(), fullBounds, 'fullscreen stays fixed on the display');
     await banner.waitForTimeout(300);
     assert.deepEqual(JSON.parse(await fs.readFile(path.join(directory, 'settings.json'), 'utf8')).desktop.bounds, beforeDrag, 'fullscreen dragging preserves saved normal bounds');
-    await banner.locator('.scorebug').click({ position: { x: 15, y: 20 } });
+    await browseBanner(-1);
     await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey === key, initialGame);
-    await banner.locator('.scorebug').click();
+    await browseBanner(1);
     await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey === key, skippedGame);
     // CDP keyboard events bypass Electron's before-input-event handler.
     await application.evaluate(({ BrowserWindow }) => {
@@ -436,9 +444,9 @@ const quiet = testMode() === 'quiet';
     assert.deepEqual(await waitBannerBounds(beforeDrag), beforeDrag, 'Settings exits fullscreen');
     await admin.getByRole('button', { name: 'Live control', exact: true }).click();
     const box = await banner.locator('.scorebug').boundingBox();
-    await banner.mouse.move(box.x + 40, box.y + 20);
+    await banner.mouse.move(box.x + 40, box.y + 5);
     await banner.mouse.down();
-    await banner.mouse.move(box.x + 70, box.y + 40);
+    await banner.mouse.move(box.x + 70, box.y + 25);
     await banner.mouse.up();
     // Flush pointer IPC, then wait for native movement to settle before using
     // these coordinates as the next gesture's origin.
@@ -550,14 +558,14 @@ const quiet = testMode() === 'quiet';
     };
     await toggleContextLock(true);
     const fixedBounds = await bannerBounds();
-    await banner.locator('.scorebug').click({ position: { x: 15, y: 20 } });
+    await browseBanner(-1);
     await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey === key, initialGame);
-    await banner.locator('.scorebug').click();
+    await browseBanner(1);
     await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey === key, skippedGame);
     const lockedBox = await banner.locator('.scorebug').boundingBox();
-    await banner.mouse.move(lockedBox.x + 40, lockedBox.y + 20);
+    await banner.mouse.move(lockedBox.x + 40, lockedBox.y + 5);
     await banner.mouse.down();
-    await banner.mouse.move(lockedBox.x + 80, lockedBox.y + 40);
+    await banner.mouse.move(lockedBox.x + 80, lockedBox.y + 25);
     await banner.mouse.up();
     await banner.waitForTimeout(450);
     assert.deepEqual(await bannerBounds(), fixedBounds, 'locked dragging leaves the native window in place');
