@@ -340,6 +340,9 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
       win.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Escape' });
     });
     assert.deepEqual(await waitBannerBounds(beforeDrag), beforeDrag, 'Escape restores normal size and position');
+    assert.equal(await application.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('display.html?desktop')).isAlwaysOnTop()), true,
+    'leaving fullscreen preserves always-on-top');
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).fullscreen), false);
     await banner.waitForFunction(() => !document.body.classList.contains('desktop-fullscreen'));
     assert.equal(await banner.locator('body').getAttribute('title'), 'Click: browse · Drag: move · Double-click: resize · Right-click: menu');

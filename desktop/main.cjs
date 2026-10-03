@@ -85,9 +85,11 @@ function setFullscreen(value) {
     fullscreenDisplayId = null;
     if (process.platform === 'darwin') banner.setSimpleFullScreen(false);
     else { banner.setFullScreen(false); banner.setFullScreenable(false); }
-    if (process.platform === 'win32') banner.setAlwaysOnTop(true, 'floating');
     banner.setBackgroundColor('#00000000');
     banner.setBounds(bounds);
+    // On Windows "floating" explicitly reorders behind the taskbar and can
+    // clear topmost status. Keep the compact banner above other app windows.
+    if (process.platform === 'win32') banner.setAlwaysOnTop(true, 'pop-up-menu');
     persist({ bounds });
   }
   banner.webContents.send('desktop:fullscreen', !!normalBounds);
@@ -217,7 +219,7 @@ else {
         updateChecker.menuItem(),
       ]).popup({ window: banner });
     });
-    banner.setAlwaysOnTop(true, 'floating');
+    banner.setAlwaysOnTop(true, process.platform === 'win32' ? 'pop-up-menu' : 'floating');
     if (process.platform === 'darwin') banner.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
     banner.on('close', event => { if (!quitting) { event.preventDefault(); hideBanner(); } });
     const saveBounds = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => persist({ bounds: normalBounds || banner.getBounds() }), 250); };
