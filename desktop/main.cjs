@@ -75,6 +75,9 @@ function setFullscreen(value) {
     else { banner.setFullScreenable(true); banner.setFullScreen(true); }
     banner.setBounds(fullscreenBounds(display));
     showBanner();
+    // Electron's normal "floating" level deliberately stays behind the Windows
+    // taskbar. Fullscreen must cover it as well as the desktop.
+    if (process.platform === 'win32') banner.setAlwaysOnTop(true, 'screen-saver');
     banner.focus();
   } else {
     const bounds = fitBounds(normalBounds, screen.getAllDisplays());
@@ -82,6 +85,7 @@ function setFullscreen(value) {
     fullscreenDisplayId = null;
     if (process.platform === 'darwin') banner.setSimpleFullScreen(false);
     else { banner.setFullScreen(false); banner.setFullScreenable(false); }
+    if (process.platform === 'win32') banner.setAlwaysOnTop(true, 'floating');
     banner.setBackgroundColor('#00000000');
     banner.setBounds(bounds);
     persist({ bounds });

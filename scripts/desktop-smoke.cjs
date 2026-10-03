@@ -304,14 +304,16 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     assert.notEqual(await banner.evaluate(() => getComputedStyle(document.body).cursor), 'none', 'moving reveals the cursor');
     assert.ok(Math.abs(presentation.centerX - presentation.width / 2) < 2, 'banner centered horizontally');
     assert.ok(Math.abs(presentation.centerY - presentation.height / 2) < 2, 'banner centered vertically');
-    assert.equal(await application.evaluate(({ BrowserWindow }) => {
+    const nativeFullscreen = await application.evaluate(({ BrowserWindow }) => {
       const win = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('display.html?desktop'));
       // Electron 44's transparent Windows path emits enter-full-screen and
       // covers the monitor, but does not set the widget's isFullScreen flag.
       // The monitor bounds and opaque background are checked above.
-      if (process.platform === 'win32') return globalThis.bannerFullscreenEntered && win.isAlwaysOnTop();
-      return process.platform === 'darwin' ? win.isSimpleFullScreen() : win.isFullScreen();
-    }), true, 'platform fullscreen entered with the banner covering desktop chrome');
+      if (process.platform === 'win32') return { entered: globalThis.bannerFullscreenEntered, covering: win.isAlwaysOnTop() };
+      const entered = process.platform === 'darwin' ? win.isSimpleFullScreen() : win.isFullScreen();
+      return { entered, covering: entered };
+    });
+    assert.deepEqual(nativeFullscreen, { entered: true, covering: true }, 'platform fullscreen entered with the banner covering desktop chrome');
     await admin.waitForFunction(() => document.querySelector('#desktop-size').disabled);
     await doubleClickBanner(1);
     assert.deepEqual(await bannerBounds(), fullBounds, 'fullscreen ignores double-click resizing');
