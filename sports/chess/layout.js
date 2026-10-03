@@ -9,6 +9,7 @@
       : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
   }
   const player = person => `<span class="chess-piece chess-piece--${person.color}" aria-label="${person.color}"></span><span class="chess-name" title="${escape(person.name)}">${person.title ? `<small>${escape(person.title)}</small> ` : ""}${escape(person.name)}</span>`;
+  const brand = `<span class="chess-brand"><svg class="chess-brand-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18c0-4 2-6 5-8l-5 2-3-3 5-5V2l4 2c5 1 7 5 7 10v4H7Z"/><path d="M7 18h13v3H5v-3h2Z"/><circle cx="11" cy="7" r=".8" fill="currentColor" stroke="none"/></svg>CHESS</span>`;
   function createLayout(root = document) {
     const mount = root.querySelector("#sports-overlay");
     global.SportsOverlay.odds?.clear(mount);
@@ -38,7 +39,7 @@
       mount.dataset.sport = "chess"; mount.dataset.state = event.state; mount.dataset.stale = String(d.stale);
       mount.setAttribute("aria-label", `${d.name}, ${d.roundName}, ${event.detailedState}${d.stale ? ", stale broadcast" : ""}`);
       const href = `https://lichess.org/broadcast/-/-/${encodeURIComponent(d.roundId)}`;
-      mount.innerHTML = `<div class="chess-bar"><span class="chess-brand">♞ CHESS</span><a class="chess-event" href="${href}" target="_blank" rel="noopener" title="${escape(d.name)}">${escape(d.name)}</a><span class="chess-state" title="${escape(d.roundName)}">${escape(d.roundName)} · ${state}</span></div>
+      mount.innerHTML = `<div class="chess-bar">${brand}<a class="chess-event" href="${href}" target="_blank" rel="noopener" title="${escape(d.name)}">${escape(d.name)}</a><span class="chess-state" title="${escape(d.roundName)}">${escape(d.roundName)} · ${state}</span></div>
         ${featured ? `<div class="chess-focus">${featured.players.map(person => `<div class="chess-player${featured.state === "live" && person.color === featured.turn ? " is-turn" : ""}"><div class="chess-person">${player(person)}<span class="chess-rating">${person.rating ?? "Unrated"}${person.federation ? ` · ${escape(person.federation)}` : ""}</span></div><strong class="chess-clock" title="Last broadcast clock">${clock(person.clock)}</strong><strong class="chess-point">${featured.result ? featured.result === "½-½" ? "½" : featured.result === (person.color === "white" ? "1-0" : "0-1") ? "1" : "0" : ""}</strong></div>`).join("")}</div>`
         : `<div class="chess-board"><div class="chess-labels"><span>POS</span><span>PLAYER</span><span>PLAYED</span><span>POINTS</span></div><div class="scorebug-vertical-viewport"><div class="scorebug-vertical-track">${shown.length ? shown.map(person => `<div class="chess-entry"><span class="chess-board-number">${person.rank ?? "—"}</span><span class="chess-person"><span class="chess-name" title="${escape(person.name)}">${person.title ? `<small>${escape(person.title)}</small> ` : ""}${escape(person.name)}</span></span><span class="chess-played">${person.played ?? "—"}</span><strong class="chess-result">${escape(person.score)}</strong></div>`).join("") : '<div class="chess-empty">Tournament standings unavailable</div>'}</div></div></div>`}
         <div class="chess-footer"><span class="scorebug-scroll-viewport"><span class="scorebug-scroll-text">${escape(footer)}</span></span><a href="${href}" target="_blank" rel="noopener">Lichess ↗</a></div>`;
@@ -51,7 +52,7 @@
       mount.classList.remove("is-loading"); mount.classList.toggle("is-hidden", !visible);
       delete mount.dataset.stale;
       mount.setAttribute("aria-label", `Chess · ${message}`);
-      mount.innerHTML = `<div class="chess-bar"><span class="chess-brand">♞ CHESS</span><span>LICHESS BROADCASTS</span></div><div class="chess-empty">${escape(message)}</div>`;
+      mount.innerHTML = `<div class="chess-bar">${brand}<span>LICHESS BROADCASTS</span></div><div class="chess-empty">${escape(message)}</div>`;
     }
     function handleError(message, error) {
       console.warn(`[SportsOver] ${message}`, error);

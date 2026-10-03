@@ -66,6 +66,22 @@ const standings=Array.from({length:12},(_,i)=>({name:i?'Player '+(i+1):'Leader',
     await page.locator(`#rotation-queue [data-game-key="${key}"]`).waitFor();
    }
   }
+  // List filters stay independent and never change the saved banner rotation.
+  const beforeFilters=await page.evaluate(()=>localStorage.getItem('sports-overlay.config.v1'));
+  await page.locator('#available-sport-filter').selectOption('disc-golf');
+  await page.locator('#queue-sport-filter').selectOption('chess');
+  assert.equal(await page.locator('#rotation-queue .game-card').count(),2);
+  assert.equal(await page.locator('#rotation-queue [data-game-key^="chess:"]').count(),2);
+  assert.equal(await page.locator('#rotation-count').innerText(),'2 of 4 games');
+  assert.equal(await page.locator('#available-sport-filter').inputValue(),'disc-golf');
+  await page.locator('#queue-sport-filter').selectOption('disc-golf');
+  assert.equal(await page.locator('#rotation-queue [data-game-key^="disc-golf:"]').count(),2);
+  await page.locator('#available-sport-filter').selectOption('chess');
+  assert.equal(await page.locator('#queue-sport-filter').inputValue(),'disc-golf');
+  assert.equal(await page.evaluate(()=>localStorage.getItem('sports-overlay.config.v1')),beforeFilters);
+  await page.locator('#queue-sport-filter').selectOption('');
+  assert.equal(await page.locator('#rotation-queue .game-card').count(),4);
+  assert.equal(await page.locator('#rotation-count').innerText(),'4 games');
   let banner=await context.newPage();banner.on('pageerror',e=>errors.push(e.message));
   // Freeze the engine's selected banner with a saved lock, then inspect the real output.
   for(const sport of ['chess','disc-golf']){

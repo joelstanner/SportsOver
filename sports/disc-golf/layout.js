@@ -6,6 +6,7 @@
   const through = player => player.status || (player.completed ? "F" : player.started ? player.played ?? "—" : player.teeTime ? player.teeTime.slice(0, 5) : "—");
   const playerName = player => player.pdgaNumber
     ? `<a href="https://www.pdga.com/player/${encodeURIComponent(player.pdgaNumber)}" target="_blank" rel="noopener">${escape(player.name)}</a>` : escape(player.name);
+  const brand = `<span class="pdga-brand"><svg class="pdga-brand-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-18 12 12)"><ellipse cx="12" cy="10" rx="9" ry="3.5"/><path d="M3 10v3c0 1.9 4 3.5 9 3.5s9-1.6 9-3.5v-3"/><ellipse cx="12" cy="10" rx="5" ry="1.5"/></g></svg>PDGA</span>`;
   function createLayout(root = document) {
     const mount = root.querySelector("#sports-overlay");
     global.SportsOverlay.odds?.clear(mount);
@@ -38,7 +39,7 @@
       mount.classList.remove("is-loading", "is-hidden");
       mount.dataset.sport = "disc-golf"; mount.dataset.state = event.state; mount.dataset.stale = String(stale);
       mount.setAttribute("aria-label", `${details.name}, ${details.division}, round ${details.round}, ${event.detailedState}${stale ? ", stale scores" : ""}`);
-      mount.innerHTML = `<div class="pdga-bar"><span class="pdga-brand">PDGA</span><a class="pdga-event" href="https://www.pdga.com/tour/event/${encodeURIComponent(details.tournamentId)}" target="_blank" rel="noopener" title="${escape(details.name)}">${escape(details.name)}</a><span class="pdga-state">${escape(details.division)} · ${roundLabel} · ${state}</span></div>
+      mount.innerHTML = `<div class="pdga-bar">${brand}<a class="pdga-event" href="https://www.pdga.com/tour/event/${encodeURIComponent(details.tournamentId)}" target="_blank" rel="noopener" title="${escape(details.name)}">${escape(details.name)}</a><span class="pdga-state">${escape(details.division)} · ${roundLabel} · ${state}</span></div>
         ${featured ? `<div class="pdga-focus"><span class="pdga-place">${place(featured)}</span><div class="pdga-person"><strong class="pdga-name">${playerName(featured)}</strong><span class="pdga-sub">${featured.wonPlayoff ? "Playoff winner" : `PDGA #${escape(featured.pdgaNumber)}`} · ${roundLabel}</span></div>${metric("TOTAL", signed(featured.total), "pdga-total")}${metric("ROUND", signed(featured.roundToPar))}${metric(!featured.started && featured.teeTime ? "TEE" : "THRU", through(featured))}</div><div class="pdga-chase"><span>LEADERS</span>${leaders.slice(0, 3).map(player => `<span>${place(player)} ${escape(player.shortName)} <b>${signed(player.total)}</b></span>`).join("")}</div>`
         : `<div class="pdga-board"><div class="pdga-labels"><span>POS</span><span>PLAYER</span><span>${showRatings ? "RATING" : "TOTAL"}</span><span>ROUND</span><span>${event.state === "pregame" ? "TEE" : "THRU"}</span></div><div class="scorebug-vertical-viewport"><div class="scorebug-vertical-track">${leaders.length ? leaders.map(player => `<div class="pdga-entry"><span class="pdga-place">${place(player)}</span><strong class="pdga-name">${playerName(player)}${player.wonPlayoff ? '<span class="pdga-playoff">PLAYOFF</span>' : ""}</strong><strong class="pdga-total">${showRatings ? player.rating ?? "—" : signed(player.total)}</strong><span>${signed(player.roundToPar)}</span><span class="pdga-thru" title="${escape(!player.started && player.teeTime ? `Tee ${player.teeTime} (course local)` : through(player))}">${through(player)}</span></div>`).join("") : '<div class="pdga-empty">Awaiting player scores</div>'}</div></div></div>`}
         <div class="pdga-footer"><span class="scorebug-scroll-viewport"><span class="scorebug-scroll-text">${escape(footer)}</span></span><a href="https://www.pdga.com/live/event/${encodeURIComponent(details.tournamentId)}/${encodeURIComponent(details.division)}/scores?round=${encodeURIComponent(details.round)}" target="_blank" rel="noopener">Scores: PDGA ↗</a></div>`;
@@ -51,7 +52,7 @@
       mount.setAttribute("aria-label", `PDGA · ${message}`);
       delete mount.dataset.stale;
       mount.classList.remove("is-loading"); mount.classList.toggle("is-hidden", !visible);
-      mount.innerHTML = `<div class="pdga-bar"><span class="pdga-brand">PDGA</span><span>DISC GOLF</span></div><div class="pdga-empty">${escape(message)}</div>`;
+      mount.innerHTML = `<div class="pdga-bar">${brand}<span>DISC GOLF</span></div><div class="pdga-empty">${escape(message)}</div>`;
     }
     function handleError(message, error) {
       console.warn(`[SportsOver] ${message}`, error);

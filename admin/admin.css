@@ -150,6 +150,7 @@ select, input { border: 1px solid var(--line); border-radius: 8px; padding: 10px
 .count-badge { border-radius: 999px; padding: 5px 8px; color: var(--teal); background: var(--teal-dark); font-size: 0.68rem; font-weight: 800; white-space: nowrap; }
 .game-list { display: grid; gap: 8px; max-height: 390px; overflow-y: auto; padding: 10px; }
 .game-filters { display: grid; grid-template-columns: 120px minmax(140px, 1fr); gap: 8px; border-bottom: 1px solid var(--line); padding: 10px; }
+.game-filter-note { align-self: center; margin: 0; color: var(--muted); font-size: 0.74rem; }
 .game-filters select, .game-filters input { width: 100%; padding: 8px 9px; font-size: 0.74rem; }
 .game-card { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto auto; gap: 8px 9px; align-items: center; border: 1px solid var(--line); border-radius: 9px; padding: 10px; background: #0b1518; }
 .game-card:not(.game-card--available) .game-identity { grid-column: 1; grid-row: 1 / span 2; }

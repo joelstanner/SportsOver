@@ -156,6 +156,7 @@
       if (!info.contains(event.target)) show(false);
     });
   });
+  document.querySelector("#queue-sport-filter").addEventListener("change", renderRotationControls);
   document.querySelector("#available-sport-filter").addEventListener("change", renderRotationControls);
   document.querySelector("#game-search").addEventListener("input", renderRotationControls);
   document.querySelectorAll("[data-default-duration]").forEach(input => {
@@ -505,12 +506,12 @@
 
   function renderLiveSportPicker() {
     const picker = document.querySelector("#live-sport");
-    const filter = document.querySelector("#available-sport-filter");
+    const filters = [...document.querySelectorAll("#available-sport-filter, #queue-sport-filter")];
     const selectedSport = picker.value;
-    const selectedFilter = filter.value;
+    const selectedFilters = filters.map(filter => filter.value);
     const enabledSports = workingConfig.sports.filter(group => group.enabled !== false);
     picker.replaceChildren();
-    filter.replaceChildren(new Option("All sports", ""));
+    filters.forEach(filter => filter.replaceChildren(new Option("All sports", "")));
     enabledSports.forEach(group => {
       const sport = configApi.findSport(group.sport);
       const topFavorite = group.favorites
@@ -521,12 +522,14 @@
       option.value = group.sport;
       option.textContent = `${sport.name} · ${sport.competitionType === "individual" ? `${group.events.filter(event => event.enabled).length} watched ${sport.key === "chess" ? "broadcasts" : "divisions"}` : topFavorite?.name || "no included team"}`;
       picker.append(option);
-      filter.append(new Option(sport.key === "chess" ? sport.name : sport.league, group.sport));
+      filters.forEach(filter => filter.append(new Option(sport.key === "chess" ? sport.name : sport.league, group.sport)));
     });
     if (enabledSports.some(group => group.sport === selectedSport)) picker.value = selectedSport;
-    filter.value = enabledSports.some(group => group.sport === selectedFilter) ? selectedFilter : "";
+    filters.forEach((filter, index) => {
+      filter.value = enabledSports.some(group => group.sport === selectedFilters[index]) ? selectedFilters[index] : "";
+      filter.disabled = !enabledSports.length;
+    });
     picker.disabled = !enabledSports.length;
-    filter.disabled = !enabledSports.length;
     if (!enabledSports.length) picker.append(new Option("No sports enabled", ""));
     if (picker.value !== selectedSport) updateLive();
   }
@@ -733,11 +736,17 @@
     }
     queueList.replaceChildren();
     availableList.replaceChildren();
-    document.querySelector("#rotation-count").textContent = `${queue.length} game${queue.length === 1 ? "" : "s"}`;
+    const queueSportFilter = document.querySelector("#queue-sport-filter").value;
+    const shownCount = queue.filter(entry => !queueSportFilter || entry.candidate.sport === queueSportFilter).length;
+    document.querySelector("#rotation-count").textContent = `${queueSportFilter ? `${shownCount} of ` : ""}${queue.length} game${queue.length === 1 ? "" : "s"}`;
 
     if (!queue.length) appendRotationEmpty(queueList, active ? "No live games in rotation. Live mode is still on."
       : availableRotationEntries.length ? "No games selected for the banner." : "Refresh games to build the live queue.");
-    queue.forEach((entry, index) => renderQueueGame(entry, index, queue, queueList));
+    else if (!shownCount) appendRotationEmpty(queueList, "No games for this sport in rotation.");
+    // Filter only the cards; actions retain their positions in the full rotation.
+    queue.forEach((entry, index) => {
+      if (!queueSportFilter || entry.candidate.sport === queueSportFilter) renderQueueGame(entry, index, queue, queueList);
+    });
     highlightBannerGame();
 
     const queuedKeys = new Set([...normalRotationQueue(), ...queue].map(rotationEntryKey));

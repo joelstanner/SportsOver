@@ -3,6 +3,18 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.24.0 — 2026-10-02
+
+### Added
+
+- A sport filter for the On banner list, with visible and total game counts.
+  Filtering affects only the list and leaves banner playback unchanged.
+
+### Changed
+
+- Disc-golf and chess banners have crisp title icons and richer teal and violet
+  gradients, consistent with the other sports.
+
 ## 0.23.0 — 2026-10-02
 
 ### Added
