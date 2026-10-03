@@ -13,7 +13,38 @@ downloads. Do not advertise a platform as tested solely because its build passes
 Windows also supports an unsigned x64 NSIS installer; see below. The source-based
 `npm install` / `npm start` workflow remains available.
 
-## Build
+## GitHub installer builds
+
+Release installers are built and validated in GitHub Actions. Push the intended
+release commit to `main`, or dispatch the workflows for that ref:
+
+- [macOS package and smoke](../.github/workflows/macos-package.yml) uses a native
+  Apple Silicon job (`macos-15`) and a native Intel job (`macos-15-intel`). Each
+  runs unit tests, builds its DMG, verifies the image, checksum, signature,
+  architecture, version and runtime archive, then smoke-tests the packaged app
+  and a copy installed from the DMG after ejecting it.
+- [Windows package and smoke](../.github/workflows/windows-package.yml) builds
+  and tests the unsigned x64 installer, as described below.
+
+Both workflows also run on pull requests. Artifact upload happens only after
+the platform's checks pass. The artifacts are `SportsOver-macos-arm64`,
+`SportsOver-macos-x64`, and `SportsOver-windows-x64`, each containing its installer,
+checksum and installation instructions. Download all three from successful runs
+whose `headSha` matches the exact release commit. Use separate download folders
+to avoid the two Mac instruction files colliding. Verify the checksums again
+after downloading. These workflows have read-only repository permissions and
+do not create tags, publish releases, or replace existing release assets.
+
+Do not replace a failed CI build with locally built release installers. Fix the
+failure and rerun the affected job. A new source commit requires fresh artifacts
+for all platforms. Local installer builds remain available for troubleshooting.
+
+CI verifies native execution on both Mac architectures, but does not establish
+browser-quarantine/Gatekeeper first-launch behavior, real OBS output, or behavior
+on physical multi-monitor setups. Report the actual successful run results and
+remaining manual checks in release notes.
+
+## Local troubleshooting builds
 
 Use a Mac with Node.js 22 or newer, npm, Apple's command-line tools, and internet
 access to download the pinned Electron and packaging tools. From the checkout:
@@ -93,11 +124,16 @@ Managed Macs may not permit opening an unidentified developer's app.
 ## Release
 
 After the version bump is approved under `AGENTS.md`, update both package
-versions and `CHANGELOG.md`, rebuild the local app and installers, and repeat
-the relevant checks. Prepare a GitHub release with the matching version,
+versions and `CHANGELOG.md`, and rebuild the local development app with
+`npm run build:mac`. Commit and push, then wait for the macOS and Windows
+packaging workflows on that exact commit. Download the three successful CI
+artifacts and verify their checksums; do not rebuild release installers locally.
+Prepare a GitHub release with the matching version,
 checksums, installation instructions, and release notes that identify these
 builds as unnotarized. Verify an actual downloaded asset before publishing the
-release. Building locally does not create a Git tag, release, or upload.
+release. Record links to both CI runs and their tested architectures in the
+release notes. Publishing still requires user authorization; CI only uploads
+build artifacts. Do not replace already published assets during a workflow test.
 
 Updates are manual: quit SportsOver and replace the app in Applications.
 Preferences and refreshed catalogs remain under

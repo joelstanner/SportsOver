@@ -1,0 +1,98 @@
+name: macOS package and smoke
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  macos:
+    name: macOS ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-15
+            app-dir: mac-arm64
+          - arch: x64
+            runner: macos-15-intel
+            app-dir: mac
+    defaults:
+      run:
+        shell: bash
+    env:
+      ARCH: ${{ matrix.arch }}
+      APP_DIR: ${{ matrix.app-dir }}
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Check native architecture and version
+        id: package
+        run: |
+          node -e 'require("node:assert/strict").equal(process.arch, process.env.ARCH)'
+          echo "version=$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
+      - run: npm test
+      - run: npm run dist:mac -- "--$ARCH"
+      - name: Verify disk image, checksum, and app metadata
+        env:
+          VERSION: ${{ steps.package.outputs.version }}
+        run: |
+          image="SportsOver-$VERSION-mac-$ARCH.dmg"
+          app="dist/installers/$APP_DIR/SportsOver.app"
+          hdiutil verify "dist/installers/$image"
+          (cd dist/installers && shasum -a 256 -c "$image.sha256")
+          codesign --verify --deep --strict "$app"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist")" = "$VERSION"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Contents/Info.plist")" = 'com.sportsover.desktop'
+          test "$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$app/Contents/Info.plist")" = '13.0'
+          icon="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$app/Contents/Info.plist")"
+          test -n "$icon"
+          test -f "$app/Contents/Resources/$icon"
+          native_arch="$ARCH"
+          if [ "$ARCH" = x64 ]; then native_arch=x86_64; fi
+          lipo -verify_arch "$native_arch" "$app/Contents/MacOS/SportsOver"
+          npm run verify:package -- "$app/Contents/Resources/app.asar"
+          node -e 'const a=require("@electron/asar"), assert=require("node:assert/strict"); assert.equal(JSON.parse(a.extractFile(process.argv[1],"package.json")).version,process.env.VERSION)' "$app/Contents/Resources/app.asar"
+      - name: Smoke packaged executable
+        run: |
+          export SPORTSOVER_TEST_EXECUTABLE="$PWD/dist/installers/$APP_DIR/SportsOver.app/Contents/MacOS/SportsOver"
+          npm run test:desktop
+      - name: Install from disk image into isolated directory
+        env:
+          VERSION: ${{ steps.package.outputs.version }}
+        run: |
+          mount="$RUNNER_TEMP/SportsOver-mount"
+          destination="$RUNNER_TEMP/SportsOver-install"
+          mkdir -p "$mount" "$destination"
+          trap 'hdiutil detach "$mount" >/dev/null 2>&1 || true' EXIT
+          hdiutil attach -readonly -nobrowse -mountpoint "$mount" "dist/installers/SportsOver-$VERSION-mac-$ARCH.dmg"
+          test -d "$mount/SportsOver.app"
+          test "$(readlink "$mount/Applications")" = /Applications
+          cmp packaging/'Install SportsOver.txt' "$mount/Install SportsOver.txt"
+          ditto "$mount/SportsOver.app" "$destination/SportsOver.app"
+          hdiutil detach "$mount"
+          trap - EXIT
+          codesign --verify --deep --strict "$destination/SportsOver.app"
+          cmp "dist/installers/$APP_DIR/SportsOver.app/Contents/Resources/app.asar" "$destination/SportsOver.app/Contents/Resources/app.asar"
+          npm run verify:package -- "$destination/SportsOver.app/Contents/Resources/app.asar"
+      - name: Smoke installed executable
+        env:
+          SPORTSOVER_TEST_EXECUTABLE: ${{ runner.temp }}/SportsOver-install/SportsOver.app/Contents/MacOS/SportsOver
+        run: npm run test:desktop
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SportsOver-macos-${{ matrix.arch }}
+          if-no-files-found: error
+          path: |
+            dist/installers/SportsOver-${{ steps.package.outputs.version }}-mac-${{ matrix.arch }}.dmg
+            dist/installers/SportsOver-${{ steps.package.outputs.version }}-mac-${{ matrix.arch }}.dmg.sha256
+            dist/installers/Install SportsOver.txt

@@ -216,12 +216,15 @@ SportsOver is licensed under the [MIT License](LICENSE). Third-party dependencie
 
 Run `npm run build:mac`, then open `dist/SportsOver.app` for the SportsOver application name and scoreboard Dock/Finder icon. This reuses the installed Electron runtime and creates a local ad-hoc signed bundle; it is not notarized for distribution. Rebuild after source changes. `npm start` remains the development launcher and macOS may identify it as Electron. Both launches use the same SportsOver settings.
 
-Run `npm run dist:mac` on a Mac to build a downloadable DMG for that Mac's
-architecture, or `npm run dist:mac -- --all` for both Apple Silicon and Intel.
-Installers, SHA-256 checksums, and installation instructions are written to
-`dist/installers/`. These are ad-hoc signed, unnotarized builds and are never
-uploaded automatically. See [macOS packaging](desktop/PACKAGING.md) for build
-commands, verification, and the release checklist.
+Future release installers are built in GitHub Actions: native Apple Silicon and
+Intel jobs build and test macOS DMGs, and the Windows job builds and tests the
+x64 installer. Download `SportsOver-macos-arm64`, `SportsOver-macos-x64`, and
+`SportsOver-windows-x64` artifacts from successful runs for the release commit.
+Each includes its installer, SHA-256 checksum, and installation instructions.
+Mac builds remain ad-hoc signed and unnotarized; Windows builds remain unsigned.
+CI produces artifacts without publishing a release. Local `dist:mac`/`dist:win`
+commands remain available for troubleshooting. See [desktop packaging](desktop/PACKAGING.md)
+for CI verification and the release checklist.
 
 The menu-bar scoreboard uses a compact template icon with a persistent position. Its initial position is near the right edge to avoid a crowded MacBook notch area; Cmd-drag can reposition it. Banner controls also remain available in the Banner application menu.
 
