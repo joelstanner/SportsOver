@@ -3,6 +3,21 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.30.0 — 2026-10-03
+
+### Added
+
+- Games starting in less than an hour show a countdown that updates every
+  second in banners, Live control cards, and desktop/OBS output. At the
+  scheduled start, they show Starting soon until the feed reports play.
+
+### Changed
+
+- Football, basketball, their college leagues, and soccer show full team
+  names during halftime, returning to abbreviations when play resumes.
+
+Existing settings are preserved. No migration is required.
+
 ## 0.29.0 — 2026-10-03
 
 ### Added

@@ -39,6 +39,7 @@ function layoutFixture() {
   const elements = new Map(), timers = new Map(); let timerId = 0;
   function element(id) {
     if (!elements.has(id)) elements.set(id, { hidden: false, textContent: '', isConnected: true, dataset: {},
+      closest: selector => { assert.equal(selector, '#sports-overlay'); return element(selector); },
       clientWidth: 438, scrollWidth: 300, style: { setProperty() {}, removeProperty() {} },
       classList: { add() {}, remove() {}, toggle() {} }, setAttribute() {}, removeAttribute() {} });
     return elements.get(id);
