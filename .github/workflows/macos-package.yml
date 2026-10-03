@@ -59,7 +59,7 @@ jobs:
           test -f "$app/Contents/Resources/$icon"
           native_arch="$ARCH"
           if [ "$ARCH" = x64 ]; then native_arch=x86_64; fi
-          lipo -verify_arch "$native_arch" "$app/Contents/MacOS/SportsOver"
+          lipo "$app/Contents/MacOS/SportsOver" -verify_arch "$native_arch"
           npm run verify:package -- "$app/Contents/Resources/app.asar"
           node -e 'const a=require("@electron/asar"), assert=require("node:assert/strict"); assert.equal(JSON.parse(a.extractFile(process.argv[1],"package.json")).version,process.env.VERSION)' "$app/Contents/Resources/app.asar"
       - name: Smoke packaged executable
