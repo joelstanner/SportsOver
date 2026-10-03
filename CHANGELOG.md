@@ -3,6 +3,13 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.21.1 — 2026-10-02
+
+### Fixed
+
+- Keep rotation and available-game lists at their scroll positions when changing
+  a game's display time or refreshing games, including cards with odds.
+
 ## 0.21.0 — 2026-10-02
 
 ### Added

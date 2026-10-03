@@ -725,7 +725,10 @@
     const queue = currentRotationQueue();
     const queueList = document.querySelector("#rotation-queue");
     const availableList = document.querySelector("#available-games");
-    for (const list of [queueList, availableList]) {
+    // Clearing odds and rebuilding cards can shrink a scrolled list temporarily.
+    // Restore its position only after all of its replacement cards are mounted.
+    const listPositions = [queueList, availableList].map(list => ({ list, scrollTop: list.scrollTop }));
+    for (const { list } of listPositions) {
       list.querySelectorAll(".game-copy").forEach(mount => oddsApi.clear(mount));
     }
     queueList.replaceChildren();
@@ -752,6 +755,7 @@
       ? "No additional PDGA divisions available. Divisions already in rotation are listed above."
       : availableRotationEntries.length ? "No matching current games." : "No games loaded yet.");
     available.forEach(entry => renderAvailableGame(entry, availableList));
+    for (const { list, scrollTop } of listPositions) list.scrollTop = scrollTop;
     if (!global.sportsDesktop && active) {
       const expiry = localLiveMode.nextExpiry(workingConfig.liveModeFinalMinutes);
       if (Number.isFinite(expiry)) {
