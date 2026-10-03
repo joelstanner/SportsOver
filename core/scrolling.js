@@ -86,10 +86,12 @@
       if (!manual || held(viewport) || touching || reducedMotion()) return;
       const remaining = 180 - (performance.now() - lastInput);
       if (remaining > 0) { timer = setTimeout(resume, remaining); return; }
-      // Match the existing animation's 25%-85% travelling segment exactly.
+      // Invert the smoothstep easing used by the 25%-85% travelling segment
+      // (cubic-bezier(1/3, 0, 2/3, 1)) to resume at the visible position.
       const distance = maximum(), position = clamp(viewport.scrollTop);
       const seconds = parseFloat(track.style.getPropertyValue("--vertical-duration")) || 20;
-      const phase = distance ? .25 + .6 * position / distance : 0;
+      const progress = distance ? .5 - Math.sin(Math.asin(1 - 2 * position / distance) / 3) : 0;
+      const phase = distance ? .25 + .6 * progress : 0;
       track.style.setProperty("--vertical-delay", `${-phase * seconds}s`);
       manual = false;
       viewport.scrollTop = 0;
@@ -140,8 +142,10 @@
         const focused = viewport.contains(document.activeElement);
         const animation = track.getAnimations()[0];
         const duration = (parseFloat(track.style.getPropertyValue("--vertical-duration")) || 20) * 1000;
-        const delay = (parseFloat(getComputedStyle(track).animationDelay) || 0) * 1000;
-        const phase = animation ? ((Number(animation.currentTime) - delay) % duration) / duration : undefined;
+        const style = getComputedStyle(track);
+        const delay = (parseFloat(style.animationDelay) || 0) * 1000;
+        const elapsed = animation ? Math.max(0, (Number(animation.currentTime) - delay) / duration) : 0;
+        const phase = animation ? style.animationIterationCount === "1" ? Math.min(1, elapsed) : elapsed % 1 : undefined;
         return { key: viewport.dataset.scrollIdentity, lastInput, focused, touching,
           focusHref: focused ? document.activeElement.href : null,
           ...((manual || local || held(viewport) || reducedMotion()) ? { position: offset(viewport), distance: maximum(), phase } : {}),

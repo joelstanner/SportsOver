@@ -12,9 +12,12 @@
 .scorebug-vertical-viewport { height:45px; overflow-x:hidden; overflow-y:auto; overscroll-behavior-y:contain; scrollbar-width:none; touch-action:pan-y; }
 .scorebug-vertical-viewport::-webkit-scrollbar { display:none; }
 .scorebug-vertical-viewport.is-manual-scrolling .scorebug-vertical-track { animation:none; transform:none; }
-.scorebug-vertical-track.is-scrolling-vertically { animation: scorebug-vertical var(--vertical-duration,20s) linear infinite; animation-delay:var(--vertical-delay,0s); }
+.scorebug-vertical-track.is-scrolling-vertically { animation: scorebug-vertical var(--vertical-duration,20s) linear infinite forwards; animation-delay:var(--vertical-delay,0s); }
+/* Keep the last rows visible while the next banner loads and transitions out. */
+#sports-overlay[data-rotation-active="true"] .is-scrolling-vertically { animation-iteration-count:1; }
 @keyframes scorebug-vertical {
-  0%, 25% { transform:translateY(0); }
+  0% { transform:translateY(0); }
+  25% { transform:translateY(0); animation-timing-function:cubic-bezier(.333333,0,.666667,1); }
   85%, 100% { transform:translateY(var(--vertical-distance)); }
 }
 .scorebug-vertical-viewport:hover .is-scrolling-vertically, .scorebug-vertical-viewport:focus-within .is-scrolling-vertically { animation-play-state:paused; }

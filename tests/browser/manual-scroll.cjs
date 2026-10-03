@@ -38,6 +38,17 @@ const root = path.resolve(__dirname, '../..');
       await page.mouse.move(800, 300);
       await page.evaluate(kind => setup(kind), kind);
       await viewport.hover();
+      const eased = await viewport.evaluate(el => {
+        const animation = el.firstElementChild.getAnimations()[0];
+        const at = time => {
+          animation.currentTime = time;
+          return -new DOMMatrixReadOnly(getComputedStyle(el.firstElementChild).transform).m42;
+        };
+        return [at(5500), at(11000), at(16500)];
+      });
+      assert.ok(eased[0] > 0 && eased[0] < 1, 'automatic scroll eases into motion');
+      assert.ok(Math.abs(eased[1] - 52.5) < .1, 'automatic scroll reaches the midpoint on time');
+      assert.ok(eased[2] > 104 && eased[2] < 105, 'automatic scroll eases to a stop');
       await viewport.evaluate(el => { el.firstElementChild.getAnimations()[0].currentTime = 10000; });
       const before = await position(page);
       assert.ok(before > 20 && before < 70);
@@ -98,7 +109,8 @@ const root = path.resolve(__dirname, '../..');
     const mirror = await context.newPage();
     await mirror.addInitScript(() => {
       window.actions = [];
-      window.sportsDesktop = { action: async (...args) => actions.push(args), status: async () => ({ fullscreen: false }), onFullscreenChange() {} };
+      window.sportsDesktop = { action: async (...args) => { if (args[0] !== 'banner-hover') actions.push(args); },
+        status: async () => ({ fullscreen: false }), onFullscreenChange() {}, onFrame() {} };
     });
     await mirror.goto(running.url.replace('/output', '/sports/display.html?desktop=1'));
     await mirror.waitForFunction(() => document.body.dataset.sequence === '1');
@@ -122,6 +134,24 @@ const root = path.resolve(__dirname, '../..');
       await mirror.waitForFunction(sequence => Number(document.body.dataset.sequence) === sequence, frame.sequence);
     }
     assert.ok(await position(mirror) < 20, 'automatic scroll wraps after bottom dwell despite refreshes');
+    // Rotation holds the last rows even when loading/polling delays the handoff.
+    frame = { ...frame, sequence: frame.sequence + 1, gameKey: 'rotating-pdga', transition: 'quick',
+      html: frame.html.replace('id="sports-overlay"', 'id="sports-overlay" data-rotation-active="true"')
+        .replace(/--vertical-delay: [^;"]+/, '--vertical-delay: -21s') };
+    await mirror.waitForFunction(sequence => Number(document.body.dataset.sequence) === sequence, frame.sequence);
+    assert.equal(await position(mirror), 105, 'completed rotating scroll holds at bottom');
+    await mirrored.focus();
+    for (let i = 0; i < 3; i++) {
+      frame = { ...frame, sequence: frame.sequence + 1, html: frame.html.replace(/--vertical-delay: [^;"]+/, `--vertical-delay: -${22 + i}s`) };
+      await mirror.waitForFunction(sequence => Number(document.body.dataset.sequence) === sequence, frame.sequence);
+      assert.equal(await position(mirror), 105, 'refresh preserves completed phase instead of wrapping to top');
+    }
+    await mirrored.evaluate(el => el.blur());
+    frame = { ...frame, sequence: frame.sequence + 1, gameKey: 'next-pdga', transition: 'quick',
+      html: frame.html.replace('data-rotation-active="true"', 'data-rotation-active="false"')
+        .replace(/--vertical-delay: [^;"]+/, '--vertical-delay: 0s') };
+    await mirror.waitForFunction(sequence => Number(document.body.dataset.sequence) === sequence, frame.sequence);
+    assert.equal(await position(mirror), 0, 'quick rotation starts the next banner at the top');
     // Touch gestures on the desktop list scroll content without starting a window drag.
     await mirrored.focus();
     await mirror.keyboard.press('Home');
@@ -143,7 +173,7 @@ const root = path.resolve(__dirname, '../..');
     assert.equal(await position(page), 0);
     assert.equal(await viewport.evaluate(el => el.classList.contains('is-manual-scrolling')), false);
     assert.deepEqual(errors, []);
-    console.log('Manual scrolling passed: PDGA, chess standings/matchups, wheel, keyboard, refresh, clamp/reset, resume/wrap, reduced motion, desktop mirror at 200%, touch and desktop gesture isolation.');
+    console.log('Manual scrolling passed: PDGA, chess standings/matchups, wheel, keyboard, refresh, clamp/reset, eased resume/wrap, rotation bottom hold and quick handoff, reduced motion, desktop mirror at 200%, touch and desktop gesture isolation.');
   } finally {
     await browser.close();
     if (server) await new Promise(resolve => server.close(resolve));

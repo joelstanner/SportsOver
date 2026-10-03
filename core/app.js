@@ -235,6 +235,7 @@ async function startDemoRotation() {
   }
 
   let demoIndex = 0;
+  document.querySelector("#sports-overlay").dataset.rotationActive = String(demos.length > 1);
   await renderDemoEvent(demos[demoIndex]);
   const advance = async () => {
     demoIndex = (demoIndex + 1) % demos.length;
@@ -525,6 +526,8 @@ function scheduleRotation() {
   rotationTimer = null;
   pendingRotation = null;
   const generation = ++rotationGeneration;
+  const mount = document.querySelector("#sports-overlay");
+  if (mount) mount.dataset.rotationActive = String(!overrideEntry && rotationQueue.length > 1);
   if (overrideEntry || rotationQueue.length < 2) return;
   const advance = async () => {
     if (generation !== rotationGeneration) return;

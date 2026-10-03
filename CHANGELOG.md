@@ -3,6 +3,25 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.29.0 — 2026-10-03
+
+### Added
+
+- Team names and logos open the current game's MLB or ESPN page when a game
+  link is available.
+
+### Fixed
+
+- Vertical scrolling banners hold their last rows until rotation finishes,
+  preventing a jump back to the top before the next banner appears.
+
+### Changed
+
+- Vertical scrolling eases into motion and into its stop. Manual scrolling
+  resumes smoothly, while single banners and temporary overrides keep looping.
+
+Existing settings are preserved. No migration is required.
+
 ## 0.28.2 — 2026-10-03
 
 ### Fixed

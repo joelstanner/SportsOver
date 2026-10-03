@@ -9,6 +9,7 @@ require("../../core/config.js");
 async function fixture(extraFavorites = [], gameCount = 2, useRealSelection = false, discoveryIntervalMs, individual = false) {
   let now = 0, timerId = 0, notify, visibility;
   const timers = new Map(), calls = [], renders = [];
+  const mount = { dataset: {}, classList: { remove() {} } };
   let release = null, holdNext = false, schedulesOffline = false;
   const config = { sports: [{ sport: "baseball", favorites: [{ teamKey: "team", enabled: true }, ...extraFavorites] }],
     providerRefreshSeconds: { baseball: { live: 12, pregame: 60, idle: 300, final: 300 } },
@@ -48,7 +49,8 @@ async function fixture(extraFavorites = [], gameCount = 2, useRealSelection = fa
       return response(url.startsWith("schedule") ? { events: structuredClone(games) } : { id: url, state: game?.state || "live", competitionType: game?.competitionType });
     },
     SportsOverlay: api, location: { search: "" }, addEventListener: () => {},
-    document: { querySelector: () => null, addEventListener: (_, fn) => { visibility = fn; } },
+    matchMedia: () => ({ matches: true }),
+    document: { querySelector: () => mount, addEventListener: (_, fn) => { visibility = fn; } },
   });
   context.window = context;
   const mockedSelection = api.selection;
@@ -69,7 +71,7 @@ async function fixture(extraFavorites = [], gameCount = 2, useRealSelection = fa
     }
     now = end; await flush();
   }
-  return { calls, renders, timers, advance, flush, visibility, engine: api.engine, config, games,
+  return { calls, renders, timers, advance, flush, visibility, mount, engine: api.engine, config, games,
     failSchedules: value => { schedulesOffline = value; },
     async save(patch) {
       Object.assign(config, patch);
@@ -95,6 +97,21 @@ async function fixture(extraFavorites = [], gameCount = 2, useRealSelection = fa
     hold() { holdNext = true; }, async release() { const fn = release; release = null; fn(); await flush(); },
   };
 }
+
+test('scrolls hold at the bottom during rotation and repeat for a single banner or override', async () => {
+  const app = await fixture();
+  assert.equal(app.mount.dataset.rotationActive, 'true');
+  await app.engine.override({ gameKey: 'baseball:1' }); await app.flush();
+  assert.equal(app.mount.dataset.rotationActive, 'false');
+  await app.engine.override(null); await app.flush();
+  assert.equal(app.mount.dataset.rotationActive, 'true');
+  await app.save({ lockedGameKeys: ['baseball:1'] });
+  assert.equal(app.mount.dataset.rotationActive, 'false');
+  await app.save({ lockedGameKeys: [] });
+  assert.equal(app.mount.dataset.rotationActive, 'true');
+  const single = await fixture([], 1);
+  assert.equal(single.mount.dataset.rotationActive, 'false');
+});
 
 test('a discovery outage retains received games and recovers to a genuinely empty feed', async () => {
   const app = await fixture();
