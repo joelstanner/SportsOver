@@ -6,7 +6,7 @@ const config = global.SportsOverlay.config.normalizeConfig();
 config.sports.forEach(g=>{g.enabled=['chess','disc-golf'].includes(g.sport);if(g.autoFollow!==undefined)g.autoFollow=false;});
 const metadata = require('../sports/disc-golf/event.json'), scores = require('../sports/disc-golf/round.json');
 const chessMeta={tour:{id:'Tour1234',name:'Masters Invitational'},rounds:[{id:'Round001',name:'Round 1',ongoing:true}]};
-const chessRound={tour:chessMeta.tour,round:chessMeta.rounds[0],games:[{id:'Game0001',players:[{name:'Leader',fideId:123,clock:6000},{name:'Opponent',fideId:456,clock:12000}],lastMove:'e2e4'}]};
+const chessRound={tour:chessMeta.tour,round:chessMeta.rounds[0],games:[{id:'Game0001',players:[{name:'Leader',fideId:123,clock:6000},{name:'Opponent',fideId:456,clock:12000}],lastMove:''}]};
 const standings=Array.from({length:12},(_,i)=>({name:i?'Player '+(i+1):'Leader',fideId:123+i,rank:i+1,score:7-i/2,played:8}));
 (async()=>{
  const browser=await chromium.launch({headless:true,channel:process.env.PLAYWRIGHT_CHANNEL||'chrome'});

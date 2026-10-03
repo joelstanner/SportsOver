@@ -14,6 +14,7 @@
     delete mount.dataset.preseason;
     let lastEvent = null, scrollState = null;
     function render(event) {
+      const scrollSnapshot = global.SportsOverlay.scrolling?.capture(mount);
       lastEvent = event;
       const { details, competitors } = event;
       const stale = details.stale && event.state !== "pregame";
@@ -45,9 +46,11 @@
         <div class="pdga-footer"><span class="scorebug-scroll-viewport"><span class="scorebug-scroll-text">${escape(footer)}</span></span><a href="https://www.pdga.com/live/event/${encodeURIComponent(details.tournamentId)}/${encodeURIComponent(details.division)}/scores?round=${encodeURIComponent(details.round)}" target="_blank" rel="noopener">Scores: PDGA ↗</a></div>`;
       global.SportsOverlay.scrolling?.render(mount.querySelector(".scorebug-scroll-viewport"), mount.querySelector(".scorebug-scroll-text"), footer);
       scrollState = global.SportsOverlay.scrolling?.vertical(mount.querySelector(".scorebug-vertical-viewport"), event, scrollState);
+      global.SportsOverlay.scrolling?.restore(mount, scrollSnapshot);
       return event.state;
     }
     function renderNoEvent(message = "Choose a PDGA tournament in Settings", visible = true) {
+      global.SportsOverlay.scrolling?.capture(mount);
       lastEvent = null; scrollState = null;
       mount.setAttribute("aria-label", `PDGA · ${message}`);
       delete mount.dataset.stale;
@@ -59,7 +62,8 @@
       if (lastEvent) render({ ...lastEvent, details: { ...lastEvent.details, stale: true } });
       else renderNoEvent("PDGA unavailable · awaiting scheduled update");
     }
-    return { render, renderNoEvent, handleError };
+    function dispose() { global.SportsOverlay.scrolling?.capture(mount); }
+    return { render, renderNoEvent, handleError, dispose };
   }
   function metric(label, value, className = "") { return `<div class="pdga-metric"><small>${label}</small><strong class="${className}">${escape(value)}</strong></div>`; }
   global.SportsOverlay.registry.registerLayout("disc-golf", { createLayout });

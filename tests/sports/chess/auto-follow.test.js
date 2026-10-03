@@ -147,3 +147,30 @@ test('second-tier failures keep last received suggestions labeled stale and heal
  assert.equal(failed.availableEntries.length,1);assert.equal(failed.availableEntries[0].candidate.raw.stale,true);assert.ok(failed.failures>0);
  f.directory.length=0;f.advance(900000);assert.equal((await client.discover()).availableEntries.length,0);
 });
+
+test('a saved Add selection loads directly after restart with discovery off and follows the next round',async()=>{
+ const f=fixture(),id=f.add('Norm0001',3);
+ const config=api.config.normalizeConfig({includedGames:[`chess:${id}:auto`],sports:[{sport:'chess',autoFollow:false,discoverSecondTier:false}]});
+ f.directory.length=0;f.offlineDirectory(true);
+ const client=()=>lichess.createClient({...f.options,session:lichess.createSession(),autoFollow:false,discoverSecondTier:false,watches:api.config.eventWatches(config,'chess')});
+ assert.deepEqual(ids(await client().discover()),[`${id}:auto`]);
+ f.set(id,'break');
+ let event=await client().getEvent(`${id}:auto`);assert.equal(event.details.roundName,'Round 2');assert.equal(event.state,'pregame');
+ const item=f.tours.get(id);item.payload.round=item.metadata.rounds[1];item.payload.round.ongoing=true;item.payload.games[0].status='*';
+ event=await client().getEvent(`${id}:auto`);assert.equal(event.state,'live');
+ assert.ok(!f.calls.some(url=>url.pathname.endsWith('/top')));
+ config.includedGames=[];assert.deepEqual(ids(await client().discover()),[]);
+});
+
+test('freshly inspected second-tier games remain available when later discovery is rate-limited',async()=>{
+ const f=fixture(),id=f.add('Norm0001',3);f.tours.get(id).payload.games[0].players=[{name:'A',title:'GM'},{name:'B',title:'GM'}];
+ f.add('Norm0002',3);
+ const original=f.options.fetchImpl;
+ const client=lichess.createClient({...f.options,autoFollow:false,discoverSecondTier:true,fetchImpl:url=>url.endsWith('Norm0002')?Promise.resolve(new Response('{}',{status:429})):original(url)});
+ const result=await client.discover();
+ assert.equal(result.availableEntries[0].candidate.id,`${id}:auto`);
+ assert.equal(result.availableEntries[0].candidate.state,'live');
+ assert.equal((await client.getEvent(`${id}:auto`)).details.standingsUnavailable,true);
+ assert.ok(result.failures>0);
+ assert.equal(client.discoveryIntervalMs,60000);
+});

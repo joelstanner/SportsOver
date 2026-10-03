@@ -337,16 +337,36 @@
     return Boolean(watch && watch.enabled !== false && (watch.view !== "player" || watch.playerId));
   }
 
+  // Explicit rotation selections are durable identities, even when a temporary
+  // discovery shortlist changes or disappears after restarting the engine.
+  function eventWatches(config, sport) {
+    const group = config.sports.find(group => group.sport === sport);
+    const watches = [...(group?.events || [])], seen = new Set(watches.map(watchId));
+    for (const key of config.includedGames || []) {
+      const match = sport === "chess" ? /^chess:([a-zA-Z0-9]{8}):auto$/.exec(key)
+        : sport === "disc-golf" ? /^disc-golf:([1-9]\d{0,8}):([A-Z][A-Z0-9]{1,5})$/.exec(key) : null;
+      if (!match) continue;
+      const watch = sport === "chess"
+        ? { tournamentId: match[1], roundId: "", view: "overview" }
+        : { tournamentId: match[1], division: match[2], view: "leaderboard" };
+      const id = watchId(watch);
+      if (seen.has(id)) continue;
+      seen.add(id);
+      watches.push({ ...watch, name: `${sport === "chess" ? "Chess" : "PDGA"} ${match[1]}`, enabled: true, playerId: "", leaderboardSize: 10 });
+    }
+    return watches;
+  }
+
   function isCandidateEnabled(config, candidate) {
     const group = config.sports.find(group => group.sport === candidate?.sport);
     if (!group || group.enabled === false) return false;
     if (candidate.sport === "chess") {
-      const watch = group.events.find(event => watchId(event) === candidate.id);
+      const watch = eventWatches(config, "chess").find(event => watchId(event) === candidate.id);
       return watch ? isWatchEnabled(watch) : candidate.raw?.automatic === true
         && (candidate.raw.discoveryTier === "second" ? group.discoverSecondTier !== false : group.autoFollow === true);
     }
     if (candidate.sport !== "disc-golf") return true;
-    const watch = group.events.find(event => watchId(event) === candidate.id);
+    const watch = eventWatches(config, "disc-golf").find(event => watchId(event) === candidate.id);
     if (watch) return isWatchEnabled(watch);
     return candidate.raw?.automatic === true
       && (candidate.raw.discoveryTier === "second" ? group.discoverSecondTier !== false : group.autoFollow === true)
@@ -378,6 +398,7 @@
     enabledTeams,
     isCandidateEnabled,
     isWatchEnabled,
+    eventWatches,
     watchId,
   });
 })(typeof window === "undefined" ? globalThis : window);

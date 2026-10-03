@@ -3,6 +3,37 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.26.0 — 2026-10-03
+
+### Added
+
+- Manual wheel, trackpad, touch, and keyboard scrolling for PDGA leaderboards
+  and chess standings/matchups, preserving hover pause and position through
+  score refreshes in desktop and OBS displays.
+- Live chess banners show all round boards with tournament points, clock
+  snapshots, moves, and results. Player names open the board's game or the
+  player's broadcast card.
+- A Banner size submenu in the banner's right-click menu, with all 50–300%
+  presets and the current size checked across desktop menus.
+
+### Changed
+
+- ESPN, MLB, and PDGA requests share paced service queues and rate-limit
+  cooldowns. Displayed-game requests take priority while background work
+  continues to receive turns; queued duplicates are promoted without refetching.
+- Sports join rotation as their discovery finishes, with per-sport loading
+  status instead of waiting for every provider.
+- GitHub update checks honor rate-limit retry times across app restarts.
+
+### Fixed
+
+- Explicitly added chess tournaments and PDGA divisions remain discoverable
+  after restarts or changes to automatic suggestions. Removing a watch clears
+  its saved inclusion so it cannot reappear unexpectedly.
+- Tournament title links fit their text without consuming adjacent blank space.
+
+Existing settings are preserved. No migration is required.
+
 ## 0.25.0 — 2026-10-03
 
 ### Added

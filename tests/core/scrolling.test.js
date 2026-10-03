@@ -52,6 +52,15 @@ test('vertical leaderboard keeps elapsed time on refresh and resets for a differ
   assert.equal(styles['--vertical-distance'],'-105px');
   assert.equal(styles['--vertical-duration'],'20s');
   assert.notEqual(scrolling.vertical(viewport,{...event,id:'Other123:auto'},state),state);
+  viewport.dataset = {scrollKey:'matchups:Round006',scrollLabel:'10 round matchups. Scroll to see all boards.'};
+  let label;
+  viewport.setAttribute = (name, value) => { if (name === 'aria-label') label = value; };
+  const matchups = scrolling.vertical(viewport,event,state);
+  assert.notEqual(matchups,state,'switching from standings resets the scroll');
+  assert.equal(label,viewport.dataset.scrollLabel);
+  assert.equal(scrolling.vertical(viewport,event,matchups),matchups);
+  viewport.dataset.scrollKey = 'matchups:Round007';
+  assert.notEqual(scrolling.vertical(viewport,event,matchups),matchups,'a new round starts at its first board');
   track.children=Array(3);
   assert.equal(scrolling.vertical(viewport,event,state),null);
 });

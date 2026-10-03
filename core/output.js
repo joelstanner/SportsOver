@@ -61,7 +61,11 @@
         const gameChanged = engineInstance === frame.instance && displayedGameKey
           && frame.gameKey && displayedGameKey !== frame.gameKey;
         if (gameChanged) await animate(mount, 'is-rotating-out');
+        const scrolling = window.SportsOverlay?.scrolling;
+        const scrollSnapshot = scrolling?.capture(mount);
         updateNode(mount, template.content.firstElementChild);
+        scrolling?.restore(document.querySelector('#sports-overlay'),
+          gameChanged || engineInstance !== frame.instance ? null : scrollSnapshot);
         if (gameChanged) await animate(document.querySelector('#sports-overlay'), 'is-rotating-in');
         displayedGameKey = frame.gameKey;
         engineInstance = frame.instance;

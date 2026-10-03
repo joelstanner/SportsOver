@@ -38,9 +38,12 @@ const empty = { ready: true, discoveryComplete: false, discoveryPending: true, a
     assert.match(await page.locator('#available-games').innerText(), /Loading games/);
     assert.equal(await page.locator('#available-games').getAttribute('aria-busy'), 'true');
     const healthy = { ...empty, discoveryComplete: true, discoveryPending: false, availableEntries: entries, automaticEntries: [entries[0]], queue: [entries[0]] };
-    engineState = healthy;
+    engineState = { ...healthy, discoveryPending: true, loadingSports: ['disc-golf'] };
     await page.locator('#rotation-queue .game-card').waitFor();
     await page.locator('#available-games .game-card').waitFor();
+    await page.waitForFunction(() => document.querySelector('#rotation-status').textContent.includes('Loading Disc golf'));
+    assert.match(await page.locator('#rotation-status').innerText(), /Showing available games/);
+    assert.equal(await page.locator('#available-games').getAttribute('aria-busy'), 'true');
     engineState = { ...healthy, discoveryPending: true };
     await page.waitForFunction(() => document.querySelector('#rotation-status').textContent.includes('Loading game updates'));
     assert.match(await page.locator('#rotation-count').innerText(), /1 game · loading/);

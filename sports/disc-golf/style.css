@@ -5,8 +5,8 @@
 .pdga-bar { height:18px; display:flex; align-items:center; gap:7px; padding:0 10px; background:linear-gradient(110deg,#23665c80,#091a258c 60%,#24496166); border-bottom:1px solid #ffffff24; font-size:8px; }
 .pdga-brand { display:inline-flex; align-items:center; gap:4px; flex-shrink:0; white-space:nowrap; color:#83dece; font-weight:850; letter-spacing:.12em; }
 .pdga-brand-icon { width:13px; height:13px; flex-shrink:0; }
-.pdga-event { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.pdga-state { color:#c2d2de; font-size:7px; font-weight:800; white-space:nowrap; }
+.pdga-event { flex:0 1 auto; margin-right:auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pdga-state { flex-shrink:0; color:#c2d2de; font-size:7px; font-weight:800; white-space:nowrap; }
 .pdga-scorebug[data-state="live"] .pdga-state { color:#92e4d3; }
 .pdga-board { height:55px; padding:0 10px; }
 .pdga-labels,.pdga-entry { display:grid; grid-template-columns:22px minmax(0,1fr) 49px 47px 33px; align-items:center; column-gap:4px; }

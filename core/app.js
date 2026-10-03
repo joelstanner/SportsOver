@@ -51,6 +51,7 @@ let renderedGameKey = null;
 let automaticRotationEntries = [];
 let overrideEntry = null;
 let discoveryPending = null;
+let loadingSports = new Set();
 let rediscover = false;
 let normalRotationQueue = [];
 let liveRotationQueue = [];
@@ -61,6 +62,7 @@ window.SportsOverlay.engine = {
   describe: () => ({
     discoveryComplete: cachedDiscoveries !== null,
     discoveryPending: Boolean(discoveryPending),
+    loadingSports: [...loadingSports],
     discoveryFailures: (cachedDiscoveries || []).reduce((total, result) => total + (result.failures || 0), 0),
     availableEntries: (cachedDiscoveries || []).flatMap(result => result.availableEntries).map(publicEntry),
     automaticEntries: automaticRotationEntries.map(publicEntry),
@@ -116,13 +118,13 @@ function createSportContext(group) {
   if (group.sport === "disc-golf") {
     const providerModule = window.SportsOverlay.registry.getProvider("pdga");
     return { sport: group.sport, league: "PDGA", providerModule,
-      provider: providerModule.createClient({ watches: group.events, autoFollow: group.autoFollow, discoverSecondTier: group.discoverSecondTier, autoDivisions: group.autoDivisions, session: pdgaSession, requestTimeoutMs: CONFIG.requestTimeoutMs,
+      provider: providerModule.createClient({ watches: window.SportsOverlay.config.eventWatches(savedConfig, group.sport), autoFollow: group.autoFollow, discoverSecondTier: group.discoverSecondTier, autoDivisions: group.autoDivisions, session: pdgaSession, requestTimeoutMs: CONFIG.requestTimeoutMs,
         fetchImpl: refresh.fetchFor(group.sport, providerModule) }) };
   }
   if (group.sport === "chess") {
     const providerModule = window.SportsOverlay.registry.getProvider("lichess");
     return { sport: group.sport, league: "Lichess", providerModule,
-      provider: providerModule.createClient({ watches: group.events, autoFollow: group.autoFollow, discoverSecondTier: group.discoverSecondTier, session: chessSession, requestTimeoutMs: CONFIG.requestTimeoutMs,
+      provider: providerModule.createClient({ watches: window.SportsOverlay.config.eventWatches(savedConfig, group.sport), autoFollow: group.autoFollow, discoverSecondTier: group.discoverSecondTier, session: chessSession, requestTimeoutMs: CONFIG.requestTimeoutMs,
         fetchImpl: refresh.fetchFor(group.sport, providerModule) }) };
   }
   const favoriteTeams = group.favorites
@@ -245,9 +247,9 @@ function discoverGames(refresh = true) {
 async function discoverGamesOnce(refresh = true) {
   const generation = ++discoveryGeneration;
   clearTimeout(discoveryTimer);
-  clearTimeout(pollTimer);
-  pollGeneration += 1;
   if (!sportContexts.length) {
+    loadingSports.clear();
+    clearTimeout(pollTimer); pollGeneration++;
     rotationQueue = []; normalRotationQueue = []; liveRotationQueue = []; automaticRotationEntries = []; cachedDiscoveries = [];
     liveMode.update({ enabledSports: [] });
     overrideEntry = null; currentIndex = 0;
@@ -258,12 +260,28 @@ async function discoverGamesOnce(refresh = true) {
     return;
   }
 
-  const discoveries = !refresh && cachedDiscoveries ? cachedDiscoveries : await Promise.all(sportContexts.map(discoverSport));
+  const contexts = [...sportContexts];
+  if (refresh || !cachedDiscoveries) {
+    loadingSports = new Set(contexts.map(context => context.sport));
+    await Promise.all(contexts.map(async context => {
+      const result = await discoverSport(context);
+      if (generation !== discoveryGeneration) return;
+      loadingSports.delete(context.sport);
+      const received = new Map((cachedDiscoveries || []).map(item => [item.sport, item]));
+      received.set(context.sport, result);
+      cachedDiscoveries = contexts.flatMap(item => received.has(item.sport) ? [received.get(item.sport)] : []);
+      await applyDiscoveries(cachedDiscoveries, generation, true);
+    }));
+  }
   if (generation !== discoveryGeneration) return;
-  const synchronized = await window.SportsOverlay.automaticWatches?.sync(discoveries);
+  await applyDiscoveries(cachedDiscoveries || [], generation);
+  if (generation !== discoveryGeneration) return;
+  const synchronized = await window.SportsOverlay.automaticWatches?.sync(cachedDiscoveries || []);
   if (generation !== discoveryGeneration) return;
   if (synchronized) savedConfig.automaticWatchLists = synchronized.automaticWatchLists;
-  cachedDiscoveries = discoveries;
+}
+
+async function applyDiscoveries(discoveries, generation, partial = false) {
   const availableEntries = discoveries.flatMap(result => result.availableEntries);
   const watchedTeams = sportContexts.flatMap(context => {
     const teams = context.favoriteTeams || [];
@@ -297,14 +315,19 @@ async function discoverGamesOnce(refresh = true) {
     rotationTimer = null;
     rotationGeneration += 1;
     renderedGameKey = null;
-    layout.renderNoEvent(liveMode.isActive() ? "No live games in rotation" : discoveries.some(result => result.failures) ? "Scores unavailable · retrying automatically" : "No watched or live spotlight games found", liveMode.isActive() || CONFIG.showNoGameMessage);
-    scheduleDiscovery();
+    layout.renderNoEvent(loadingSports.size ? "Loading games…" : liveMode.isActive() ? "No live games in rotation" : discoveries.some(result => result.failures) ? "Scores unavailable · retrying automatically" : "No watched or live spotlight games found", liveMode.isActive() || CONFIG.showNoGameMessage);
+    if (!partial) scheduleDiscovery();
     return;
   }
 
-  scheduleDiscovery();
-  await renderCurrentGame({ animate: changedGame });
-  schedulePoll();
+  if (!partial) scheduleDiscovery();
+  // New sports can join the queue without interrupting an already displayed
+  // game or waiting for its next score request. Existing polling keeps running.
+  if (!partial || changedGame || !renderedGameKey) {
+    await renderCurrentGame({ animate: changedGame });
+    if (generation !== discoveryGeneration) return;
+    schedulePoll();
+  }
   const tournamentStateChanged = rotationQueue[currentIndex]?.candidate.competitionType === "individual"
     && rotationQueue[currentIndex].candidate.state !== previousState;
   if (!rotationTimer || changedGame || tournamentStateChanged || rotationQueue.length < 2) scheduleRotation();
@@ -402,7 +425,7 @@ function renderCurrentGame(options = {}) {
 async function renderGame(entry, revision, { animate = false } = {}) {
   if (revision !== requestRevision) return;
   try {
-    let event = await entry.context.provider.getEvent(entry.candidate.id, entry.featuredTeamId);
+    let event = await entry.context.provider.getEvent(entry.candidate.id, entry.featuredTeamId, { priority: 'display' });
     const discovered = cachedDiscoveries?.flatMap(result => result.availableEntries)
       .find(candidate => entryKey(candidate) === entryKey(entry));
     if (entry.context.providerModule.withSchedule) {
@@ -556,7 +579,8 @@ if (!staticPreview) {
     lastInstance = snapshot.instance;
     const timingChanged = JSON.stringify(savedConfig.gameDurations) !== JSON.stringify(snapshot.config.gameDurations)
       || JSON.stringify(savedConfig.defaultGameDurations) !== JSON.stringify(snapshot.config.defaultGameDurations);
-    const teamsChanged = JSON.stringify(savedConfig.sports) !== JSON.stringify(snapshot.config.sports);
+    const teamsChanged = JSON.stringify(savedConfig.sports) !== JSON.stringify(snapshot.config.sports)
+      || JSON.stringify(savedConfig.includedGames) !== JSON.stringify(snapshot.config.includedGames);
     const pdgaSelectionChanged = savedConfig.liveModeFinalMinutes !== snapshot.config.liveModeFinalMinutes
       || JSON.stringify(savedConfig.excludedGames) !== JSON.stringify(snapshot.config.excludedGames);
     const selectionChanged = pdgaSelectionChanged || savedConfig.fallbackMode !== snapshot.config.fallbackMode || savedConfig.displayMode !== snapshot.config.displayMode;

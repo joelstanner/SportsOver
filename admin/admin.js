@@ -424,7 +424,12 @@
       favoriteList.hidden = !enabled.checked;
       if (sport.competitionType === "individual") {
         const renderAutomaticWatches = () => renderAutomaticWatchList(favoriteList, group);
-        global.SportsOverlay[sport.key === "chess" ? "chessSettings" : "pdgaSettings"].render(favoriteList, group, () => {
+        global.SportsOverlay[sport.key === "chess" ? "chessSettings" : "pdgaSettings"].render(favoriteList, group, removedWatch => {
+          if (removedWatch) {
+            const key = `${sport.key}:${configApi.watchId(removedWatch)}`;
+            workingConfig.includedGames = workingConfig.includedGames.filter(item => item !== key);
+            scheduleSettingsSave("includedGames");
+          }
           scheduleSettingsSave("sports");
           renderAutomaticWatches();
         }, providerRefresh.fetchFor(sport.key, global.SportsOverlay[sport.key === "chess" ? "lichess" : "pdga"]), sport.key === "chess" ? chessSession : undefined);
@@ -693,7 +698,9 @@
         }
         renderRotationControls();
         const status = document.querySelector('#rotation-status');
-        status.textContent = engineLoading ? availableRotationEntries.length
+        const pendingSports = (state.loadingSports || []).map(sport => configApi.findSport(sport)?.name || sport).join(', ');
+        status.textContent = pendingSports ? `Loading ${pendingSports}… ${availableRotationEntries.length ? 'Showing available games.' : 'Waiting for score feeds.'}`
+          : engineLoading ? availableRotationEntries.length
           ? 'Loading game updates… Showing last received games.' : 'Loading games… Waiting for score feeds.'
           : state.discoveryPending ? 'Loading game updates… Showing last received games.' : state.discoveryFailures
           ? 'Some score feeds are unavailable. Keeping received games and retrying automatically.' : 'Shared engine games';
@@ -752,11 +759,11 @@
 
   async function discoverSportGames(group) {
     if (group.enabled === false) return { automaticEntries: [], availableEntries: [] };
-    if (group.sport === "disc-golf") return global.SportsOverlay.pdga.createClient({ watches: group.events, autoFollow: group.autoFollow, discoverSecondTier: group.discoverSecondTier, autoDivisions: group.autoDivisions, session: pdgaSession,
+    if (group.sport === "disc-golf") return global.SportsOverlay.pdga.createClient({ watches: configApi.eventWatches(workingConfig, group.sport), autoFollow: group.autoFollow, discoverSecondTier: group.discoverSecondTier, autoDivisions: group.autoDivisions, session: pdgaSession,
       fetchImpl: providerRefresh.fetchFor("disc-golf", global.SportsOverlay.pdga),
     }).discover({ topFavoriteOnly: workingConfig.displayMode === "top-favorite", fallbackMode: workingConfig.fallbackMode,
       excludedKeys: workingConfig.excludedGames, retentionMs: liveModeActive() ? workingConfig.liveModeFinalMinutes * 60_000 : 60 * 60_000 });
-    if (group.sport === "chess") return global.SportsOverlay.lichess.createClient({ watches: group.events, autoFollow: group.autoFollow, discoverSecondTier: group.discoverSecondTier, session: chessSession,
+    if (group.sport === "chess") return global.SportsOverlay.lichess.createClient({ watches: configApi.eventWatches(workingConfig, group.sport), autoFollow: group.autoFollow, discoverSecondTier: group.discoverSecondTier, session: chessSession,
       fetchImpl: providerRefresh.fetchFor("chess", global.SportsOverlay.lichess),
     }).discover({ topFavoriteOnly: workingConfig.displayMode === "top-favorite", fallbackMode: workingConfig.fallbackMode, excludedKeys: workingConfig.excludedGames, retentionMs: liveModeActive() ? workingConfig.liveModeFinalMinutes * 60_000 : 60 * 60_000 });
     const watchedTeams = group.favorites

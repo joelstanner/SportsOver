@@ -14,6 +14,26 @@ const round = require('./round.json');
 const watch = { tournamentId: '86076', division: 'MPO', enabled: true, view: 'leaderboard', playerId: '' };
 const normalize = (r = round, m = metadata) => api.pdga.normalizeEvent(m, r, watch);
 
+test('displayed PDGA scores promote shared discovery metadata and prioritize the round fetch', async () => {
+  let release;
+  const calls = [], promotions = [];
+  const fetchImpl = async (url, options) => {
+    calls.push({ url, options });
+    if (url.includes('fetch_event')) await new Promise(resolve => { release = resolve; });
+    return Response.json({ data: url.includes('fetch_event') ? metadata : round });
+  };
+  fetchImpl.prioritize = url => promotions.push(url);
+  const client = api.pdga.createClient({ watches: [watch], fetchImpl });
+  const discovered = client.getMetadata(watch.tournamentId);
+  const displayed = client.getEvent('86076:MPO', undefined, { priority: 'display' });
+  assert.equal(calls.length, 1);
+  assert.deepEqual(promotions, [calls[0].url]);
+  release();
+  await Promise.all([discovered, displayed]);
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].options.priority, 'display');
+});
+
 test('real PDGA round maps a field, authoritative playoff places and round number', () => {
   const event = normalize();
   assert.equal(event.competitionType, 'individual');

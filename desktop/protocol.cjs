@@ -1,9 +1,11 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const providerNetwork = require('../core/provider-network.js');
 const ORIGIN = 'sportsover://app';
 const CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://statsapi.mlb.com https://site.api.espn.com https://site.web.api.espn.com https://sports.core.api.espn.com https://www.pdga.com https://lichess.org; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'";
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml' };
-function createHandler({ root, dataRoot, store, refresh, engine, fetchImpl = globalThis.fetch }) {
+function createHandler({ root, dataRoot, store, refresh, engine, fetchImpl = globalThis.fetch,
+  fetchProvider = providerNetwork.create({ fetchImpl }) }) {
   let refreshing = false;
   const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
   return async request => {
@@ -11,6 +13,20 @@ function createHandler({ root, dataRoot, store, refresh, engine, fetchImpl = glo
       const url = new URL(request.url);
       if (url.protocol !== 'sportsover:' || url.host !== 'app') return new Response('Forbidden', { status: 403 });
       if (request.initiatorOrigin && request.initiatorOrigin !== ORIGIN) return new Response('Forbidden', { status: 403 });
+      if (url.pathname === '/api/provider' || url.pathname === '/api/provider/priority') {
+        const promote = url.pathname === '/api/provider/priority';
+        if (request.method !== (promote ? 'POST' : 'GET')) return new Response('Method not allowed', { status: 405 });
+        const target = url.searchParams.get('url');
+        if (!providerNetwork.serviceFor(target)) return json({ error: 'Unsupported score provider URL' }, 400);
+        if (promote) { fetchProvider.prioritize(target); return json({}); }
+        const response = await fetchProvider(target, { requestTimeoutMs: Number(url.searchParams.get('timeout')),
+          priority: url.searchParams.get('priority') === 'display' ? 'display' : 'background' });
+        // Expose JSON bytes and retry timing only, never upstream cookies/headers.
+        const headers = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' };
+        const retry = response.headers.get('Retry-After');
+        if (retry) headers['Retry-After'] = retry;
+        return new Response(await response.arrayBuffer(), { status: response.status, headers });
+      }
       const chessPlayers = /^\/api\/chess\/broadcast\/([a-zA-Z0-9]{8})\/players$/.exec(url.pathname);
       if (chessPlayers) {
         if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
@@ -19,7 +35,12 @@ function createHandler({ root, dataRoot, store, refresh, engine, fetchImpl = glo
         const response = await fetchImpl(`https://lichess.org/broadcast/${chessPlayers[1]}/players`, {
           signal: AbortSignal.timeout(8000), redirect: 'error', credentials: 'omit',
         });
-        if (!response.ok) return json({ error: `Lichess returned HTTP ${response.status}` }, response.status);
+        if (!response.ok) {
+          const failure = json({ error: `Lichess returned HTTP ${response.status}` }, response.status);
+          const retry = response.headers?.get('Retry-After');
+          if (retry) failure.headers.set('Retry-After', retry);
+          return failure;
+        }
         return json(await response.json());
       }
       if (url.pathname === '/api/output' && request.method === 'GET') return json(engine.output());

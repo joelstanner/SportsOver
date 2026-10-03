@@ -3,6 +3,9 @@
 ## User shorthand
 
 - `gst` means `git status`. When requested, show the current Git status.
+- `ship it` authorizes a version bump, commit, push, and published GitHub release.
+  Follow the CI installer and checksum requirements below; do not ask again for
+  version-bump or publication approval for that shipment.
 
 ## Test and demo fixtures
 

@@ -101,7 +101,7 @@
         q(".pdga-down").disabled = index === group.events.length - 1;
         const move = direction => { [group.events[index], group.events[index + direction]] = [group.events[index + direction], group.events[index]]; changed(); renderList(); };
         q(".pdga-up").onclick = () => move(-1); q(".pdga-down").onclick = () => move(1);
-        q(".pdga-remove").onclick = () => { group.events.splice(index, 1); changed(); renderList(); };
+        q(".pdga-remove").onclick = () => { group.events.splice(index, 1); changed(watch); renderList(); };
         q(".pdga-view").value = watch.view;
         q(".pdga-size").value = String(watch.leaderboardSize === 3 ? 3 : 10);
         q(".pdga-size").onchange = event => { watch.leaderboardSize = Number(event.target.value); changed(); };

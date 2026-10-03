@@ -10,11 +10,11 @@
     const requestTimeoutMs = Number(options.requestTimeoutMs);
     const fetchImpl = options.fetchImpl || global.fetch.bind(global);
 
-    async function fetchJson(url) {
+    async function fetchJson(url, requestOptions = {}) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
       try {
-        const response = await fetchImpl(url, { cache: "no-store", signal: controller.signal });
+        const response = await fetchImpl(url, { cache: "no-store", signal: controller.signal, requestTimeoutMs, priority: requestOptions.priority });
         if (!response.ok) throw new Error(`ESPN NFL feed returned HTTP ${response.status}`);
         return await response.json();
       } finally {
@@ -39,8 +39,8 @@
       return (await fetchJson(SCOREBOARD_URL)).events ?? [];
     }
 
-    async function getEvent(gameId, eventFeaturedTeamId = featuredTeamId) {
-      const summary = await fetchJson(`${SUMMARY_URL}${encodeURIComponent(gameId)}`);
+    async function getEvent(gameId, eventFeaturedTeamId = featuredTeamId, requestOptions = {}) {
+      const summary = await fetchJson(`${SUMMARY_URL}${encodeURIComponent(gameId)}`, requestOptions);
       return normalizeEvent(summary, eventFeaturedTeamId, gameId);
     }
 

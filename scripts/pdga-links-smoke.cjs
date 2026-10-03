@@ -43,10 +43,22 @@ require('../core/config.js');
     await engine.reload();
     await banner.locator('.pdga-entry').first().waitFor();
     await admin.evaluate(() => window.sportsDesktop.action('show'));
+    const viewport = banner.locator('.scorebug-vertical-viewport');
+    async function checkScroll() {
+      await viewport.hover();
+      await viewport.focus();
+      await banner.keyboard.press('Home');
+      await banner.mouse.wheel(0, 45);
+      await banner.waitForFunction(() => document.querySelector('.scorebug-vertical-viewport').scrollTop > 0);
+      await banner.keyboard.press('Home');
+      assert.equal(await viewport.evaluate(el => el.scrollTop), 0);
+    }
+    await checkScroll();
     const scores = 'https://www.pdga.com/live/event/86076/MPO/scores?round=3';
     assert.equal(await banner.locator('.pdga-footer a').getAttribute('href'), scores);
     await banner.locator('.pdga-footer a').click();
     await admin.evaluate(() => window.sportsDesktop.action('lock'));
+    await checkScroll();
     await banner.locator('.pdga-footer a').click();
     await banner.locator('.pdga-event').click();
     await banner.locator('.pdga-name a').first().click();
@@ -60,6 +72,6 @@ require('../core/config.js');
     await banner.locator('.pdga-total').first().click();
     await new Promise(resolve => setTimeout(resolve, 600));
     assert.deepEqual(await application.evaluate(() => globalThis.pdgaLinks.navigation), ['next']);
-    console.log('PDGA scores, tournament, and player links open without navigation; locked clicks, keyboard activation, and normal browsing passed.');
+    console.log('PDGA scores, tournament, and player links open without navigation; locked clicks, keyboard activation, and normal browsing and native wheel/keyboard scrolling passed.');
   } finally { if (application) await application.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

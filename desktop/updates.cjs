@@ -1,5 +1,6 @@
 const RELEASES_URL = 'https://github.com/joelstanner/SportsOver/releases/latest';
 const RELEASE_API = 'https://api.github.com/repos/joelstanner/SportsOver/releases/latest';
+const { retryAfterMs } = require('../core/provider-network.js');
 
 function parseVersion(value) {
   const match = String(value).match(/^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*))?(?:\+[\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*)?$/);
@@ -30,9 +31,30 @@ function compareVersions(left, right) {
 }
 
 function createUpdateChecker({ app, dialog, shell, fetchImpl = globalThis.fetch, onStateChange = () => {}, timeoutMs = 10000,
-  now = Date.now, readLastCheck = () => null, saveLastCheck = () => {} }) {
+  now = Date.now, readLastCheck = () => null, saveLastCheck = () => {},
+  readRateLimit = () => null, saveRateLimit = () => {} }) {
   let checking = false;
   let lastAutomaticCheck = null;
+  let rateLimit;
+  function limits() {
+    if (!rateLimit) {
+      let saved;
+      try { saved = readRateLimit(); } catch (_) { /* Keep an in-memory fallback. */ }
+      rateLimit = { until: Number.isFinite(saved?.until) ? Math.max(0, saved.until) : 0,
+        failures: Number.isInteger(saved?.failures) ? Math.max(0, Math.min(4, saved.failures)) : 0 };
+    }
+    return rateLimit;
+  }
+  function rememberLimit(until, failures) {
+    rateLimit = { until, failures };
+    try { saveRateLimit(rateLimit); } catch (_) { /* Still enforce the limit this session. */ }
+  }
+  async function showRateLimit(interactive) {
+    if (interactive) await dialog.showMessageBox({ type: 'warning', title: 'SportsOver updates',
+      message: 'GitHub update checks are temporarily paused.',
+      detail: `GitHub has limited requests from this connection. Try again after ${new Date(limits().until).toLocaleString()}.`,
+      buttons: ['OK'] });
+  }
   function menuItem() {
     return { id: 'check-updates', label: checking ? 'Checking for updates…' : 'Check for updates…', enabled: !checking, click: () => check() };
   }
@@ -52,11 +74,27 @@ function createUpdateChecker({ app, dialog, shell, fetchImpl = globalThis.fetch,
     checking = true;
     onStateChange();
     try {
+      if (now() < limits().until) return await showRateLimit(interactive);
       const current = app.getVersion();
       const response = await fetchImpl(RELEASE_API, {
         headers: { Accept: 'application/vnd.github+json', 'User-Agent': `SportsOver/${current}` },
         signal: AbortSignal.timeout(timeoutMs),
       });
+      const retry = response.headers.get('Retry-After');
+      const exhausted = response.headers.get('X-RateLimit-Remaining') === '0';
+      const reset = Number(response.headers.get('X-RateLimit-Reset')) * 1000;
+      const resetDelay = exhausted && Number.isFinite(reset) ? Math.max(0, reset - now()) : 0;
+      let secondary = false;
+      if (response.status === 403 && !retry && !exhausted) {
+        const body = await response.clone().json().catch(() => ({}));
+        secondary = /rate limit|abuse detection/i.test(String(body.message || ''));
+      }
+      if (response.status === 429 || (response.status === 403 && (retry || exhausted || secondary))) {
+        const failures = Math.min(4, limits().failures + 1);
+        const delay = Math.max(retryAfterMs(retry, now()), resetDelay, Math.min(300000, 60000 * 2 ** (failures - 1)));
+        rememberLimit(now() + delay, failures);
+        return await showRateLimit(interactive);
+      }
       if (!response.ok) {
         if (response.status === 404) {
           if (interactive) await dialog.showMessageBox({ type: 'info', title: 'SportsOver updates', message: 'No published release is available yet.', detail: `Installed version: ${current}`, buttons: ['OK'] });
@@ -64,6 +102,8 @@ function createUpdateChecker({ app, dialog, shell, fetchImpl = globalThis.fetch,
         }
         throw Error('Release check failed');
       }
+      // Even a successful request may consume the final request in the IP budget.
+      rememberLimit(exhausted ? now() + Math.max(60000, resetDelay) : 0, 0);
       const release = await response.json();
       if (release.draft !== false || release.prerelease !== false) throw Error('Unexpected release data');
       const latest = release.tag_name;

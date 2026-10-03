@@ -162,3 +162,81 @@ test('explicit retry refreshes failed feeds only and preserves other sports and 
   await assert.rejects(other('other-failed'), /offline/);
   assert.equal(f.calls(), 4);
 });
+
+test('Lichess network requests are paced across clients while cached responses remain immediate', async () => {
+  let time=0;
+  const calls=[], sleeps=[], config=api.config.normalizeConfig();
+  const limited={...provider,requestIntervalMs:1000,rateLimitCooldownMs:60000};
+  const cache=api.providerRefresh.create({config:()=>config,now:()=>time,
+    sleep:async ms=>{sleeps.push(ms);time+=ms;},fetchImpl:async url=>{calls.push({url,time});return Response.json({state:'live'});}});
+  const first=cache.fetchFor('chess',limited), second=cache.fetchFor('chess',limited);
+  await Promise.all([first('one'),second('two'),first('one'),second('three')]);
+  assert.deepEqual(calls,[{url:'one',time:0},{url:'two',time:1000},{url:'three',time:2000}]);
+  await first('one');await second('two');
+  assert.deepEqual(sleeps,[1000,1000]);
+  assert.equal(calls.length,3);
+});
+
+test('429 Retry-After gates every Lichess endpoint and explicit retry cannot bypass cooldown', async () => {
+  for(const retry of ['120',new Date(Date.parse('2026-10-03T00:00:00Z')+120000).toUTCString()]) {
+    let time=0, limited=true;const calls=[], epoch=Date.parse('2026-10-03T00:00:00Z');
+    const p={...provider,requestIntervalMs:1000,rateLimitCooldownMs:60000};
+    const cache=api.providerRefresh.create({config:()=>api.config.normalizeConfig(),now:()=>time,wallNow:()=>epoch+time,
+      sleep:async ms=>{time+=ms;},fetchImpl:async url=>{calls.push(url);return limited?new Response('{}',{status:429,headers:{'Retry-After':retry}}):Response.json({state:'live'});}});
+    const fetch=cache.fetchFor('chess',p), other=cache.fetchFor('chess',p);
+    await Promise.all([assert.rejects(fetch('first'),/429/),assert.rejects(other('second'),/429/)]);
+    assert.deepEqual(calls,['first']);
+    time=119999;limited=false;fetch.retryFailed();
+    await assert.rejects(other('third'),/429/);assert.equal(calls.length,1);
+    time=120000;fetch.retryFailed();
+    await other('second');assert.deepEqual(calls,['first','second']);
+  }
+});
+
+test('ESPN cooldown spans sports and hosts, survives manual retries, and leaves healthy caches usable', async () => {
+  let time = 0, calls = 0, throttled = false;
+  const cache = api.providerRefresh.create({ config: () => api.config.normalizeConfig(), now: () => time,
+    wallNow: () => 1790985600000 + time, sleep: async ms => { time += ms; }, fetchImpl: async () => {
+      calls++;
+      return throttled ? new Response('', { status: 429, headers: { 'Retry-After': '120' } }) : Response.json({ state: 'live' });
+    } });
+  const basketball = cache.fetchFor('basketball', provider), hockey = cache.fetchFor('hockey', provider);
+  const nba = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
+  const nhl = 'https://sports.core.api.espn.com/v2/sports/hockey/leagues/nhl/events/1/competitions/1/situation';
+  await basketball(nba);
+  throttled = true;
+  await assert.rejects(hockey(nhl), /429/);
+  assert.equal(calls, 2);
+  await basketball(nba);
+  assert.equal(calls, 2);
+  time = 120249; throttled = false;
+  hockey.retryFailed(); basketball.retryFailed();
+  await assert.rejects(hockey(nhl), /429/);
+  await assert.rejects(basketball(nba + '?date=tomorrow'), /429/);
+  assert.equal(calls, 2);
+  time = 120250;
+  await hockey(nhl);
+  // Retry-After is rounded up to whole seconds for newly blocked URLs.
+  time = 121250;
+  await basketball(nba + '?date=tomorrow');
+  assert.equal(calls, 4);
+});
+
+test('display joins promote queued discovery cache misses without duplicate network traffic', async () => {
+  let time = 0, release, started;
+  const calls = [], active = new Promise(resolve => { started = resolve; });
+  const base = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=';
+  const cache = api.providerRefresh.create({ config: () => api.config.normalizeConfig(), now: () => time,
+    wallNow: () => time, sleep: async ms => { time += ms; }, fetchImpl: async url => {
+      calls.push(url);
+      if (url === base + '1') await new Promise(resolve => { release = resolve; started(); });
+      return Response.json({ state: 'live' });
+    } });
+  const fetch = cache.fetchFor('basketball', provider);
+  const first = fetch(base + '1'); await active;
+  const background = fetch(base + '2'), queued = fetch(base + '3');
+  const displayed = fetch(base + '3', { priority: 'display' });
+  release();
+  await Promise.all([first, background, queued, displayed]);
+  assert.deepEqual(calls, [base + '1', base + '3', base + '2']);
+});

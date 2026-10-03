@@ -84,14 +84,14 @@ test('catalog refresh writes only app data and retains a previous catalog on emp
   t.after(() => { global.fetch = original; });
   const bundledFile = path.resolve(__dirname, '../../sports/basketball/teams.json');
   const bundled = fs.readFileSync(bundledFile, 'utf8');
-  global.fetch = async () => ({ ok: true, json: async () => ({ sports: [{ leagues: [{ teams: [{ team: { id: '8', abbreviation: 'DET', displayName: 'Detroit Test', color: '111111', alternateColor: 'eeeeee' } }] }] }] }) });
+  global.fetch = async () => Response.json({ sports: [{ leagues: [{ teams: [{ team: { id: '8', abbreviation: 'DET', displayName: 'Detroit Test', color: '111111', alternateColor: 'eeeeee' } }] }] }] });
   const result = await updateCatalogs('basketball', directory);
   assert.equal(result[0].count, 1);
   const output = path.join(directory, 'sports/basketball/teams.json');
   const updated = fs.readFileSync(output, 'utf8');
   assert.equal(JSON.parse(updated).teams[0].name, 'Detroit Test');
   assert.equal(fs.readFileSync(bundledFile, 'utf8'), bundled);
-  global.fetch = async () => ({ ok: true, json: async () => ({}) });
+  global.fetch = async () => Response.json({});
   await assert.rejects(updateCatalogs('basketball', directory), /Empty team directory/);
   assert.equal(fs.readFileSync(output, 'utf8'), updated);
 });
@@ -102,7 +102,7 @@ test('desktop standings bridge permits only public tournament players and preser
   const players = [{ name: 'Leader', score: 1, rank: 1, played: 1 }];
   const handler = createHandler({ root: path.resolve(__dirname, '../..'), fetchImpl: async (url, options) => {
     calls.push({ url, options });
-    return Response.json(status === 200 ? players : { error: 'Try later' }, { status });
+    return Response.json(status === 200 ? players : { error: 'Try later' }, { status, headers: status === 429 ? { 'Retry-After': '120' } : {} });
   }});
   const url = 'sportsover://app/api/chess/broadcast/Tour1234/players';
   const response = await handler(new Request(url));
@@ -117,5 +117,53 @@ test('desktop standings bridge permits only public tournament players and preser
   assert.equal((await handler(new Request(url.replace('Tour1234', 'invalid')))).status, 404);
   assert.equal((await handler(new Request(url.replace('/players', '/teams')))).status, 404);
   assert.equal(calls.length, 1);
-  for (status of [429, 503]) assert.equal((await handler(new Request(url))).status, status);
+  for (status of [429, 503]) {
+    const failure = await handler(new Request(url));
+    assert.equal(failure.status, status);
+    assert.equal(failure.headers.get('Retry-After'), status === 429 ? '120' : null);
+  }
+});
+
+test('desktop provider bridge shares throttles across windows and catalogs and rejects unsafe targets', async () => {
+  const { create } = require('../../core/provider-network.js');
+  let time = 0, calls = 0;
+  const fetchProvider = create({ now: () => time, sleep: async ms => { time += ms; }, fetchImpl: async () => {
+    calls++;
+    return new Response('', { status: 429, headers: { 'Retry-After': '120', 'Set-Cookie': 'private=1' } });
+  } });
+  const handler = createHandler({ fetchProvider });
+  const nba = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
+  const nhl = 'https://sports.core.api.espn.com/v2/sports/hockey/leagues/nhl/events/1/competitions/1/situation';
+  const request = url => new Request(`sportsover://app/api/provider?${new URLSearchParams({ url })}`);
+  for (const url of [nba, nhl]) {
+    const response = await handler(request(url));
+    assert.equal(response.status, 429);
+    assert.equal(response.headers.get('Retry-After'), '120');
+    assert.equal(response.headers.get('Set-Cookie'), null);
+  }
+  const { updateCatalogs } = await import('../../scripts/team-catalog.mjs');
+  await assert.rejects(updateCatalogs('basketball', '/unused', fetchProvider), /429/);
+  assert.equal(calls, 1);
+  assert.equal((await handler(request('https://127.0.0.1/private'))).status, 400);
+  assert.equal((await handler(new Request(request(nba).url, { method: 'POST' }))).status, 405);
+  assert.equal((await handler({ url: request(nba).url, method: 'GET', initiatorOrigin: 'https://evil.example' })).status, 403);
+  assert.equal(calls, 1);
+});
+
+test('desktop bridge forwards display priority and promotes queued requests without fetching', async () => {
+  const calls = [], promoted = [];
+  const fetchProvider = async (url, options) => { calls.push({ url, options }); return Response.json({}); };
+  fetchProvider.prioritize = url => promoted.push(url);
+  const handler = createHandler({ fetchProvider });
+  const target = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=123';
+  const query = new URLSearchParams({ url: target, priority: 'display', timeout: '8000' });
+  await handler(new Request(`sportsover://app/api/provider?${query}`));
+  assert.equal(calls[0].options.priority, 'display');
+  const promotion = `sportsover://app/api/provider/priority?${query}`;
+  assert.equal((await handler(new Request(promotion, { method: 'POST' }))).status, 200);
+  assert.deepEqual(promoted, [target]);
+  assert.equal(calls.length, 1);
+  assert.equal((await handler(new Request(promotion))).status, 405);
+  assert.equal((await handler({ url: promotion, method: 'POST', initiatorOrigin: 'https://evil.example' })).status, 403);
+  assert.equal(promoted.length, 1);
 });

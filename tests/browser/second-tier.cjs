@@ -49,8 +49,14 @@ const scores = { scores: [{ Name: 'Pro Player', PDGANum: 123, Rating: 1020, Roun
   assert.equal(await page.locator('.pdga-second-tier').isChecked(), false);
   await page.getByRole('button', { name: 'Live control', exact: true }).click();
   await page.locator(`#rotation-queue [data-game-key="${pdgaKey}"]`).waitFor();
+  await page.locator(`#rotation-queue [data-game-key="${chessKey}"]`).waitFor();
+  await page.locator(`#rotation-queue [data-game-key="${chessKey}"] .remove-game`).click();
+  await page.waitForFunction(() => !window.SportsOverlay.config.loadConfig().includedGames.includes('chess:Select01:auto'));
+  await page.reload();
+  await page.getByRole('button', { name: 'Live control', exact: true }).click();
+  await page.locator(`#rotation-queue [data-game-key="${pdgaKey}"]`).waitFor();
   assert.equal(await page.locator(`[data-game-key="${chessKey}"]`).count(), 0);
   assert.deepEqual(errors, []);
-  console.log('Second-tier browser check passed: labeled suggestions, available-only default, add, keep watch, persisted opt-out and manual watch preservation.');
+  console.log('Second-tier browser check passed: labeled suggestions, available-only default, add, keep watch, persisted opt-out, added tournament survival across reload, explicit removal, and manual watch preservation.');
  } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

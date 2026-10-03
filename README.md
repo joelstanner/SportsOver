@@ -94,7 +94,8 @@ To update a downloaded source checkout, replace it with the newer source and run
 - **Navigate:** click the leftmost 20% of the banner for the previous rotation item; click elsewhere for the next item, including while its position is locked. Single clicks wait briefly to distinguish a double-click. Both directions wrap around and start a fresh display interval. Game locks and temporary overrides still apply. Desktop and OBS stay in sync.
 - **Move:** click anywhere on the unlocked banner and drag, including between monitors. Moving more than 5 screen pixels starts a drag; releasing after dragging never skips a game.
 - **Settings:** right-click the banner and choose **Settings…**. Right-clicking does not advance rotation.
-- **Chess broadcast:** click the tournament title or **Lichess ↗** to open the displayed round and its games in your browser. These links work with the banner locked and do not advance rotation.
+- **Banner size:** right-click the banner and choose **Banner size** → **50%–300%**. The current preset is checked; sizing is unavailable in fullscreen.
+- **Chess broadcast:** click the tournament title or **Lichess ↗** to open the displayed round and its games in your browser. Click a player name in a matchup or followed-player banner to open that board’s game; names in standings open the player’s broadcast card. These links work with the banner locked and do not advance rotation.
 - **PDGA scores:** click **Scores: PDGA ↗** to open scores for the displayed tournament, division, and round. Tournament titles and player names open their PDGA pages. Links work with the banner locked and do not advance rotation.
 - **Updates:** SportsOver checks the latest published GitHub release on launch, at most once every 24 hours. Normal launches prompt only when a newer version is available; background launches, up-to-date results, and automatic-check failures stay quiet. Choose **Check for updates…** in the tray dropdown, banner right-click menu, or application menu for an immediate manual check. **Open download page** opens the official release page for manual installation.
 - **Resize:** double-click the left half of the unlocked banner to shrink it, or the right half to enlarge it, stepping through 50%, 75%, 100%, 125%, 150%, 200%, and 300%. Double-clicks resize without changing games; dragging never resizes. Banner size in Settings and the tray menu also work. Proportional scaling keeps the full 472 × 100 design intact; transparent windows do not rely on platform-specific native resize borders.
@@ -137,7 +138,7 @@ In normal rotation, a watched team's final also stays for up to 24 hours after S
 
 **Live control** reads discovered games from that same engine and manages automatic, hybrid, or curated game rotation, game order and durations, and game locks. A game lock chooses what plays; the desktop position lock prevents dragging and double-click resizing. **Demo lab** previews deterministic sport/lifecycle examples without changing the live banner. Use the Electron overlay window to view the live output while changing Settings. Demo lab uses fixed data only.
 
-Live control shows **Loading…** while the desktop engine searches for games or refreshes them. Previously received games stay visible during a discovery outage or engine restart, with a status message explaining that they are the last received results. A successful refresh replaces them, including when the provider confirms there are no games.
+The desktop engine publishes each sport as it finishes loading, so ready games can enter rotation while slower feeds are still being checked. Live control names the sports still loading; score polling continues for games already displayed. Live control shows **Loading…** while the desktop engine searches for games or refreshes them. Previously received games stay visible during a discovery outage or engine restart, with a status message explaining that they are the last received results. A successful refresh replaces them, including when the provider confirms there are no games.
 
 **Refresh teams** saves current provider catalogs in app data, leaving the source checkout unchanged. A failed sport refresh retains its previous directory; other successful sports may still update. Live feeds can be unavailable or delayed. Existing provider fallback/error states apply; this app does not guarantee real-time scores.
 
@@ -203,7 +204,7 @@ node tests/browser/pdga-auto-follow.cjs
 npm run test:pdga:live
 ```
 
-`npm test` runs the provider/rotation/configuration suite and desktop persistence, recovery, bounds, and protocol tests. `npm run test:desktop` launches real Electron windows with isolated temporary app data and mocked provider responses. It checks shared rendering, authenticated API access, override expiry/restoration, independent desktop visibility, shared settings, desktop controls and secure preferences, then restarts to verify persistence. It also asserts that only one engine window makes provider requests while desktop, Settings and an HTTP browser-source client are connected. It leaves screenshots and test data in the temporary directory printed at completion. It does not alter your normal preferences.
+`npm test` runs the provider/rotation/configuration suite and desktop persistence, recovery, bounds, and protocol tests. `npm run test:desktop` launches real Electron windows with isolated temporary app data and mocked provider responses. It checks shared rendering, authenticated API access, override expiry/restoration, independent desktop visibility, shared settings, desktop controls and secure preferences, then restarts to verify persistence. It also asserts that one engine owns rotation and only the desktop request coordinator contacts the mocked sports APIs while desktop, Settings and an HTTP browser-source client are connected. It leaves screenshots and test data in the temporary directory printed at completion. It does not alter your normal preferences.
 
 `npm run test:pdga` uses Chrome with fixture scores to check PDGA settings, persistence, player selection, locks, stale data, and mixed-sport rendering. `npm run test:pdga:live` is an optional network check using a completed PDGA tournament in an isolated Electron instance; it verifies the native 200% banner and OBS, then simulates an active round to check removal from Live mode. Set `SPORTSOVER_TEST_EXECUTABLE` to test a built app instead of the source launcher. `node tests/browser/pdga-auto-follow.cjs` checks automatic discovery, division choices, exclusions, explicit watches, player preferences, and disabling during Live mode with fixture feeds. With `SPORTSOVER_TEST_EXECUTABLE` set, it runs the same flow in the packaged app and checks shared native/OBS output and directory request counts.
 
@@ -212,6 +213,44 @@ Platform results and remaining manual checks are recorded in [desktop/TESTING.md
 ## License
 
 SportsOver is licensed under the [MIT License](LICENSE). Third-party dependencies and sports data, logos, and trademarks remain subject to their respective licenses and terms.
+
+### Provider access and request limits
+
+Reviewed October 3, 2026, excluding Lichess. No official numeric request quota was
+found for the ESPN, MLB Stats API or PDGA Live endpoints used here. Public access
+is not a redistribution license, and request pacing does not resolve permissions.
+
+| Provider | Published rules and open questions |
+| --- | --- |
+| ESPN | [Disney terms, section 2](https://disneytermsofuse.com/english/) cover ESPN and require express written permission for automated extraction and business use. Confirm permission for these endpoints, score overlays and team artwork. |
+| MLB Stats API | [MLB's data notice](https://gdx.mlb.com/components/copyright.txt) permits individual, noncommercial, non-bulk use and requires written authorization for other uses. Confirm how distribution, public overlays and team logos may be used; no numeric definition of non-bulk was found. |
+| PDGA Live | [Website terms](https://www.pdga.com/tos) restrict automated collection and public display. The separate [developer program](https://www.pdga.com/dev) requires membership, a signed agreement, authenticated access and prelaunch implementation review, plus attribution on every screen with PDGA data and links from player/event/course names. Confirm authorization specifically for the unauthenticated Live endpoints used here, applicable limits, caching and display requirements. The current agreement form requires login and has not been reviewed. |
+| GitHub releases | [Unauthenticated REST requests](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api) share a 60/hour budget per originating IP. Rate-limited 403/429 responses require respecting retry/reset headers and secondary-limit backoff. |
+
+ESPN, MLB and PDGA requests share a desktop-process queue per service, including
+Settings lookups and team-directory refreshes. Each service starts requests at
+least 250 ms apart and runs one request at a time. This is a SportsOver pacing
+choice, not a published provider allowance. ESPN's hosts and all its sports share
+one queue. Request timeouts start when a request is dispatched, not while queued.
+Requests for the game being displayed take priority over queued discovery and
+catalog work. After three display requests, a waiting background request gets a
+turn; both groups preserve their own arrival order. If discovery already queued
+the displayed game's data, that request is promoted without fetching it twice.
+Running requests are allowed to finish, and priority never bypasses a cooldown.
+HTTP 429 pauses the entire service for at least one minute; repeated throttling
+increases that delay up to five minutes. Longer `Retry-After` values are honored,
+including HTTP dates. HTTP 403/503 with `Retry-After` also pauses that service.
+Manual retries and new feed URLs cannot bypass an active cooldown; healthy cached
+responses remain available. Sports cooldowns last for the desktop process lifetime.
+In browser development mode, queues are per page and catalog refreshes use the
+development server's separate queue. These limits cannot coordinate other apps or
+machines sharing the same public IP.
+
+GitHub checks honor `Retry-After` and `X-RateLimit-Reset`, recognize secondary-limit
+errors, and retain cooldowns across app restarts when preferences can be saved.
+Manual checks explain when to retry without sending another request during the
+cooldown. Automatic checks remain at most daily and stay silent on errors.
+No provider permission or license approval is implied by these protections.
 
 ## Local macOS app
 
@@ -233,4 +272,6 @@ The menu-bar scoreboard uses a compact template icon with a persistent position.
 
 Disc golf and chess can each show a tournament leaderboard and a separate followed-player banner for the same event. Add the tournament in Settings, then choose **Add player banner** and select the player. Player banners stay out of rotation until a player is selected; clearing that selection removes the banner from rotation again. Each banner can be included, reordered, locked, or removed independently. A player banner also offers **Add tournament banner**.
 
-Tournament banners default to **Top 10 · scroll vertically**, showing three rows at a time in the existing compact banner. **Top 3 · static** is also available. Chess standings use Lichess's published tournament points and tiebreak order; broadcasts without published totals show an unavailable message. Hover or focus the list to pause it in place; it resumes when you leave. Reduced-motion mode uses manual scrolling.
+Tournament banners default to **Top 10 · scroll vertically**, showing three rows at a time in the existing compact banner. **Top 3 · static** is also available. Chess standings use Lichess's published tournament points and tiebreak order; broadcasts without published totals show an unavailable message. Hover or focus the list to pause it in place. Scroll over the rows with a mouse wheel, trackpad, or touch swipe; with keyboard focus, use arrow keys, Page Up/Down, or Home/End. Manual scrolling starts from the visible rows and keeps its position through score refreshes. Automatic scrolling resumes from that position after you leave the list and keyboard focus moves away. Reduced-motion mode stays manual. These controls also apply to live chess matchups and the desktop/OBS display; each display keeps its own scroll position.
+
+`node tests/browser/manual-scroll.cjs` checks manual scrolling for PDGA and chess, including keyboard and touch input, refresh preservation, boundaries, reduced motion, and the desktop mirror at 200% scale.

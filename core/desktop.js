@@ -37,6 +37,7 @@
     document.body.addEventListener('pointerdown', event => {
       if (event.button !== 0 || !event.isPrimary) return;
       if (bannerLink(event.target)) return;
+      if (event.pointerType === 'touch' && event.target.closest('.scorebug-vertical-viewport')) return;
       if (document.body.classList.contains('desktop-fullscreen') && !event.target.closest('#sports-overlay')) return;
       event.preventDefault();
       pointerId = event.pointerId;
@@ -110,10 +111,11 @@
       <h3>Banner controls</h3>
       <dl class="desktop-gestures">
         <div><dt>Browse games <span>Click</span></dt><dd>Leftmost 20%: previous item. Anywhere else: next item. PDGA and chess links open in your browser.</dd></div>
+        <div><dt>Scroll lists <span>Wheel or trackpad</span></dt><dd>Scroll PDGA and chess rows while hovering to pause automatic movement. Touch swipes also work. With the list focused, use arrow keys, Page Up/Down, or Home/End. Automatic scrolling resumes after you leave and move keyboard focus away.</dd></div>
         <div><dt>Resize <span>Double-click</span></dt><dd>When unlocked: left half makes it smaller; right half makes it bigger. Size ranges from 50% to 300%.</dd></div>
         <div><dt>Move <span>Drag</span></dt><dd>When unlocked: click anywhere and drag to reposition. Dragging and resizing keep the current game.</dd></div>
         <div><dt>Fullscreen <span>Ctrl/Cmd + Shift + F</span></dt><dd>Show only the banner, centered across a black screen. The cursor hides after 3 seconds of inactivity; move it to show it again. Press Escape or choose Exit fullscreen to restore the previous size and position. Moving and resizing pause in fullscreen. Opening Settings also exits fullscreen.</dd></div>
-        <div><dt>Banner menu <span>Right-click</span></dt><dd>Open Settings, lock or unlock the banner position, toggle fullscreen, or hide the banner.</dd></div>
+        <div><dt>Banner menu <span>Right-click</span></dt><dd>Open Settings, choose a banner size, lock or unlock the banner position, toggle fullscreen, or hide the banner.</dd></div>
       </dl>
       <p class="desktop-info-note">Browsing wraps around and restarts the display timer. Clicks pause briefly to detect double-clicks. Game locks and temporary overrides still apply.</p>
     </div>

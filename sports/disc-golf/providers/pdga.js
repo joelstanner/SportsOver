@@ -102,55 +102,61 @@
   }
   function createClient({ watches = [], autoFollow = false, discoverSecondTier = false, autoDivisions = ["MPO", "FPO"],
     session = createSession(), now = Date.now, fetchImpl = global.fetch.bind(global), requestTimeoutMs = 8000 } = {}) {
-    // Share in-flight metadata across divisions and bound all requests, including
-    // rendering requests that overlap discovery, to three per engine session.
-    async function get(url) {
-      if (session.requests.has(url)) return session.requests.get(url);
+    // Coordinated clients use the shared service queue; standalone clients retain
+    // their three-request bound. Share in-flight metadata across divisions.
+    const coordinated = typeof fetchImpl.prioritize === "function";
+    async function get(url, requestOptions = {}) {
+      if (session.requests.has(url)) {
+        if (requestOptions.priority === "display") fetchImpl.prioritize?.(url);
+        return session.requests.get(url);
+      }
       const pending = (async () => {
-        if (session.active >= 3) await new Promise(resolve => session.waiting.push(resolve));
-        else session.active++;
+        if (!coordinated && session.active >= 3) await new Promise(resolve => session.waiting.push(resolve));
+        else if (!coordinated) session.active++;
         try {
-          const response = await fetchImpl(url, { signal: AbortSignal.timeout(requestTimeoutMs) });
+          const response = await fetchImpl(url, { signal: AbortSignal.timeout(requestTimeoutMs), requestTimeoutMs, priority: requestOptions.priority });
           if (!response.ok) { const error = Error(`PDGA returned HTTP ${response.status}`); error.status = response.status; throw error; }
           return await response.json();
         } finally {
-          const next = session.waiting.shift();
-          if (next) next(); else session.active--;
+          if (!coordinated) {
+            const next = session.waiting.shift();
+            if (next) next(); else session.active--;
+          }
         }
       })();
       session.requests.set(url, pending);
       try { return await pending; } finally { session.requests.delete(url); }
     }
-    async function getMetadata(tournamentId) {
+    async function getMetadata(tournamentId, requestOptions = {}) {
       if (!/^[1-9]\d{0,8}$/.test(String(tournamentId))) throw Error("Enter a valid PDGA tournament ID");
-      const response = await get(`${BASE}live_results_fetch_event?TournID=${tournamentId}`);
+      const response = await get(`${BASE}live_results_fetch_event?TournID=${tournamentId}`, requestOptions);
       if (!Array.isArray(response.data?.Divisions)) throw Error("PDGA tournament not found");
       if (response.data.ScoringFormat && response.data.ScoringFormat !== "S") {
         const error = Error("Only individual stroke-play PDGA events are supported"); error.unsupported = true; throw error;
       }
       return response.data;
     }
-    async function getRound(tournamentId, division, round) {
+    async function getRound(tournamentId, division, round, requestOptions = {}) {
       const query = new URLSearchParams({ TournID: tournamentId, Division: division, Round: round });
-      const response = await get(`${BASE}live_results_fetch_round?${query}`);
+      const response = await get(`${BASE}live_results_fetch_round?${query}`, requestOptions);
       if (!Array.isArray(response.data?.scores)) throw Error("PDGA round scores unavailable");
       return response.data;
     }
-    async function getEvent(id) {
+    async function getEvent(id, _featuredTeamId, requestOptions = {}) {
       const manual = watches.find(item => watchId(item) === id);
       const watch = manual || (autoFollow && session.watches.get(id)) || (discoverSecondTier && session.secondTier.get(id));
       if (!isWatchEnabled(watch) || (!manual && !autoDivisions.includes(watch.division))) throw Error("PDGA tournament/division is not watched");
-      return loadEvent(watch);
+      return loadEvent(watch, undefined, requestOptions);
     }
-    async function loadEvent(watch, metadataPromise) {
+    async function loadEvent(watch, metadataPromise, requestOptions = {}) {
       const id = watchId(watch);
       try {
-        const metadata = await (metadataPromise || getMetadata(watch.tournamentId));
+        const metadata = await (metadataPromise || getMetadata(watch.tournamentId, requestOptions));
         const division = metadata.Divisions.find(item => item.Division === watch.division);
         if (!division) { const error = Error("Selected PDGA division is unavailable"); error.unsupported = true; throw error; }
         const roundNumber = Math.max(1, number(division.LatestRound) || number(metadata.LatestRound) || 1);
         let round;
-        try { round = await getRound(watch.tournamentId, watch.division, roundNumber); }
+        try { round = await getRound(watch.tournamentId, watch.division, roundNumber, requestOptions); }
         catch (error) {
           // A posted division can exist before its first scorecard. Only a
           // missing first round with no prior scores is a scheduled event.

@@ -5,8 +5,8 @@
 .chess-bar { height:18px; display:flex; align-items:center; gap:7px; padding:0 10px; background:linear-gradient(110deg,#70518b66,#11122180 60%,#51497466); border-bottom:1px solid #ffffff24; font-size:8px; }
 .chess-brand { display:inline-flex; align-items:center; gap:4px; flex-shrink:0; color:#dcc0ff; font-weight:850; letter-spacing:.09em; white-space:nowrap; }
 .chess-brand-icon { width:13px; height:13px; flex-shrink:0; }
-.chess-event { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.chess-state { max-width:140px; color:#d5ccdf; font-size:7px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chess-event { flex:0 1 auto; margin-right:auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.chess-state { flex-shrink:0; max-width:140px; color:#d5ccdf; font-size:7px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .chess-scorebug[data-state="live"] .chess-state { color:#b3ecd5; }
 .chess-board { height:55px; padding:0 10px; }
 .chess-labels,.chess-entry { display:grid; grid-template-columns:22px minmax(0,1fr) 45px 43px; align-items:center; column-gap:8px; }
@@ -17,6 +17,7 @@
 .chess-board-number { color:#b1a6c3; font-size:8px; }
 .chess-person { min-width:0; display:flex; align-items:center; gap:5px; }
 .chess-name { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:650; min-width:0; }
+.chess-name[href]:focus-visible { outline:1px solid #dcc0ff; outline-offset:-1px; }
 .chess-name small { font-size:7px; color:#bdafd1; }
 .chess-piece { display:inline-block; width:6px; height:6px; flex-shrink:0; border:1px solid #c4b9da; border-radius:50%; }
 .chess-piece--white { background:#f6f1ff; }
@@ -40,3 +41,18 @@
 .chess-board .chess-empty { padding:12px 0; }
 
 .chess-labels>:nth-child(3), .chess-played { text-align:right; }
+
+.chess-match-labels,.chess-matchup { display:grid; grid-template-columns:15px minmax(0,1fr) 36px 43px minmax(0,1fr) 36px; align-items:center; column-gap:5px; }
+.chess-match-labels { height:10px; color:#b1a6c3; font-size:6px; }
+.chess-match-side-label { display:flex; justify-content:space-between; gap:3px; }
+.chess-matchup { height:15px; font-size:9px; }
+.chess-matchup + .chess-matchup { border-top:1px solid #ffffff0b; }
+.chess-match-person { display:flex; align-items:center; min-width:0; gap:3px; }
+.chess-match-person .chess-name { flex:1; }
+.chess-total { flex-shrink:0; color:#dcc0ff; font-size:7px; }
+.chess-match-clock { text-align:right; font-size:8px; }
+.chess-match-labels>:nth-child(3),.chess-match-labels>:last-child { text-align:right; }
+.chess-match-status,.chess-match-labels>:nth-child(4) { text-align:center; color:#dcc0ff; white-space:nowrap; }
+.chess-match-status { font-size:7px; }
+.chess-match-person.is-turn .chess-piece { box-shadow:0 0 0 2px #b3ecd550; }
+.chess-match-clock.is-turn { color:#b3ecd5; font-weight:800; }

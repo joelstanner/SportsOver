@@ -153,6 +153,67 @@ test('invalid or future timestamps and unavailable preferences do not block chec
   assert.deepEqual(f.dialogs, []);
 });
 
+test('GitHub cooldown respects Retry-After and reset headers across manual checks and restarts', async () => {
+  const epoch = Date.parse('2026-10-03T00:00:00Z');
+  for (const status of [403, 429]) {
+    for (const retry of ['120', new Date(epoch + 120000).toUTCString()]) {
+      let time = epoch, saved, calls = 0;
+      const options = { now: () => time, readRateLimit: () => saved, saveRateLimit: value => { saved = value; },
+        fetchImpl: async () => {
+          calls++;
+          return new Response('', { status, headers: { 'Retry-After': retry, 'X-RateLimit-Remaining': '0', 'X-RateLimit-Reset': String(epoch / 1000 + 180) } });
+        } };
+      const first = fixture(options);
+      await first.checker.check();
+      assert.equal(saved.until, epoch + 180000);
+      assert.match(first.dialogs[0].message, /temporarily paused/);
+      time += 179999;
+      await first.checker.check();
+      const restarted = fixture(options);
+      await restarted.checker.checkOnLaunch({ background: true });
+      await restarted.checker.check();
+      assert.equal(calls, 1);
+      assert.equal(restarted.dialogs.length, 1);
+      time++;
+      await restarted.checker.check();
+      assert.equal(calls, 2);
+    }
+  }
+});
+
+test('secondary-limit messages use increasing cooldowns while ordinary 403 errors remain ordinary errors', async () => {
+  let time = 100000000, calls = 0;
+  const f = fixture({ now: () => time, fetchImpl: async () => {
+    calls++;
+    return Response.json({ message: 'You have exceeded a secondary rate limit.' }, { status: 403 });
+  } });
+  await f.checker.check();
+  time += 60000; await f.checker.check();
+  time += 60000; await f.checker.check();
+  assert.equal(calls, 2);
+  time += 60000; await f.checker.check();
+  assert.equal(calls, 3);
+  assert.ok(f.dialogs.every(dialog => /temporarily paused/.test(dialog.message)));
+  const forbidden = fixture({ fetchImpl: async () => Response.json({ message: 'Forbidden' }, { status: 403 }) });
+  await forbidden.checker.check();
+  assert.match(forbidden.dialogs[0].message, /Could not check/);
+});
+
+test('a successful GitHub response with no remaining quota blocks further checks until reset', async () => {
+  let time = 100000000, calls = 0;
+  const f = fixture({ now: () => time, fetchImpl: async () => {
+    calls++;
+    return Response.json({ tag_name: 'v0.14.0', draft: false, prerelease: false }, {
+      headers: { 'X-RateLimit-Remaining': '0', 'X-RateLimit-Reset': String((time + 120000) / 1000) },
+    });
+  } });
+  await f.checker.check();
+  await f.checker.check();
+  assert.equal(calls, 1);
+  time += 120000; await f.checker.check();
+  assert.equal(calls, 2);
+});
+
 test('tray and application menus expose the checker and preserve Quit and banner controls', () => {
   const vm = require('node:vm');
   const fs = require('node:fs');
@@ -172,6 +233,7 @@ test('tray and application menus expose the checker and preserve Quit and banner
       require: name => {
         if (name === 'electron') return electron;
         if (name === './updates.cjs') return updates;
+        if (name === './bounds.cjs') return require('../../desktop/bounds.cjs');
         if (name === './engine-state.cjs') return { EngineState: class {} };
         if (name === './banner-gesture.cjs') return { createBannerGesture: () => () => {} };
         if (name === './protocol.cjs') return { ORIGIN: 'sportsover://app' };
@@ -190,6 +252,8 @@ test('tray and application menus expose the checker and preserve Quit and banner
     for (const id of ['toggle-banner', 'lock-banner', 'fullscreen-banner', 'recover-banner']) {
       assert.ok(bannerMenu.some(item => item.id === id), `Banner menu includes ${id}`);
     }
-    assert.ok(bannerMenu.some(item => item.label === 'Banner size'));
+    const sizes = bannerMenu.find(item => item.id === 'banner-size');
+    assert.equal(sizes.label, 'Banner size');
+    assert.equal(sizes.submenu.map(item => item.label).join(','), '50%,75%,100%,125%,150%,200%,300%');
   }
 });

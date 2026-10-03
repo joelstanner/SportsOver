@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const { EngineState } = require('./engine-state.cjs');
 const { startServer, credentials } = require('./server.cjs');
 const { Store, applyCatalog } = require('./store.cjs');
-const { fitBounds, fullscreenBounds, stepBannerScale } = require('./bounds.cjs');
+const { fitBounds, fullscreenBounds, BANNER_SCALES, stepBannerScale } = require('./bounds.cjs');
 const { createBannerGesture } = require('./banner-gesture.cjs');
 const { bannerUrl } = require('./banner-link.cjs');
 const { createHandler, ORIGIN } = require('./protocol.cjs');
@@ -12,6 +12,8 @@ const { createUpdateChecker } = require('./updates.cjs');
 const updateChecker = createUpdateChecker({ app, dialog, shell, onStateChange: menus,
   readLastCheck: () => store?.value.desktop.lastUpdateCheck,
   saveLastCheck: timestamp => store.desktop({ lastUpdateCheck: timestamp }),
+  readRateLimit: () => store?.value.desktop.updateRateLimit,
+  saveRateLimit: value => store.desktop({ updateRateLimit: value }),
 });
 let backgroundStartup = process.argv.includes('--background');
 app.setName('SportsOver');
@@ -99,6 +101,12 @@ function fullscreenMenuItem() {
   return { id: 'fullscreen-banner', label: normalBounds ? 'Exit fullscreen' : 'Fullscreen banner',
     accelerator: 'CommandOrControl+Shift+F', click: () => setFullscreen(!normalBounds) };
 }
+function bannerSizeMenuItem() {
+  const width = (normalBounds || banner?.getBounds())?.width;
+  return { id: 'banner-size', label: 'Banner size', enabled: !normalBounds,
+    submenu: BANNER_SCALES.map(scale => ({ id: `banner-size-${scale}`, label: `${Math.round(scale * 100)}%`,
+      type: 'checkbox', checked: width === Math.round(472 * scale), click: () => resize(scale) })) };
+}
 function recover() {
   setFullscreen(false);
   if (banner.webContents.isCrashed()) banner.webContents.reload();
@@ -124,7 +132,7 @@ function menus() {
     { id: 'lock-banner', label: 'Lock banner position', type: 'checkbox', checked: locked, click: item => lock(item.checked) },
     fullscreenMenuItem(),
     { id: 'recover-banner', label: 'Recover banner (unlock and reposition)', accelerator: 'CommandOrControl+Shift+U', click: recover },
-    { label: 'Banner size', enabled: !normalBounds, submenu: [0.75, 1, 1.25, 1.5, 2].map(scale => ({ label: `${Math.round(scale * 100)}%`, click: () => resize(scale) })) },
+    bannerSizeMenuItem(),
     { type: 'separator' }, updateItem,
     { type: 'separator' }, { label: 'Quit SportsOver', accelerator: 'CommandOrControl+Q', click: () => app.quit() },
   ];
@@ -151,6 +159,7 @@ function resize(scale) {
   if (normalBounds) return;
   bannerGesture({ phase: 'cancel' });
   banner.setBounds(fitBounds({ ...banner.getBounds(), width: Math.round(472 * scale) }, screen.getAllDisplays()));
+  menus();
 }
 function status() { return { version: app.getVersion(), trayAvailable: !!tray && !tray.isDestroyed(), trayBounds: tray && !tray.isDestroyed() ? tray.getBounds() : null, appIconAvailable: !!appIcon, obsUrl, engineReady: engineState.ready, override: engineState.override, locked, visible: banner.isVisible(), fullscreen: !!normalBounds, scale: (normalBounds || banner.getBounds()).width / 472, shortcut, warning: store.warning }; }
 if (!app.requestSingleInstanceLock()) app.quit();
@@ -170,8 +179,9 @@ else {
     if (process.platform === 'darwin' && appIcon) app.dock.setIcon(appIcon);
     app.setAboutPanelOptions({ applicationName: 'SportsOver', applicationVersion: app.getVersion(), ...(appIcon ? { iconPath: appIconPath } : {}) });
     const { updateCatalogs } = await import('../scripts/team-catalog.mjs');
-    protocol.handle('sportsover', createHandler({ root, dataRoot: app.getPath('userData'), store, engine: engineState, fetchImpl: (...args) => net.fetch(...args), refresh: async sport => {
-      try { return await updateCatalogs(sport, app.getPath('userData')); }
+    const fetchProvider = require('../core/provider-network.js').create({ fetchImpl: (...args) => net.fetch(...args) });
+    protocol.handle('sportsover', createHandler({ root, dataRoot: app.getPath('userData'), store, engine: engineState, fetchProvider, fetchImpl: (...args) => net.fetch(...args), refresh: async sport => {
+      try { return await updateCatalogs(sport, app.getPath('userData'), fetchProvider); }
       finally {
         for (const entry of globalThis.SportsOverlay.config.SPORT_CATALOG) {
           try { applyCatalog(JSON.parse(require('node:fs').readFileSync(path.join(app.getPath('userData'), 'sports', entry.key, 'teams.json'), 'utf8'))); }
@@ -215,6 +225,7 @@ else {
         { label: 'Settings…', click: openSettings },
         { id: 'lock-banner', label: 'Lock banner position', type: 'checkbox', checked: locked, click: item => lock(item.checked) },
         fullscreenMenuItem(),
+        bannerSizeMenuItem(),
         { id: 'hide-banner', label: 'Hide banner', click: hideBanner },
         updateChecker.menuItem(),
       ]).popup({ window: banner });

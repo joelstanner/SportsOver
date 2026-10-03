@@ -43,7 +43,7 @@ async function startServer({ root, engine, token, port = 17843 }) {
       if (url.pathname === '/api/output') return json(response, 200, engine.output());
       if (url.pathname === '/' || url.pathname === '/output') { response.writeHead(302, { Location: '/sports/display.html' }); return response.end(); }
       const relative = decodeURIComponent(url.pathname).replace(/^\/sports\//, '');
-      if (!(relative === 'display.html' || relative === 'core/output.js' || relative === 'core/desktop.js' || /^(core|sports)\/[\w/.-]+\.css$/.test(relative)) || relative.split('/').includes('..')) return json(response, 404, { error: 'Not found' });
+      if (!(relative === 'display.html' || relative === 'core/scrolling.js' || relative === 'core/output.js' || relative === 'core/desktop.js' || /^(core|sports)\/[\w/.-]+\.css$/.test(relative)) || relative.split('/').includes('..')) return json(response, 404, { error: 'Not found' });
       const content = await fs.promises.readFile(path.join(root, relative));
       response.writeHead(200, {
         'Content-Type': relative.endsWith('.html') ? 'text/html' : relative.endsWith('.css') ? 'text/css' : 'text/javascript',

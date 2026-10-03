@@ -10,11 +10,11 @@
     const requestTimeoutMs = Number(options.requestTimeoutMs);
     const fetchImpl = options.fetchImpl || global.fetch.bind(global);
 
-    async function fetchJson(url) {
+    async function fetchJson(url, requestOptions = {}) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
       try {
-        const response = await fetchImpl(url, { cache: "no-store", signal: controller.signal });
+        const response = await fetchImpl(url, { cache: "no-store", signal: controller.signal, requestTimeoutMs, priority: requestOptions.priority });
         if (!response.ok) throw new Error(`ESPN NHL feed returned HTTP ${response.status}`);
         return await response.json();
       } finally {
@@ -32,15 +32,15 @@
       return (await fetchJson(`${API}/scoreboard?limit=100`)).events ?? [];
     }
 
-    async function getEvent(gameId, eventFeaturedTeamId = featuredTeamId) {
-      const summary = await fetchJson(`${API}/summary?event=${encodeURIComponent(gameId)}`);
+    async function getEvent(gameId, eventFeaturedTeamId = featuredTeamId, requestOptions = {}) {
+      const summary = await fetchJson(`${API}/summary?event=${encodeURIComponent(gameId)}`, requestOptions);
       const event = normalizeEvent(summary, eventFeaturedTeamId, gameId);
       if (event.state !== EVENT_STATES.LIVE) return event;
       // This endpoint reports the current advantage, unlike cumulative PP stats
       // or a historical play's strength. Failure must not preserve an old flag.
       try {
         const id = encodeURIComponent(gameId);
-        const situation = await fetchJson(`${SITUATION_API}${id}/competitions/${id}/situation`);
+        const situation = await fetchJson(`${SITUATION_API}${id}/competitions/${id}/situation`, requestOptions);
         event.details.powerPlayActive = typeof situation.powerPlay === "boolean" ? situation.powerPlay : null;
         event.details.powerPlayTeamId = powerPlayTeam(summary, situation, event.teams);
       } catch (_) {

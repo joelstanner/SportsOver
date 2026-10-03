@@ -1,6 +1,8 @@
 import { mkdir, writeFile, rename } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import providerNetwork from "../core/provider-network.js";
+const fetchProvider = providerNetwork.create();
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BRAND_OVERRIDES = new Map([
@@ -22,8 +24,8 @@ const ESPN_SPORTS = Object.freeze([
 
 export const SUPPORTED_SPORTS = Object.freeze(["baseball", ...ESPN_SPORTS.map(item => item.sport)]);
 
-async function fetchJson(url) {
-  const response = await fetch(url, { signal: AbortSignal.timeout(20000) });
+async function fetchJson(url, fetchImpl) {
+  const response = await fetchImpl(url, { requestTimeoutMs: 20000 });
   if (!response.ok) throw new Error(`${url} returned HTTP ${response.status}`);
   return response.json();
 }
@@ -53,10 +55,10 @@ async function writeCatalog(sport, value, outputRoot = root) {
   return { sport, count: value.teams.length, updatedAt: value.updatedAt };
 }
 
-async function updateMlb(outputRoot) {
+async function updateMlb(outputRoot, fetchImpl) {
   const [mlb, espn] = await Promise.all([
-    fetchJson("https://statsapi.mlb.com/api/v1/teams?sportId=1"),
-    fetchJson("https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams?limit=100"),
+    fetchJson("https://statsapi.mlb.com/api/v1/teams?sportId=1", fetchImpl),
+    fetchJson("https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams?limit=100", fetchImpl),
   ]);
   const espnTeams = espn.sports?.[0]?.leagues?.[0]?.teams?.map(entry => entry.team) ?? [];
   const aliases = new Map([["CWS", "CHW"]]);
@@ -83,9 +85,9 @@ function espnIdentity(team, metadata) {
   return { teamId: team.abbreviation, keyId: abbreviation, logoId: abbreviation };
 }
 
-async function updateEspnSport(metadata, outputRoot) {
+async function updateEspnSport(metadata, outputRoot, fetchImpl) {
   const url = `https://site.api.espn.com/apis/site/v2/sports/${metadata.apiSport}/${metadata.apiLeague}/teams?limit=${metadata.limit}`;
-  const payload = await fetchJson(url);
+  const payload = await fetchJson(url, fetchImpl);
   const sourceTeams = payload.sports?.[0]?.leagues?.[0]?.teams?.map(entry => entry.team) ?? [];
   const teams = sourceTeams.map(team => {
     const identity = espnIdentity(team, metadata);
@@ -102,12 +104,12 @@ async function updateEspnSport(metadata, outputRoot) {
   return writeCatalog(metadata.sport, catalog({ sport: metadata.sport, league: metadata.league, provider: metadata.provider }, teams), outputRoot);
 }
 
-export async function updateCatalogs(selection = "all", outputRoot = root) {
+export async function updateCatalogs(selection = "all", outputRoot = root, fetchImpl = fetchProvider) {
   const sports = selection === "all" ? SUPPORTED_SPORTS : [selection];
   if (sports.some(sport => !SUPPORTED_SPORTS.includes(sport))) throw new Error(`Unsupported sport: ${selection}`);
   const results = await Promise.allSettled(sports.map(sport => sport === "baseball"
-    ? updateMlb(outputRoot)
-    : updateEspnSport(ESPN_SPORTS.find(item => item.sport === sport), outputRoot)));
+    ? updateMlb(outputRoot, fetchImpl)
+    : updateEspnSport(ESPN_SPORTS.find(item => item.sport === sport), outputRoot, fetchImpl)));
   const failures = results.filter(result => result.status === "rejected");
   if (failures.length) throw new Error(failures.map(result => result.reason.message).join("; "));
   return results.map(result => result.value);

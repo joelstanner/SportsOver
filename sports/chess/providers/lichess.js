@@ -91,7 +91,7 @@
       teamKeys: [], competitorKeys: event.competitors.map(player => player.id),
       raw: { name: event.details.name, bannerLabel: event.details.view === "player"
         ? `Player · ${event.competitors.find(player => (player.pdgaNumber || player.id) === event.details.playerId)?.name || "Choose a player"}`
-        : `Top ${event.details.leaderboardSize} players`, roundName: event.details.roundName, stale: event.details.stale, automatic: event.details.automatic, detailedState: event.detailedState,
+        : event.state === "live" && event.details.games.length ? "Live round matchups" : `Top ${event.details.leaderboardSize} players`, roundName: event.details.roundName, stale: event.details.stale, automatic: event.details.automatic, detailedState: event.detailedState,
         discoveryTier: event.details.discoveryTier, discoveryReason: event.details.discoveryReason } };
   }
   function createSession() { return { tail: Promise.resolve(), requests: new Map(), lastGood: new Map(), cooldownUntil: 0, directory: [], directoryAt: -Infinity, directoryPending: null, watches: new Map(), finishedAt: new Map(), activeWatches: new Set(), secondTier: new Map(), secondTierAt: -Infinity }; }
@@ -123,13 +123,23 @@
         : BASE + path;
       if (session.requests.has(url)) return session.requests.get(url);
       const pending = session.tail.catch(() => {}).then(async () => {
-        if (now() < session.cooldownUntil) throw Error("Lichess rate limit · retrying after one minute");
-        const response = await fetchImpl(url, { signal: AbortSignal.timeout(requestTimeoutMs) });
-        if (!response.ok) {
-          if (response.status === 429) session.cooldownUntil = now() + 60_000;
-          const error = Error(`Lichess returned HTTP ${response.status}`); error.status = response.status; throw error;
+        if (now() < session.cooldownUntil) throw Error("Lichess rate limit · waiting before retrying");
+        try {
+          const response = await fetchImpl(url, { signal: AbortSignal.timeout(requestTimeoutMs), requestTimeoutMs });
+          if (!response.ok) {
+            const error = Error(`Lichess returned HTTP ${response.status}`); error.status = response.status;
+            const retry = response.headers?.get("Retry-After");
+            if (retry) error.retryAfterMs = /^\d+(\.\d+)?$/.test(retry) ? Number(retry) * 1000 : Math.max(0, Date.parse(retry) - now()) || 0;
+            throw error;
+          }
+          return response.json();
+        } catch (error) {
+          // The shared refresh cache throws for HTTP errors instead of returning
+          // a Response. Both paths must stop all remaining Lichess requests.
+          if (error.status === 429) session.cooldownUntil = Math.max(session.cooldownUntil,
+            error.retryAt ?? now() + Math.max(60_000, error.retryAfterMs || 0));
+          throw error;
         }
-        return response.json();
       });
       session.tail = pending; session.requests.set(url, pending);
       try { return await pending; } finally { session.requests.delete(url); }
@@ -163,14 +173,14 @@
       }
     }
     async function listCurrentEvents() {
-      if (!session.directoryPending && now() >= session.directoryAt + DIRECTORY_INTERVAL) {
+      if (!session.directoryPending && now() >= (session.directoryError ? session.directoryRetryAt : session.directoryAt + DIRECTORY_INTERVAL)) {
         session.directoryPending = (async () => {
           try {
             const value = await get("top");
             if (!Array.isArray(value.active)) throw Error("Lichess broadcast directory unavailable");
             session.directory = value.active.filter(item => validId(item.tour?.id)).map(item => ({ ...item.tour, currentRound: item.round }));
             session.directoryError = null;
-          } catch (error) { session.directoryError = error; }
+          } catch (error) { session.directoryError = error; session.directoryRetryAt = Math.max(now() + 60_000, session.cooldownUntil); }
           finally { session.directoryAt = now(); session.directoryPending = null; }
         })();
       }
@@ -178,13 +188,17 @@
       if (session.directoryError) throw session.directoryError;
       return session.directory;
     }
-    async function loadEvent(watch) {
+    async function loadEvent(watch, inspectedEvent) {
       const id = watchId(watch);
       try {
-        const metadata = await getMetadata(watch.tournamentId);
-        const round = selectRound(metadata, watch.roundId, now());
-        if (!round) { const error = Error("Selected chess round is unavailable"); error.missingRound = true; throw error; }
-        const event = normalizeEvent(metadata, await getRound(round.id), watch, now());
+        let event = inspectedEvent && structuredClone(inspectedEvent);
+        if (!event) {
+          const metadata = await getMetadata(watch.tournamentId);
+          const round = selectRound(metadata, watch.roundId, now());
+          if (!round) { const error = Error("Selected chess round is unavailable"); error.missingRound = true; throw error; }
+          event = normalizeEvent(metadata, await getRound(round.id), watch, now());
+        }
+        Object.assign(event.details, { discoveryReason: watch.discoveryReason });
         if (watch.view !== "player" || !event.competitors.some(person => person.id === watch.playerId)) {
           try { event.details.standings = await getStandings(watch.tournamentId); }
           catch (_) {
@@ -209,9 +223,10 @@
     }
     async function secondTierEvents() {
       if (!discoverSecondTier) return { events: [], failures: 0 };
+      const inspected = new Map();
       let failures = 0;
       try { await listCurrentEvents(); } catch (_) { failures++; }
-      if (!session.directoryError && now() >= session.secondTierAt + DIRECTORY_INTERVAL) {
+      if (!session.directoryError && now() >= (session.secondTierRetryAt || session.secondTierAt + DIRECTORY_INTERVAL)) {
         const found = [];
         // Inspect only a bounded set of currently ongoing official broadcasts.
         const candidates = session.directory.filter(tour => tour.tier === 3 && tour.currentRound?.ongoing)
@@ -225,6 +240,7 @@
             const event = normalizeEvent(metadata, await getRound(round.id), watch, now()), strength = secondTierStrength(event);
             if (metadata.tour.tier !== 3 || event.state !== "live" || !strength.qualifies) continue;
             found.push({ watch: { ...watch, discoveryReason: strength.reason }, rank: strength.rank });
+            inspected.set(watchId(watch), event);
           } catch (_) { failures++; }
         }
         const next = found.sort((a, b) => b.rank - a.rank || watchId(a.watch).localeCompare(watchId(b.watch))).slice(0, 3).map(item => item.watch);
@@ -233,11 +249,12 @@
         }
         session.secondTier = new Map(next.map(watch => [watchId(watch), watch]));
         session.secondTierAt = now();
+        session.secondTierRetryAt = failures ? Math.max(now() + 60_000, session.cooldownUntil) : 0;
       }
       const events = [];
       for (const watch of session.secondTier.values()) {
         if (watches.some(item => watchId(item) === watchId(watch))) continue;
-        try { const event = await loadEvent(watch); failures += Number(event.details.stale); if (event.state === "live") events.push(event); }
+        try { const event = await loadEvent(watch, inspected.get(watchId(watch))); failures += Number(event.details.stale); if (event.state === "live") events.push(event); }
         catch (_) { failures++; }
       }
       return { events, failures };
@@ -308,10 +325,17 @@
         automaticWatches: autoFollow && !session.directoryError ? [...session.watches.values()].filter(watch => !watches.some(item => watchId(item) === watchId(watch))) : null,
         automaticWatchesComplete: failures === manualFailures };
     }
-    return { getMetadata, getRound, getStandings, resolve, listCurrentEvents, getEvent, discover, discoveryIntervalMs: autoFollow || discoverSecondTier ? DIRECTORY_INTERVAL : Infinity };
+    return { getMetadata, getRound, getStandings, resolve, listCurrentEvents, getEvent, discover,
+      get discoveryIntervalMs() {
+        return Math.min(autoFollow || discoverSecondTier ? DIRECTORY_INTERVAL : Infinity,
+          session.cooldownUntil > now() ? session.cooldownUntil - now() : Infinity,
+          session.directoryError ? Math.max(1000, session.directoryRetryAt - now()) : Infinity,
+          session.secondTierRetryAt ? Math.max(1000, session.secondTierRetryAt - now()) : Infinity);
+      } };
   }
   const provider = { createClient, createSession, eliteEvents, reference, watchId, selectRound, gameState, roundState, normalizeEvent, normalizePlayer, normalizeStandings, toCandidate,
-    failureBackoff: true, refreshIntervalMs: url => String(url).endsWith("/top") ? DIRECTORY_INTERVAL : undefined,
+    failureBackoff: true, requestIntervalMs: 1000, rateLimitCooldownMs: 60_000,
+    refreshIntervalMs: url => String(url).endsWith("/top") ? DIRECTORY_INTERVAL : undefined,
     refreshState(payload, url) {
       if (String(url).endsWith("/players")) return "live";
       if (String(url).includes("/-/-/")) return payload ? roundState(payload) : "pregame";

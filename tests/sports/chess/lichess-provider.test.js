@@ -10,6 +10,11 @@ const payload = { tour: metadata.tour, round: metadata.rounds[0], games: [
 ] };
 const watch = { tournamentId: "Tour1234", roundId: "", view: "overview", enabled: true };
 const response = (value, status = 200) => ({ ok: status === 200, status, json: async () => structuredClone(value) });
+test('tournament candidates describe live matchups and switch back to standings outside play', () => {
+  const event = api.normalizeEvent(metadata, payload, watch);
+  assert.equal(api.toCandidate(event).raw.bannerLabel, 'Live round matchups');
+  assert.equal(api.toCandidate({...event,state:'interrupted'}).raw.bannerLabel, 'Top 10 players');
+});
 test("chess reference parsing distinguishes tournaments, rounds, and game links", () => {
   assert.deepEqual(api.reference("Tour1234"), { id: "Tour1234", round: false });
   assert.deepEqual(api.reference("https://lichess.org/broadcast/masters/Tour1234"), { id: "Tour1234", round: false });
@@ -201,4 +206,19 @@ test('tournament standings and player banners remain independent through discove
   assert.equal(retained.details.standings[0].score, 5.5);
   assert.equal(retained.details.standingsUnavailable, true);
   assert.equal((await client.getEvent('Tour1234:auto:banner:follow-white')).details.stale, false);
+});
+
+test('429 thrown by the shared refresh cache activates cooldown and retries directory after that cooldown', async () => {
+  let now=1000,calls=0,limited=true;
+  const session=api.createSession();
+  const client=api.createClient({session,now:()=>now,fetchImpl:async()=>{
+    calls++;
+    if(limited){const error=Error('Score provider returned HTTP 429');error.status=429;error.retryAt=121000;throw error;}
+    return response({active:[]});
+  }});
+  await assert.rejects(client.listCurrentEvents(),/429/);
+  await assert.rejects(client.getMetadata('Tour1234'),/rate limit/);
+  assert.equal(calls,1);assert.equal(client.discoveryIntervalMs,120000);
+  now=120999;await assert.rejects(client.listCurrentEvents(),/429/);assert.equal(calls,1);
+  now=121000;limited=false;assert.deepEqual(await client.listCurrentEvents(),[]);assert.equal(calls,2);
 });

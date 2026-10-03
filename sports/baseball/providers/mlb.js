@@ -21,11 +21,11 @@
     const fetchImpl = options.fetchImpl || global.fetch.bind(global);
     const scheduleUrl = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&teamId=${teamId}`;
 
-    async function fetchJson(url) {
+    async function fetchJson(url, requestOptions = {}) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
       try {
-        const response = await fetchImpl(url, { cache: "no-store", signal: controller.signal });
+        const response = await fetchImpl(url, { cache: "no-store", signal: controller.signal, requestTimeoutMs, priority: requestOptions.priority });
         if (!response.ok) throw new Error(`MLB API returned HTTP ${response.status}`);
         return await response.json();
       } finally {
@@ -43,8 +43,8 @@
       return schedule.dates?.flatMap(entry => entry.games ?? []) ?? [];
     }
 
-    async function getEvent(gameId, eventFeaturedTeamId = teamId) {
-      const feed = await fetchJson(`https://statsapi.mlb.com/api/v1.1/game/${gameId}/feed/live`);
+    async function getEvent(gameId, eventFeaturedTeamId = teamId, requestOptions = {}) {
+      const feed = await fetchJson(`https://statsapi.mlb.com/api/v1.1/game/${gameId}/feed/live`, requestOptions);
       return normalizeFeed(feed, eventFeaturedTeamId, gameId);
     }
 

@@ -15,7 +15,7 @@
       event.details.standings = global.SportsOverlay.lichess.normalizeStandings([
         "Gukesh D", "Magnus Carlsen", "Fabiano Caruana", "Hikaru Nakamura", "Viswanathan Anand",
         "Judit Polgar", "Anish Giri", "Wesley So", "Ding Liren", "Alireza Firouzja",
-      ].map((name, index) => ({ name, title: "GM", rank: index + 1, played: 7, score: 6 - Math.floor(index / 2) * 0.5 })));
+      ].map((name, index) => ({ name, fideId: ({ "Gukesh D": 46616543, "Fabiano Caruana": 2020009 })[name], title: "GM", rank: index + 1, played: 7, score: 6 - Math.floor(index / 2) * 0.5 })));
       return event;
     });
   }

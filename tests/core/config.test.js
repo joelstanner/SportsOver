@@ -226,3 +226,17 @@ test('second-tier discovery defaults on, persists an explicit off choice, and co
   assert.equal(api.normalizeConfig(config).sports[0].discoverSecondTier,false);
  }
 });
+
+test('explicit tournament additions survive discovery changes without overriding disabled watches', () => {
+  const config = configApi.normalizeConfig({ includedGames: ['chess:vwZHETCy:auto', 'chess:Disabled:auto', 'disc-golf:12345:MPO', 'chess:bad:auto', 'chess:vwZHETCy:auto:banner:missing'],
+    sports: [{sport:'chess',autoFollow:false,discoverSecondTier:false,events:[{tournamentId:'Disabled',enabled:false}]}] });
+  const watches = configApi.eventWatches(config,'chess');
+  assert.deepEqual(watches.map(configApi.watchId), ['Disabled:auto','vwZHETCy:auto']);
+  assert.equal(watches[0].enabled,false);
+  assert.equal(configApi.isCandidateEnabled(config,{sport:'chess',id:'vwZHETCy:auto'}),true);
+  assert.equal(configApi.isCandidateEnabled(config,{sport:'chess',id:'Disabled:auto'}),false);
+  assert.equal(configApi.eventWatches(config,'disc-golf')[0].division,'MPO');
+  config.includedGames=[];
+  assert.equal(configApi.isCandidateEnabled(config,{sport:'chess',id:'vwZHETCy:auto'}),false);
+  assert.equal(configApi.eventWatches(config,'chess').length,1);
+});

@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const { bannerUrl } = require('../../desktop/banner-link.cjs');
 
 test('opens Lichess broadcast rounds and individual games', () => {
-  for (const url of ['https://lichess.org/broadcast/-/-/Round001', 'https://lichess.org/broadcast/masters/round-1/Round001/Game0001#32']) {
+  for (const url of ['https://lichess.org/broadcast/-/-/Round001', 'https://lichess.org/broadcast/-/-/Round001#players/123', 'https://lichess.org/broadcast/-/-/Round001#players/Fabiano%20Caruana', 'https://lichess.org/broadcast/masters/round-1/Round001/Game0001#32']) {
     assert.equal(bannerUrl(url), url);
   }
 });
