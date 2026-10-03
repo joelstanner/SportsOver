@@ -3,6 +3,13 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.21.3 — 2026-10-02
+
+### Fixed
+
+- MLB pregame banners now include the date when the game is not today, using
+  the selected display time zone.
+
 ## 0.21.2 — 2026-10-02
 
 ### Fixed

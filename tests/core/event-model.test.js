@@ -6,7 +6,7 @@ const assert = require("node:assert/strict");
 global.window = globalThis;
 require("../../core/event-model.js");
 
-test("shared non-baseball pregame formatter includes the date unless the game is today", () => {
+test("shared pregame formatter includes the date unless the game is today", () => {
   const now = new Date("2026-10-24T19:00:00Z");
   const today = "2026-10-25T00:15:00Z";
   const nextWeek = "2026-11-01T00:15:00Z";

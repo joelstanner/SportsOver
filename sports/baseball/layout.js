@@ -307,7 +307,7 @@
   }
 
   function formatLocalTime(isoDate) {
-    return window.SportsOverlay.model.formatGameTime(isoDate);
+    return window.SportsOverlay.model.formatPregameStart(isoDate);
   }
 
   function showElement(element, visible) {
