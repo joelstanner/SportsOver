@@ -3,6 +3,22 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.27.0 — 2026-10-03
+
+### Added
+
+- File menu actions to export and import settings backups, using the same
+  validation and feedback as the Settings buttons.
+- An Unlock all control in the rotation header to clear game locks at once.
+
+### Changed
+
+- Hovering over the desktop banner lets the rotation timer count down, then
+  holds the current banner until the pointer leaves. Scores continue updating,
+  manual browsing still works, and hiding the banner releases the hold.
+
+Existing settings are preserved. No migration is required.
+
 ## 0.26.0 — 2026-10-03
 
 ### Added
