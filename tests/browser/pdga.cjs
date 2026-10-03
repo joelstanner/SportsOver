@@ -15,13 +15,13 @@ const directory = [{tournId:86076,officialName:'Disc Golf Championship with a ve
   const browser = await chromium.launch({headless:true,channel:process.env.PLAYWRIGHT_CHANNEL || 'chrome'});
   try {
     const context = await browser.newContext({viewport:{width:1120,height:850}});
-    let offline = false, upcoming = false;
+    let offline = false, upcoming = false, livePlayer = false;
     await context.route('**/*', async route => {
       const url = new URL(route.request().url());
       if (url.hostname === 'www.pdga.com' && url.pathname.includes('current-events')) return route.fulfill({json:directory});
       if (url.hostname === 'www.pdga.com') return route.fulfill({status:offline ? 503 : 200,json:{data:url.pathname.endsWith('fetch_event')
-        ? upcoming ? {...metadata,LatestRound:1,HighestCompletedRound:0,Divisions:[{Division:'MPO',LatestRound:1}]} : metadata
-        : upcoming ? {scores:[{Name:'Kevin Jones',PDGANum:41760,Round:1,TeeTime:'09:00'}]} : scores}});
+        ? upcoming || livePlayer ? {...metadata,LatestRound:1,HighestCompletedRound:0,Divisions:[{Division:'MPO',LatestRound:1}]} : metadata
+        : upcoming ? {scores:[{Name:'Kevin Jones',PDGANum:41760,Round:1,TeeTime:'09:00'}]} : livePlayer ? require('../sports/disc-golf/live-round.json') : scores}});
       if (url.hostname !== 'overlay.test') return route.fulfill({json:{events:[],dates:[]}});
       const file = url.pathname === '/admin/' ? 'admin/index.html' : url.pathname.slice(1);
       try { return route.fulfill({body:await fs.readFile(path.join(root,file)),contentType:({'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json'})[path.extname(file)]}); }
@@ -59,16 +59,18 @@ const directory = [{tournId:86076,officialName:'Disc Golf Championship with a ve
     await page.getByRole('button',{name:'Live control'}).click();
     await page.locator('#rotation-queue [data-game-key="disc-golf:86076:MPO"]').waitFor();
     const rotationName = page.locator('#rotation-queue [data-game-key="disc-golf:86076:MPO"] .game-name');
-    await rotationName.evaluate(el=>el.style.width='150px');
+    await rotationName.evaluate(el=>{el.style.width='80px';el.style.whiteSpace='nowrap';});
     await rotationName.hover();
-    assert.equal(await rotationName.getAttribute('title'), metadata.Name);
+    assert.equal(await rotationName.innerText(), 'Player · Kevin Jones');
+    assert.equal(await rotationName.getAttribute('title'), `Player · Kevin Jones · ${metadata.Name} · MPO`);
     await page.mouse.move(0,0);
     await rotationName.evaluate(el=>el.style.width='max-content');
     await rotationName.hover();
     assert.equal(await rotationName.getAttribute('title'), null);
-    await rotationName.evaluate(el=>el.style.removeProperty('width'));
+    await rotationName.evaluate(el=>{el.style.removeProperty('width');el.style.removeProperty('white-space');});
     await page.locator('#rotation-queue .lock-game').click();
     await page.waitForFunction(()=>JSON.parse(localStorage.getItem('sports-overlay.config.v1')).lockedGameKeys.includes('disc-golf:86076:MPO'));
+    assert.match(await page.locator('#rotation-queue .game-meta').innerText(), /Final · R3 · Pos 4 · Total −12 · Round −7 · Thru F/);
     const banner = await context.newPage(); banner.on('pageerror',e=>errors.push(e.message));
     await banner.goto('http://overlay.test/index.html?sport=disc-golf');
     await banner.locator('.pdga-focus').waitFor();
@@ -124,6 +126,19 @@ const directory = [{tournId:86076,officialName:'Disc Golf Championship with a ve
     assert.match(await banner.locator('.pdga-labels').innerText(), /RATING/);
     assert.match(await banner.locator('.pdga-footer').innerText(), /By PDGA rating/);
     await banner.screenshot({path:'/tmp/sportsover-pdga-ratings.png'});
+    // Live round-one totals must appear in both the player's leaders strip
+    // and the division board when PDGA leaves ToPar empty.
+    const liveRound = require('../sports/disc-golf/live-round.json');
+    for (const view of ['player', 'leaderboard']) {
+      await banner.evaluate(({metadata, liveRound, view}) => {
+        const api = window.SportsOverlay;
+        api.registry.getLayout('disc-golf').createLayout().render(api.pdga.normalizeEvent(metadata, liveRound,
+          {tournamentId:'98293', division:'MPO', view, playerId:'90439'}));
+      }, {metadata, liveRound, view});
+      const totals = banner.locator(view === 'player' ? '.pdga-chase b' : '.pdga-entry .pdga-total');
+      assert.deepEqual(await totals.allTextContents(), ['−2', '−1', '−1']);
+      if (view === 'player') assert.equal(await banner.locator('.pdga-focus .pdga-total').innerText(), '−2');
+    }
     // A next-round DNF must not make waiting players live, and its footer
     // must not incorrectly claim that the unplayed round is complete.
     await banner.evaluate(metadata=>{
@@ -149,11 +164,27 @@ const directory = [{tournId:86076,officialName:'Disc Golf Championship with a ve
     await banner.locator('.basketball-scorebug[data-state="live"]').waitFor();
     await banner.locator('.pdga-scorebug[data-state="live"]').waitFor();
     await banner.locator('.basketball-scorebug[data-state="live"]').waitFor();
+    upcoming = false;
+    livePlayer = true;
+    await page.evaluate(() => {
+      const config = JSON.parse(localStorage.getItem('sports-overlay.config.v1'));
+      config.sports.forEach(group => { group.enabled = group.sport === 'disc-golf'; });
+      config.sports.find(group => group.sport === 'disc-golf').events[0].playerId = '90439';
+      localStorage.setItem('sports-overlay.config.v1', JSON.stringify(config));
+    });
+    await page.reload();
+    await page.getByRole('button',{name:'Live control',exact:true}).click();
+    const lockedPlayer = page.locator('#rotation-queue [data-game-key="disc-golf:86076:MPO"]');
+    await lockedPlayer.locator('.lock-game.is-locked').waitFor();
+    assert.equal(await lockedPlayer.locator('.game-name').innerText(), 'Player · Lucas Oberholtzer Hess');
+    assert.match(await lockedPlayer.locator('.game-meta').innerText(), /Live now · R1 · Pos 1 · Total −2 · Round −2 · Thru 2/);
+    assert.equal(await lockedPlayer.locator('.game-tournament').innerText(), `${metadata.SimpleName} · MPO`);
+    await lockedPlayer.screenshot({path:'/tmp/sportsover-pdga-player-card.png'});
     await page.getByRole('button',{name:'Settings',exact:true}).click();
     await sport.locator('.sport-enabled').uncheck();
     await page.waitForFunction(()=>JSON.parse(localStorage.getItem('sports-overlay.config.v1')).sports.find(s=>s.sport==='disc-golf').enabled===false);
     const saved = await page.evaluate(()=>JSON.parse(localStorage.getItem('sports-overlay.config.v1')).sports.find(s=>s.sport==='disc-golf'));
-    assert.equal(saved.events[0].playerId,'41760');
+    assert.equal(saved.events[0].playerId,'90439');
     assert.deepEqual(errors,[]);
     console.log('PDGA browser flow passed: browse events, responsive settings, watch, select player, save/reload, queue lock, 200%, stale data, team layout, disable.');
   } finally { await browser.close(); }

@@ -28,7 +28,9 @@
       rating: number(score.Rating) > 0 ? number(score.Rating) : null,
       place: !status && (started || priorRound) && ranked > 0 ? ranked : null,
       tied: flag(score.Tied), wonPlayoff: flag(score.WonPlayoff), status,
-      total: !status && (started || priorRound) ? number(score.ToPar) : null,
+      // ParThruRound includes the live round; ToPar can be empty in round one
+      // or contain only posted scores while the next round is in progress.
+      total: !status && (started || priorRound) ? number(score.ParThruRound) ?? number(score.ToPar) : null,
       roundScore: !status && started ? number(score.RoundScore) : null,
       roundToPar: !status && started ? number(score.RoundtoPar) : null,
       played: number(score.Played), holes: number(score.Holes), completed: flag(score.Completed), started,
@@ -76,11 +78,17 @@
     });
   }
   function toCandidate(event) {
+    const player = event.details.view === "player"
+      ? event.competitors.find(player => (player.pdgaNumber || player.id) === event.details.playerId) : null;
     return { id: event.id, sport: "disc-golf", competitionType: "individual", state: event.state, startTime: null,
       teamKeys: [], competitorKeys: event.competitors.map(player => player.pdgaNumber).filter(Boolean),
       raw: { name: event.details.name, fullName: event.details.fullName, bannerLabel: event.details.view === "player"
-        ? `Player · ${event.competitors.find(player => (player.pdgaNumber || player.id) === event.details.playerId)?.name || "Choose a player"}`
+        ? `Player · ${player?.name || (event.details.playerId ? "Player unavailable" : "Choose a player")}`
         : `Top ${event.details.leaderboardSize} players`, division: event.details.division, round: event.details.round,
+        view: event.details.view, player: player ? {
+          name: player.name, place: player.place, tied: player.tied, total: player.total, roundToPar: player.roundToPar,
+          played: player.played, completed: player.completed, started: player.started, teeTime: player.teeTime, status: player.status,
+        } : null,
         dateRange: event.details.dateRange, stale: event.details.stale, automatic: event.details.automatic, detailedState: event.detailedState,
         discoveryTier: event.details.discoveryTier, discoveryReason: event.details.discoveryReason } };
   }

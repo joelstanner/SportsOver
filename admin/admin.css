@@ -183,6 +183,8 @@ select, input { border: 1px solid var(--line); border-radius: 8px; padding: 10px
 .game-copy .sports-odds { justify-content: flex-start; padding: 4px 0 0; background: transparent; column-gap: 12px; }
 .game-copy .sports-odds strong { white-space: normal; overflow-wrap: anywhere; }
 .game-name { overflow: hidden; font-size: 0.82rem; text-overflow: ellipsis; white-space: nowrap; }
+.game-card.is-player-card .game-name { white-space: normal; overflow-wrap: anywhere; }
+.game-tournament { color: #fff; font-size: 0.68rem; overflow-wrap: anywhere; }
 .game-meta, .game-source { color: var(--muted); font-size: 0.68rem; }
 .game-card.is-live .game-meta { color: #ff6b6b; font-weight: 800; }
 .game-card.is-final { background: #121b29; border-color: #41516a; }

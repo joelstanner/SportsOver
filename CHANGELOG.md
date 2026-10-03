@@ -3,6 +3,17 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.28.1 — 2026-10-03
+
+### Fixed
+
+- PDGA player totals, leaders lines, and leaderboards use running scores,
+  including first-round events where the posted tournament total is empty.
+- PDGA player cards in the rotation show the player name first, the tournament
+  and division beneath it in white, and position, total, round score, and progress.
+
+Existing settings are preserved. No migration is required.
+
 ## 0.28.0 — 2026-10-03
 
 ### Added

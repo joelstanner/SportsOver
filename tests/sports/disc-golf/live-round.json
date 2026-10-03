@@ -1,0 +1,53 @@
+{
+  "scores": [
+    {
+      "Name": "Lucas Oberholtzer Hess",
+      "ShortName": "L. Oberholtzer Hess",
+      "PDGANum": 90439,
+      "Round": 1,
+      "RoundStarted": 1,
+      "HasRoundScore": 0,
+      "Played": 2,
+      "Completed": 0,
+      "ToPar": null,
+      "RoundtoPar": -2,
+      "ParThruRound": -2,
+      "RoundScore": 5,
+      "RunningPlace": 1,
+      "Tied": false
+    },
+    {
+      "Name": "Matt Hammersten",
+      "ShortName": "M. Hammersten",
+      "PDGANum": 81781,
+      "Round": 1,
+      "RoundStarted": 1,
+      "HasRoundScore": 0,
+      "Played": 2,
+      "Completed": 0,
+      "ToPar": null,
+      "RoundtoPar": -1,
+      "ParThruRound": -1,
+      "RoundScore": 6,
+      "RunningPlace": 2,
+      "Tied": true
+    },
+    {
+      "Name": "Conor Hahler",
+      "ShortName": "C. Hahler",
+      "PDGANum": 126772,
+      "Round": 1,
+      "RoundStarted": 1,
+      "HasRoundScore": 0,
+      "Played": 2,
+      "Completed": 0,
+      "ToPar": null,
+      "RoundtoPar": -1,
+      "ParThruRound": -1,
+      "RoundScore": 5,
+      "RunningPlace": 2,
+      "Tied": true
+    }
+  ],
+  "layouts": []
+}

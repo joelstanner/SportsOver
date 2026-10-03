@@ -50,6 +50,26 @@ test('real PDGA round maps a field, authoritative playoff places and round numbe
   assert.equal(event.details.fullName, metadata.Name);
   assert.equal(candidate.raw.fullName, metadata.Name);
 });
+test('LoCo Open first-round live totals use ParThruRound when ToPar is empty', () => {
+  // Public 98293/MPO round-one feed, October 3, 2026.
+  const event = normalize(require('./live-round.json'));
+  assert.equal(event.state, 'live');
+  assert.deepEqual(event.competitors.map(p => [p.name, p.total, p.roundToPar]), [
+    ['Lucas Oberholtzer Hess', -2, -2], ['Matt Hammersten', -1, -1], ['Conor Hahler', -1, -1],
+  ]);
+});
+test('running totals take precedence over posted totals, including even par', () => {
+  const score = {Round:2, RoundStarted:1, ToPar:-4, RoundtoPar:-2, ParThruRound:'-6'};
+  assert.equal(api.pdga.normalizePlayer(score).total, -6);
+  assert.equal(api.pdga.normalizePlayer({...score, ParThruRound:0}).total, 0);
+  for (const ParThruRound of [null, undefined, '', 'invalid']) {
+    assert.equal(api.pdga.normalizePlayer({...score, ParThruRound}).total, -4);
+  }
+  assert.equal(api.pdga.normalizePlayer({...score, Round:1, RoundStarted:0}).total, null);
+  assert.equal(api.pdga.normalizePlayer({...score, RoundStatus:'WD'}).total, null);
+  assert.equal(api.pdga.normalizePlayer({...score, RoundStarted:0, ParThruRound:-4}).total, -4);
+  assert.equal(api.pdga.normalizePlayer({...score, ToPar:null, ParThruRound:null}).total, null);
+});
 test('upcoming fields sort by player rating, with alphabetical ties and unrated players last', () => {
   const scores = [
     {Name:'A Unrated', Rating:0}, {Name:'B Lower', Rating:'1010'},
@@ -247,6 +267,13 @@ test('leaderboard and player banners for one division survive discovery independ
   const client = api.pdga.createClient({watches,fetchImpl:async url=>({ok:true,json:async()=>({data:url.includes('fetch_event')?metadata:round})})});
   const result = await client.discover();
   assert.deepEqual(result.automaticEntries.map(e=>e.candidate.id),['86076:MPO','86076:MPO:banner:kevin']);
+  const [board, player] = result.automaticEntries.map(e => e.candidate.raw);
+  assert.equal(board.view, 'leaderboard');
+  assert.equal(board.player, null);
+  assert.equal(player.view, 'player');
+  assert.equal(player.bannerLabel, 'Player · Kevin Jones');
+  assert.deepEqual(player.player, {name:'Kevin Jones', place:4, tied:false, total:-12, roundToPar:-7,
+    played:18, completed:true, started:true, teeTime:'14:36:00', status:''});
   assert.equal((await client.getEvent('86076:MPO:banner:kevin')).details.playerId,'41760');
   assert.equal((await client.getEvent('86076:MPO')).details.view,'leaderboard');
 });

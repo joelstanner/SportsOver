@@ -985,9 +985,18 @@
     }
     renderGameLogos(card.querySelector(".game-logos"), entry.candidate);
     const name = card.querySelector(".game-name");
+    card.classList.toggle("is-player-card", entry.candidate.sport === "disc-golf" && entry.candidate.raw?.view === "player");
     name.textContent = gameName(entry.candidate);
+    if (card.classList.contains("is-player-card")) {
+      const tournament = document.createElement("span");
+      tournament.className = "game-tournament";
+      tournament.textContent = [entry.candidate.raw.name, entry.candidate.raw.division].filter(Boolean).join(" · ");
+      name.after(tournament);
+    }
     name.addEventListener("pointerenter", () => {
-      if (name.scrollWidth > name.clientWidth) name.title = entry.candidate.raw?.fullName || name.textContent;
+      if (name.scrollWidth > name.clientWidth) name.title = entry.candidate.sport === "disc-golf" && entry.candidate.raw?.view === "player"
+        ? [name.textContent, entry.candidate.raw.fullName || entry.candidate.raw.name, entry.candidate.raw.division].filter(Boolean).join(" · ")
+        : entry.candidate.raw?.fullName || name.textContent;
       else name.removeAttribute("title");
     });
     card.querySelector(".game-meta").textContent = [gameMeta(entry.candidate), entry.candidate.raw?.discoveryReason].filter(Boolean).join(" · ");
@@ -1066,7 +1075,11 @@
 
   function gameName(candidate) {
     if (candidate.sport === "chess") return `${candidate.raw?.name || "Chess tournament"} · ${candidate.raw?.roundName || "Round"}${candidate.raw?.bannerLabel ? ` · ${candidate.raw.bannerLabel}` : ""}`;
-    if (candidate.sport === "disc-golf") return `${candidate.raw?.name || "PDGA tournament"} · ${candidate.raw?.division || ""}${candidate.raw?.bannerLabel ? ` · ${candidate.raw.bannerLabel}` : ""}`;
+    if (candidate.sport === "disc-golf") {
+      const tournament = `${candidate.raw?.name || "PDGA tournament"} · ${candidate.raw?.division || ""}`;
+      return candidate.raw?.view === "player" ? candidate.raw.bannerLabel
+        : `${tournament}${candidate.raw?.bannerLabel ? ` · ${candidate.raw.bannerLabel}` : ""}`;
+    }
     if (candidate.sport === "baseball") {
       const teams = candidate.raw?.teams;
       return [teams?.away?.team?.name, teams?.home?.team?.name].filter(Boolean).join(" at ") || `Game ${candidate.id}`;
@@ -1081,7 +1094,17 @@
 
   function gameMeta(candidate) {
     if (candidate.sport === "chess") return `${candidate.raw?.stale ? "Last received · " : ""}${candidate.state === "live" ? "Live now" : candidate.state === "interrupted" ? candidate.raw?.detailedState || "Break" : candidate.state === "final" ? "Final" : "Upcoming"}${candidate.state === "pregame" && candidate.startTime ? ` · ${global.SportsOverlay.model.formatPregameStart(candidate.startTime)}` : ""}`;
-    if (candidate.sport === "disc-golf") return `${candidate.raw?.stale ? "Last received · " : ""}${candidate.state === "final" ? "Final" : candidate.state === "live" ? "Live now" : candidate.state === "interrupted" ? candidate.raw?.detailedState || "Break" : "Upcoming"} · R${candidate.raw?.round || 1} · ${candidate.raw?.dateRange || ""}`;
+    if (candidate.sport === "disc-golf") {
+      const state = `${candidate.raw?.stale ? "Last received · " : ""}${candidate.state === "final" ? "Final" : candidate.state === "live" ? "Live now" : candidate.state === "interrupted" ? candidate.raw?.detailedState || "Break" : "Upcoming"}`;
+      const player = candidate.raw?.view === "player" && candidate.raw.player;
+      const signed = value => value == null ? "—" : value === 0 ? "E" : value > 0 ? `+${value}` : String(value).replace("-", "−");
+      const stats = !player ? [] : player.status ? [player.status] : [
+        `Pos ${player.place == null ? "—" : `${player.tied ? "T" : ""}${player.place}`}`,
+        `Total ${signed(player.total)}`, `Round ${signed(player.roundToPar)}`,
+        player.completed ? "Thru F" : player.started ? `Thru ${player.played ?? "—"}` : player.teeTime ? `Tee ${player.teeTime.slice(0, 5)} (course local)` : "Awaiting tee time",
+      ];
+      return [state, `R${candidate.raw?.round || 1}`, ...stats, candidate.raw?.dateRange].filter(Boolean).join(" · ");
+    }
     const preseason = candidate.sport === "baseball"
       ? ["S", "E"].includes(candidate.raw?.gameType)
       : global.SportsOverlay.model.espnPreseason(candidate.raw || {}, candidate.sport !== "soccer");
