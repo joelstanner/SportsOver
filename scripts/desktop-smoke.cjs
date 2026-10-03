@@ -288,7 +288,15 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     const fullBounds = await bannerBounds();
     const fullDisplay = await application.evaluate(({ screen }, bounds) => screen.getDisplayMatching(bounds).bounds, beforeDrag);
     assert.deepEqual(fullBounds, fullDisplay, 'fullscreen covers the entire current monitor');
-    await banner.waitForFunction(() => document.body.classList.contains('desktop-fullscreen'));
+    // Fullscreen IPC can arrive before Chromium handles the native resize.
+    // Wait for the viewport and resize-driven scale before measuring centering.
+    await banner.waitForFunction(({ width, height }) => {
+      const zoom = width / 472;
+      return document.body.classList.contains('desktop-fullscreen')
+        && innerWidth === width && innerHeight === height
+        && Math.abs(Number(document.body.style.zoom) - zoom) < 0.001
+        && Math.abs(parseFloat(document.body.style.height) * zoom - height) < 1;
+    }, fullBounds);
     const presentation = await banner.evaluate(() => {
       const box = document.querySelector('.scorebug').getBoundingClientRect();
       return { background: getComputedStyle(document.body).backgroundColor,
@@ -302,8 +310,8 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     assert.equal(await banner.locator('.scorebug').evaluate(el => getComputedStyle(el).cursor), 'none', 'idle cursor hides over the banner too');
     await banner.mouse.move(20, 10);
     assert.notEqual(await banner.evaluate(() => getComputedStyle(document.body).cursor), 'none', 'moving reveals the cursor');
-    assert.ok(Math.abs(presentation.centerX - presentation.width / 2) < 2, 'banner centered horizontally');
-    assert.ok(Math.abs(presentation.centerY - presentation.height / 2) < 2, 'banner centered vertically');
+    assert.ok(Math.abs(presentation.centerX - presentation.width / 2) < 2, `banner centered horizontally: ${JSON.stringify(presentation)}`);
+    assert.ok(Math.abs(presentation.centerY - presentation.height / 2) < 2, `banner centered vertically: ${JSON.stringify(presentation)}`);
     const nativeFullscreen = await application.evaluate(({ BrowserWindow }) => {
       const win = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('display.html?desktop'));
       // Electron 44's transparent Windows path emits enter-full-screen and
