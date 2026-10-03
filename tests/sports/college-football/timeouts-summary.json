@@ -1,0 +1,323 @@
+{
+  "_source": "https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=401871050",
+  "_note": "Reduced 2026-10-02 snapshot at 10:51 Q3. Includes period boundaries, timeout plays, latest play, and duplicate current-drive timeout.",
+  "header": {
+    "id": "401871050",
+    "competitions": [
+      {
+        "status": {
+          "displayClock": "10:51",
+          "period": 3,
+          "type": {
+            "id": "2",
+            "name": "STATUS_IN_PROGRESS",
+            "state": "in",
+            "completed": false,
+            "description": "In Progress",
+            "detail": "10:51 - 3rd Quarter",
+            "shortDetail": "10:51 - 3rd",
+            "statusPrimary": "10:51",
+            "statusSecondary": "3rd"
+          },
+          "displayPeriod": "3rd"
+        },
+        "competitors": [
+          {
+            "id": "48",
+            "homeAway": "home",
+            "score": "0",
+            "timeoutsUsed": 2,
+            "team": {
+              "id": "48",
+              "displayName": "Delaware Blue Hens",
+              "location": "Delaware",
+              "abbreviation": "DEL"
+            }
+          },
+          {
+            "id": "2335",
+            "homeAway": "away",
+            "score": "20",
+            "timeoutsUsed": 4,
+            "team": {
+              "id": "2335",
+              "displayName": "Liberty Flames",
+              "location": "Liberty",
+              "abbreviation": "LIB"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "drives": {
+    "previous": [
+      {
+        "plays": [
+          {
+            "id": "4018710503",
+            "period": {
+              "number": 1
+            },
+            "clock": {
+              "displayValue": "15:00"
+            },
+            "type": {
+              "id": "53",
+              "text": "Kickoff",
+              "abbreviation": "K"
+            }
+          }
+        ]
+      },
+      {
+        "plays": [
+          {
+            "id": "401871050147",
+            "period": {
+              "number": 2
+            },
+            "clock": {
+              "displayValue": "14:50"
+            },
+            "type": {
+              "id": "24",
+              "text": "Pass Reception",
+              "abbreviation": "REC"
+            }
+          }
+        ]
+      },
+      {
+        "plays": [
+          {
+            "id": "401871050298",
+            "period": {
+              "number": 2
+            },
+            "clock": {
+              "displayValue": "1:27"
+            },
+            "type": {
+              "id": "21",
+              "text": "Timeout",
+              "abbreviation": "TO"
+            },
+            "text": "Timeout Delaware, clock 01:27",
+            "teamParticipants": [
+              {
+                "id": "2335"
+              },
+              {
+                "id": "48",
+                "timeout": true
+              }
+            ]
+          },
+          {
+            "id": "401871050314",
+            "period": {
+              "number": 2
+            },
+            "clock": {
+              "displayValue": "1:08"
+            },
+            "type": {
+              "id": "21",
+              "text": "Timeout",
+              "abbreviation": "TO"
+            },
+            "text": "Timeout Liberty, clock 01:08",
+            "teamParticipants": [
+              {
+                "id": "2335",
+                "timeout": true
+              },
+              {
+                "id": "48"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "plays": [
+          {
+            "id": "401871050347",
+            "period": {
+              "number": 2
+            },
+            "clock": {
+              "displayValue": "0:28"
+            },
+            "type": {
+              "id": "21",
+              "text": "Timeout",
+              "abbreviation": "TO"
+            },
+            "text": "Timeout Liberty, clock 00:28",
+            "teamParticipants": [
+              {
+                "id": "48"
+              },
+              {
+                "id": "2335",
+                "timeout": true
+              }
+            ]
+          },
+          {
+            "id": "401871050363",
+            "period": {
+              "number": 2
+            },
+            "clock": {
+              "displayValue": "0:06"
+            },
+            "type": {
+              "id": "21",
+              "text": "Timeout",
+              "abbreviation": "TO"
+            },
+            "text": "Timeout Delaware, clock 00:06",
+            "teamParticipants": [
+              {
+                "id": "48",
+                "timeout": true
+              },
+              {
+                "id": "2335"
+              }
+            ]
+          },
+          {
+            "id": "401871050364",
+            "period": {
+              "number": 2
+            },
+            "clock": {
+              "displayValue": "0:06"
+            },
+            "type": {
+              "id": "21",
+              "text": "Timeout",
+              "abbreviation": "TO"
+            },
+            "text": "Timeout Liberty, clock 00:06",
+            "teamParticipants": [
+              {
+                "id": "48"
+              },
+              {
+                "id": "2335",
+                "timeout": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "plays": [
+          {
+            "id": "401871050377",
+            "period": {
+              "number": 3
+            },
+            "clock": {
+              "displayValue": "15:00"
+            },
+            "type": {
+              "id": "53",
+              "text": "Kickoff",
+              "abbreviation": "K"
+            }
+          }
+        ]
+      },
+      {
+        "plays": [
+          {
+            "id": "401871050416",
+            "period": {
+              "number": 3
+            },
+            "clock": {
+              "displayValue": "11:59"
+            },
+            "type": {
+              "id": "21",
+              "text": "Timeout",
+              "abbreviation": "TO"
+            },
+            "text": "Timeout Liberty, clock 11:59",
+            "teamParticipants": [
+              {
+                "id": "2335",
+                "timeout": true
+              },
+              {
+                "id": "48"
+              }
+            ]
+          },
+          {
+            "id": "401871050419",
+            "period": {
+              "number": 3
+            },
+            "clock": {
+              "displayValue": "11:14"
+            },
+            "type": {
+              "id": "8",
+              "text": "Penalty",
+              "abbreviation": "PEN"
+            }
+          }
+        ]
+      }
+    ],
+    "current": {
+      "plays": [
+        {
+          "id": "401871050416",
+          "period": {
+            "number": 3
+          },
+          "clock": {
+            "displayValue": "11:59"
+          },
+          "type": {
+            "id": "21",
+            "text": "Timeout",
+            "abbreviation": "TO"
+          },
+          "text": "Timeout Liberty, clock 11:59",
+          "teamParticipants": [
+            {
+              "id": "2335",
+              "timeout": true
+            },
+            {
+              "id": "48"
+            }
+          ]
+        },
+        {
+          "id": "401871050419",
+          "period": {
+            "number": 3
+          },
+          "clock": {
+            "displayValue": "11:14"
+          },
+          "type": {
+            "id": "8",
+            "text": "Penalty",
+            "abbreviation": "PEN"
+          }
+        }
+      ]
+    }
+  }
+}

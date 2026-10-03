@@ -63,6 +63,9 @@
     const homeSource = competitors(competition).find(team => team.homeAway === "home") ?? {};
     const away = normalizeTeam(awaySource, featuredTeamId);
     const home = normalizeTeam(homeSource, featuredTeamId);
+    const timeouts = collegeTimeouts(payload, competition, status);
+    away.timeoutsRemaining = timeouts.away;
+    home.timeoutsRemaining = timeouts.home;
     const possessionId = String(situation.possession || situation.lastPlay?.team?.id || "");
     const possession = [away, home].find(team => String(team.id) === possessionId);
     const detailedState = statusType.description || statusType.detail || "Scheduled";
@@ -76,6 +79,7 @@
       startTime: competition.date ?? payload.date ?? null,
       teams: { away, home },
       details: {
+        timeoutMaximum: timeouts.maximum,
         odds: global.SportsOverlay.model.espnOdds(payload),
         inPlay: statusType.state === "in",
         preseason: global.SportsOverlay.model.espnPreseason(payload),
@@ -109,13 +113,77 @@
       abbreviation,
       record: totalRecord?.summary || totalRecord?.displayValue || "",
       score: finiteNumberOrNull(competitor.score?.value ?? competitor.score),
-      timeoutsRemaining: global.SportsOverlay.timeouts.remaining(competitor, 3),
       featured: teamMatches(competitor, featuredTeamId),
       logoUrl: team.logo
         || team.logos?.find(logo => logo.rel?.includes("scoreboard") && !logo.rel?.includes("dark"))?.href
         || team.logos?.[0]?.href
         || "",
     };
+  }
+
+  function collegeTimeouts(payload, competition, status) {
+    const period = Number(status.period);
+    const maximum = period > 4 ? 1 : 3;
+    const teams = competitors(competition);
+    const result = { maximum, away: null, home: null };
+    // Show the next half's fresh allocation once halftime has been announced.
+    const halftime = /halftime/i.test(status.type?.description || status.type?.detail || "");
+    // NCAA Rule 3-1-3: 1OT and 2OT each get one; 3OT onward share one.
+    const firstPeriod = period <= 2 ? 1 : period <= 4 ? 3 : Math.min(period, 7);
+    const drives = [...(payload.drives?.previous || []), ...(payload.drives?.current ? [payload.drives.current] : [])];
+    const plays = [...new Map(drives.flatMap(drive => drive.plays || [])
+      .map(play => [play.id ?? play.sequenceNumber ?? JSON.stringify(play), play])).values()];
+    const playPeriod = play => Number(play.period?.number);
+    const coveredStart = plays.some(play => playPeriod(play) < firstPeriod
+      || (playPeriod(play) === firstPeriod && play.clock?.displayValue === "15:00"));
+    const coveredPeriods = new Set(plays.map(playPeriod).filter(value => Number.isInteger(value) && value >= firstPeriod && value <= period));
+    if (period <= 4 && status.displayClock === "15:00") coveredPeriods.add(period);
+    const used = { away: 0, home: 0 };
+    let reliable = Number.isInteger(period) && period > 0 && coveredStart && coveredPeriods.size === period - firstPeriod + 1;
+    for (const play of plays) {
+      const charged = (play.teamParticipants || []).filter(participant => participant.timeout === true);
+      const isTimeout = charged.length || String(play.type?.id) === "21" || /^timeout$/i.test(play.type?.text || "");
+      if (!isTimeout) continue;
+      if (!Number.isInteger(playPeriod(play))) { reliable = false; continue; }
+      if (playPeriod(play) < firstPeriod || playPeriod(play) > period) continue;
+      let chargedTeams = charged.map(participant => teams.find(team =>
+        String(team.team?.id ?? team.id) === String(participant.id ?? participant.team?.id)));
+      if (!charged.length) {
+        // Possession/start/end team IDs can belong to the opponent. Only use an
+        // explicitly named timeout team when participant charge flags are absent.
+        if (/official|media|two[ -]minute/i.test(play.text || "")) continue;
+        const name = /^timeout\s+(.+?),\s*clock\b/i.exec(play.text || "")?.[1].trim().toLowerCase();
+        chargedTeams = name ? teams.filter(({ team = {} }) =>
+          [team.displayName, team.shortDisplayName, team.location, team.nickname, team.abbreviation, team.name]
+            .some(value => value && value.toLowerCase() === name)) : [];
+        if (chargedTeams.length !== 1) { reliable = false; continue; }
+      }
+      for (const team of chargedTeams) {
+        if (!team || !(team.homeAway in used)) reliable = false;
+        else used[team.homeAway]++;
+      }
+    }
+    for (const team of teams) {
+      const side = team.homeAway;
+      if (!(side in used)) continue;
+      const explicit = timeoutCount(team.timeoutsRemaining, maximum);
+      if (halftime) result[side] = 3;
+      else if (explicit !== null) result[side] = explicit;
+      else if (reliable) result[side] = used[side] <= maximum ? maximum - used[side] : null;
+      // Used counts can be cumulative across halves. They are only unambiguous
+      // before halftime; never subtract the whole-game total in later periods.
+      else if (period === 1 || period === 2) {
+        const count = timeoutCount(team.timeoutsUsed, maximum);
+        result[side] = count === null ? null : maximum - count;
+      }
+    }
+    return result;
+  }
+
+  function timeoutCount(value, maximum) {
+    if (!["number", "string"].includes(typeof value) || String(value).trim() === "") return null;
+    const count = Number(value);
+    return Number.isInteger(count) && count >= 0 && count <= maximum ? count : null;
   }
 
   function teamMatches(competitor, featuredTeamId) {

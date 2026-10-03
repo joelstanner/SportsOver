@@ -3,6 +3,16 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.21.2 — 2026-10-02
+
+### Fixed
+
+- College football timeout counts now follow the current half instead of ESPN's
+  cumulative game totals, reset at halftime, and count duplicate plays only once.
+- College overtime shows one timeout per team for each of the first two extra
+  periods, then one shared allowance from the third overtime onward.
+- Hide uncertain timeout counts when the feed lacks sufficient play history.
+
 ## 0.21.1 — 2026-10-02
 
 ### Fixed

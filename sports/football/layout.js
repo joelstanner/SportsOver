@@ -56,8 +56,9 @@
       setTeam(els.awayMark, els.awayAbbr, els.awayRecord, away);
       setTeam(els.homeMark, els.homeAbbr, els.homeRecord, home);
       const showTimeouts = event.state === EVENT_STATES.LIVE || event.state === EVENT_STATES.INTERRUPTED;
-      global.SportsOverlay.timeouts.renderMarkers(els.awayTimeouts, showTimeouts ? away.timeoutsRemaining : null, 3, away.name);
-      global.SportsOverlay.timeouts.renderMarkers(els.homeTimeouts, showTimeouts ? home.timeoutsRemaining : null, 3, home.name);
+      const timeoutMaximum = event.sport === "college-football" ? event.details.timeoutMaximum ?? 3 : 3;
+      global.SportsOverlay.timeouts.renderMarkers(els.awayTimeouts, showTimeouts ? away.timeoutsRemaining : null, timeoutMaximum, away.name);
+      global.SportsOverlay.timeouts.renderMarkers(els.homeTimeouts, showTimeouts ? home.timeoutsRemaining : null, timeoutMaximum, home.name);
       const showScore = event.state !== EVENT_STATES.PREGAME;
       els.awayScore.textContent = showScore ? away.score ?? 0 : "";
       els.homeScore.textContent = showScore ? home.score ?? 0 : "";
