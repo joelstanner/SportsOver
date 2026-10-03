@@ -260,6 +260,41 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     await banner.locator('.scorebug').click();
     await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey === key, skippedGame);
 
+    const nativeKey = async (page, keyCode, modifiers = []) => {
+      const url = page.url();
+      await application.evaluate(({ BrowserWindow }, url) => BrowserWindow.getAllWindows()
+        .find(win => win.webContents.getURL() === url).focus(), url);
+      await page.waitForFunction(() => document.hasFocus());
+      // Use native input because CDP keyboard events bypass before-input-event.
+      await application.evaluate(({ BrowserWindow }, { url, keyCode, modifiers }) => {
+        const contents = BrowserWindow.getAllWindows().find(win => win.webContents.getURL() === url).webContents;
+        contents.sendInputEvent({ type: 'keyDown', keyCode, modifiers });
+        contents.sendInputEvent({ type: 'keyUp', keyCode, modifiers });
+      }, { url, keyCode, modifiers });
+    };
+    await banner.waitForFunction(async key => {
+      const frame = await (await fetch('/api/output')).json();
+      return frame.gameKey === key && Number(document.body.dataset.sequence) >= frame.sequence;
+    }, skippedGame);
+    await banner.evaluate(() => {
+      window.arrowTransitions = [];
+      document.addEventListener('animationstart', event => {
+        if (event.animationName === 'sports-rotate-quick') window.arrowTransitions.push(getComputedStyle(event.target).animationDuration);
+      });
+    });
+    await nativeKey(banner, 'Right');
+    await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey === key, initialGame);
+    await banner.waitForFunction(() => window.arrowTransitions.length >= 1);
+    await nativeKey(banner, 'Left');
+    await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey === key, skippedGame);
+    await banner.waitForFunction(() => window.arrowTransitions.length >= 2);
+    assert.deepEqual(await banner.evaluate(() => window.arrowTransitions.slice(0, 2)), ['0.1s', '0.1s'], 'arrows use a 100 ms transition');
+    await nativeKey(banner, 'Right', ['control']);
+    await nativeKey(admin, 'Right');
+    await admin.waitForTimeout(250);
+    assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame,
+      'modified arrows and arrows in Settings do not navigate the banner');
+
     const doubleClickBanner = async direction => {
       const width = await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
         .find(win => win.webContents.getURL().includes('display.html?desktop')).getContentBounds().width);

@@ -26,6 +26,15 @@
   animation: sports-rotate-in 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+#sports-overlay.is-rotating-quick {
+  animation: sports-rotate-quick 100ms ease-out both;
+}
+
+@keyframes sports-rotate-quick {
+  from { opacity: 0.65; transform: translateX(6px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 @keyframes sports-rotate-out {
   to {
     opacity: 0;
@@ -47,7 +56,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   #sports-overlay.is-rotating-out,
-  #sports-overlay.is-rotating-in {
+  #sports-overlay.is-rotating-in,
+  #sports-overlay.is-rotating-quick {
     animation: none;
   }
 }

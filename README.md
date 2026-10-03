@@ -91,7 +91,7 @@ To update a downloaded source checkout, replace it with the newer source and run
 
 `npm start` preserves Electron's diagnostic output. If Chromium reports a macOS Keychain certificate with `Failed parsing extensions`, the launcher adds an explanation that Chromium skipped that certificate and is continuing. No action is needed when scores load normally; other certificate or network errors still need investigation.
 
-- **Navigate:** click the leftmost 20% of the banner for the previous rotation item; click elsewhere for the next item, including while its position is locked. Single clicks wait briefly to distinguish a double-click. Both directions wrap around and start a fresh display interval. Game locks and temporary overrides still apply. Desktop and OBS stay in sync.
+- **Navigate:** click the leftmost 20% of the banner for the previous rotation item; click elsewhere for the next item, including while its position is locked. With the banner focused, **Left arrow** goes back and **Right arrow** goes forward, including in fullscreen. Single clicks wait briefly to distinguish a double-click. Both directions wrap around and start a fresh display interval. Game locks and temporary overrides still apply. Desktop and OBS stay in sync.
 - **Move:** click anywhere on the unlocked banner and drag, including between monitors. Moving more than 5 screen pixels starts a drag; releasing after dragging never skips a game.
 - **Settings:** right-click the banner and choose **Settings…**. Right-clicking does not advance rotation.
 - **Banner size:** right-click the banner and choose **Banner size** → **50%–300%**. The current preset is checked; sizing is unavailable in fullscreen.

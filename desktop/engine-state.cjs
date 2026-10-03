@@ -12,7 +12,8 @@ class EngineState extends EventEmitter {
     this.ready = true; this.lastSeen = this.now();
     const gameKey = frame.metadata.renderedGameKey || null;
     if (frame.html !== this.frame.html || gameKey !== this.frame.gameKey) {
-      this.frame = { sequence: this.frame.sequence + 1, html: frame.html, gameKey, updatedAt: this.now() };
+      this.frame = { sequence: this.frame.sequence + 1, html: frame.html, gameKey,
+        transition: frame.metadata.rotationTransition === 'quick' ? 'quick' : 'normal', updatedAt: this.now() };
     }
     this.metadata = frame.metadata;
     this.emit('frame', this.output());

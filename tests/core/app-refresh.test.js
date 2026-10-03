@@ -298,6 +298,32 @@ test("default timing changes immediately reschedule banner rotation", async () =
   assert.equal(app.renders.at(-1), "game/2");
 });
 
+test('fast navigation displays a cached game before an outstanding score request finishes', async () => {
+  const app = await fixture([], 3);
+  await app.engine.next();
+  app.hold();
+  const slow = app.engine.next();
+  await app.flush();
+  await app.engine.previous({ fast: true });
+  assert.equal(app.engine.describe().renderedGameKey, 'baseball:2');
+  assert.equal(app.engine.describe().rotationTransition, 'quick');
+  await app.release(); await slow;
+  assert.equal(app.engine.describe().renderedGameKey, 'baseball:2', 'late response cannot replace the selected game');
+  assert.equal(app.engine.describe().rotationTransition, 'quick', 'score updates preserve the navigation transition');
+});
+
+test('fast navigation to an unseen game bypasses an unrelated pending render', async () => {
+  const app = await fixture([], 3);
+  app.hold();
+  const slow = app.engine.next();
+  await app.flush();
+  await app.engine.next({ fast: true });
+  assert.equal(app.engine.describe().renderedGameKey, 'baseball:3');
+  assert.equal(app.engine.describe().rotationTransition, 'quick');
+  await app.release(); await slow;
+  assert.equal(app.engine.describe().renderedGameKey, 'baseball:3');
+});
+
 test("manual next wraps the queue and gives the next game a fresh dwell interval", async () => {
   const app = await fixture();
   await app.advance(4000);

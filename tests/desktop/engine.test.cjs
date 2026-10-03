@@ -12,11 +12,13 @@ test('output game identity follows rendered content, including changes with iden
   engine.publish({ html, metadata: { currentGameKey: 'baseball:2', renderedGameKey: 'baseball:1' } });
   assert.equal(engine.output().gameKey, 'baseball:1');
   assert.equal(engine.output().sequence, first.sequence, 'loading the next game does not transition the old frame');
-  engine.publish({ html, metadata: { currentGameKey: 'baseball:2', renderedGameKey: 'baseball:2' } });
+  engine.publish({ html, metadata: { currentGameKey: 'baseball:2', renderedGameKey: 'baseball:2', rotationTransition: 'quick' } });
   assert.equal(engine.output().gameKey, 'baseball:2');
+  assert.equal(engine.output().transition, 'quick');
   assert.equal(engine.output().sequence, first.sequence + 1);
   engine.publish({ html, metadata: { renderedGameKey: null } });
   assert.equal(engine.output().gameKey, null);
+  assert.equal(engine.output().transition, 'normal');
 });
 test('temporary overrides expire, retries do not extend them, conflicts and unknown games are rejected', () => {
   let time = 100, callback;

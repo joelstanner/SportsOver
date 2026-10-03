@@ -1,18 +1,30 @@
 'use strict';
 (async () => {
   if (window.top !== window) { document.documentElement.style.background = '#26373b'; document.body.style.background = '#26373b'; }
-  let signature = '';
+  let displayedSequence = 0;
   let failures = 0;
   let displayedGameKey = null;
   let engineInstance = null;
+  let pendingFrame = null, rendering = null;
+  let interruptedTransition = false;
   async function animate(element, className) {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    element.classList.remove(className);
+    // Restart the same quick animation when another arrow interrupts it.
+    void element.offsetWidth;
+    const quick = className === 'is-rotating-quick';
+    const previousFilter = element.style.filter;
+    if (quick) {
+      element.style.filter = 'url("#sports-rotation-motion-blur")';
+      motionBlurAnimation.beginElement();
+    }
     element.classList.add(className);
     try {
       const animations = element.getAnimations().filter(animation => animation.animationName?.startsWith('sports-rotate-'));
       await Promise.allSettled(animations.map(animation => animation.finished));
     } finally {
       element.classList.remove(className);
+      if (quick) element.style.filter = previousFilter;
     }
   }
   // Keep unchanged subtrees mounted so unrelated score/footer updates do not
@@ -49,29 +61,72 @@
   const note = document.createElement('div');
   note.style.cssText = 'position:fixed;bottom:0;left:6px;background:#392414;color:#fff;font:10px system-ui;padding:2px 6px;display:none';
   document.body.append(note);
+  const motionBlur = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  motionBlur.setAttribute('aria-hidden', 'true');
+  motionBlur.setAttribute('width', '0');
+  motionBlur.setAttribute('height', '0');
+  motionBlur.style.position = 'absolute';
+  motionBlur.innerHTML = `<defs><filter id="sports-rotation-motion-blur" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+    <feGaussianBlur stdDeviation="0 0"><animate attributeName="stdDeviation" values="5 0;0 0" dur="100ms" begin="indefinite" fill="freeze" /></feGaussianBlur>
+  </filter></defs>`;
+  document.body.append(motionBlur);
+  const motionBlurAnimation = motionBlur.querySelector('animate');
+  async function applyFrame(frame) {
+    if (engineInstance === frame.instance && frame.sequence <= displayedSequence) return;
+    const template = document.createElement('template');
+    template.innerHTML = frame.html;
+    const mount = document.querySelector('#sports-overlay');
+    const gameChanged = engineInstance === frame.instance && displayedGameKey
+      && frame.gameKey && displayedGameKey !== frame.gameKey;
+    const quick = frame.transition === 'quick';
+    if (gameChanged && !quick) await animate(mount, 'is-rotating-out');
+    if (pendingFrame?.instance === frame.instance && pendingFrame.sequence > frame.sequence) return;
+    const quickAnimation = quick && (gameChanged || interruptedTransition);
+    interruptedTransition = false;
+    const scrolling = window.SportsOverlay?.scrolling;
+    const scrollSnapshot = scrolling?.capture(mount);
+    updateNode(mount, template.content.firstElementChild);
+    scrolling?.restore(document.querySelector('#sports-overlay'),
+      gameChanged || engineInstance !== frame.instance ? null : scrollSnapshot);
+    displayedGameKey = frame.gameKey;
+    engineInstance = frame.instance;
+    displayedSequence = frame.sequence;
+    if (gameChanged || quickAnimation) await animate(document.querySelector('#sports-overlay'), quick ? 'is-rotating-quick' : 'is-rotating-in');
+    document.body.dataset.sequence = String(frame.sequence);
+  }
+  function receiveFrame(frame) {
+    // A polling response may be older than an immediately delivered desktop frame.
+    if (engineInstance === frame.instance && frame.sequence <= displayedSequence) return rendering;
+    if (pendingFrame?.instance === frame.instance && pendingFrame.sequence >= frame.sequence) return rendering;
+    pendingFrame = frame;
+    if (rendering) {
+      const mount = document.querySelector('#sports-overlay');
+      if (frame.transition === 'quick' && (frame.gameKey !== displayedGameKey || mount.classList.contains('is-rotating-out'))) {
+        for (const animation of mount.getAnimations()) {
+          if (animation.animationName?.startsWith('sports-rotate-')) {
+            interruptedTransition = true;
+            animation.cancel();
+          }
+        }
+      }
+      return rendering;
+    }
+    rendering = (async () => {
+      while (pendingFrame) {
+        const next = pendingFrame;
+        pendingFrame = null;
+        await applyFrame(next);
+      }
+    })().finally(() => { rendering = null; });
+    return rendering;
+  }
+  window.sportsDesktop?.onFrame(frame => { receiveFrame(frame)?.catch(console.error); });
   async function poll() {
     try {
       const response = await fetch('/api/output', { cache: 'no-store', signal: AbortSignal.timeout(3000) });
       if (!response.ok) throw Error('Output unavailable');
       const frame = await response.json();
-      if (signature !== `${frame.instance}:${frame.sequence}`) {
-        const template = document.createElement('template');
-        template.innerHTML = frame.html;
-        const mount = document.querySelector('#sports-overlay');
-        const gameChanged = engineInstance === frame.instance && displayedGameKey
-          && frame.gameKey && displayedGameKey !== frame.gameKey;
-        if (gameChanged) await animate(mount, 'is-rotating-out');
-        const scrolling = window.SportsOverlay?.scrolling;
-        const scrollSnapshot = scrolling?.capture(mount);
-        updateNode(mount, template.content.firstElementChild);
-        scrolling?.restore(document.querySelector('#sports-overlay'),
-          gameChanged || engineInstance !== frame.instance ? null : scrollSnapshot);
-        if (gameChanged) await animate(document.querySelector('#sports-overlay'), 'is-rotating-in');
-        displayedGameKey = frame.gameKey;
-        engineInstance = frame.instance;
-        signature = `${frame.instance}:${frame.sequence}`;
-        document.body.dataset.sequence = String(frame.sequence);
-      }
+      await receiveFrame(frame);
       failures = 0;
       note.textContent = 'Sports engine reconnecting…';
       note.style.display = frame.ready ? 'none' : 'block';

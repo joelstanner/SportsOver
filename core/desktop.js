@@ -125,7 +125,8 @@
       <h3>Banner controls</h3>
       <dl class="desktop-gestures">
         <div><dt>Browse games <span>Click</span></dt><dd>Leftmost 20%: previous item. Anywhere else: next item. PDGA and chess links open in your browser.</dd></div>
-        <div><dt>Scroll lists <span>Wheel or trackpad</span></dt><dd>Scroll PDGA and chess rows while hovering to pause automatic movement. Touch swipes also work. With the list focused, use arrow keys, Page Up/Down, or Home/End. Automatic scrolling resumes after you leave and move keyboard focus away.</dd></div>
+        <div><dt>Browse games <span>Left / Right arrows</span></dt><dd>With the banner focused, press Left for the previous item or Right for the next item, with a quick transition. Works in fullscreen and while the banner position is locked.</dd></div>
+        <div><dt>Scroll lists <span>Wheel or trackpad</span></dt><dd>Scroll PDGA and chess rows while hovering to pause automatic movement. Touch swipes also work. With the list focused, use Up/Down arrows, Page Up/Down, or Home/End. Automatic scrolling resumes after you leave and move keyboard focus away.</dd></div>
         <div><dt>Resize <span>Double-click</span></dt><dd>When unlocked: left half makes it smaller; right half makes it bigger. Size ranges from 50% to 300%.</dd></div>
         <div><dt>Move <span>Drag</span></dt><dd>When unlocked: click anywhere and drag to reposition. Dragging and resizing keep the current game.</dd></div>
         <div><dt>Fullscreen <span>Ctrl/Cmd + Shift + F</span></dt><dd>Show only the banner, centered across a black screen. The cursor hides after 3 seconds of inactivity; move it to show it again. Press Escape or choose Exit fullscreen to restore the previous size and position. Moving and resizing pause in fullscreen. Opening Settings also exits fullscreen.</dd></div>

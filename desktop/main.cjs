@@ -45,6 +45,13 @@ const root = path.resolve(__dirname, '..');
 const trusted = url => url.startsWith(`${ORIGIN}/sports/`);
 function secure(win) {
   win.webContents.on('before-input-event', (event, input) => {
+    if (win === banner && win.isFocused() && input.type === 'keyDown'
+      && !input.alt && !input.control && !input.meta && !input.shift
+      && (input.key === 'ArrowLeft' || input.key === 'ArrowRight')) {
+      event.preventDefault();
+      bannerGesture({ phase: 'cancel' });
+      engineWindow.webContents.send('engine:command', { type: input.key === 'ArrowLeft' ? 'previous' : 'next', fast: true });
+    }
     if (normalBounds && input.type === 'keyDown' && input.key === 'Escape') {
       event.preventDefault();
       setFullscreen(false);
@@ -236,7 +243,11 @@ else {
     ipcMain.on('engine:publish', (event, frame) => {
       if (event.sender !== engineWindow.webContents || event.senderFrame !== event.sender.mainFrame) return;
       if (typeof frame?.html !== 'string' || frame.html.length > 1000000 || !Array.isArray(frame.metadata?.availableEntries)) return;
+      const sequence = engineState.frame.sequence;
       engineState.publish(frame);
+      if (engineState.frame.sequence !== sequence && banner && !banner.isDestroyed()) {
+        banner.webContents.send('desktop:frame', engineState.output());
+      }
     });
     ipcMain.handle('engine:state', event => { authorize(event); return engineState.state(); });
     const bounds = fitBounds(store.value.desktop.bounds, screen.getAllDisplays());

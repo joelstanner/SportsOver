@@ -50,6 +50,8 @@ let renderChain = Promise.resolve();
 let discoveryGeneration = 0;
 let cachedDiscoveries = null;
 let renderedGameKey = null;
+let rotationTransition = "normal";
+const renderedEvents = new Map();
 let automaticRotationEntries = [];
 let overrideEntry = null;
 let discoveryPending = null;
@@ -74,11 +76,12 @@ window.SportsOverlay.engine = {
     liveMode: { active: liveMode.isActive(), canActivate: normalRotationQueue.some(window.SportsOverlay.liveMode.isLive) },
     currentGameKey: entryKey(overrideEntry || rotationQueue[currentIndex]) || null,
     renderedGameKey,
+    rotationTransition,
     overrideGameKey: entryKey(overrideEntry) || null,
   }),
   refresh: () => discoverGames(),
-  next: () => stepRotation(1),
-  previous: () => stepRotation(-1),
+  next: options => stepRotation(1, options),
+  previous: options => stepRotation(-1, options),
   setHovered(value) {
     bannerHovered = value === true;
     if (!bannerHovered && pendingRotation) {
@@ -108,15 +111,19 @@ window.SportsOverlay.engine = {
     else discoverGames(false);
   },
 };
-async function stepRotation(direction) {
+async function stepRotation(direction, { fast = false } = {}) {
   if (overrideEntry || rotationQueue.length < 2) return;
   pendingRotation = null;
   clearTimeout(rotationTimer); rotationTimer = null;
   const generation = ++rotationGeneration;
   clearTimeout(pollTimer); pollGeneration++;
   currentIndex = (currentIndex + direction + rotationQueue.length) % rotationQueue.length;
-  await renderCurrentGame({ animate: true });
-  if (generation === rotationGeneration) { schedulePoll(); scheduleRotation(); }
+  const cached = fast && renderedEvents.has(entryKey(rotationQueue[currentIndex]));
+  await renderCurrentGame({ animate: !fast, fast });
+  if (generation === rotationGeneration) {
+    schedulePoll(); scheduleRotation();
+    if (cached) void renderCurrentGame();
+  }
 }
 
 function publicEntry(entry) {
@@ -428,12 +435,23 @@ function renderCurrentGame(options = {}) {
   const entry = overrideEntry || rotationQueue[currentIndex];
   if (!entry) return Promise.resolve();
   const revision = ++requestRevision;
+  const cached = options.fast && renderedEvents.get(entryKey(entry));
+  if (cached) {
+    clearTransitionClasses();
+    activateLayout(entry.context.sport).render(cached);
+    renderedGameKey = entryKey(entry);
+    rotationTransition = "quick";
+    lastEventState = cached.state;
+    return Promise.resolve();
+  }
   const render = () => renderGame(entry, revision, options);
+  // Arrow navigation must not queue behind a slow request for another game.
+  if (options.fast) return render();
   renderChain = renderChain.then(render, render);
   return renderChain;
 }
 
-async function renderGame(entry, revision, { animate = false } = {}) {
+async function renderGame(entry, revision, { animate = false, fast = false } = {}) {
   if (revision !== requestRevision) return;
   try {
     let event = await entry.context.provider.getEvent(entry.candidate.id, entry.featuredTeamId, { priority: 'display' });
@@ -474,7 +492,11 @@ async function renderGame(entry, revision, { animate = false } = {}) {
     if (!animate) clearTransitionClasses();
     const currentLayout = activateLayout(entry.context.sport);
     currentLayout.render(event);
+    renderedEvents.delete(entryKey(entry));
+    renderedEvents.set(entryKey(entry), event);
+    if (renderedEvents.size > 200) renderedEvents.delete(renderedEvents.keys().next().value);
     // Publish the displayed game, not the next queue entry while it is loading.
+    if (renderedGameKey !== entryKey(entry)) rotationTransition = fast ? "quick" : "normal";
     renderedGameKey = entryKey(entry);
     if (animate) transitionIn();
     lastEventState = event.state;
@@ -615,6 +637,7 @@ if (!staticPreview) {
         ? { ...overrideEntry, context } : null;
     }
     if (teamsChanged || catalogChanged) {
+      renderedEvents.clear();
       // Invalidate in-flight discovery and remove disabled sports immediately,
       // including manual games, locks, and temporary overrides.
       discoveryGeneration++;

@@ -28,8 +28,8 @@
         refreshResult = { requestId: command.requestId, error: null };
       } catch (error) { refreshResult = { requestId: command.requestId, error: error.message }; }
     }
-    if (command.type === 'next') window.SportsOverlay.engine?.next();
-    if (command.type === 'previous') window.SportsOverlay.engine?.previous();
+    if (command.type === 'next') await window.SportsOverlay.engine?.next({ fast: command.fast === true });
+    if (command.type === 'previous') await window.SportsOverlay.engine?.previous({ fast: command.fast === true });
     if (command.type === 'live-mode') window.SportsOverlay.engine?.setLiveMode(command.active);
     publish();
   });
