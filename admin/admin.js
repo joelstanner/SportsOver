@@ -177,6 +177,7 @@
   });
   undoLiveButton.addEventListener("click", undoLastLiveChange);
   document.querySelector("#reset-rotation").addEventListener("click", resetRotation);
+  document.querySelector("#unlock-all-games").addEventListener("click", unlockAllGames);
   document.querySelector("#live-sport").addEventListener("change", updateLive);
   document.querySelector("#refresh-live").addEventListener("click", updateLive);
   document.querySelector("#demo-sport").addEventListener("change", updateDemo);
@@ -820,6 +821,7 @@
       : canActivate ? "Show only live games from your rotation." : "No live games in rotation.";
     document.querySelector("#rotation-mode").disabled = active;
     document.querySelector("#reset-rotation").disabled = active;
+    document.querySelector("#unlock-all-games").disabled = workingConfig.lockedGameKeys.length === 0;
     document.querySelector("#live-mode-note").textContent = active
       ? `Live mode is on. Game locks apply to eligible live games. Finished games stay for ${workingConfig.liveModeFinalMinutes} minutes. Turn off to restore your full rotation.`
       : "Show only live games from your rotation. Finished games stay for the time set in Settings.";
@@ -1138,6 +1140,12 @@
     workingConfig.gameDurations = {};
     workingConfig.lockedGameKeys = [];
     autoApplyLiveChange(previousLiveConfig, "Automatic rotation restored");
+  }
+
+  function unlockAllGames() {
+    const previousLiveConfig = savedLiveConfig();
+    workingConfig.lockedGameKeys = [];
+    autoApplyLiveChange(previousLiveConfig, "All games unlocked · rotation resumed");
   }
 
   function toggleGameLock(entry) {
