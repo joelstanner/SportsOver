@@ -3,6 +3,33 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.25.0 — 2026-10-03
+
+### Added
+
+- Selective second-tier chess and PDGA suggestions in Available games, with
+  qualification reasons, independent toggles, and fifteen-minute discovery.
+  Suggestions are enabled by default; adding them to rotation remains manual.
+- Visible loading indicators in Live control, with previously received games
+  preserved during discovery outages and engine restarts.
+
+### Changed
+
+- Settings backup now has clear import/export actions and import progress,
+  validation, and completion feedback.
+- Current-round chess watches advance to the next scheduled round as Upcoming,
+  keeping tournament standings visible and showing its scheduled start.
+- Chess and disc-golf breaks use Final rotation timing; queue state and timers
+  update when tournament status changes.
+
+### Fixed
+
+- Restored desktop chess standings when Lichess blocks direct renderer requests.
+- Discovery feed failures no longer erase previously loaded games and now
+  surface in Live control status.
+- Clarified current-event controls and kept long PDGA event names from widening
+  the settings layout.
+
 ## 0.24.1 — 2026-10-02
 
 ### Fixed

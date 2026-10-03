@@ -6,10 +6,12 @@ function fixture(){
  let now=Date.parse('2026-10-02T18:00:00Z'),active=0,maximum=0,offlineDirectory=false;const directory=[],tours=new Map(),calls=[],session=lichess.createSession();
  const options={autoFollow:true,session,now:()=>now,fetchImpl:async value=>{
   const url=new URL(value);calls.push(url);maximum=Math.max(maximum,++active);await new Promise(resolve=>setImmediate(resolve));active--;
-  if(url.pathname.endsWith('/top'))return offlineDirectory?new Response('{}',{status:503}):Response.json({active:directory.map(tour=>({tour}))});
-  const id=url.pathname.split('/').at(-1),item=[...tours.values()].find(item=>item.metadata.tour.id===id || item.payload.round.id===id);
+  if(url.pathname.endsWith('/top'))return offlineDirectory?new Response('{}',{status:503}):Response.json({active:directory.map(tour=>({tour,round:tours.get(tour.id)?.payload.round}))});
+  const id=url.pathname.split('/').at(-1),item=[...tours.values()].find(item=>item.metadata.tour.id===id || item.metadata.rounds.some(round=>round.id===id));
   if(!item||item.offline)return new Response('{}',{status:503});
-  return Response.json(url.pathname.includes('/-/-/')?item.payload:item.metadata);
+  return Response.json(url.pathname.includes('/-/-/')
+   ? id===item.payload.round.id?item.payload:{tour:item.metadata.tour,round:item.metadata.rounds.find(round=>round.id===id),games:[]}
+   :item.metadata);
  }};
  function add(id,tier=5,state='live'){
   const tour={id,name:`Elite ${id}`,tier,dates:[now-1000,now+86400000]};directory.push(tour);
@@ -45,9 +47,19 @@ test('repeating discovery finds newly posted elite tournaments every fifteen min
 });
 test('round breaks and directory rollover retain active tournaments; completed events retire after retention',async()=>{
  const f=fixture();f.add('Best0001');await f.client.discover();f.directory.length=0;f.advance(900000);f.set('Best0001','break');
+ delete f.tours.get('Best0001').metadata.rounds[1].startsAt;
  assert.deepEqual(ids(await f.client.discover()),['Best0001:auto']);assert.equal((await f.client.getEvent('Best0001:auto')).state,'interrupted');
  f.set('Best0001','final');let result=await f.client.discover({retentionMs:60000});assert.equal(result.automaticEntries[0].autoRetainUntil,f.now()+60000);
  f.advance(60000);result=await f.client.discover({retentionMs:60000});assert.deepEqual(ids(result),[]);assert.deepEqual(result.automaticWatches,[]);
+});
+
+test('future rounds remain available as upcoming and obey automatic fallback selection',async()=>{
+ const f=fixture();f.add('Best0001');await f.client.discover();f.set('Best0001','break');
+ const result=await f.client.discover({fallbackMode:'hide'});
+ assert.deepEqual(ids(result),[]);
+ assert.equal(result.availableEntries[0].candidate.raw.roundName,'Round 2');
+ assert.equal(result.availableEntries[0].candidate.state,'pregame');
+ assert.deepEqual(ids(await f.client.discover({fallbackMode:'up-next'})),['Best0001:auto']);
 });
 test('outages preserve received automatic watches, cannot prove completion, and recover',async()=>{
  const f=fixture();f.add('Best0001');await f.client.discover();f.tours.get('Best0001').offline=true;f.offlineDirectory(true);f.advance(900000);
@@ -88,4 +100,50 @@ test('unselected player banners stay out of discovery and cannot reappear as aut
  assert.equal((await client.getEvent(`${id}:auto`)).details.playerId,'fide:123');
  pending.playerId='';
  result=await client.discover();assert.deepEqual(ids(result),[`${id}:auto:banner:leaders`]);
+});
+
+test('second-tier suggestions require a strong titled live field, stay available-only, and are capped',async()=>{
+ const f=fixture();
+ for(let i=0;i<6;i++){
+  const id=f.add(`Norm000${i}`,3,i===5?'pregame':'live');
+  f.tours.get(id).payload.games[0].players=[{name:`GM ${i}`,fideId:100+i,title:'GM'},{name:`WGM ${i}`,fideId:200+i,title:'WGM'}];
+ }
+ f.add('Weak0001',3);f.add('Fake0001',0);
+ const client=lichess.createClient({...f.options,autoFollow:false,discoverSecondTier:true});
+ const result=await client.discover();
+ assert.equal(result.availableEntries.length,3);assert.deepEqual(ids(result),[]);
+ assert.ok(result.availableEntries.every(entry=>entry.candidate.raw.discoveryTier==='second'&&entry.candidate.state==='live'));
+ assert.match(result.availableEntries[0].candidate.raw.discoveryReason,/2 GM\/WGM/);
+ assert.equal((await client.getEvent(result.availableEntries[0].candidate.id)).details.discoveryTier,'second');
+ assert.ok(!f.calls.some(url=>url.pathname.includes('Fake0001')));
+});
+test('four distinct IM/WIM players qualify, repeated identities and rating alone do not',async()=>{
+ const f=fixture(),id=f.add('Norm0001',3),item=f.tours.get(id);
+ item.payload.games=[{...item.payload.games[0],players:[{name:'One',fideId:1,title:'IM'},{name:'Two',fideId:2,title:'WIM'}]},
+ {...item.payload.games[0],players:[{name:'Three',fideId:3,title:'IM'},{name:'Four',fideId:4,title:'WIM'}]}];
+ const client=lichess.createClient({...f.options,autoFollow:false,discoverSecondTier:true});
+ assert.equal((await client.discover()).availableEntries.length,1);
+ item.payload.games[1].players=item.payload.games[0].players;f.advance(900000);
+ assert.equal((await client.discover()).availableEntries.length,0);
+});
+test('second-tier search cadence survives client recreation; breaks, opt-out and manual watches are respected',async()=>{
+ const f=fixture(),id=f.add('Norm0001',3);f.tours.get(id).payload.games[0].players=[{name:'A',title:'GM'},{name:'B',title:'GM'}];
+ const options={...f.options,autoFollow:false,discoverSecondTier:true};
+ await lichess.createClient(options).discover();
+ const weak=f.add('Weak0001',3);await lichess.createClient(options).discover();
+ assert.ok(!f.calls.some(url=>url.pathname.includes(weak)));
+ f.set(id,'break');assert.equal((await lichess.createClient(options).discover()).availableEntries.length,0);
+ const disabled=lichess.createClient({...options,discoverSecondTier:false});assert.equal((await disabled.discover()).availableEntries.length,0);
+ await assert.rejects(disabled.getEvent(`${id}:auto`),/not watched/);
+ f.set(id,'live');
+ const manual=lichess.createClient({...options,watches:[{tournamentId:id,roundId:'',enabled:true,view:'overview'}]});
+ assert.equal((await manual.discover()).availableEntries.length,1);assert.equal((await manual.getEvent(`${id}:auto`)).details.automatic,false);
+ const hidden=lichess.createClient({...options,watches:[{tournamentId:id,roundId:'',enabled:false}]});assert.equal((await hidden.discover()).availableEntries.length,0);
+});
+test('second-tier failures keep last received suggestions labeled stale and healthy scans retire them',async()=>{
+ const f=fixture(),id=f.add('Norm0001',3);f.tours.get(id).payload.games[0].players=[{name:'A',title:'GM'},{name:'B',title:'GM'}];
+ const client=lichess.createClient({...f.options,autoFollow:false,discoverSecondTier:true});await client.discover();
+ f.tours.get(id).offline=true;f.advance(900000);const failed=await client.discover();
+ assert.equal(failed.availableEntries.length,1);assert.equal(failed.availableEntries[0].candidate.raw.stale,true);assert.ok(failed.failures>0);
+ f.directory.length=0;f.advance(900000);assert.equal((await client.discover()).availableEntries.length,0);
 });

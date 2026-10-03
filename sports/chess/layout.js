@@ -30,6 +30,7 @@
       if (!featured && d.view !== "player") footer = "Tournament standings · Points and tiebreak order from Lichess";
       if (!featured && !shown.length) footer = "Tournament scores are not published for this broadcast yet";
       if (!featured && d.standingsUnavailable) footer = shown.length ? "STALE standings · Last received tournament scores" : "Tournament standings unavailable · retrying automatically";
+      if (event.state === "pregame" && event.startTime) footer = `${global.SportsOverlay.model.formatPregameStart(event.startTime)} · ${footer}`;
       if (d.lastPlay) footer = d.lastPlay;
       if (event.state === "interrupted") footer = event.detailedState === "Round complete"
         ? "Round complete · awaiting next round" : event.detailedState;

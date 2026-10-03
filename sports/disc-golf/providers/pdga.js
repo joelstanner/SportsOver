@@ -71,7 +71,7 @@
         name: metadata.SimpleName || metadata.Name || watch.name, dateRange: metadata.DateRange || metadata.StartDate || "",
         fullName: metadata.Name || metadata.SimpleName || watch.name,
         view: watch.view || "leaderboard", playerId: watch.playerId || "", leaderboardSize: watch.leaderboardSize === 3 ? 3 : 10, layouts: round.layouts || [],
-        stale: false, automatic: watch.automatic === true,
+        stale: false, automatic: watch.automatic === true, discoveryTier: watch.discoveryTier, discoveryReason: watch.discoveryReason,
       },
     });
   }
@@ -81,12 +81,13 @@
       raw: { name: event.details.name, fullName: event.details.fullName, bannerLabel: event.details.view === "player"
         ? `Player · ${event.competitors.find(player => (player.pdgaNumber || player.id) === event.details.playerId)?.name || "Choose a player"}`
         : `Top ${event.details.leaderboardSize} players`, division: event.details.division, round: event.details.round,
-        dateRange: event.details.dateRange, stale: event.details.stale, automatic: event.details.automatic, detailedState: event.detailedState } };
+        dateRange: event.details.dateRange, stale: event.details.stale, automatic: event.details.automatic, detailedState: event.detailedState,
+        discoveryTier: event.details.discoveryTier, discoveryReason: event.details.discoveryReason } };
   }
   const DIRECTORY_INTERVAL = 15 * 60_000;
   function createSession() {
     return { directory: [], directoryAt: -Infinity, directoryPending: null,
-      selected: null, watches: new Map(), requests: new Map(), active: 0, waiting: [] };
+      selected: null, watches: new Map(), requests: new Map(), active: 0, waiting: [], secondTier: new Map(), secondTierAt: -Infinity };
   }
   function proTourEvents(directory, now) {
     const day = 86400_000;
@@ -99,7 +100,7 @@
         || Math.abs(Date.parse(a.startDate) - now) - Math.abs(Date.parse(b.startDate) - now)
         || String(a.tournId).localeCompare(String(b.tournId))).slice(0, 12);
   }
-  function createClient({ watches = [], autoFollow = false, autoDivisions = ["MPO", "FPO"],
+  function createClient({ watches = [], autoFollow = false, discoverSecondTier = false, autoDivisions = ["MPO", "FPO"],
     session = createSession(), now = Date.now, fetchImpl = global.fetch.bind(global), requestTimeoutMs = 8000 } = {}) {
     // Share in-flight metadata across divisions and bound all requests, including
     // rendering requests that overlap discovery, to three per engine session.
@@ -137,7 +138,7 @@
     }
     async function getEvent(id) {
       const manual = watches.find(item => watchId(item) === id);
-      const watch = manual || (autoFollow && session.watches.get(id));
+      const watch = manual || (autoFollow && session.watches.get(id)) || (discoverSecondTier && session.secondTier.get(id));
       if (!isWatchEnabled(watch) || (!manual && !autoDivisions.includes(watch.division))) throw Error("PDGA tournament/division is not watched");
       return loadEvent(watch);
     }
@@ -165,7 +166,7 @@
         if (!cached || error.unsupported) throw error;
         // Upcoming fields may have tee times but no scores to go stale. Keep
         // their normal status until a routine refresh detects play starting.
-        return { ...cached, details: { ...cached.details, stale: cached.state !== "pregame", unavailable: true, automatic: watch.automatic === true, view: watch.view, playerId: watch.playerId, leaderboardSize: watch.leaderboardSize === 3 ? 3 : 10 } };
+        return { ...cached, details: { ...cached.details, stale: cached.state !== "pregame", unavailable: true, automatic: watch.automatic === true, discoveryTier: watch.discoveryTier, discoveryReason: watch.discoveryReason, view: watch.view, playerId: watch.playerId, leaderboardSize: watch.leaderboardSize === 3 ? 3 : 10 } };
       }
     }
     async function listCurrentEvents() {
@@ -182,6 +183,58 @@
       if (session.directoryPending) await session.directoryPending;
       if (session.directoryError) throw session.directoryError;
       return session.directory;
+    }
+    async function secondTierEvents(metadataFor) {
+      if (!discoverSecondTier || !autoDivisions.length) return { events: [], failures: 0 };
+      let failures = 0;
+      try { await listCurrentEvents(); } catch (_) { failures++; }
+      if (!session.directoryError && now() >= session.secondTierAt + DIRECTORY_INTERVAL) {
+        const found = [], day = 86400_000;
+        const candidates = session.directory.filter(item => /^[1-9]\d{0,8}$/.test(String(item.tournId))
+          && String(item.tier).toUpperCase().split("/")[0] === "A"
+          && (!item.eventType || ["S", "E"].includes(item.eventType))
+          && Date.parse(item.startDate) <= now() + day && Date.parse(item.endDate || item.startDate) >= now() - day)
+          .sort((a, b) => Date.parse(b.startDate) - Date.parse(a.startDate) || String(a.tournId).localeCompare(String(b.tournId)))
+          .filter((item, index, all) => all.findIndex(other => String(other.tournId) === String(item.tournId)) === index).slice(0, 12);
+        for (const directory of candidates) {
+          const id = String(directory.tournId);
+          try {
+            const metadata = await metadataFor(id);
+            if (String(metadata.TierPro ?? metadata.RawTier ?? directory.tier).toUpperCase().split("/")[0] !== "A") continue;
+            const entries = [];
+            for (const division of metadata.Divisions.filter(item => ["MPO", "FPO"].includes(item.Division) && autoDivisions.includes(item.Division))) {
+              const watch = { tournamentId: id, division: division.Division, name: metadata.SimpleName || metadata.Name || directory.officialName,
+                enabled: true, view: "leaderboard", playerId: "", automatic: true, discoveryTier: "second" };
+              const event = await loadEvent(watch, Promise.resolve(metadata));
+              if (event.details.unavailable) { failures++; continue; }
+              if (event.state !== "live") continue;
+              const ratings = event.competitors.map(player => player.rating).filter(rating => rating > 0).sort((a, b) => b - a).slice(0, 5);
+              const average = ratings.length ? Math.round(ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length) : 0;
+              watch.discoveryReason = `Pro A-tier · ${watch.division}${average ? ` · top ${ratings.length} rated players average ${average}` : " · ratings unavailable"}`;
+              // Compare division-relative field strength so FPO-only events remain competitive.
+              entries.push({ watch, rank: average ? average - (watch.division === "FPO" ? 900 : 1000) : -Infinity });
+            }
+            if (entries.length) found.push({ entries, rank: Math.max(...entries.map(entry => entry.rank)), id });
+          } catch (error) { if (!error.unsupported) failures++; }
+        }
+        const next = found.sort((a, b) => b.rank - a.rank || a.id.localeCompare(b.id)).slice(0, 3).flatMap(item => item.entries.map(entry => entry.watch));
+        if (failures) for (const watch of session.secondTier.values()) {
+          const ids = new Set(next.map(item => item.tournamentId));
+          if ((ids.has(watch.tournamentId) || ids.size < 3) && !next.some(item => watchId(item) === watchId(watch))) next.push(watch);
+        }
+        session.secondTier = new Map(next.map(watch => [watchId(watch), watch]));
+        session.secondTierAt = now();
+      }
+      const events = [];
+      for (const watch of session.secondTier.values()) {
+        if (!autoDivisions.includes(watch.division) || watches.some(item => watchId(item) === watchId(watch))) continue;
+        try {
+          const event = await loadEvent(watch, metadataFor(watch.tournamentId));
+          failures += Number(Boolean(event.details.unavailable));
+          if (event.state === "live") events.push(event);
+        } catch (_) { failures++; }
+      }
+      return { events, failures };
     }
     async function discover({ topFavoriteOnly = false, fallbackMode = "up-next", excludedKeys = [], retentionMs = 60 * 60_000 } = {}) {
       let failures = 0;
@@ -267,11 +320,13 @@
         session.selected.active ||= active(selected);
         session.selected.events = selected.events;
       }
+      const secondTier = await secondTierEvents(metadataFor);
       const asEntry = event => ({ kind: event.details.automatic ? "automatic-event" : "watched-event", candidate: toCandidate(event) });
       const available = new Map(manual.map(event => [event.id, asEntry(event)]));
       for (const tournament of tournaments) for (const event of tournament.allEvents || tournament.events) {
         if (!available.has(event.id)) available.set(event.id, asEntry(event));
       }
+      for (const event of secondTier.events) if (!available.has(event.id)) available.set(event.id, asEntry(event));
       const firstWatch = watches.find(isWatchEnabled);
       const automatic = new Map((topFavoriteOnly ? manual.filter(event => event.id === watchId(firstWatch || {})) : manual)
         .map(event => [event.id, asEntry(event)]));
@@ -279,14 +334,14 @@
         automatic.set(event.id, { ...(automatic.get(event.id) || asEntry(event)),
           ...(session.selected.finishedAt !== null ? { autoRetainUntil: session.selected.finishedAt + retentionMs } : {}) });
       }
-      return { availableEntries: [...available.values()], automaticEntries: [...automatic.values()], failures,
+      return { availableEntries: [...available.values()], automaticEntries: [...automatic.values()], failures: failures + secondTier.failures,
         automaticWatches: autoFollow && !session.directoryError ? [...session.watches.values()]
           .filter(watch => !watches.some(item => watchId(item) === watchId(watch)))
           .map(watch => ({ tournamentId: watch.tournamentId, division: watch.division, name: watch.name, enabled: true, view: "leaderboard", playerId: "" })) : null,
         automaticWatchesComplete: failures === manualFailures,
       };
     }
-    return { getEvent, discover, getMetadata, getRound, listCurrentEvents, discoveryIntervalMs: autoFollow ? DIRECTORY_INTERVAL : Infinity };
+    return { getEvent, discover, getMetadata, getRound, listCurrentEvents, discoveryIntervalMs: autoFollow || discoverSecondTier ? DIRECTORY_INTERVAL : Infinity };
   }
 
   const provider = { createClient, createSession, proTourEvents, watchId,

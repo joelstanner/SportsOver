@@ -9,6 +9,7 @@ require('../core/config.js');
  config.sports.forEach(group=>group.enabled=group.sport==='chess');
  config.sports.find(group=>group.sport==='chess').events=[{tournamentId:'Tour1234',roundId:'',name:'Masters Invitational',enabled:true,view:'overview',playerId:''}];
  config.providerRefreshSeconds.chess={live:5,pregame:5,idle:5,final:5};
+ config.defaultGameDurations={live:45,pregame:5,final:5};
  await fs.writeFile(path.join(directory,'settings.json'),JSON.stringify({version:1,config,desktop:{visible:false}}));
  const metadata={tour:{id:'Tour1234',name:'Masters Invitational',info:{tc:'90+30'}},rounds:[{id:'Round001',name:'Round 1',ongoing:true},{id:'Round002',name:'Round 2'}],defaultRoundId:'Round001'};
  const round={tour:metadata.tour,round:metadata.rounds[0],games:[{id:'Game0001',players:[{name:'Gukesh D',title:'GM',rating:2787,fideId:123,clock:185400},{name:'Fabiano Caruana',title:'GM',rating:2803,clock:164200}],fen:'8/8/8/8/8/8/8/8 b - - 0 32',lastMove:'e2e4',status:'*'}]};
@@ -68,19 +69,24 @@ require('../core/config.js');
   await banner.waitForFunction(()=>document.querySelector('.chess-focus')?.textContent.includes('30:54'));
   frame=await(await fetch(status.obsUrl.replace('/output','/api/output'))).json();assert.match(frame.html,/chess-focus/);
   await banner.locator('#sports-overlay').screenshot({path:'/tmp/sportsover-chess-native-player.png'});
-  await admin.evaluate(()=>window.sportsDesktop.action('live-mode',true));
-  await admin.waitForFunction(async()=>(await window.sportsDesktop.engine()).liveMode.active);
-  // Intermediate completion stays in Live mode; the same watch then advances.
+  // Intermediate completion stays in normal rotation with final timing.
   await application.evaluate(()=>{globalThis.chessTest.round.games[0].status='1-0';globalThis.chessTest.round.round.ongoing=false;globalThis.chessTest.round.round.finishedAt=Date.now();globalThis.chessTest.metadata.rounds[0]=globalThis.chessTest.round.round;});
   await banner.waitForFunction(()=>document.querySelector('#sports-overlay')?.dataset.state==='interrupted',{},{timeout:15000});
   assert.equal((await admin.evaluate(()=>window.sportsDesktop.engine())).queue.length,1);
+  const breakTiming=await engine.evaluate(()=>{
+   const api=window.SportsOverlay,entry=api.engine.describe().queue[0],config=api.config.loadConfig();
+   return {state:entry.candidate.state,seconds:api.selection.gameDurationSeconds(entry,config.gameDurations,undefined,config.defaultGameDurations)};
+  });
+  assert.deepEqual(breakTiming,{state:'interrupted',seconds:5});
   await application.evaluate(()=>{const t=globalThis.chessTest;t.metadata.rounds[1].ongoing=true;t.round.round=t.metadata.rounds[1];t.round.games[0].status='*';});
   await banner.waitForFunction(()=>document.querySelector('.chess-state')?.textContent.includes('Round 2'),{},{timeout:15000});
   assert.equal((await admin.evaluate(()=>window.sportsDesktop.engine())).currentGameKey,'chess:Tour1234:auto');
+  await admin.evaluate(()=>window.sportsDesktop.action('live-mode',true));
+  await admin.waitForFunction(async()=>(await window.sportsDesktop.engine()).liveMode.active);
   // Removing an active watched tournament removes it from the shared engine/outputs.
   await sport.locator('.chess-remove').click();
   await admin.waitForFunction(async()=>(await window.sportsDesktop.engine()).queue.length===0);
   await banner.waitForFunction(()=>!document.querySelector('.chess-entry,.chess-focus'));
-  console.log('Chess native broadcast links without navigation, normal banner clicks, 200% banner, player selection, shared OBS, Live mode break/advance, and removal passed.');
+  console.log('Chess desktop standings bridge, broadcast links, banner clicks, 200% banner, player selection, shared OBS, break timing, round advance, Live mode, and removal passed.');
  }finally{if(application)await application.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

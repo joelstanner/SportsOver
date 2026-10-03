@@ -124,8 +124,8 @@ Managed Macs may not permit opening an unidentified developer's app.
 ## Release
 
 After the version bump is approved under `AGENTS.md`, update both package
-versions and `CHANGELOG.md`, and rebuild the local development app with
-`npm run build:mac`. Commit and push, then wait for the macOS and Windows
+versions and `CHANGELOG.md`. Do not rebuild the local development app as part
+of the version bump or release. Commit and push, then wait for the macOS and Windows
 packaging workflows on that exact commit. Download the three successful CI
 artifacts and verify their checksums; do not rebuild release installers locally.
 Prepare a GitHub release with the matching version,

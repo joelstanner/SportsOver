@@ -59,6 +59,8 @@ const liveMode = window.SportsOverlay.liveMode.create();
 // The desktop host is the sole live engine. Outputs receive rendered snapshots.
 window.SportsOverlay.engine = {
   describe: () => ({
+    discoveryComplete: cachedDiscoveries !== null,
+    discoveryPending: Boolean(discoveryPending),
     discoveryFailures: (cachedDiscoveries || []).reduce((total, result) => total + (result.failures || 0), 0),
     availableEntries: (cachedDiscoveries || []).flatMap(result => result.availableEntries).map(publicEntry),
     automaticEntries: automaticRotationEntries.map(publicEntry),
@@ -114,13 +116,13 @@ function createSportContext(group) {
   if (group.sport === "disc-golf") {
     const providerModule = window.SportsOverlay.registry.getProvider("pdga");
     return { sport: group.sport, league: "PDGA", providerModule,
-      provider: providerModule.createClient({ watches: group.events, autoFollow: group.autoFollow, autoDivisions: group.autoDivisions, session: pdgaSession, requestTimeoutMs: CONFIG.requestTimeoutMs,
+      provider: providerModule.createClient({ watches: group.events, autoFollow: group.autoFollow, discoverSecondTier: group.discoverSecondTier, autoDivisions: group.autoDivisions, session: pdgaSession, requestTimeoutMs: CONFIG.requestTimeoutMs,
         fetchImpl: refresh.fetchFor(group.sport, providerModule) }) };
   }
   if (group.sport === "chess") {
     const providerModule = window.SportsOverlay.registry.getProvider("lichess");
     return { sport: group.sport, league: "Lichess", providerModule,
-      provider: providerModule.createClient({ watches: group.events, autoFollow: group.autoFollow, session: chessSession, requestTimeoutMs: CONFIG.requestTimeoutMs,
+      provider: providerModule.createClient({ watches: group.events, autoFollow: group.autoFollow, discoverSecondTier: group.discoverSecondTier, session: chessSession, requestTimeoutMs: CONFIG.requestTimeoutMs,
         fetchImpl: refresh.fetchFor(group.sport, providerModule) }) };
   }
   const favoriteTeams = group.favorites
@@ -275,6 +277,7 @@ async function discoverGamesOnce(refresh = true) {
     { keyOf: entryKey, watchedTeams },
   );
   const previousKey = entryKey(rotationQueue[currentIndex]);
+  const previousState = rotationQueue[currentIndex]?.candidate.state;
   normalRotationQueue = window.SportsOverlay.selection.applyRotationControls({
     automaticEntries: automaticRotationEntries,
     availableEntries,
@@ -302,7 +305,9 @@ async function discoverGamesOnce(refresh = true) {
   scheduleDiscovery();
   await renderCurrentGame({ animate: changedGame });
   schedulePoll();
-  if (!rotationTimer || changedGame || rotationQueue.length < 2) scheduleRotation();
+  const tournamentStateChanged = rotationQueue[currentIndex]?.candidate.competitionType === "individual"
+    && rotationQueue[currentIndex].candidate.state !== previousState;
+  if (!rotationTimer || changedGame || tournamentStateChanged || rotationQueue.length < 2) scheduleRotation();
 }
 
 function selectedRotationQueue(availableEntries) {
@@ -320,6 +325,24 @@ function selectedRotationQueue(availableEntries) {
 }
 
 async function discoverSport(context) {
+  let result;
+  try { result = await discoverSportOnce(context); }
+  catch (error) {
+    console.warn(`[Sports overlay] ${context.sport} discovery failed.`, error);
+    result = { sport: context.sport, automaticEntries: [], availableEntries: [], failures: 1 };
+  }
+  if (!result.failures || result.availableEntries.length) return result;
+  const previous = cachedDiscoveries?.find(item => item.sport === context.sport);
+  if (!previous) return result;
+  // A failed refresh is not evidence that the previously found games vanished.
+  // Still respect watches or sports disabled while the request was in flight.
+  const retained = entries => entries.filter(entry => window.SportsOverlay.config.isCandidateEnabled(savedConfig, entry.candidate))
+    .map(entry => ({ ...entry, context, candidate: { ...entry.candidate, raw: { ...entry.candidate.raw, stale: true } } }));
+  return { ...result, automaticEntries: retained(previous.automaticEntries), availableEntries: retained(previous.availableEntries),
+    automaticWatches: null, automaticWatchesComplete: false };
+}
+
+async function discoverSportOnce(context) {
   if (["disc-golf", "chess"].includes(context.sport)) {
     const result = await context.provider.discover({ topFavoriteOnly: savedConfig.displayMode === "top-favorite",
       fallbackMode: savedConfig.fallbackMode, excludedKeys: savedConfig.excludedGames,
@@ -364,7 +387,7 @@ async function discoverSport(context) {
     featuredTeamId: candidate.teamKeys.find(teamId => favoriteIds.includes(String(teamId).toUpperCase())) ?? null,
     context,
   }));
-  return { automaticEntries, availableEntries };
+  return { sport: context.sport, automaticEntries, availableEntries, failures };
 }
 
 function renderCurrentGame(options = {}) {
@@ -392,7 +415,7 @@ async function renderGame(entry, revision, { animate = false } = {}) {
     const watchedTeams = savedConfig.displayMode === "top-favorite" ? entry.context.favoriteTeams?.slice(0, 1) : entry.context.favoriteTeams;
     const watchedGame = watchedTeams?.some(team => entry.candidate.teamKeys
       ?.some(id => String(id).toUpperCase() === String(team.teamId).toUpperCase()));
-    if (!overrideEntry && (liveMode.isActive() || watchedGame)) {
+    if (!overrideEntry && (liveMode.isActive() || watchedGame || event.competitionType === "individual")) {
       const observed = { ...entry, candidate: { ...entry.candidate, state: event.state,
         competitionType: event.competitionType || entry.candidate.competitionType },
         ...(event.state === "final" ? { autoFinalDetectedAt: entry.autoFinalDetectedAt ?? Date.now() } : {}) };
@@ -421,6 +444,7 @@ async function renderGame(entry, revision, { animate = false } = {}) {
     renderedGameKey = entryKey(entry);
     if (animate) transitionIn();
     lastEventState = event.state;
+    if (!overrideEntry && event.competitionType === "individual" && entry.candidate.state !== event.state) scheduleRotation();
   } catch (error) {
     if (revision === requestRevision) {
       clearTransitionClasses();

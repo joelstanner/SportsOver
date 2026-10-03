@@ -19,6 +19,9 @@
       <p>Follow one Elite Series or Major tournament through live rounds and round breaks. Manual watches keep their saved views. With nothing live, your fallback setting applies.</p>
       <div class="pdga-watch-controls"><label class="toggle"><input type="checkbox" class="pdga-auto-division" value="MPO">MPO</label><label class="toggle"><input type="checkbox" class="pdga-auto-division" value="FPO">FPO</label></div>
       <p>Elite event search repeats every 15 minutes while SportsOver is running. Discovered divisions appear in the automatic watch list below and are labeled Automatic in Live control. Exclude them there, or choose Watch division to keep them in your watch list.</p>`;
+    automatic.insertAdjacentHTML("beforeend", `<label class="toggle"><input type="checkbox" class="pdga-second-tier">Find select second-tier live tournaments</label><p>Live MPO/FPO at pro A-tier events, ranked by the top five player ratings relative to each division. Up to 3 tournaments in Available games. Checked every 15 minutes. Add a suggestion to rotation or watch it to keep following. Prestige and field strength are used; prize pools are not verified.</p>`);
+    const secondTier = automatic.querySelector(".pdga-second-tier"); secondTier.checked = group.discoverSecondTier !== false;
+    secondTier.onchange = () => { group.discoverSecondTier = secondTier.checked; changed(); };
     const toggle = automatic.querySelector(".pdga-auto-follow");
     toggle.checked = group.autoFollow;
     toggle.onchange = () => { group.autoFollow = toggle.checked; changed(); };
@@ -30,7 +33,7 @@
     const builder = document.createElement("div");
     builder.className = "pdga-watch-builder";
     builder.innerHTML = `<p>Watch a tournament and division. Watched events stay in rotation until removed, including finished events. Live mode includes live rounds and round breaks. Add a separate player banner to follow someone in the same division. Up to 30 banners.</p>
-      <div class="pdga-watch-controls"><label class="field">PDGA tournament URL or ID<input class="pdga-tournament-input" placeholder="e.g. 86076" type="text"></label><button class="button button--secondary pdga-load" type="button">Load tournament</button><button class="button button--quiet pdga-browse" type="button">Browse current events</button></div>
+      <div class="pdga-watch-controls"><label class="field">PDGA tournament URL or ID<input class="pdga-tournament-input" placeholder="e.g. 86076" type="text"></label><button class="button button--secondary pdga-load" type="button">Load tournament</button><button class="button button--secondary pdga-browse" type="button">Browse current events</button></div>
       <label class="field pdga-current-label" hidden>Current events<select class="pdga-current"><option value="">Choose a tournament…</option></select></label>
       <div class="pdga-watch-controls pdga-division-controls" hidden><label class="field">Division<select class="pdga-division"></select></label><button class="button button--secondary pdga-watch" type="button" title="Add the selected tournament division (such as MPO or FPO) to your watch list and follow its leaderboard across rounds. It stays watched until you remove it.">Watch division</button></div>
       <p class="pdga-settings-status" role="status"></p>`;

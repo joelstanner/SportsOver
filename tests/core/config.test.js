@@ -214,3 +214,15 @@ test("default game durations migrate and normalize", () => {
   assert.deepEqual(configApi.normalizeConfig({ defaultGameDurations: { live: null, pregame: "bad" } }).defaultGameDurations,
     { live: 20, pregame: 5, final: 10 });
 });
+
+test('second-tier discovery defaults on, persists an explicit off choice, and controls candidate eligibility independently',()=>{
+ const api=global.SportsOverlay.config;
+ for(const sport of ['chess','disc-golf']){
+  const config=api.normalizeConfig({sports:[{sport,autoFollow:false}]});const group=config.sports[0];
+  assert.equal(group.discoverSecondTier,true);
+  const candidate={sport,id:sport==='chess'?'Tour1234:auto':'12345:MPO',raw:{automatic:true,discoveryTier:'second',division:'MPO'}};
+  assert.equal(api.isCandidateEnabled(config,candidate),true);
+  group.discoverSecondTier=false;assert.equal(api.isCandidateEnabled(config,candidate),false);
+  assert.equal(api.normalizeConfig(config).sports[0].discoverSecondTier,false);
+ }
+});

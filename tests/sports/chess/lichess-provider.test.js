@@ -16,15 +16,61 @@ test("chess reference parsing distinguishes tournaments, rounds, and game links"
   assert.deepEqual(api.reference("https://lichess.org/broadcast/masters/round-1/Round001/Game0001#32"), { id: "Round001", round: true });
   for (const bad of ["https://evil.com/broadcast/masters/Tour1234", "https://lichess.org.evil.com/broadcast/masters/Tour1234", "http://lichess.org/broadcast/masters/Tour1234", "../Tour1234", "https://lichess.org/@/Tour1234"]) assert.equal(api.reference(bad), null);
 });
-test("current round advances and keeps a completed round as a break before the next start", () => {
+test("current round advances to the nearest scheduled round before its start", () => {
   assert.equal(api.selectRound(metadata, "", 5000).id, "Round001");
   const next = structuredClone(metadata); delete next.rounds[0].ongoing; next.rounds[0].finishedAt = 4000;
-  assert.equal(api.selectRound(next, "", 5000).id, "Round001");
+  assert.equal(api.selectRound(next, "", 5000).id, "Round002");
   assert.equal(api.selectRound(next, "", 11000).id, "Round002");
   next.rounds[1].ongoing = true;
   assert.equal(api.selectRound(next, "", 11000).id, "Round002");
   assert.equal(api.selectRound(next, "Round001").id, "Round001");
   assert.equal(api.selectRound(next, "Missing1"), null);
+  next.rounds.push({ id: 'Round003', startsAt: 20000 });
+  delete next.rounds[1].ongoing;
+  assert.equal(api.selectRound(next, '', 5000).id, 'Round002');
+  next.rounds[1].finishedAt = 12000;
+  next.rounds[2].finishedAt = 22000;
+  assert.equal(api.selectRound(next, '', 23000).id, 'Round003');
+});
+
+test('a scheduled next round is upcoming with tournament standings, then breaks or goes live after its start', async () => {
+  let now = Date.parse('2026-10-03T07:00:00Z');
+  const meta = { tour: { id: 'Tour1234', name: 'League tournament' }, defaultRoundId: 'Round001', rounds: [
+    { id: 'Round001', name: 'Round 1', startsAt: Date.parse('2026-09-19T11:00:00Z'), finished: true },
+    { id: 'Round002', name: 'Round 2', startsAt: Date.parse('2026-10-03T11:00:00Z') },
+    { id: 'Round003', name: 'Round 3', startsAt: Date.parse('2026-10-31T12:00:00Z') },
+  ] };
+  const round = { tour: meta.tour, round: meta.rounds[1], games: [] };
+  const urls = [];
+  const client = api.createClient({ watches: [watch], session: api.createSession(), now: () => now, fetchImpl: async url => {
+    urls.push(url);
+    return response(url.endsWith('/players') ? [{ name: 'Leader', score: 1, rank: 1, played: 1 }]
+      : url.includes('/-/-/') ? round : meta);
+  }});
+  const discovered = await client.discover();
+  const candidate = discovered.availableEntries[0].candidate;
+  assert.equal(candidate.raw.roundName, 'Round 2');
+  assert.equal(candidate.state, 'pregame');
+  assert.equal(candidate.startTime, '2026-10-03T11:00:00.000Z');
+  let event = await client.getEvent('Tour1234:auto');
+  assert.equal(event.detailedState, 'Upcoming');
+  assert.equal(event.details.standings[0].score, 1);
+  assert.ok(urls.some(url => url.endsWith('/-/-/Round002')));
+  assert.ok(!urls.some(url => url.endsWith('/-/-/Round001')));
+  assert.equal(api.selectRound(meta, 'Round001', now).id, 'Round001');
+  round.games.push({ id: 'Game0002', status: '½-½' }, { id: 'Game0003', status: '*' });
+  event = await client.getEvent('Tour1234:auto');
+  assert.equal(event.state, 'pregame', 'advance results do not turn future unstarted pairings into a break');
+  assert.equal(event.details.games[0].result, '½-½');
+  round.games[1].lastMove = 'd2d4';
+  assert.equal((await client.getEvent('Tour1234:auto')).state, 'live', 'actual early play takes precedence over the scheduled start');
+  delete round.games[1].lastMove;
+  now = meta.rounds[1].startsAt;
+  event = await client.getEvent('Tour1234:auto');
+  assert.equal(event.state, 'interrupted');
+  assert.equal(event.detailedState, 'Awaiting remaining games');
+  round.games.push({ id: 'Game0001', status: '*', lastMove: 'e2e4' });
+  assert.equal((await client.getEvent('Tour1234:auto')).state, 'live');
 });
 test("results, competitors, clock snapshots, turn, and event states normalize", () => {
   const live = api.normalizeEvent(metadata, payload, watch);
@@ -117,6 +163,26 @@ test('standings use published tournament scores and tiebreak ranks, excluding un
   assert.deepEqual(standings.map(p => p.name), ['Leader', 'Tie second', 'Tie third', 'Zero']);
   assert.equal(standings[1].played, 7);
   assert.throws(() => api.normalizeStandings({ games: [] }), /unavailable/);
+});
+
+test('desktop standings use the local bridge while browser standings use Lichess directly', async t => {
+  const original = global.location;
+  t.after(() => { if (original === undefined) delete global.location; else global.location = original; });
+  for (const protocol of ['sportsover:', 'http:']) {
+    global.location = { protocol };
+    const urls = [];
+    let limited = false;
+    const client = api.createClient({ session: api.createSession(), fetchImpl: async url => {
+      urls.push(url);
+      return limited ? response({}, 429) : response([{ name: 'Leader', score: 1, rank: 1 }]);
+    }});
+    assert.equal((await client.getStandings('Tour1234'))[0].score, 1);
+    assert.equal(urls[0], protocol === 'sportsover:' ? '/api/chess/broadcast/Tour1234/players' : 'https://lichess.org/broadcast/Tour1234/players');
+    limited = true;
+    await assert.rejects(client.getStandings('Tour1234'), /429/);
+    await assert.rejects(client.getMetadata('Tour1234'), /rate limit/);
+    assert.equal(urls.length, 2);
+  }
 });
 
 test('tournament standings and player banners remain independent through discovery and a standings outage', async () => {

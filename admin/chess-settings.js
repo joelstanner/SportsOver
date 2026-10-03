@@ -5,7 +5,7 @@
     const list = document.createElement("div"), builder = document.createElement("div");
     builder.className = "pdga-watch-builder chess-watch-builder";
     builder.innerHTML = `<p>Watch a public Lichess broadcast. Follow its current round automatically, or keep a specific round. Watched broadcasts stay in rotation until removed, including finals. Add a separate player banner to follow someone in the same round. Up to 30 banners.</p>
-      <div class="pdga-watch-controls"><label class="field">Lichess broadcast URL or ID<input class="chess-input" type="text" placeholder="Paste a lichess.org/broadcast link"></label><button class="button button--secondary chess-load" type="button">Load broadcast</button><button class="button button--quiet chess-browse" type="button">Browse current broadcasts</button></div>
+      <div class="pdga-watch-controls"><label class="field">Lichess broadcast URL or ID<input class="chess-input" type="text" placeholder="Paste a lichess.org/broadcast link"></label><button class="button button--secondary chess-load" type="button">Load broadcast</button><button class="button button--secondary chess-browse" type="button">Browse current broadcasts</button></div>
       <label class="field chess-current-label" hidden>Current broadcasts<select class="chess-current"></select></label>
       <div class="pdga-watch-controls chess-round-controls" hidden><label class="field">Round<select class="chess-round"></select></label><button class="button button--secondary chess-watch" type="button" title="Add this tournament to your watch list using the selected round option: follow the current round automatically or keep a specific round. It stays watched until you remove it.">Watch tournament</button></div>
       <p class="chess-status" role="status"></p>`;
@@ -112,6 +112,9 @@
     }
     const automatic = document.createElement("div"); automatic.className = "pdga-watch-card";
     automatic.innerHTML = `<label class="toggle"><input class="chess-auto-follow" type="checkbox">Automatically follow elite tournaments</label><p>Find Lichess best-tier and high-tier events every 15 minutes while SportsOver is running. Follow live rounds and breaks, with your fallback setting when nothing is live. Discovered events appear in the automatic watch list below.</p>`;
+    automatic.insertAdjacentHTML("beforeend", `<label class="toggle"><input type="checkbox" class="chess-second-tier">Find select second-tier live tournaments</label><p>Official live broadcasts with at least 2 GM/WGM or 4 GM/WGM/IM/WIM players. Up to 3 tournaments in Available games. Checked every 15 minutes. Add a suggestion to rotation or watch it to keep following. Prestige and field strength are used; prize pools are not verified.</p>`);
+    const secondTier = automatic.querySelector(".chess-second-tier"); secondTier.checked = group.discoverSecondTier !== false;
+    secondTier.onchange = () => { group.discoverSecondTier = secondTier.checked; changed(); };
     const toggle = automatic.querySelector(".chess-auto-follow"); toggle.checked = group.autoFollow;
     toggle.onchange = () => { group.autoFollow = toggle.checked; changed(); };
     container.replaceChildren(automatic, list, builder); renderList();

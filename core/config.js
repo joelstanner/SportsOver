@@ -34,8 +34,8 @@
       frozenSport("soccer", ["mls:9726"]),
       frozenSport("basketball", ["nba:det"]),
       frozenSport("college-basketball", ["ncaam:158", "ncaam:264", "ncaam:2547"]),
-      Object.freeze({ sport: "disc-golf", enabled: true, favorites: Object.freeze([]), events: Object.freeze([]), autoFollow: false, autoDivisions: Object.freeze(["MPO", "FPO"]) }),
-      Object.freeze({ sport: "chess", enabled: true, favorites: Object.freeze([]), events: Object.freeze([]), autoFollow: true }),
+      Object.freeze({ sport: "disc-golf", enabled: true, favorites: Object.freeze([]), events: Object.freeze([]), autoFollow: false, discoverSecondTier: true, autoDivisions: Object.freeze(["MPO", "FPO"]) }),
+      Object.freeze({ sport: "chess", enabled: true, favorites: Object.freeze([]), events: Object.freeze([]), autoFollow: true, discoverSecondTier: true }),
     ]),
     providerRefreshSeconds: Object.freeze(Object.fromEntries(SPORT_CATALOG.map(({ key: sport }) =>
       [sport, Object.freeze({ live: ["disc-golf", "chess"].includes(sport) ? 30 : 12, pregame: 60, idle: 300, final: 300 })]))),
@@ -118,14 +118,14 @@
       if (!findSport(sport) || seenSports.has(sport)) return;
       seenSports.add(sport);
       sports.push({ sport, enabled: group.enabled !== false, favorites: normalizeFavorites(group.favorites, sport),
-        ...(sport === "disc-golf" ? { events: normalizePdgaEvents(group.events), autoFollow: group.autoFollow === true,
+        ...(sport === "disc-golf" ? { events: normalizePdgaEvents(group.events), autoFollow: group.autoFollow === true, discoverSecondTier: group.discoverSecondTier !== false,
           autoDivisions: Array.isArray(group.autoDivisions) ? ["MPO", "FPO"].filter(division => group.autoDivisions.includes(division)) : ["MPO", "FPO"] } : {}),
-        ...(sport === "chess" ? { events: normalizeChessEvents(group.events), autoFollow: group.autoFollow !== false } : {}) });
+        ...(sport === "chess" ? { events: normalizeChessEvents(group.events), autoFollow: group.autoFollow !== false, discoverSecondTier: group.discoverSecondTier !== false } : {}) });
     });
     SPORT_CATALOG.forEach(sport => {
       if (!seenSports.has(sport.key)) sports.push({ sport: sport.key, enabled: true, favorites: [],
-        ...(sport.key === "disc-golf" ? { events: [], autoFollow: false, autoDivisions: ["MPO", "FPO"] } : {}),
-        ...(sport.key === "chess" ? { events: [], autoFollow: true } : {}) });
+        ...(sport.key === "disc-golf" ? { events: [], autoFollow: false, discoverSecondTier: true, autoDivisions: ["MPO", "FPO"] } : {}),
+        ...(sport.key === "chess" ? { events: [], autoFollow: true, discoverSecondTier: true } : {}) });
     });
 
     const rotationSeconds = Number(source.rotationSeconds);
@@ -342,12 +342,14 @@
     if (!group || group.enabled === false) return false;
     if (candidate.sport === "chess") {
       const watch = group.events.find(event => watchId(event) === candidate.id);
-      return watch ? isWatchEnabled(watch) : group.autoFollow === true && candidate.raw?.automatic === true;
+      return watch ? isWatchEnabled(watch) : candidate.raw?.automatic === true
+        && (candidate.raw.discoveryTier === "second" ? group.discoverSecondTier !== false : group.autoFollow === true);
     }
     if (candidate.sport !== "disc-golf") return true;
     const watch = group.events.find(event => watchId(event) === candidate.id);
     if (watch) return isWatchEnabled(watch);
-    return group.autoFollow === true && candidate.raw?.automatic === true
+    return candidate.raw?.automatic === true
+      && (candidate.raw.discoveryTier === "second" ? group.discoverSecondTier !== false : group.autoFollow === true)
       && group.autoDivisions.includes(candidate.raw.division);
   }
 

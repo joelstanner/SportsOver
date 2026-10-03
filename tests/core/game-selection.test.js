@@ -224,6 +224,19 @@ test("custom state durations apply unless a game has an override", () => {
   }
 });
 
+test("tournament breaks use final timing while team interruptions keep live timing", () => {
+  const defaults = { live: 45, pregame: 15, final: 5 };
+  for (const sport of ["chess", "disc-golf"]) {
+    const entry = { candidate: { sport, id: "tournament", competitionType: "individual", state: "interrupted" } };
+    assert.equal(selection.gameDurationSeconds(entry, {}, undefined, defaults), 5);
+    assert.equal(selection.gameDurationSeconds(entry, { [`${sport}:tournament`]: 30 }, undefined, defaults), 30);
+    entry.candidate.state = "live";
+    assert.equal(selection.gameDurationSeconds(entry, {}, undefined, defaults), 45);
+  }
+  const halftime = { candidate: { sport: "football", id: "game", competitionType: "team", state: "interrupted" } };
+  assert.equal(selection.gameDurationSeconds(halftime, {}, undefined, defaults), 45);
+});
+
 test("Mariners and Padres each contribute an upcoming game in watched-team order", () => {
   const mlbGame = (id, team, state, date) => ({ gamePk: id, gameDate: date, status: { abstractGameState: state }, teams: { away: { team: { id: team } }, home: { team: { id: 119 } } } });
   const games = [

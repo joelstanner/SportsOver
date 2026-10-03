@@ -10,6 +10,7 @@ config.providerRefreshSeconds['disc-golf'] = {live:5,pregame:5,idle:5,final:5};
 const root = path.resolve(__dirname,'../..');
 const metadata = require('../sports/disc-golf/event.json');
 const scores = require('../sports/disc-golf/round.json');
+const directory = [{tournId:86076,officialName:'Disc Golf Championship with a very long tournament name and presenting sponsor at the regional championship course',startDate:'2026-10-02'}];
 (async () => {
   const browser = await chromium.launch({headless:true,channel:process.env.PLAYWRIGHT_CHANNEL || 'chrome'});
   try {
@@ -17,6 +18,7 @@ const scores = require('../sports/disc-golf/round.json');
     let offline = false, upcoming = false;
     await context.route('**/*', async route => {
       const url = new URL(route.request().url());
+      if (url.hostname === 'www.pdga.com' && url.pathname.includes('current-events')) return route.fulfill({json:directory});
       if (url.hostname === 'www.pdga.com') return route.fulfill({status:offline ? 503 : 200,json:{data:url.pathname.endsWith('fetch_event')
         ? upcoming ? {...metadata,LatestRound:1,HighestCompletedRound:0,Divisions:[{Division:'MPO',LatestRound:1}]} : metadata
         : upcoming ? {scores:[{Name:'Kevin Jones',PDGANum:41760,Round:1,TeeTime:'09:00'}]} : scores}});
@@ -31,6 +33,19 @@ const scores = require('../sports/disc-golf/round.json');
     await page.evaluate(config=>localStorage.setItem('sports-overlay.config.v1',JSON.stringify(config)),config);
     await page.reload();
     const sport = page.locator('.sport-card[data-sport="disc-golf"]');
+    await sport.getByRole('button',{name:'Browse current events',exact:true}).click();
+    await sport.locator('.pdga-current').waitFor({state:'visible'});
+    for (const width of [1120,760,480,320]) {
+      await page.setViewportSize({width,height:850});
+      const overflow = await sport.evaluate(card => [card, ...card.querySelectorAll('.sport-favorites, .pdga-watch-card, .pdga-watch-builder, .field')]
+        .filter(el => el.getClientRects().length && el.scrollWidth > el.clientWidth + 1)
+        .map(el => ({className:el.className,width:el.clientWidth,scrollWidth:el.scrollWidth})));
+      assert.deepEqual(overflow,[],`Disc golf settings overflow at ${width}px`);
+    }
+    await page.setViewportSize({width:1120,height:850});
+    await sport.locator('.pdga-current').selectOption('86076');
+    await sport.locator('.pdga-division').waitFor({state:'visible'});
+    assert.equal(await sport.locator('.pdga-tournament-input').inputValue(),'86076');
     await sport.locator('.pdga-tournament-input').fill('https://www.pdga.com/tour/event/86076');
     await sport.getByRole('button',{name:'Load tournament',exact:true}).click();
     await sport.locator('.pdga-division').selectOption('MPO');
@@ -140,6 +155,6 @@ const scores = require('../sports/disc-golf/round.json');
     const saved = await page.evaluate(()=>JSON.parse(localStorage.getItem('sports-overlay.config.v1')).sports.find(s=>s.sport==='disc-golf'));
     assert.equal(saved.events[0].playerId,'41760');
     assert.deepEqual(errors,[]);
-    console.log('PDGA browser flow passed: watch, select player, save/reload, queue lock, 200%, stale data, team layout, disable.');
+    console.log('PDGA browser flow passed: browse events, responsive settings, watch, select player, save/reload, queue lock, 200%, stale data, team layout, disable.');
   } finally { await browser.close(); }
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -6,15 +6,16 @@ const fs = require("node:fs");
 const path = require("node:path");
 require("../../core/config.js");
 
-async function fixture(extraFavorites = [], gameCount = 2, useRealSelection = false, discoveryIntervalMs) {
+async function fixture(extraFavorites = [], gameCount = 2, useRealSelection = false, discoveryIntervalMs, individual = false) {
   let now = 0, timerId = 0, notify, visibility;
   const timers = new Map(), calls = [], renders = [];
-  let release = null, holdNext = false;
+  let release = null, holdNext = false, schedulesOffline = false;
   const config = { sports: [{ sport: "baseball", favorites: [{ teamKey: "team", enabled: true }, ...extraFavorites] }],
     providerRefreshSeconds: { baseball: { live: 12, pregame: 60, idle: 300, final: 300 } },
     gameDurations: {}, lockedGameKeys: [], fallbackMode: "up-next", displayMode: "automatic" };
   const games = Array.from({ length: gameCount }, (_, index) => ({ sport: "baseball", id: String(index + 1), state: "live",
-    teamKeys: [useRealSelection ? "TEAM" : "team"], ...(useRealSelection ? { startTime: new Date(0).toISOString() } : {}) }));
+    teamKeys: individual ? [] : [useRealSelection ? "TEAM" : "team"], ...(individual ? { competitionType: "individual" } : {}),
+    ...(useRealSelection ? { startTime: new Date(0).toISOString() } : {}) }));
   const response = data => Response.json(data);
   const provider = { toCandidate: game => game, normalizeEvent: event => event,
     createClient: ({ fetchImpl, teamId }) => ({ discoveryIntervalMs,
@@ -42,6 +43,7 @@ async function fixture(extraFavorites = [], gameCount = 2, useRealSelection = fa
     fetch: async url => {
       calls.push({ url, at: now });
       if (holdNext) { holdNext = false; await new Promise(resolve => { release = resolve; }); }
+      if (schedulesOffline && url.startsWith("schedule")) return new Response('{}', { status: 503 });
       const game = games.find(game => `game/${game.id}` === url);
       return response(url.startsWith("schedule") ? { events: structuredClone(games) } : { id: url, state: game?.state || "live", competitionType: game?.competitionType });
     },
@@ -52,7 +54,7 @@ async function fixture(extraFavorites = [], gameCount = 2, useRealSelection = fa
   const mockedSelection = api.selection;
   await vm.runInContext(fs.readFileSync(path.join(__dirname, "../../core/game-selection.js"), "utf8"), context);
   api.selection = { ...api.selection, ...(useRealSelection ? {} : { buildRotationQueue: mockedSelection.buildRotationQueue }),
-    gameDurationSeconds: mockedSelection.gameDurationSeconds };
+    ...(individual ? {} : { gameDurationSeconds: mockedSelection.gameDurationSeconds }) };
   for (const file of ["provider-refresh.js", "provider-discovery.js", "live-mode.js", "app.js"]) {
     await vm.runInContext(fs.readFileSync(path.join(__dirname, "../../core", file), "utf8"), context);
   }
@@ -68,6 +70,7 @@ async function fixture(extraFavorites = [], gameCount = 2, useRealSelection = fa
     now = end; await flush();
   }
   return { calls, renders, timers, advance, flush, visibility, engine: api.engine, config, games,
+    failSchedules: value => { schedulesOffline = value; },
     async save(patch) {
       Object.assign(config, patch);
       await notify({ initialized: true, instance: "one", catalogRevision: 0, config: structuredClone(config) });
@@ -92,6 +95,34 @@ async function fixture(extraFavorites = [], gameCount = 2, useRealSelection = fa
     hold() { holdNext = true; }, async release() { const fn = release; release = null; fn(); await flush(); },
   };
 }
+
+test('a discovery outage retains received games and recovers to a genuinely empty feed', async () => {
+  const app = await fixture();
+  assert.equal(app.engine.describe().availableEntries.length, 2);
+  app.failSchedules(true);
+  await app.advance(12000);
+  assert.equal(app.engine.describe().availableEntries.length, 2);
+  assert.equal(app.engine.describe().queue.length, 2);
+  assert.ok(app.engine.describe().discoveryFailures > 0);
+  app.failSchedules(false);
+  app.games.length = 0;
+  await app.advance(12000);
+  assert.equal(app.engine.describe().availableEntries.length, 0);
+  assert.equal(app.engine.describe().queue.length, 0);
+  assert.equal(app.engine.describe().discoveryFailures, 0);
+});
+
+test('discovery reports loading while a refresh is pending without clearing received games', async () => {
+  const app = await fixture();
+  assert.equal(app.engine.describe().discoveryComplete, true);
+  assert.equal(app.engine.describe().discoveryPending, false);
+  app.time(12000); app.hold();
+  const refresh = app.engine.refresh(); await app.flush();
+  assert.equal(app.engine.describe().discoveryPending, true);
+  assert.equal(app.engine.describe().availableEntries.length, 2);
+  await app.release(); await refresh;
+  assert.equal(app.engine.describe().discoveryPending, false);
+});
 
 test("disabling the sport clears rotation and overrides, stops polling, and supports re-enabling", async () => {
   const f = await fixture();
@@ -375,6 +406,20 @@ test('a polled individual break leaves Live mode immediately and returns when pl
   app.games[0].state = 'live';
   await app.advance(60000);
   assert.equal(app.engine.describe().queue.length, 1);
+});
+
+test('normal tournament rotation updates the queue and timer when a refresh detects a break', async () => {
+  const app = await fixture([], 2, false, undefined, true);
+  await app.save({ defaultGameDurations: { live: 45, pregame: 15, final: 5 } });
+  app.games[0].state = 'interrupted';
+  await app.advance(12000);
+  assert.equal(app.engine.describe().queue[0].candidate.state, 'interrupted');
+  assert.equal(app.engine.describe().availableEntries[0].candidate.state, 'interrupted');
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:1');
+  await app.advance(4999);
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:1');
+  await app.advance(1);
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:2');
 });
 
 test("recurring directory discovery is capped independently of long score refresh intervals", async () => {

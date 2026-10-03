@@ -95,3 +95,27 @@ test('catalog refresh writes only app data and retains a previous catalog on emp
   await assert.rejects(updateCatalogs('basketball', directory), /Empty team directory/);
   assert.equal(fs.readFileSync(output, 'utf8'), updated);
 });
+
+test('desktop standings bridge permits only public tournament players and preserves upstream errors', async () => {
+  const calls = [];
+  let status = 200;
+  const players = [{ name: 'Leader', score: 1, rank: 1, played: 1 }];
+  const handler = createHandler({ root: path.resolve(__dirname, '../..'), fetchImpl: async (url, options) => {
+    calls.push({ url, options });
+    return Response.json(status === 200 ? players : { error: 'Try later' }, { status });
+  }});
+  const url = 'sportsover://app/api/chess/broadcast/Tour1234/players';
+  const response = await handler(new Request(url));
+  assert.deepEqual(await response.json(), players);
+  assert.equal(response.headers.get('Cache-Control'), 'no-store');
+  assert.equal(calls[0].url, 'https://lichess.org/broadcast/Tour1234/players');
+  assert.equal(calls[0].options.redirect, 'error');
+  assert.equal(calls[0].options.credentials, 'omit');
+  assert.ok(calls[0].options.signal instanceof AbortSignal);
+  assert.equal((await handler(new Request(url, { method: 'POST' }))).status, 405);
+  assert.equal((await handler({ url, method: 'GET', initiatorOrigin: 'https://evil.example' })).status, 403);
+  assert.equal((await handler(new Request(url.replace('Tour1234', 'invalid')))).status, 404);
+  assert.equal((await handler(new Request(url.replace('/players', '/teams')))).status, 404);
+  assert.equal(calls.length, 1);
+  for (status of [429, 503]) assert.equal((await handler(new Request(url))).status, status);
+});

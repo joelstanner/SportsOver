@@ -78,6 +78,7 @@
   let refreshingGames = false;
   const localLiveMode = global.SportsOverlay.liveMode.create();
   let engineRotationState = null;
+  let engineLoading = Boolean(global.sportsDesktop);
   let bannerGameKey = null;
   let changingLiveMode = false;
   const liveModeButton = document.querySelector("#live-mode");
@@ -183,10 +184,19 @@
   document.querySelector("#refresh-demo").addEventListener("click", updateDemo);
 
   const connection = document.createElement("p");
+  connection.className = "settings-connection";
   connection.setAttribute("role", "status");
-  status.before(connection);
-  const migration = document.createElement("div");
+  const migration = document.createElement("section");
+  migration.className = "settings-backup";
+  migration.setAttribute("aria-labelledby", "settings-backup-heading");
+  migration.innerHTML = `<h3 id="settings-backup-heading">Settings backup</h3>
+    <p id="settings-backup-help">${shared
+      ? "Export a backup, or choose a previously exported settings file to import and apply it."
+      : "Export a backup of your settings to import into shared control."}</p>`;
+  const backupActions = document.createElement("div");
+  backupActions.className = "settings-backup-actions";
   const exportButton = document.createElement("button");
+  exportButton.type = "button";
   exportButton.textContent = "Export settings";
   exportButton.className = "button button--secondary";
   exportButton.onclick = () => {
@@ -195,13 +205,25 @@
     link.href = url; link.download = "sports-settings.json"; link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  migration.append(exportButton);
+  backupActions.append(exportButton);
+  migration.append(backupActions);
   if (shared) {
-    const importLabel = document.createElement("label");
-    importLabel.textContent = "Import exported settings ";
+    const importButton = document.createElement("button");
+    importButton.type = "button";
+    importButton.className = "button button--secondary";
+    importButton.textContent = "Import settings…";
+    importButton.setAttribute("aria-describedby", "settings-backup-help");
     const input = document.createElement("input");
     input.type = "file"; input.accept = "application/json,.json";
+    input.hidden = true;
+    input.setAttribute("aria-label", "Settings backup file");
+    importButton.onclick = () => input.click();
+    const importStatus = document.createElement("p");
+    importStatus.className = "settings-import-status";
+    importStatus.setAttribute("role", "status");
+    let importing = false;
     const defaults = document.createElement("button");
+    defaults.type = "button";
     defaults.textContent = "Start with defaults";
     defaults.className = "button button--secondary";
     async function initialize(config) {
@@ -210,19 +232,39 @@
         acknowledge(); renderSettings();
         status.textContent = global.sportsDesktop ? "Imported. Banner updates automatically." : "Shared settings initialized.";
         refreshConnection();
-      } catch (error) { status.textContent = error.message; }
+        return true;
+      } catch (error) { status.textContent = error.message; return false; }
     }
     input.onchange = async () => {
+      const file = input.files[0];
+      if (!file || importing) return;
+      importing = true;
+      importButton.textContent = "Importing…";
+      importStatus.className = "settings-import-status";
+      importStatus.textContent = `Importing ${file.name}…`;
+      refreshConnection();
       try {
-        const file = input.files[0];
-        if (!file || file.size > 262144) throw new Error("Select a settings JSON file smaller than 256 KB.");
-        const imported = JSON.parse(await file.text());
+        if (file.size > 262144) throw new Error("Choose a settings backup smaller than 256 KB.");
+        let imported;
+        try { imported = JSON.parse(await file.text()); }
+        catch (_) { throw new Error("Could not read this backup. Choose a JSON file created with Export settings."); }
         if (!imported || (!Array.isArray(imported.sports) && !Array.isArray(imported.favorites))) throw new Error("This file is not an exported sports configuration.");
-        await initialize(imported);
-      } catch (error) { status.textContent = error.message; }
+        if (!await initialize(imported)) throw new Error(status.textContent);
+        importStatus.classList.add("is-saved");
+        importStatus.textContent = `Imported ${file.name}. Your settings are now applied.`;
+      } catch (error) {
+        importStatus.classList.add("is-error");
+        importStatus.textContent = error.message;
+      } finally {
+        input.value = "";
+        importing = false;
+        importButton.textContent = "Import settings…";
+        refreshConnection();
+      }
     };
     defaults.onclick = () => initialize(configApi.DEFAULT_CONFIG);
-    importLabel.append(input); migration.append(importLabel, defaults);
+    backupActions.append(importButton, input, defaults);
+    migration.append(importStatus);
     function refreshConnection() {
       const snapshot = shared.snapshot();
       const initialized = snapshot?.initialized;
@@ -231,8 +273,8 @@
         : !initialized ? "Import your previous settings or start with defaults."
         : "Connected — controlling the desktop banner.";
       if (snapshot?.recovery) connection.textContent += ` ${snapshot.recovery}`;
-      input.disabled = !connected || (initialized && !global.sportsDesktop);
-      defaults.disabled = !connected || initialized;
+      input.disabled = importButton.disabled = importing || !connected || (initialized && !global.sportsDesktop);
+      defaults.disabled = importing || !connected || initialized;
       if (global.sportsDesktop) defaults.hidden = true;
       document.querySelector("#save-settings").disabled = !connected || !initialized;
       document.querySelector("#reset-settings").disabled = !connected || !initialized;
@@ -263,7 +305,8 @@
     });
     refreshConnection();
   } else connection.textContent = "Local preview — settings here do not control the desktop banner. Export them to import into shared control.";
-  status.before(migration);
+  migration.append(connection);
+  status.closest(".actions").before(migration);
   renderSettings();
   updateDemo();
   if (global.sportsDesktop || shared) pollBannerGame();
@@ -642,14 +685,20 @@
       try {
         const state = manual ? (await global.sportsDesktop.action('refresh')).engine : await global.sportsDesktop.engine();
         if (manual && !state?.ready) throw Error('Sports engine is not ready. Try again.');
-        engineRotationState = state;
-        automaticRotationEntries = state.automaticEntries;
-        availableRotationEntries = state.availableEntries;
+        engineLoading = !state.ready || state.discoveryComplete === false;
+        if (!engineLoading) {
+          engineRotationState = state;
+          automaticRotationEntries = state.automaticEntries;
+          availableRotationEntries = state.availableEntries;
+        }
         renderRotationControls();
         const status = document.querySelector('#rotation-status');
-        status.textContent = !state.ready ? 'Sports engine starting…' : state.discoveryFailures
+        status.textContent = engineLoading ? availableRotationEntries.length
+          ? 'Loading game updates… Showing last received games.' : 'Loading games… Waiting for score feeds.'
+          : state.discoveryPending ? 'Loading game updates… Showing last received games.' : state.discoveryFailures
           ? 'Some score feeds are unavailable. Keeping received games and retrying automatically.' : 'Shared engine games';
         status.className = state.discoveryFailures ? 'save-status is-error' : 'save-status is-saved';
+        for (const id of ['rotation-queue', 'available-games']) document.getElementById(id).setAttribute('aria-busy', String(engineLoading || state.discoveryPending === true));
         return { failures: state.discoveryFailures || 0 };
       } catch (error) {
         document.querySelector('#rotation-status').textContent = error.message;
@@ -658,7 +707,7 @@
       return;
     }
     clearTimeout(gameDiscoveryTimer);
-    gameDiscoveryTimer = setTimeout(discoverRotationGames, workingConfig.sports.some(group => group.enabled && group.autoFollow) ? 15 * 60_000 : 60 * 60_000);
+    gameDiscoveryTimer = setTimeout(discoverRotationGames, workingConfig.sports.some(group => group.enabled && (group.autoFollow || group.discoverSecondTier)) ? 15 * 60_000 : 60 * 60_000);
     const revision = ++gameDiscoveryRevision;
     const rotationStatus = document.querySelector("#rotation-status");
     rotationStatus.textContent = "Loading games…";
@@ -703,11 +752,11 @@
 
   async function discoverSportGames(group) {
     if (group.enabled === false) return { automaticEntries: [], availableEntries: [] };
-    if (group.sport === "disc-golf") return global.SportsOverlay.pdga.createClient({ watches: group.events, autoFollow: group.autoFollow, autoDivisions: group.autoDivisions, session: pdgaSession,
+    if (group.sport === "disc-golf") return global.SportsOverlay.pdga.createClient({ watches: group.events, autoFollow: group.autoFollow, discoverSecondTier: group.discoverSecondTier, autoDivisions: group.autoDivisions, session: pdgaSession,
       fetchImpl: providerRefresh.fetchFor("disc-golf", global.SportsOverlay.pdga),
     }).discover({ topFavoriteOnly: workingConfig.displayMode === "top-favorite", fallbackMode: workingConfig.fallbackMode,
       excludedKeys: workingConfig.excludedGames, retentionMs: liveModeActive() ? workingConfig.liveModeFinalMinutes * 60_000 : 60 * 60_000 });
-    if (group.sport === "chess") return global.SportsOverlay.lichess.createClient({ watches: group.events, autoFollow: group.autoFollow, session: chessSession,
+    if (group.sport === "chess") return global.SportsOverlay.lichess.createClient({ watches: group.events, autoFollow: group.autoFollow, discoverSecondTier: group.discoverSecondTier, session: chessSession,
       fetchImpl: providerRefresh.fetchFor("chess", global.SportsOverlay.lichess),
     }).discover({ topFavoriteOnly: workingConfig.displayMode === "top-favorite", fallbackMode: workingConfig.fallbackMode, excludedKeys: workingConfig.excludedGames, retentionMs: liveModeActive() ? workingConfig.liveModeFinalMinutes * 60_000 : 60 * 60_000 });
     const watchedTeams = group.favorites
@@ -759,7 +808,7 @@
     liveModeButton.setAttribute("aria-pressed", String(active));
     const canActivate = global.sportsDesktop ? engineRotationState?.ready && engineRotationState?.liveMode?.canActivate
       : normalRotationQueue().some(global.SportsOverlay.liveMode.isLive);
-    liveModeButton.disabled = changingLiveMode || (!active && !canActivate);
+    liveModeButton.disabled = engineLoading || changingLiveMode || (!active && !canActivate);
     liveModeButton.title = active ? "Turn off Live mode and restore your full rotation."
       : canActivate ? "Show only live games from your rotation." : "No live games in rotation.";
     document.querySelector("#rotation-mode").disabled = active;
@@ -780,9 +829,11 @@
     availableList.replaceChildren();
     const queueSportFilter = document.querySelector("#queue-sport-filter").value;
     const shownCount = queue.filter(entry => !queueSportFilter || entry.candidate.sport === queueSportFilter).length;
-    document.querySelector("#rotation-count").textContent = `${queueSportFilter ? `${shownCount} of ` : ""}${queue.length} game${queue.length === 1 ? "" : "s"}`;
+    const loadingGames = engineLoading || engineRotationState?.discoveryPending === true;
+    document.querySelector("#rotation-count").textContent = engineLoading && !queue.length ? "Loading…"
+      : `${queueSportFilter ? `${shownCount} of ` : ""}${queue.length} game${queue.length === 1 ? "" : "s"}${loadingGames ? " · loading…" : ""}`;
 
-    if (!queue.length) appendRotationEmpty(queueList, active ? "No live games in rotation. Live mode is still on."
+    if (!queue.length) appendRotationEmpty(queueList, engineLoading ? "Loading games…" : active ? "No live games in rotation. Live mode is still on."
       : availableRotationEntries.length ? "No games selected for the banner." : "Refresh games to build the live queue.");
     else if (!shownCount) appendRotationEmpty(queueList, "No games for this sport in rotation.");
     // Filter only the cards; actions retain their positions in the full rotation.
@@ -802,7 +853,7 @@
       .filter(entry => !search || gameName(entry.candidate).toLowerCase().includes(search))
       .sort((a, b) => gameStateRank(a.candidate.state) - gameStateRank(b.candidate.state)
         || new Date(a.candidate.startTime || 0) - new Date(b.candidate.startTime || 0));
-    if (!available.length) appendRotationEmpty(availableList, sportFilter === "disc-golf" && !search
+    if (!available.length) appendRotationEmpty(availableList, engineLoading && !availableRotationEntries.length ? "Loading games…" : sportFilter === "disc-golf" && !search
       ? "No additional PDGA divisions available. Divisions already in rotation are listed above."
       : availableRotationEntries.length ? "No matching current games." : "No games loaded yet.");
     available.forEach(entry => renderAvailableGame(entry, availableList));
@@ -883,7 +934,7 @@
     const sport = configApi.findSport(entry.candidate.sport);
     card.dataset.gameKey = rotationEntryKey(entry);
     card.classList.toggle("is-live", entry.candidate.state === "live");
-    card.querySelector(".game-sport").textContent = `${sport?.league || entry.candidate.sport.toUpperCase()}${entry.candidate.raw?.automatic ? " · Automatic" : ""}`;
+    card.querySelector(".game-sport").textContent = `${sport?.league || entry.candidate.sport.toUpperCase()}${entry.candidate.raw?.discoveryTier === "second" ? " · Second tier" : entry.candidate.raw?.automatic ? " · Automatic" : ""}`;
     if (entry.candidate.raw?.automatic) {
       const watch = document.createElement("button");
       watch.type = "button"; watch.className = `lock-game ${entry.candidate.sport === "chess" ? "chess-watch-automatic" : "pdga-watch-automatic"}`; watch.textContent = entry.candidate.sport === "chess" ? "Watch tournament" : "Watch division";
@@ -924,7 +975,7 @@
       if (name.scrollWidth > name.clientWidth) name.title = entry.candidate.raw?.fullName || name.textContent;
       else name.removeAttribute("title");
     });
-    card.querySelector(".game-meta").textContent = gameMeta(entry.candidate);
+    card.querySelector(".game-meta").textContent = [gameMeta(entry.candidate), entry.candidate.raw?.discoveryReason].filter(Boolean).join(" · ");
     const candidate = entry.candidate;
     const odds = global.SportsOverlay.model.espnOdds(candidate.raw || {});
     const teams = gameTeams(candidate);

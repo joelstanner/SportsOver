@@ -137,6 +137,8 @@ In normal rotation, a watched team's final also stays for up to 24 hours after S
 
 **Live control** reads discovered games from that same engine and manages automatic, hybrid, or curated game rotation, game order and durations, and game locks. A game lock chooses what plays; the desktop position lock prevents dragging and double-click resizing. **Demo lab** previews deterministic sport/lifecycle examples without changing the live banner. Use the Electron overlay window to view the live output while changing Settings. Demo lab uses fixed data only.
 
+Live control shows **Loading…** while the desktop engine searches for games or refreshes them. Previously received games stay visible during a discovery outage or engine restart, with a status message explaining that they are the last received results. A successful refresh replaces them, including when the provider confirms there are no games.
+
 **Refresh teams** saves current provider catalogs in app data, leaving the source checkout unchanged. A failed sport refresh retains its previous directory; other successful sports may still update. Live feeds can be unavailable or delayed. Existing provider fallback/error states apply; this app does not guarantee real-time scores.
 
 Turn off **Show sport** in a sport's Settings card to remove that sport

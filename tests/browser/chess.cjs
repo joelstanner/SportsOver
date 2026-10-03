@@ -94,6 +94,21 @@ const payload = {tour:metadata.tour,round:metadata.rounds[0],games:[game('Game00
   assert.match(await banner.locator('.chess-state').innerText(),/Round 2.*BREAK/);
   assert.match(await banner.locator('.chess-footer').innerText(),/Awaiting Round 2/);
   assert.doesNotMatch(await banner.locator('.chess-footer').innerText(),/complete/);
+  // Before the next scheduled start, show Upcoming and retain tournament totals.
+  const expectedStart=await banner.evaluate(({metadata,payload})=>{
+   const api=window.SportsOverlay;
+   metadata.rounds[0].finishedAt=Date.now()-1000;
+   metadata.rounds[1].startsAt=Date.now()+86400000;
+   const round=api.lichess.selectRound(metadata);
+   payload.round=round;payload.games=[];
+   const event=api.lichess.normalizeEvent(metadata,payload,{tournamentId:'Tour1234',view:'overview'});
+   event.details.standings=[{name:'Leader',rank:1,played:1,score:1}];
+   api.registry.getLayout('chess').createLayout().render(event);
+   return api.model.formatPregameStart(event.startTime);
+  },{metadata,payload});
+  assert.match(await banner.locator('.chess-state').innerText(),/Round 2.*UPCOMING/);
+  assert.ok((await banner.locator('.chess-footer').innerText()).includes(expectedStart));
+  assert.match(await banner.locator('.chess-entry').innerText(),/Leader/);
   // The new sport participates in demo rotation with existing team layouts.
   await banner.evaluate(()=>{const c=JSON.parse(localStorage.getItem('sports-overlay.config.v1'));c.sports.forEach(g=>g.enabled=['basketball','chess'].includes(g.sport));localStorage.setItem('sports-overlay.config.v1',JSON.stringify(c));});
   await banner.goto('http://overlay.test/index.html?scenario=rotation');

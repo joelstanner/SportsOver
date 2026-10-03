@@ -3,7 +3,7 @@ const path = require('node:path');
 const ORIGIN = 'sportsover://app';
 const CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://statsapi.mlb.com https://site.api.espn.com https://site.web.api.espn.com https://sports.core.api.espn.com https://www.pdga.com https://lichess.org; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'";
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml' };
-function createHandler({ root, dataRoot, store, refresh, engine }) {
+function createHandler({ root, dataRoot, store, refresh, engine, fetchImpl = globalThis.fetch }) {
   let refreshing = false;
   const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
   return async request => {
@@ -11,6 +11,17 @@ function createHandler({ root, dataRoot, store, refresh, engine }) {
       const url = new URL(request.url);
       if (url.protocol !== 'sportsover:' || url.host !== 'app') return new Response('Forbidden', { status: 403 });
       if (request.initiatorOrigin && request.initiatorOrigin !== ORIGIN) return new Response('Forbidden', { status: 403 });
+      const chessPlayers = /^\/api\/chess\/broadcast\/([a-zA-Z0-9]{8})\/players$/.exec(url.pathname);
+      if (chessPlayers) {
+        if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
+        // Lichess's website standings route does not allow our custom renderer
+        // origin. Fetch only this fixed public endpoint in the desktop process.
+        const response = await fetchImpl(`https://lichess.org/broadcast/${chessPlayers[1]}/players`, {
+          signal: AbortSignal.timeout(8000), redirect: 'error', credentials: 'omit',
+        });
+        if (!response.ok) return json({ error: `Lichess returned HTTP ${response.status}` }, response.status);
+        return json(await response.json());
+      }
       if (url.pathname === '/api/output' && request.method === 'GET') return json(engine.output());
       if (url.pathname === '/api/sports/state') {
         if (request.method === 'GET') return json(store.snapshot());

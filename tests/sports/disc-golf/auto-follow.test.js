@@ -209,3 +209,46 @@ test('unselected player banners stay out of discovery and cannot reappear as aut
  pending.playerId='';
  result=await client.discover();assert.deepEqual(ids(result),[`${id}:MPO:banner:leaders`]);
 });
+
+test('second tier offers at most three live pro A-tier tournaments ordered by field strength without automatic rotation',async()=>{
+ const f=fixture(),added=[];
+ for(let i=0;i<5;i++){
+  const id=f.add('A');added.push(id);f.events.get(id).metadata.TierPro='A';
+  for(const division of ['MPO','FPO'])f.events.get(id).rounds[division].scores[0].Rating=(division==='MPO'?1000:900)+i;
+ }
+ f.add('B');const amateur=f.add('B/A');const hybrid=f.add('A/B');f.events.get(hybrid).metadata.TierPro='B';
+ const client=api.pdga.createClient({...f.options,autoFollow:false,discoverSecondTier:true});const result=await client.discover();
+ assert.deepEqual(ids(result),[]);assert.equal(result.availableEntries.length,6);
+ assert.deepEqual([...new Set(result.availableEntries.map(entry=>entry.candidate.id.split(':')[0]))],added.slice(2).reverse());
+ assert.ok(result.availableEntries.every(entry=>entry.candidate.raw.discoveryTier==='second'));
+ assert.match(result.availableEntries[0].candidate.raw.discoveryReason,/Pro A-tier.*1004/);
+ assert.ok(!f.calls.some(url=>url.searchParams.get('TournID')===amateur));
+ assert.equal((await client.getEvent(`${added[4]}:MPO`)).details.discoveryTier,'second');
+});
+test('second-tier PDGA ignores amateur-only, future, completed, doubles and unstarted events',async()=>{
+ const f=fixture();const am=f.add('A');f.events.get(am).metadata.Divisions=[{Division:'MA1',LatestRound:1}];
+ f.add('A','pregame');f.add('A','final');const doubles=f.add('A');f.events.get(doubles).metadata.ScoringFormat='D';
+ const future=f.add('A');f.directory.find(item=>item.tournId===future).startDate='2026-11-01';
+ const hybrid=f.add('A/B');f.events.get(hybrid).metadata.TierPro='A';
+ const client=api.pdga.createClient({...f.options,autoFollow:false,discoverSecondTier:true});
+ assert.deepEqual((await client.discover()).availableEntries.map(entry=>entry.candidate.id),[`${hybrid}:MPO`,`${hybrid}:FPO`]);
+});
+test('second-tier PDGA respects division settings, manual preferences, disabled watches, and search cadence',async()=>{
+ const f=fixture(),id=f.add('A');const options={...f.options,autoFollow:false,discoverSecondTier:true};
+ await api.pdga.createClient(options).discover();const later=f.add('A');
+ const client=api.pdga.createClient({...options,autoDivisions:['FPO']});
+ assert.deepEqual((await client.discover()).availableEntries.map(entry=>entry.candidate.id),[`${id}:FPO`]);
+ assert.ok(!f.calls.some(url=>url.searchParams.get('TournID')===later));
+ await assert.rejects(client.getEvent(`${id}:MPO`),/not watched/);
+ const off=api.pdga.createClient({...options,discoverSecondTier:false});assert.deepEqual((await off.discover()).availableEntries,[]);
+ await assert.rejects(off.getEvent(`${id}:MPO`),/not watched/);
+ const manual=api.pdga.createClient({...options,watches:[{tournamentId:id,division:'MPO',view:'player',playerId:'123',enabled:true},{tournamentId:id,division:'FPO',enabled:false}]});
+ const result=await manual.discover();assert.equal(result.availableEntries.length,1);assert.equal(result.availableEntries[0].candidate.raw.automatic,false);
+ f.advance(900000);assert.ok((await client.discover()).availableEntries.some(entry=>entry.candidate.id===`${later}:FPO`));
+});
+test('second-tier PDGA retains stale suggestions through outages and removes them after a healthy scan',async()=>{
+ const f=fixture(),id=f.add('A'),client=api.pdga.createClient({...f.options,autoFollow:false,discoverSecondTier:true});
+ await client.discover();f.events.get(id).metadataOffline=true;f.advance(900000);
+ const failed=await client.discover();assert.equal(failed.availableEntries.length,2);assert.ok(failed.availableEntries.every(entry=>entry.candidate.raw.stale));assert.ok(failed.failures>0);
+ f.directory.length=0;f.advance(900000);assert.deepEqual((await client.discover()).availableEntries,[]);
+});

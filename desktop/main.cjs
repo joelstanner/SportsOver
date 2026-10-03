@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, Tray, nativeImage, globalShortcut, ipcMain, protocol, screen, session, dialog, clipboard, systemPreferences, shell } = require('electron');
+const { app, BrowserWindow, Menu, Tray, nativeImage, globalShortcut, ipcMain, protocol, screen, session, dialog, clipboard, systemPreferences, shell, net } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const { EngineState } = require('./engine-state.cjs');
@@ -170,7 +170,7 @@ else {
     if (process.platform === 'darwin' && appIcon) app.dock.setIcon(appIcon);
     app.setAboutPanelOptions({ applicationName: 'SportsOver', applicationVersion: app.getVersion(), ...(appIcon ? { iconPath: appIconPath } : {}) });
     const { updateCatalogs } = await import('../scripts/team-catalog.mjs');
-    protocol.handle('sportsover', createHandler({ root, dataRoot: app.getPath('userData'), store, engine: engineState, refresh: async sport => {
+    protocol.handle('sportsover', createHandler({ root, dataRoot: app.getPath('userData'), store, engine: engineState, fetchImpl: (...args) => net.fetch(...args), refresh: async sport => {
       try { return await updateCatalogs(sport, app.getPath('userData')); }
       finally {
         for (const entry of globalThis.SportsOverlay.config.SPORT_CATALOG) {
