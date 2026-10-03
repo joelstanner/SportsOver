@@ -864,7 +864,12 @@
       if (remove) remove.textContent = "Exclude";
     }
     renderGameLogos(card.querySelector(".game-logos"), entry.candidate);
-    card.querySelector(".game-name").textContent = gameName(entry.candidate);
+    const name = card.querySelector(".game-name");
+    name.textContent = gameName(entry.candidate);
+    name.addEventListener("pointerenter", () => {
+      if (name.scrollWidth > name.clientWidth) name.title = entry.candidate.raw?.fullName || name.textContent;
+      else name.removeAttribute("title");
+    });
     card.querySelector(".game-meta").textContent = gameMeta(entry.candidate);
     const candidate = entry.candidate;
     const odds = global.SportsOverlay.model.espnOdds(candidate.raw || {});

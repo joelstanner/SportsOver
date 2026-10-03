@@ -9,6 +9,10 @@ require("../../core/game-selection.js");
 const selection = global.SportsOverlay.selection;
 
 function espnGame(id, state, awayId, homeId, overrides = {}) {
+  const awayScore = overrides.awayScore ?? 17;
+  const homeScore = overrides.homeScore ?? 13;
+  if (["SEA", "NEB"].includes(awayId)) assert.ok(awayScore > homeScore, `${awayId} must lead in ${id}`);
+  if (["SEA", "NEB"].includes(homeId)) assert.ok(homeScore > awayScore, `${homeId} must lead in ${id}`);
   return {
     id,
     date: overrides.date || "2026-10-10T20:00:00Z",
@@ -18,8 +22,8 @@ function espnGame(id, state, awayId, homeId, overrides = {}) {
       broadcasts: overrides.national ? [{ market: "national", names: ["ABC"] }] : [],
       odds: overrides.spread === undefined ? [] : [{ spread: overrides.spread }],
       competitors: [
-        { id: awayId, score: String(overrides.awayScore ?? 10), curatedRank: { current: overrides.awayRank ?? 99 }, team: { id: awayId, abbreviation: awayId } },
-        { id: homeId, score: String(overrides.homeScore ?? 13), curatedRank: { current: overrides.homeRank ?? 99 }, team: { id: homeId, abbreviation: homeId } },
+        { id: awayId, score: String(awayScore), curatedRank: { current: overrides.awayRank ?? 99 }, team: { id: awayId, abbreviation: awayId } },
+        { id: homeId, score: String(homeScore), curatedRank: { current: overrides.homeRank ?? 99 }, team: { id: homeId, abbreviation: homeId } },
       ],
     }],
   };

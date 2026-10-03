@@ -32,7 +32,8 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
         })) }] };
         if (url.pathname.includes('/feed/live')) {
           body = structuredClone(fixture);
-          if (url.pathname.includes('/game/2/')) body.liveData.linescore.teams.home.runs = 9;
+          if (url.pathname.includes('/game/2/')) body.liveData.linescore.teams.home.runs = 3;
+          if (body.liveData.linescore.teams.away.runs <= body.liveData.linescore.teams.home.runs) throw Error('Mariners fixtures must always lead');
           if (url.pathname.includes('/game/3/')) {
             body.gameData.status = { abstractGameState: 'Preview', detailedState: 'Scheduled' };
             body.gameData.teams.away = { id: 135, name: 'San Diego Padres', abbreviation: 'SD' };
@@ -268,7 +269,77 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     assert.equal(await banner.locator('.banner-controls').count(), 0, 'no hover controls cover scores');
     const bannerBounds = () => application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
       .find(win => win.webContents.getURL().includes('display.html?desktop')).getBounds());
+    const waitBannerBounds = expected => application.evaluate(async ({ BrowserWindow }, expected) => {
+      const win = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('display.html?desktop'));
+      for (let i = 0; i < 100; i++) {
+        const actual = win.getBounds();
+        if (Object.entries(expected).every(([key, value]) => actual[key] === value)) return actual;
+        await new Promise(resolve => setTimeout(resolve, 20));
+      }
+      return win.getBounds();
+    }, expected);
     const beforeDrag = await bannerBounds();
+    await application.evaluate(({ Menu }) => Menu.getApplicationMenu().getMenuItemById('fullscreen-banner').click());
+    const fullBounds = await bannerBounds();
+    const fullDisplay = await application.evaluate(({ screen }, bounds) => screen.getDisplayMatching(bounds).bounds, beforeDrag);
+    assert.deepEqual(fullBounds, fullDisplay, 'fullscreen covers the entire current monitor');
+    await banner.waitForFunction(() => document.body.classList.contains('desktop-fullscreen'));
+    const presentation = await banner.evaluate(() => {
+      const box = document.querySelector('.scorebug').getBoundingClientRect();
+      return { background: getComputedStyle(document.body).backgroundColor,
+        centerX: box.x + box.width / 2, centerY: box.y + box.height / 2, width: innerWidth, height: innerHeight };
+    });
+    assert.equal(presentation.background, 'rgb(0, 0, 0)');
+    assert.equal(await banner.locator('body').getAttribute('title'), null, 'fullscreen has no banner instruction tooltip');
+    await banner.mouse.move(10, 10);
+    assert.notEqual(await banner.evaluate(() => getComputedStyle(document.body).cursor), 'none');
+    await banner.waitForFunction(() => getComputedStyle(document.body).cursor === 'none', null, { timeout: 5000 });
+    assert.equal(await banner.locator('.scorebug').evaluate(el => getComputedStyle(el).cursor), 'none', 'idle cursor hides over the banner too');
+    await banner.mouse.move(20, 10);
+    assert.notEqual(await banner.evaluate(() => getComputedStyle(document.body).cursor), 'none', 'moving reveals the cursor');
+    assert.ok(Math.abs(presentation.centerX - presentation.width / 2) < 2, 'banner centered horizontally');
+    assert.ok(Math.abs(presentation.centerY - presentation.height / 2) < 2, 'banner centered vertically');
+    assert.equal(await application.evaluate(({ BrowserWindow }) => {
+      const win = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('display.html?desktop'));
+      return process.platform === 'darwin' ? win.isSimpleFullScreen() : win.isFullScreen();
+    }), true, 'native fullscreen hides desktop chrome');
+    await admin.waitForFunction(() => document.querySelector('#desktop-size').disabled);
+    await doubleClickBanner(1);
+    assert.deepEqual(await bannerBounds(), fullBounds, 'fullscreen ignores double-click resizing');
+    assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame);
+    await banner.screenshot({ path: path.join(directory, 'fullscreen-banner.png'), omitBackground: true });
+    // Exercise the same pointer IPC as dragging without relying on OS edge hit testing.
+    const fullDrag = { x: fullBounds.x + 100, y: fullBounds.y + 50 };
+    await banner.evaluate(async point => {
+      await window.sportsDesktop.action('banner-pointer', { phase: 'start', ...point });
+      await window.sportsDesktop.action('banner-pointer', { phase: 'end', x: point.x + 60, y: point.y + 30 });
+    }, fullDrag);
+    assert.deepEqual(await bannerBounds(), fullBounds, 'fullscreen stays fixed on the display');
+    await banner.waitForTimeout(300);
+    assert.deepEqual(JSON.parse(await fs.readFile(path.join(directory, 'settings.json'), 'utf8')).desktop.bounds, beforeDrag, 'fullscreen dragging preserves saved normal bounds');
+    await banner.locator('.scorebug').click({ position: { x: 15, y: 20 } });
+    await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey === key, initialGame);
+    await banner.locator('.scorebug').click();
+    await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey === key, skippedGame);
+    // CDP keyboard events bypass Electron's before-input-event handler.
+    await application.evaluate(({ BrowserWindow }) => {
+      const win = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('display.html?desktop'));
+      win.focus();
+      win.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
+      win.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Escape' });
+    });
+    assert.deepEqual(await waitBannerBounds(beforeDrag), beforeDrag, 'Escape restores normal size and position');
+    assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).fullscreen), false);
+    await banner.waitForFunction(() => !document.body.classList.contains('desktop-fullscreen'));
+    assert.equal(await banner.locator('body').getAttribute('title'), 'Click: browse · Drag: move · Double-click: resize · Right-click: menu');
+    assert.notEqual(await banner.evaluate(() => getComputedStyle(document.body).cursor), 'none', 'exiting fullscreen restores the cursor');
+    assert.equal(await banner.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgba(0, 0, 0, 0)', 'normal banner restores transparency');
+    await admin.getByRole('button', { name: 'Settings', exact: true }).click();
+    await admin.locator('[data-desktop="toggle-fullscreen"]').click();
+    assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).fullscreen), true);
+    await admin.locator('[data-desktop="toggle-fullscreen"]').click();
+    assert.deepEqual(await waitBannerBounds(beforeDrag), beforeDrag, 'Settings exits fullscreen');
+    await admin.getByRole('button', { name: 'Live control', exact: true }).click();
     const box = await banner.locator('.scorebug').boundingBox();
     await banner.mouse.move(box.x + 40, box.y + 20);
     await banner.mouse.down();
@@ -371,6 +442,23 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     await doubleClickBanner(-1);
     assert.deepEqual(await bannerBounds(), fixedBounds, 'locked double-clicks leave size and position unchanged');
     assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame, 'locked double-clicks do not navigate');
+    await admin.evaluate(() => window.sportsDesktop.action('toggle-fullscreen'));
+    const lockedFullBounds = await bannerBounds();
+    await banner.evaluate(async () => {
+      await window.sportsDesktop.action('banner-pointer', { phase: 'start', x: 100, y: 100 });
+      await window.sportsDesktop.action('banner-pointer', { phase: 'end', x: 160, y: 130 });
+    });
+    assert.deepEqual(await bannerBounds(), lockedFullBounds, 'position lock also prevents fullscreen dragging');
+    await application.evaluate(() => { globalThis.bannerTestMenu = null; });
+    await banner.locator('.scorebug').click({ button: 'right' });
+    await application.evaluate(async () => {
+      for (let i = 0; i < 50 && !globalThis.bannerTestMenu; i++) await new Promise(resolve => setTimeout(resolve, 20));
+      const item = globalThis.bannerTestMenu.getMenuItemById('fullscreen-banner');
+      if (item.label !== 'Exit fullscreen') throw Error('Missing fullscreen exit');
+      globalThis.bannerTestMenu.closePopup();
+      item.click();
+    });
+    assert.deepEqual(await waitBannerBounds(fixedBounds), fixedBounds, 'right-click menu exits fullscreen while locked');
     await application.evaluate(() => { globalThis.bannerTestMenu = null; });
     await banner.locator('.scorebug').click({ button: 'right' });
     await application.evaluate(async () => {
@@ -449,10 +537,10 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     const duplicate = await (await fetch(`${base}/api/v1/commands`, { method: 'POST', headers, body: JSON.stringify(command) })).json();
     assert.deepEqual(duplicate, accepted, 'retry does not extend override');
     await engine.waitForFunction(key => window.SportsOverlay.engine.describe().overrideGameKey === key, overrideKey);
-    await obs.waitForFunction(score => document.querySelector('#home-score')?.textContent === score, overrideKey === 'baseball:2' ? '9' : '2');
+    await obs.waitForFunction(score => document.querySelector('#home-score')?.textContent === score, overrideKey === 'baseball:2' ? '3' : '2');
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).visible), false, 'OBS continues while desktop hidden');
     await engine.waitForFunction(key => window.SportsOverlay.engine.describe().overrideGameKey === null && window.SportsOverlay.engine.describe().currentGameKey === key, before.currentGameKey, { timeout: 10000 });
-    await obs.waitForFunction(score => document.querySelector('#home-score')?.textContent === score, before.currentGameKey === 'baseball:2' ? '9' : '2');
+    await obs.waitForFunction(score => document.querySelector('#home-score')?.textContent === score, before.currentGameKey === 'baseball:2' ? '3' : '2');
     await admin.locator('[data-desktop="recover"]').click();
     const sharedFrame = await (await fetch(`${base}/api/output`)).json();
     await banner.waitForFunction(sequence => Number(document.body.dataset.sequence) >= sequence, sharedFrame.sequence);
@@ -476,6 +564,7 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     await admin.evaluate(() => window.sportsDesktop.action('size', 1));
     await doubleClickBanner(1);
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).scale), 1.25);
+    await admin.evaluate(() => window.sportsDesktop.action('toggle-fullscreen'));
     await admin.evaluate(async () => { await window.sportsDesktop.action('lock'); await window.sportsDesktop.action('hide'); });
     await admin.evaluate(() => window.sportsDesktop.action('live-mode', true));
     await engine.waitForFunction(() => window.SportsOverlay.engine.describe().liveMode.active);
@@ -497,6 +586,7 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     ({ admin, banner, engine } = await launch());
     assert.equal(await admin.evaluate(() => window.SportsOverlay.config.loadConfig().displayMode), 'top-favorite');
     const restored = await admin.evaluate(() => window.sportsDesktop.status());
+    assert.equal(restored.fullscreen, false, 'restart leaves fullscreen and restores normal bounds');
     assert.equal(restored.scale, 1.25); assert.equal(restored.locked, true); assert.equal(restored.visible, false);
     assert.equal(await admin.locator('[data-desktop="toggle-lock"]').innerText(), 'Unlock');
     assert.equal(await admin.locator('[data-desktop="toggle-visibility"]').innerText(), 'Show');

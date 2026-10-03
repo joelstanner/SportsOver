@@ -186,6 +186,10 @@ test('tray and application menus expose the checker and preserve Quit and banner
     const appSection = appMenu.find(item => item.label === (platform === 'darwin' ? 'SportsOver' : 'File'));
     assert.equal(appSection.submenu.find(item => item.id === 'check-updates').enabled, true);
     assert.equal(appSection.submenu.at(-1).label, 'Quit SportsOver');
-    assert.equal(appMenu.find(item => item.label === 'Banner').submenu.length, 4);
+    const bannerMenu = appMenu.find(item => item.label === 'Banner').submenu;
+    for (const id of ['toggle-banner', 'lock-banner', 'fullscreen-banner', 'recover-banner']) {
+      assert.ok(bannerMenu.some(item => item.id === id), `Banner menu includes ${id}`);
+    }
+    assert.ok(bannerMenu.some(item => item.label === 'Banner size'));
   }
 });

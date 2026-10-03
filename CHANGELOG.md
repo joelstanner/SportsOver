@@ -3,6 +3,24 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.23.0 — 2026-10-02
+
+### Added
+
+- Fullscreen banner mode centers the full-width banner on a black screen, with
+  Escape, menu, tray, and Settings controls to exit and restore its previous size
+  and position. The cursor hides after three seconds of inactivity.
+
+### Changed
+
+- Shortened the banner interaction tooltip and removed it from the fullscreen
+  background.
+- Upcoming disc-golf leaderboards show the highest PDGA-rated entrants first,
+  with ratings displayed until play begins; tournament standings then take over.
+- Truncated names in Banner rotation reveal the full name on hover.
+- Seattle teams and the Nebraska Cornhuskers always lead in scored demo and test
+  fixtures. Real provider scores are unchanged.
+
 ## 0.22.0 — 2026-10-02
 
 ### Changed

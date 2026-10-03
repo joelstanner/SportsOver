@@ -4,6 +4,16 @@
 
 - `gst` means `git status`. When requested, show the current Git status.
 
+## Test and demo fixtures
+
+Seattle teams and the Nebraska Cornhuskers must always be winning in demo data,
+test fixtures, mocked feeds, and generated test variants whenever scores are
+present. Keep them strictly ahead, never tied or behind, including final scores.
+Pregame fixtures may omit scores. Use other teams for tests that need ties or
+losses, and avoid matching these favorites against each other. When renaming a
+fixture team, update its ID, abbreviation, and logo as well so it cannot retain
+another team's identity. This rule applies to synthetic data, not real feeds.
+
 ## Version bumps
 
 After completing a change that warrants a version bump, ask the user whether to
@@ -15,8 +25,9 @@ agreed stable 1.0 release. Explicitly identify when a minor or major bump is war
 Do not increment automatically. An explicit user instruction to bump the version
 is authorization; do not ask again for that same bump. Group related changes into
 one proposed bump rather than bumping for each edit or test build. On approval,
-update package.json and package-lock.json together, update CHANGELOG.md for that
-version, and rebuild dist/SportsOver.app.
+update package.json and package-lock.json together and update CHANGELOG.md for
+that version. Do not rebuild dist/SportsOver.app locally as part of a version
+bump or release.
 
 ## Changelog
 
@@ -36,6 +47,6 @@ Windows packaging runs for the exact release commit: `SportsOver-macos-arm64`,
 before uploading those artifacts to a release. Do not substitute local installer
 builds or artifacts from another commit when CI fails; resolve the CI failure.
 
-`npm run build:mac` remains the local development app rebuild required by version
-bumps. Local installer commands are for troubleshooting only. Packaging workflows
+Do not run local Mac app rebuilds unless the user explicitly requests one.
+Local installer commands are for troubleshooting only. Packaging workflows
 produce artifacts; publishing a GitHub release still requires user authorization.

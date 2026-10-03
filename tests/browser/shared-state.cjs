@@ -17,6 +17,7 @@ const root = path.resolve(__dirname, '../..');
         const url = new URL(route.request().url());
         if (url.hostname !== '127.0.0.1') {
           if (route.request().frame().url().endsWith('/sports/admin/')) adminSchedules.add(url.pathname);
+          if (url.hostname === 'lichess.org' && url.pathname === '/api/broadcast/top') return route.fulfill({ json: { active: [] } });
           return route.fulfill({ json: { dates: [], events: [] } });
         }
         if (url.pathname.startsWith('/api/sports/state')) {
@@ -122,6 +123,10 @@ const root = path.resolve(__dirname, '../..');
     await defaultLive.fill('20');
     await defaultLive.press('Tab');
     const postseason = await contexts[1].newPage();
+    // The hourly cadence applies when automatic tournament discovery is off.
+    await chrome.getByRole('button', { name: 'Settings', exact: true }).click();
+    await chrome.locator('.chess-auto-follow').uncheck();
+    await chrome.waitForFunction(() => window.SportsOverlay.config.loadConfig().sports.find(group => group.sport === 'chess').autoFollow === false);
     const hourlyAdmin = await contexts[0].newPage();
     await hourlyAdmin.clock.install();
     await hourlyAdmin.goto('http://127.0.0.1:8000/sports/admin/');
@@ -148,15 +153,15 @@ const root = path.resolve(__dirname, '../..');
       const api = window.SportsOverlay;
       const event = api.registry.getDemo('baseball', 'live');
       window.postseasonEvent = api.mlb.withSchedule(event, {
-        gamePk: event.id, gameType: 'F', seriesGameNumber: 1, gamesInSeries: 3,
+        gamePk: event.id, gameType: 'F', seriesGameNumber: 2, gamesInSeries: 3,
         seriesDescription: 'AL Wild Card Series', status: { abstractGameState: 'Live' },
-        seriesStatus: { wins: 0, losses: 0, result: 'Series tied 0-0' },
+        seriesStatus: { wins: 1, losses: 0, result: 'SEA leads 1-0' },
       });
       window.postseasonLayout = api.baseballLayout.createLayout();
       window.postseasonEvent.details.lastPlay = 'A long last play description that must keep scrolling while the postseason information rotates below it.';
       window.postseasonLayout.render(window.postseasonEvent);
     });
-    assert.match(await postseason.locator('#series-text').innerText(), /AL WILD CARD · GAME 1 · BEST OF 3/);
+    assert.match(await postseason.locator('#series-text').innerText(), /AL WILD CARD · GAME 2 · BEST OF 3/);
     const box = await postseason.locator('#sports-overlay').boundingBox();
     assert.ok(box.width <= 460 && box.height <= 88, JSON.stringify(box));
     await postseason.screenshot({ path: '/tmp/sports-postseason-footer.png' });
@@ -191,9 +196,9 @@ const root = path.resolve(__dirname, '../..');
       }), true, 'unchanged last play retains its scroll position and animation');
     }
     await postseason.clock.runFor(8000);
-    assert.equal(await postseason.locator('#series-text').innerText(), 'SERIES TIED 0-0');
+    assert.equal(await postseason.locator('#series-text').innerText(), 'SEA LEADS 1-0');
     await publishOutput();
-    assert.equal(await output.locator('#series-text').innerText(), 'SERIES TIED 0-0');
+    assert.equal(await output.locator('#series-text').innerText(), 'SEA LEADS 1-0');
     await assertScrollContinues();
     await postseason.evaluate(() => window.postseasonLayout.render(window.postseasonEvent));
     await postseason.clock.runFor(8000);
@@ -204,11 +209,11 @@ const root = path.resolve(__dirname, '../..');
     assert.equal(await output.locator('#series-details').isVisible(), false);
     await assertScrollContinues();
     await postseason.evaluate(() => {
-      window.postseasonEvent.teams.home.score = 7;
+      window.postseasonEvent.teams.away.score = 7;
       window.postseasonLayout.render(window.postseasonEvent);
     });
     await publishOutput();
-    assert.equal(await output.locator('#home-score').innerText(), '7');
+    assert.equal(await output.locator('#away-score').innerText(), '7');
     await assertScrollContinues();
     await postseason.evaluate(() => {
       window.postseasonEvent.details.lastPlay = 'A different long play description should start a new scroll so the next play can be read from the beginning.';

@@ -21,4 +21,5 @@ function fitBounds(saved = {}, displays) {
   const h = Math.round(w * 100 / 472);
   return { x: Math.round(Math.max(area.x, Math.min(x, area.x + area.width - w))), y: Math.round(Math.max(area.y, Math.min(y, area.y + area.height - h))), width: w, height: h };
 }
-module.exports = { fitBounds, BANNER_SCALES, stepBannerScale };
+function fullscreenBounds(display) { return { ...display.bounds }; }
+module.exports = { fitBounds, fullscreenBounds, BANNER_SCALES, stepBannerScale };

@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { Store } = require('../../desktop/store.cjs');
-const { fitBounds } = require('../../desktop/bounds.cjs');
+const { fitBounds, fullscreenBounds } = require('../../desktop/bounds.cjs');
 const { createHandler } = require('../../desktop/protocol.cjs');
 const temp = t => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sportsover-test-')); t.after(() => fs.rmSync(dir, { recursive: true, force: true })); return dir; };
 test('clean desktop startup seeds Nebraska and Seattle watched teams, then preserves saved choices', t => {
@@ -54,6 +54,12 @@ test('bounds recover disconnected monitors, allow negative origins and clamp ove
   const bad = fitBounds({ x: NaN, y: Infinity, width: -2 }, displays);
   assert.equal(bad.width, 236);
   assert.equal(bad.height, 50);
+});
+test('fullscreen covers the entire monitor, including negative origins and portrait displays', () => {
+  const display = { bounds: { x: -2560, y: -200, width: 2560, height: 1440 } };
+  assert.deepEqual(fullscreenBounds(display), display.bounds);
+  const portrait = { bounds: { x: 1920, y: 0, width: 1080, height: 1920 } };
+  assert.deepEqual(fullscreenBounds(portrait), portrait.bounds);
 });
 test('private protocol serves renderer assets and state but rejects arbitrary files and foreign callers', async t => {
   const dataRoot = temp(t), store = new Store(dataRoot);

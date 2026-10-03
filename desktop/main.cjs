@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const { EngineState } = require('./engine-state.cjs');
 const { startServer, credentials } = require('./server.cjs');
 const { Store, applyCatalog } = require('./store.cjs');
-const { fitBounds, stepBannerScale } = require('./bounds.cjs');
+const { fitBounds, fullscreenBounds, stepBannerScale } = require('./bounds.cjs');
 const { createBannerGesture } = require('./banner-gesture.cjs');
 const { bannerUrl } = require('./banner-link.cjs');
 const { createHandler, ORIGIN } = require('./protocol.cjs');
@@ -20,16 +20,29 @@ protocol.registerSchemesAsPrivileged([{ scheme: 'sportsover', privileges: { stan
 const engineState = new EngineState();
 let appIcon, trayIcon, outputServer, engineWindow, obsUrl, integrationToken, lastRefresh = 0;
 let banner, settings, tray, store, quitting = false, locked = false, shortcut = false, saveTimer;
+let normalBounds = null, fullscreenDisplayId = null;
+function fullscreenDisplay() {
+  return screen.getAllDisplays().find(display => display.id === fullscreenDisplayId)
+    || screen.getDisplayMatching(banner.getBounds());
+}
 const bannerGesture = createBannerGesture({
   bounds: () => banner.getBounds(),
-  move: (x, y) => { if (!locked) banner.setPosition(x, y); },
+  move: (x, y) => {
+    if (!locked && !normalBounds) banner.setPosition(x, y);
+  },
   next: () => engineWindow.webContents.send('engine:command', { type: 'next' }),
   previous: () => engineWindow.webContents.send('engine:command', { type: 'previous' }),
-  resize: direction => { if (!locked) resize(stepBannerScale(banner.getBounds().width / 472, direction)); },
+  resize: direction => { if (!locked && !normalBounds) resize(stepBannerScale(banner.getBounds().width / 472, direction)); },
 });
 const root = path.resolve(__dirname, '..');
 const trusted = url => url.startsWith(`${ORIGIN}/sports/`);
 function secure(win) {
+  win.webContents.on('before-input-event', (event, input) => {
+    if (normalBounds && input.type === 'keyDown' && input.key === 'Escape') {
+      event.preventDefault();
+      setFullscreen(false);
+    }
+  });
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('will-navigate', (event, url) => { if (!trusted(url)) event.preventDefault(); });
   win.webContents.on('will-attach-webview', event => event.preventDefault());
@@ -47,8 +60,41 @@ function lock(value) {
   menus();
 }
 function showBanner() { backgroundStartup = false; banner.showInactive(); persist({ visible: true }); menus(); }
-function hideBanner() { banner.hide(); persist({ visible: false }); menus(); }
+function hideBanner() { setFullscreen(false); banner.hide(); persist({ visible: false }); menus(); }
+function setFullscreen(value) {
+  if (value === !!normalBounds) return;
+  bannerGesture({ phase: 'cancel' });
+  clearTimeout(saveTimer);
+  if (value) {
+    normalBounds = banner.getBounds();
+    persist({ bounds: normalBounds });
+    const display = screen.getDisplayMatching(normalBounds);
+    fullscreenDisplayId = display.id;
+    banner.setBackgroundColor('#000000');
+    if (process.platform === 'darwin') banner.setSimpleFullScreen(true);
+    else { banner.setFullScreenable(true); banner.setFullScreen(true); }
+    banner.setBounds(fullscreenBounds(display));
+    showBanner();
+    banner.focus();
+  } else {
+    const bounds = fitBounds(normalBounds, screen.getAllDisplays());
+    normalBounds = null;
+    fullscreenDisplayId = null;
+    if (process.platform === 'darwin') banner.setSimpleFullScreen(false);
+    else { banner.setFullScreen(false); banner.setFullScreenable(false); }
+    banner.setBackgroundColor('#00000000');
+    banner.setBounds(bounds);
+    persist({ bounds });
+  }
+  banner.webContents.send('desktop:fullscreen', !!normalBounds);
+  menus();
+}
+function fullscreenMenuItem() {
+  return { id: 'fullscreen-banner', label: normalBounds ? 'Exit fullscreen' : 'Fullscreen banner',
+    accelerator: 'CommandOrControl+Shift+F', click: () => setFullscreen(!normalBounds) };
+}
 function recover() {
+  setFullscreen(false);
   if (banner.webContents.isCrashed()) banner.webContents.reload();
   lock(false);
   banner.setBounds(fitBounds({}, [screen.getPrimaryDisplay()]));
@@ -56,6 +102,7 @@ function recover() {
   openSettings();
 }
 function openSettings() {
+  setFullscreen(false);
   backgroundStartup = false;
   if (settings && !settings.isDestroyed()) { if (settings.webContents.isCrashed()) settings.webContents.reload(); settings.show(); settings.focus(); return; }
   settings = new BrowserWindow({ icon: appIcon, title: 'SportsOver Settings', width: 1120, height: 820, minWidth: 700, minHeight: 500, backgroundColor: '#0b1620', webPreferences: preferences() });
@@ -69,15 +116,16 @@ function menus() {
     { id: 'settings', label: 'Settings…', accelerator: 'CommandOrControl+,', click: openSettings },
     { id: 'toggle-banner', label: banner?.isVisible() ? 'Hide banner' : 'Show banner', click: () => { if (banner.isVisible()) hideBanner(); else showBanner(); } },
     { id: 'lock-banner', label: 'Lock banner position', type: 'checkbox', checked: locked, click: item => lock(item.checked) },
+    fullscreenMenuItem(),
     { id: 'recover-banner', label: 'Recover banner (unlock and reposition)', accelerator: 'CommandOrControl+Shift+U', click: recover },
-    { label: 'Banner size', submenu: [0.75, 1, 1.25, 1.5, 2].map(scale => ({ label: `${Math.round(scale * 100)}%`, click: () => resize(scale) })) },
+    { label: 'Banner size', enabled: !normalBounds, submenu: [0.75, 1, 1.25, 1.5, 2].map(scale => ({ label: `${Math.round(scale * 100)}%`, click: () => resize(scale) })) },
     { type: 'separator' }, updateItem,
     { type: 'separator' }, { label: 'Quit SportsOver', accelerator: 'CommandOrControl+Q', click: () => app.quit() },
   ];
   tray?.setContextMenu(Menu.buildFromTemplate(controls));
   const mac = process.platform === 'darwin';
   const settingsItem = controls[0];
-  const bannerControls = controls.slice(1, 5);
+  const bannerControls = controls.slice(1, 6);
   const quitItem = controls.at(-1);
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     ...(mac ? [{ label: 'SportsOver', submenu: [
@@ -94,10 +142,11 @@ function menus() {
 }
 function resize(scale) {
   if (typeof scale !== 'number' || !Number.isFinite(scale) || scale < 0.5 || scale > 3) throw Error('Invalid banner size');
+  if (normalBounds) return;
   bannerGesture({ phase: 'cancel' });
   banner.setBounds(fitBounds({ ...banner.getBounds(), width: Math.round(472 * scale) }, screen.getAllDisplays()));
 }
-function status() { return { version: app.getVersion(), trayAvailable: !!tray && !tray.isDestroyed(), trayBounds: tray && !tray.isDestroyed() ? tray.getBounds() : null, appIconAvailable: !!appIcon, obsUrl, engineReady: engineState.ready, override: engineState.override, locked, visible: banner.isVisible(), scale: banner.getBounds().width / 472, shortcut, warning: store.warning }; }
+function status() { return { version: app.getVersion(), trayAvailable: !!tray && !tray.isDestroyed(), trayBounds: tray && !tray.isDestroyed() ? tray.getBounds() : null, appIconAvailable: !!appIcon, obsUrl, engineReady: engineState.ready, override: engineState.override, locked, visible: banner.isVisible(), fullscreen: !!normalBounds, scale: (normalBounds || banner.getBounds()).width / 472, shortcut, warning: store.warning }; }
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', (_event, argv) => {
@@ -151,6 +200,7 @@ else {
     // from the Dock, Cmd-Tab, and application menu bar.
     banner = new BrowserWindow({ ...bounds, ...(process.platform === 'darwin' ? { type: 'panel' } : {}), title: 'SportsOver', transparent: true, backgroundColor: '#00000000', frame: false, hasShadow: false, alwaysOnTop: true, resizable: false, maximizable: false, fullscreenable: false, skipTaskbar: true, show: false, webPreferences: preferences() });
     secure(banner);
+    banner.webContents.on('did-finish-load', () => banner.webContents.send('desktop:fullscreen', !!normalBounds));
     banner.on('blur', () => bannerGesture({ phase: 'cancel' }));
     banner.on('hide', () => bannerGesture({ phase: 'cancel' }));
     banner.webContents.on('context-menu', () => {
@@ -158,6 +208,7 @@ else {
       Menu.buildFromTemplate([
         { label: 'Settings…', click: openSettings },
         { id: 'lock-banner', label: 'Lock banner position', type: 'checkbox', checked: locked, click: item => lock(item.checked) },
+        fullscreenMenuItem(),
         { id: 'hide-banner', label: 'Hide banner', click: hideBanner },
         updateChecker.menuItem(),
       ]).popup({ window: banner });
@@ -165,10 +216,17 @@ else {
     banner.setAlwaysOnTop(true, 'floating');
     if (process.platform === 'darwin') banner.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
     banner.on('close', event => { if (!quitting) { event.preventDefault(); hideBanner(); } });
-    const saveBounds = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => persist({ bounds: banner.getBounds() }), 250); };
+    const saveBounds = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => persist({ bounds: normalBounds || banner.getBounds() }), 250); };
     banner.on('move', saveBounds);
     banner.on('resize', saveBounds);
-    const fit = () => banner.setBounds(fitBounds(banner.getBounds(), screen.getAllDisplays()));
+    const fit = () => {
+      if (normalBounds) {
+        const display = fullscreenDisplay();
+        fullscreenDisplayId = display.id;
+        normalBounds = fitBounds(normalBounds, screen.getAllDisplays());
+        banner.setBounds(fullscreenBounds(display));
+      } else banner.setBounds(fitBounds(banner.getBounds(), screen.getAllDisplays()));
+    };
     screen.on('display-removed', fit);
     screen.on('display-metrics-changed', fit);
     // A native template icon remains visible in both macOS appearance modes.
@@ -219,6 +277,7 @@ else {
       }
       else if (action === 'show') showBanner();
       else if (action === 'hide') hideBanner();
+      else if (action === 'toggle-fullscreen') setFullscreen(!normalBounds);
       else if (action === 'recover') recover();
       else if (action === 'size') resize(value);
       else if (action === 'settings') openSettings();
@@ -279,5 +338,5 @@ function authorize(event) {
 }
 app.on('activate', () => { if (banner && !backgroundStartup) openSettings(); });
 app.on('window-all-closed', () => { /* Tray owns the application lifetime. */ });
-app.on('before-quit', () => { quitting = true; bannerGesture({ phase: 'cancel' }); clearTimeout(saveTimer); if (banner && store) persist({ bounds: banner.getBounds() }); });
+app.on('before-quit', () => { quitting = true; bannerGesture({ phase: 'cancel' }); clearTimeout(saveTimer); if (banner && store) persist({ bounds: normalBounds || banner.getBounds() }); });
 app.on('will-quit', () => { globalShortcut.unregisterAll(); tray?.destroy(); engineState.stop(); outputServer?.close(); });

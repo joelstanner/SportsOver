@@ -25,6 +25,7 @@
       id: String(score.ResultID ?? score.PDGANum ?? ""), pdgaNumber: String(score.PDGANum || ""),
       name: String(score.Name || `${score.FirstName || ""} ${score.LastName || ""}`).trim() || "Player",
       shortName: String(score.ShortName || score.Name || "Player"),
+      rating: number(score.Rating) > 0 ? number(score.Rating) : null,
       place: !status && (started || priorRound) && ranked > 0 ? ranked : null,
       tied: flag(score.Tied), wonPlayoff: flag(score.WonPlayoff), status,
       total: !status && (started || priorRound) ? number(score.ToPar) : null,
@@ -47,9 +48,12 @@
   function normalizeEvent(metadata, round, watch) {
     if (!metadata || !Array.isArray(round?.scores)) throw Error("PDGA returned an invalid score feed");
     const roundNumber = number(round.roundNumber) || number(round.scores[0]?.Round) || 1;
-    const competitors = round.scores.map(normalizePlayer).sort((a, b) =>
-      (a.place ?? Infinity) - (b.place ?? Infinity));
     const current = roundState(round.scores);
+    // Before the first round, PDGA's feed is alphabetical. Seed the field by
+    // player rating; once play starts, preserve authoritative tournament places.
+    const competitors = round.scores.map(normalizePlayer).sort(current === "pregame" && roundNumber === 1
+      ? (a, b) => (b.rating ?? 0) - (a.rating ?? 0) || a.name.localeCompare(b.name)
+      : (a, b) => (a.place ?? Infinity) - (b.place ?? Infinity));
     // A completed intermediate round is a break, not a finished tournament.
     const finalRound = number(metadata.FinalRound) || number(metadata.Rounds);
     const state = (current === "final" && (!finalRound || roundNumber < finalRound))
@@ -65,6 +69,7 @@
       details: {
         tournamentId: watch.tournamentId, division: watch.division, round: roundNumber,
         name: metadata.SimpleName || metadata.Name || watch.name, dateRange: metadata.DateRange || metadata.StartDate || "",
+        fullName: metadata.Name || metadata.SimpleName || watch.name,
         view: watch.view || "leaderboard", playerId: watch.playerId || "", leaderboardSize: watch.leaderboardSize === 3 ? 3 : 10, layouts: round.layouts || [],
         stale: false, automatic: watch.automatic === true,
       },
@@ -73,7 +78,7 @@
   function toCandidate(event) {
     return { id: event.id, sport: "disc-golf", competitionType: "individual", state: event.state, startTime: null,
       teamKeys: [], competitorKeys: event.competitors.map(player => player.pdgaNumber).filter(Boolean),
-      raw: { name: event.details.name, bannerLabel: event.details.view === "player"
+      raw: { name: event.details.name, fullName: event.details.fullName, bannerLabel: event.details.view === "player"
         ? `Player · ${event.competitors.find(player => (player.pdgaNumber || player.id) === event.details.playerId)?.name || "Choose a player"}`
         : `Top ${event.details.leaderboardSize} players`, division: event.details.division, round: event.details.round,
         dateRange: event.details.dateRange, stale: event.details.stale, automatic: event.details.automatic, detailedState: event.detailedState } };

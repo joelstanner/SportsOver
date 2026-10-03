@@ -30,16 +30,18 @@ const root = path.resolve(__dirname, '../..');
         const api = window.SportsOverlay;
         window.testLayout = api.registry.getLayout(sport).createLayout();
         window.testEvent = api.registry.getDemo(sport, 'pregame');
-        window.testEvent.teams.away.name = 'Detroit Lions';
-        window.testEvent.teams.home.name = 'Seattle Kraken';
+        window.setNameTestTeams = () => {
+          Object.assign(window.testEvent.teams.away, { id: 'layout-away', name: 'Detroit Lions', abbreviation: 'DET', logoUrl: '', score: sport === 'baseball' ? 2 : 117 });
+          Object.assign(window.testEvent.teams.home, { id: 'layout-home', name: 'Seattle Kraken', abbreviation: 'SEA', logoUrl: '', score: sport === 'baseball' ? 3 : 123 });
+        };
+        window.setNameTestTeams();
       }, sport);
       for (const state of ['pregame', 'final', 'live', 'interrupted', 'pregame']) {
         await page.evaluate(({ state, sport }) => {
           window.testEvent.state = state;
-          window.testEvent.teams.away.score = sport === 'baseball' ? 3 : 123;
-          window.testEvent.teams.home.score = sport === 'baseball' ? 2 : 117;
           window.testLayout.render(window.testEvent);
         }, { state, sport });
+        assert.equal(await page.evaluate(() => window.testEvent.teams.home.score > window.testEvent.teams.away.score), true, 'Seattle always leads');
         const expanded = ['pregame', 'final'].includes(state);
         for (const [index, side] of ['away', 'home'].entries()) {
           const expected = await page.evaluate(({ side, expanded }) => window.testEvent.teams[side][expanded ? 'name' : 'abbreviation'], { side, expanded });
@@ -57,6 +59,7 @@ const root = path.resolve(__dirname, '../..');
                 const team = window.testEvent.teams[side];
                 team.name = side === chargersSide ? 'Los Angeles Chargers' : 'Tampa Bay Buccaneers';
                 team.abbreviation = side === chargersSide ? 'LAC' : 'TB';
+                team.id = team.abbreviation;
                 team.score = side === 'away' ? 27 : 24;
               }
               window.testLayout.render(window.testEvent);
@@ -92,8 +95,7 @@ const root = path.resolve(__dirname, '../..');
       }
       // A new matchup must remeasure names; outputs consume the chosen label verbatim.
       await page.evaluate(() => {
-        window.testEvent.teams.away.name = 'Detroit Lions';
-        window.testEvent.teams.home.name = 'Seattle Kraken';
+        window.setNameTestTeams();
         window.testLayout.render(window.testEvent);
       });
       for (const id of ids) {

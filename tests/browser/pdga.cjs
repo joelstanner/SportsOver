@@ -43,6 +43,15 @@ const scores = require('../sports/disc-golf/round.json');
     assert.equal(await sport.locator('.pdga-player').inputValue(),'41760');
     await page.getByRole('button',{name:'Live control'}).click();
     await page.locator('#rotation-queue [data-game-key="disc-golf:86076:MPO"]').waitFor();
+    const rotationName = page.locator('#rotation-queue [data-game-key="disc-golf:86076:MPO"] .game-name');
+    await rotationName.evaluate(el=>el.style.width='150px');
+    await rotationName.hover();
+    assert.equal(await rotationName.getAttribute('title'), metadata.Name);
+    await page.mouse.move(0,0);
+    await rotationName.evaluate(el=>el.style.width='max-content');
+    await rotationName.hover();
+    assert.equal(await rotationName.getAttribute('title'), null);
+    await rotationName.evaluate(el=>el.style.removeProperty('width'));
     await page.locator('#rotation-queue .lock-game').click();
     await page.waitForFunction(()=>JSON.parse(localStorage.getItem('sports-overlay.config.v1')).lockedGameKeys.includes('disc-golf:86076:MPO'));
     const banner = await context.newPage(); banner.on('pageerror',e=>errors.push(e.message));
@@ -50,6 +59,7 @@ const scores = require('../sports/disc-golf/round.json');
     await banner.locator('.pdga-focus').waitFor();
     assert.match(await banner.locator('.pdga-focus').innerText(),/Kevin Jones/);
     assert.match(await banner.locator('.pdga-state').innerText(),/R3.*FINAL/);
+    assert.equal(await banner.locator('.pdga-event').getAttribute('title'), metadata.SimpleName);
     const box = await banner.locator('#sports-overlay').boundingBox();
     assert.equal(box.width,460); assert.equal(box.height,88); assert.ok(box.y+box.height<=100);
     await banner.evaluate(()=>document.body.style.zoom='2');
@@ -82,6 +92,23 @@ const scores = require('../sports/disc-golf/round.json');
     assert.doesNotMatch(await banner.locator('.pdga-footer').innerText(),/STALE|retrying/);
     assert.doesNotMatch(await banner.locator('#sports-overlay').getAttribute('aria-label'),/stale/);
     offline = false;
+    // A pregame leaderboard shows the best-rated entrants, without inventing
+    // tournament positions.
+    await banner.evaluate(metadata=>{
+      const api = window.SportsOverlay;
+      const event = api.pdga.normalizeEvent(metadata,{roundNumber:1,scores:[
+        {Name:'Alphabetical first',Rating:1000,Round:1},
+        {Name:'Unrated entrant',Round:1},
+        {Name:'Top rated entrant',Rating:1050,Round:1},
+      ]},{tournamentId:'86076',division:'MPO',view:'leaderboard'});
+      api.registry.getLayout('disc-golf').createLayout().render(event);
+    },metadata);
+    assert.deepEqual(await banner.locator('.pdga-entry .pdga-name').allTextContents(), ['Top rated entrant','Alphabetical first','Unrated entrant']);
+    assert.deepEqual(await banner.locator('.pdga-entry .pdga-total').allTextContents(), ['1050','1000','—']);
+    assert.deepEqual(await banner.locator('.pdga-entry .pdga-place').allTextContents(), ['—','—','—']);
+    assert.match(await banner.locator('.pdga-labels').innerText(), /RATING/);
+    assert.match(await banner.locator('.pdga-footer').innerText(), /By PDGA rating/);
+    await banner.screenshot({path:'/tmp/sportsover-pdga-ratings.png'});
     // A next-round DNF must not make waiting players live, and its footer
     // must not incorrectly claim that the unplayed round is complete.
     await banner.evaluate(metadata=>{

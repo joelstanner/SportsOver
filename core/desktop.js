@@ -4,7 +4,23 @@
   if (!api || window.top !== window) return;
   if (new URLSearchParams(location.search).has('desktop')) {
     document.body.classList.add('desktop-banner');
-    document.body.title = 'PDGA and chess links open in your browser · Left 20%: previous game · Elsewhere: next game · When unlocked: double-click left half to shrink / right half to enlarge, drag to move · Right-click for Settings and position lock';
+    const bannerHint = 'Click: browse · Drag: move · Double-click: resize · Right-click: menu';
+    document.body.title = bannerHint;
+    let cursorTimer;
+    const clearCursorIdle = () => {
+      clearTimeout(cursorTimer);
+      document.body.classList.remove('cursor-idle');
+    };
+    const showCursor = () => {
+      clearCursorIdle();
+      if (document.body.classList.contains('desktop-fullscreen')) {
+        cursorTimer = setTimeout(() => document.body.classList.add('cursor-idle'), 3000);
+      }
+    };
+    for (const type of ['pointermove', 'pointerdown', 'wheel', 'focus']) {
+      window.addEventListener(type, showCursor, { passive: true });
+    }
+    window.addEventListener('blur', clearCursorIdle);
     const bannerLink = target => target.closest('.chess-scorebug a[href], .pdga-scorebug a[href]');
     let pointerId = null;
     const sendPointer = (phase, event) => api.action('banner-pointer', {
@@ -21,6 +37,7 @@
     document.body.addEventListener('pointerdown', event => {
       if (event.button !== 0 || !event.isPrimary) return;
       if (bannerLink(event.target)) return;
+      if (document.body.classList.contains('desktop-fullscreen') && !event.target.closest('#sports-overlay')) return;
       event.preventDefault();
       pointerId = event.pointerId;
       document.body.setPointerCapture(pointerId);
@@ -48,9 +65,25 @@
     });
     document.body.addEventListener('dragstart', event => event.preventDefault());
     window.addEventListener('blur', cancelPointer);
-    const scale = () => { document.body.style.zoom = String(window.innerWidth / 472); };
+    const scale = () => {
+      const zoom = window.innerWidth / 472;
+      document.body.style.zoom = String(zoom);
+      document.body.style.width = '472px';
+      document.body.style.height = `${window.innerHeight / zoom}px`;
+    };
+    const fullscreen = value => {
+      cancelPointer();
+      document.documentElement.classList.toggle('desktop-fullscreen', value);
+      document.body.classList.toggle('desktop-fullscreen', value);
+      if (value) document.body.removeAttribute('title');
+      else document.body.title = bannerHint;
+      showCursor();
+      scale();
+    };
+    api.onFullscreenChange(fullscreen);
     window.addEventListener('resize', scale);
     scale();
+    fullscreen((await api.status()).fullscreen);
     return;
   }
   const inspection = document.querySelector('.live-preview-block');
@@ -68,6 +101,7 @@
       <div class="actions">
         <button class="button button--secondary" data-desktop="toggle-lock" disabled>Lock</button>
         <button class="button button--secondary" data-desktop="toggle-visibility" disabled>Hide</button>
+        <button class="button button--secondary" data-desktop="toggle-fullscreen" disabled>Fullscreen</button>
         <button class="button button--secondary" data-desktop="recover">Recover position</button>
       </div>
       <label class="field">Banner size<select id="desktop-size"><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option><option value="3">300%</option></select></label>
@@ -78,7 +112,8 @@
         <div><dt>Browse games <span>Click</span></dt><dd>Leftmost 20%: previous item. Anywhere else: next item. PDGA and chess links open in your browser.</dd></div>
         <div><dt>Resize <span>Double-click</span></dt><dd>When unlocked: left half makes it smaller; right half makes it bigger. Size ranges from 50% to 300%.</dd></div>
         <div><dt>Move <span>Drag</span></dt><dd>When unlocked: click anywhere and drag to reposition. Dragging and resizing keep the current game.</dd></div>
-        <div><dt>Banner menu <span>Right-click</span></dt><dd>Open Settings, lock or unlock the banner position, or hide the banner.</dd></div>
+        <div><dt>Fullscreen <span>Ctrl/Cmd + Shift + F</span></dt><dd>Show only the banner, centered across a black screen. The cursor hides after 3 seconds of inactivity; move it to show it again. Press Escape or choose Exit fullscreen to restore the previous size and position. Moving and resizing pause in fullscreen. Opening Settings also exits fullscreen.</dd></div>
+        <div><dt>Banner menu <span>Right-click</span></dt><dd>Open Settings, lock or unlock the banner position, toggle fullscreen, or hide the banner.</dd></div>
       </dl>
       <p class="desktop-info-note">Browsing wraps around and restarts the display timer. Clicks pause briefly to detect double-clicks. Game locks and temporary overrides still apply.</p>
     </div>
@@ -100,6 +135,7 @@
   function showWarning(message) { warning.textContent = message || ''; warning.hidden = !message; }
   const lockButton = section.querySelector('[data-desktop="toggle-lock"]');
   const visibilityButton = section.querySelector('[data-desktop="toggle-visibility"]');
+  const fullscreenButton = section.querySelector('[data-desktop="toggle-fullscreen"]');
   function render(value) {
     const version = document.querySelector('#app-version');
     version.textContent = value.version ? `v${value.version}` : '';
@@ -121,9 +157,14 @@
     visibilityButton.title = value.visible ? 'Banner visible. Hide the desktop banner; OBS continues displaying games.' : 'Banner hidden. Show the desktop banner.';
     lockButton.disabled = false;
     visibilityButton.disabled = false;
+    fullscreenButton.disabled = false;
+    fullscreenButton.textContent = value.fullscreen ? 'Exit fullscreen' : 'Fullscreen';
+    fullscreenButton.setAttribute('aria-pressed', String(!!value.fullscreen));
+    fullscreenButton.title = value.fullscreen ? 'Restore the previous banner size and position.' : 'Show the centered banner on a black fullscreen background.';
     output.querySelector('#obs-address').textContent = value.obsUrl || 'Local output server unavailable; see the status above.';
     output.querySelector('#override-status').textContent = value.override ? `Temporary game: ${value.override.gameKey} · ends ${new Date(value.override.expiresAt).toLocaleTimeString()}` : 'Normal rotation · no temporary override';
     const select = section.querySelector('select');
+    select.disabled = !!value.fullscreen;
     if (document.activeElement !== select) select.value = String(Math.round(value.scale * 100) / 100);
   }
   async function action(name, value) { try { render(await api.action(name, value)); } catch (error) { showWarning(error.message); } }

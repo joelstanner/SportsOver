@@ -27,6 +27,32 @@ test('real PDGA round maps a field, authoritative playoff places and round numbe
   assert.equal(candidate.id, '86076:MPO');
   assert.equal(candidate.sport, 'disc-golf');
   assert.ok(candidate.competitorKeys.includes('33705'));
+  assert.equal(event.details.fullName, metadata.Name);
+  assert.equal(candidate.raw.fullName, metadata.Name);
+});
+test('upcoming fields sort by player rating, with alphabetical ties and unrated players last', () => {
+  const scores = [
+    {Name:'A Unrated', Rating:0}, {Name:'B Lower', Rating:'1010'},
+    {Name:'Z Highest', Rating:1050}, {Name:'C Equal', Rating:1010},
+    {Name:'D Invalid', Rating:'unknown'}, {Name:'E Missing'},
+  ].map((player, index) => ({...player, Round:1, RunningPlace:index+1}));
+  const event = normalize({scores});
+  assert.equal(event.state, 'pregame');
+  assert.deepEqual(event.competitors.map(p => p.name), ['Z Highest','B Lower','C Equal','A Unrated','D Invalid','E Missing']);
+  assert.deepEqual(event.competitors.map(p => p.rating), [1050,1010,1010,null,null,null]);
+  assert.ok(event.competitors.every(p => p.place === null && p.total === null));
+});
+test('live, final and between-round standings take precedence over player ratings', () => {
+  for (const phase of ['live','final','break']) {
+    const scores = [
+      {Name:'Higher rated', Rating:1050, RunningPlace:2, ToPar:-4},
+      {Name:'Tournament leader', Rating:1010, RunningPlace:1, ToPar:-6},
+    ].map(player => ({...player, Round:phase === 'break' ? 2 : 1,
+      RoundStarted:phase === 'break' ? 0 : 1, Completed:phase === 'final' ? 1 : 0}));
+    const event = normalize({scores}, {...metadata, FinalRound:1});
+    assert.equal(event.competitors[0].name, 'Tournament leader');
+    assert.equal(event.competitors[0].place, 1);
+  }
 });
 test('round completion, not the calendar, governs event status', () => {
   assert.equal(normalize(round, {...metadata,FinalRound:4}).state, 'interrupted');
