@@ -52,6 +52,11 @@ test('public output and command server restrict hosts, origins, credentials, pat
   t.after(() => { engine.stop(); server.closeAllConnections(); server.close(); });
   const base = new URL(url).origin;
   assert.match(await (await fetch(url)).text(), /core\/output.js/);
+  for (const script of ['event-model', 'countdown']) {
+    const response = await fetch(`${base}/sports/core/${script}.js`);
+    assert.equal(response.status, 200, `OBS can load ${script}`);
+    assert.match(response.headers.get('Content-Type'), /javascript/);
+  }
   assert.equal((await (await fetch(`${base}/api/output`)).json()).html, engine.frame.html);
   assert.equal((await fetch(`${base}/api/v1/state`)).status, 401);
   const headers = { Authorization: 'Bearer test-token', 'Content-Type': 'application/json' };

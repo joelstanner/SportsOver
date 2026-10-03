@@ -16,7 +16,7 @@ module.exports = async ({ pages, directory, launch, application }) => {
     assert.equal(state.dock, false, 'quiet tests do not appear in the Dock');
   };
   await assertHidden();
-  assert.deepEqual(await banner.evaluate(() => Object.keys(window.SportsOverlay)), ['scrolling']);
+  assert.deepEqual(await banner.evaluate(() => Object.keys(window.SportsOverlay)), ['scrolling', 'model', 'countdown']);
   await admin.locator('#display-mode').selectOption('top-favorite');
   await engine.waitForFunction(() => window.SportsOverlay.config.loadConfig().displayMode === 'top-favorite');
   await admin.locator('#live-mode-final-minutes').fill('7');
@@ -57,7 +57,7 @@ module.exports = async ({ pages, directory, launch, application }) => {
   }, obsUrl);
   const obs = await obsPromise;
   await obs.locator('.scorebug').waitFor();
-  assert.deepEqual(await obs.evaluate(() => Object.keys(window.SportsOverlay)), ['scrolling']);
+  assert.deepEqual(await obs.evaluate(() => Object.keys(window.SportsOverlay)), ['scrolling', 'model', 'countdown']);
   const before = await (await fetch(`${base}/api/v1/state`, { headers })).json();
   const command = { requestId: 'quiet-override', type: 'show-game', gameKey: 'baseball:2', durationSeconds: 5 };
   const response = await fetch(`${base}/api/v1/commands`, { method: 'POST', headers, body: JSON.stringify(command) });

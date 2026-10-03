@@ -164,7 +164,7 @@ const quiet = testMode() === 'quiet';
     assert.equal(await lockToggle.innerText(), 'Lock');
     await banner.locator('.scorebug').waitFor();
     assert.match(await banner.locator('body').innerText(), /SEA|Mariners/i);
-    assert.deepEqual(await banner.evaluate(() => Object.keys(window.SportsOverlay)), ['scrolling'], 'desktop loads only display scrolling, no provider or rotation engine');
+    assert.deepEqual(await banner.evaluate(() => Object.keys(window.SportsOverlay)), ['scrolling', 'model', 'countdown'], 'desktop loads only display helpers, no provider or rotation engine');
     // Adding a secondary watched team automatically discovers and selects its game.
     await admin.locator('#team-sport-picker').selectOption('baseball');
     await admin.locator('#team-picker').selectOption('mlb:135');
@@ -658,7 +658,7 @@ const quiet = testMode() === 'quiet';
         if (event.animationName.startsWith('sports-rotate-')) window.gameTransitions.push(event.animationName);
       });
     });
-    assert.deepEqual(await obs.evaluate(() => Object.keys(window.SportsOverlay)), ['scrolling'], 'OBS loads only display scrolling, no providers or rotation engine');
+    assert.deepEqual(await obs.evaluate(() => Object.keys(window.SportsOverlay)), ['scrolling', 'model', 'countdown'], 'OBS loads only display helpers, no providers or rotation engine');
     const before = await (await fetch(`${base}/api/v1/state`, { headers })).json();
     const overrideKey = before.currentGameKey === 'baseball:1' ? 'baseball:2' : 'baseball:1';
     await visibilityToggle.click();
