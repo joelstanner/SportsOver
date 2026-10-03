@@ -27,8 +27,8 @@ test("countdown ticks from wall time, enters the final hour, and stops updating 
   const element = { dataset: {}, textContent: "", title: "", hasAttribute: () => true };
   elements.push(element);
   const start = new Date(now + 3_600_000).toISOString();
-  api.render(element, start, { prefix: "Upcoming · ", suffix: " · Favorite", timeZone: "UTC" });
-  assert.equal(element.textContent, "Upcoming · 8:00 PM UTC · Favorite");
+  api.render(element, start, { prefix: "Upcoming · ", suffix: " · Favorite", timeZone: "America/Los_Angeles" });
+  assert.equal(element.textContent, "Upcoming · 1:00 PM PDT · Favorite");
   now += 1000; tick();
   assert.equal(element.textContent, "Upcoming · Starts in 59:59 · Favorite");
   now += 15_000; tick(); // A delayed tick must catch up without accumulating drift.
@@ -46,13 +46,13 @@ test("countdown ticks from wall time, enters the final hour, and stops updating 
 
   now -= 65_000;
   const card = {
-    textContent: "Upcoming · 8:00 PM UTC · Automatic",
+    textContent: "Upcoming · 1:00 PM PDT · Automatic",
     replaceChildren(...children) {
       Object.defineProperty(this, "textContent", { get: () => children.map(child =>
         typeof child === "string" ? child : child.textContent).join("") });
     },
   };
-  api.replace(card, start, "UTC");
+  api.replace(card, start, "America/Los_Angeles");
   assert.equal(card.textContent, "Upcoming · Starts in 1:05 · Automatic");
   now += 1000; tick();
   assert.equal(card.textContent, "Upcoming · Starts in 1:04 · Automatic");
