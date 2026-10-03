@@ -394,15 +394,19 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     await banner.mouse.down();
     await banner.mouse.move(box.x + 70, box.y + 40);
     await banner.mouse.up();
-    // Mouse dispatch completes before the renderer's pointer IPC necessarily
-    // reaches the main process. Wait for the native move before asserting it.
+    // Flush pointer IPC, then wait for native movement to settle before using
+    // these coordinates as the next gesture's origin.
+    await banner.evaluate(() => window.sportsDesktop.action('banner-pointer', { phase: 'cancel' }));
     const afterDrag = await application.evaluate(async ({ BrowserWindow }, origin) => {
       const win = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('display.html?desktop'));
-      const deadline = Date.now() + 1000;
-      let bounds = win.getBounds();
-      while (bounds.x === origin.x && bounds.y === origin.y && Date.now() < deadline) {
+      const deadline = Date.now() + 5000;
+      let bounds = win.getBounds(), stableSince = Date.now();
+      while (Date.now() < deadline) {
         await new Promise(resolve => setTimeout(resolve, 20));
-        bounds = win.getBounds();
+        const next = win.getBounds();
+        if (next.x !== bounds.x || next.y !== bounds.y) stableSince = Date.now();
+        bounds = next;
+        if ((bounds.x !== origin.x || bounds.y !== origin.y) && Date.now() - stableSince >= 200) break;
       }
       return bounds;
     }, beforeDrag);
@@ -473,7 +477,14 @@ const feed = globalThis.MARINERS_DEMO_FEEDS.live;
     await admin.waitForFunction(() => document.querySelector('#desktop-size').value === '1.25');
     assert.equal((await bannerBounds()).width, 590, 'context size changes the native banner');
     assert.equal(await application.evaluate(({ Menu }) => Menu.getApplicationMenu().getMenuItemById('banner-size-1.25').checked), true, 'size checkmark stays synchronized');
-    assert.equal(JSON.parse(await fs.readFile(path.join(directory, 'settings.json'), 'utf8')).desktop.bounds.width, 590, 'context size persists');
+    // Bounds persistence is debounced independently of the Settings UI poll.
+    let savedWidth;
+    for (let i = 0; i < 100; i++) {
+      savedWidth = JSON.parse(await fs.readFile(path.join(directory, 'settings.json'), 'utf8')).desktop.bounds.width;
+      if (savedWidth === 590) break;
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    assert.equal(savedWidth, 590, 'context size persists');
     assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame, 'context size does not browse games');
     const toggleContextLock = async expectedLocked => {
       await application.evaluate(() => { globalThis.bannerTestMenu = null; });
