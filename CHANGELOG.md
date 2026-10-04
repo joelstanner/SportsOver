@@ -3,6 +3,16 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.30.2 — 2026-10-03
+
+### Changed
+
+- Shortened the README and refreshed installation, banner controls, and feature
+  descriptions to match the current app, including Windows installer support.
+- Moved detailed provider access and request-limit notes to a linked reference.
+
+Existing settings are preserved. No migration is required.
+
 ## 0.30.1 — 2026-10-03
 
 ### Changed

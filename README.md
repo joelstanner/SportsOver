@@ -1,290 +1,145 @@
 # SportsOver
 
-See [CHANGELOG.md](CHANGELOG.md) for version history.
+A transparent, draggable sports banner that stays above ordinary desktop windows.
+Follow your teams and tournaments, rotate live scores, and optionally share the
+same banner with OBS. OBS is optional.
 
-A standalone Electron sports banner for your desktop. Transparent, borderless, draggable, and always on top of ordinary application windows, with separate settings and tray/menu-bar controls. SportsOver owns one sports engine and serves two outputs: the floating desktop banner and an optional local OBS browser source. OBS is not required to run the app.
+Supports **MLB, NFL, college football, NHL, MLS, NBA, NCAA men's basketball,
+PDGA disc golf, and Lichess chess broadcasts**.
 
-## Install on macOS
+## Install
 
-Mac disk images are built for **macOS 13 Ventura or newer**, with separate
-downloads for **Apple Silicon (`arm64`)** and **Intel (`x64`)**. Check
-**Apple menu → About This Mac** if you are unsure which chip you have.
-The app includes its runtime: Node.js, npm, and Terminal are not needed.
+Download an installer from the [latest release](https://github.com/joelstanner/SportsOver/releases/latest).
+**Node.js and npm are not required.** Releases include SHA-256 checksums and
+installation instructions.
 
-Download the matching `.dmg` from
-[the latest GitHub Release](https://github.com/joelstanner/SportsOver/releases/latest),
-open it, and drag **SportsOver** into **Applications**. Eject the disk image,
-then open SportsOver from Applications. Each release includes installers,
-SHA-256 checksums, and installation instructions. You can also run from source
-using the instructions below or build a DMG using [the packaging guide](desktop/PACKAGING.md).
+| Platform | Download and install |
+| --- | --- |
+| macOS 13+ · Apple Silicon | Open the `*-mac-arm64.dmg` and drag SportsOver to Applications. |
+| macOS 13+ · Intel | Open the `*-mac-x64.dmg` and drag SportsOver to Applications. |
+| Windows 10+ · x64 | Run the `*-win-x64-setup.exe`, then launch from the Start menu or desktop shortcut. No administrator access is required. |
 
-**First launch:** these early builds are ad-hoc signed and **not notarized by
-Apple**. macOS will normally block the first launch. If you trust the download,
-try opening SportsOver, dismiss the warning, then go to **System Settings →
-Privacy & Security → Open Anyway** and confirm. Follow
-[Apple's guidance](https://support.apple.com/102445). Managed Macs may prohibit
-this exception. Do not disable system-wide security; report warnings about
-damage or malware instead of trying to bypass them. The disk image also
-includes **Install SportsOver.txt** with these instructions.
+Mac builds are ad-hoc signed and not notarized. If macOS blocks first launch,
+try opening the app, dismiss the warning, then use **System Settings → Privacy &
+Security → Open Anyway** ([Apple's instructions](https://support.apple.com/102445)).
+Windows builds are unsigned and may show an unknown-publisher or SmartScreen
+warning. See the [Mac](packaging/Install%20SportsOver.txt) and
+[Windows](packaging/Install%20SportsOver%20Windows.txt) installation guides for details.
 
-**Updates:** quit SportsOver and replace the app in Applications with the new
-download. Settings and team selections stay in
-`~/Library/Application Support/SportsOver`. Updates are manual.
-**Uninstall:** quit the app and move it from Applications to the Trash;
-saved preferences remain available for a later reinstall.
+**Updates are manual.** SportsOver checks for new releases on launch, at most
+once a day; **Check for updates…** is also available in its menus. Quit the app,
+then replace it in Applications on Mac or run the newer Windows installer over
+the same destination. Settings are retained.
 
-Windows continues to use the source installation below with `npm install`
-and `npm start`. No Windows installer is provided.
+## Get started
 
-## Install Node.js and npm (Windows or running from source)
+The banner and Settings open together. Closing Settings keeps SportsOver running;
+use the tray/menu-bar icon to reopen it or choose **Quit SportsOver**.
 
-**npm** is the tool that downloads SportsOver's dependencies and starts the app. It comes with **Node.js**, so you install Node.js once and then use npm in your terminal. Running `npm install` later installs this project's dependencies, not npm itself. See the [official npm installation guide](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm/).
+- **Settings:** choose and rank teams and sports, set the time zone, and adjust
+  score refresh intervals and fallback behavior. Changes save automatically.
+  Use **Export settings** / **Import settings…** here or in the File menu for backups.
+- **Live control:** add or exclude games, reorder the rotation, set display
+  durations, and choose automatic, hybrid, or curated queues. Lock one game to
+  hold it, or several to rotate among them; **Unlock all** clears game locks.
+- **Live mode:** show live games from your rotation, with configurable finished-game
+  retention (20 minutes by default). Tournament breaks leave Live mode until play
+  resumes; team-sport breaks remain eligible. Live mode starts off after a restart.
+- **Demo lab:** preview sample banners without changing the live output.
 
-1. Open the [official Node.js download page](https://nodejs.org/en/download/) and choose the **LTS (Long-Term Support)** release. SportsOver requires Node.js **22 or newer**.
-2. Download the installer for your computer: **macOS Installer (.pkg)** on a Mac or **Windows Installer (.msi)** on Windows. Run it and follow the prompts, keeping npm and the default PATH options enabled.
-3. Close and reopen your terminal after installation so it can find the new commands. On macOS, open **Terminal** (Applications → Utilities) or **iTerm** if you already use it. On Windows, open **Command Prompt** from the Start menu.
-4. Type each command below and press Enter after each line:
+Automatic rotation follows included watched teams in rank order, showing shared
+matchups once. Watched-team finals can rotate alongside upcoming games for up to
+24 hours, ending when the next game starts. Games starting in less than an hour
+show a countdown, then **Starting soon** until the feed reports play.
 
-```sh
-node --version
-npm --version
-```
+## Banner controls
 
-Both should print a version number. The Node.js version should start with `v22` or a higher major number. If either command says “command not found” or “not recognized,” confirm the installer finished and reopen the terminal; if necessary, restart your computer. If your existing Node.js version is below 22, install the current LTS release before continuing.
+| Action | Control |
+| --- | --- |
+| Browse games | Click the leftmost 20% for previous; click elsewhere for next. With the banner focused, use Left/Right arrows. |
+| Move | Drag anywhere on the unlocked banner. |
+| Resize | Double-click the unlocked banner's left half to shrink or right half to enlarge. Size presets (50–300%) are also in Settings and menus. |
+| Open Settings | Right-click the banner and choose **Settings…**, or use the tray/menu bar. |
+| Lock position / hide | Use Settings, the tray, or the banner's right-click menu. Position locking keeps game browsing available. |
+| Fullscreen | Use **Fullscreen** or **Ctrl/Cmd + Shift + F**; press **Escape** to restore the previous size and position. |
+| Recover the banner | **Ctrl/Cmd + Shift + U** shows, unlocks, and moves it to the primary display, then opens Settings. Tray recovery is also available. |
 
-You only need this setup once per computer. No npm account is required to install or run SportsOver.
+Hovering over the desktop banner holds it when the rotation timer runs out;
+scores keep updating, and rotation resumes when you leave. Team names and logos,
+tournament titles, and player names open the relevant provider page when available.
+Position, size, visibility, and lock state survive restarts.
 
-## Run from source
+## Disc golf and chess
 
-Download or clone [SportsOver on GitHub](https://github.com/joelstanner/SportsOver) and extract it if it came as a ZIP. In your terminal, use `cd` (change directory) to enter the folder containing SportsOver's `package.json`.
+In the sport's Settings card, browse current events or paste a tournament URL/ID,
+load it, then choose **Watch division** (PDGA) or **Watch tournament** (Lichess).
+Chess can follow the current round automatically or pin a round.
 
-For example, if the folder is named `SportsOver` in your Downloads folder, use the command for your system:
+Each event can have a tournament banner and a separate **player banner**, with
+independent rotation controls. Select a player to include a player banner.
+Leaderboards offer **Top 10 · scroll vertically** or **Top 3 · static**; live chess
+also shows round matchups. Hover or focus lists to pause scrolling, and browse with
+a wheel, trackpad, touch, or keyboard.
 
-**macOS — Terminal or iTerm:**
+**Automatic watch lists** discover elite events every 15 minutes while the app
+runs. Elite chess discovery starts on; PDGA pro-tour discovery starts off, with
+MPO/FPO selected when enabled. Exclude automatic entries or use **Keep watch** to
+save a manual watch. Select second-tier live suggestions appear in **Available
+games** by default; add them to rotation manually.
 
-```sh
-cd "$HOME/Downloads/SportsOver"
-```
+Live feeds require internet access and may be delayed or unavailable. **STALE**
+marks retained scores during outages; chess clocks are broadcast snapshots.
+Chess standings require published tournament totals. See the
+[provider access and request limits](desktop/PROVIDERS.md) and
+[chess provider notes](sports/chess/README.md) for scope and restrictions.
 
-**Windows — Command Prompt:**
+## OBS and integrations
 
-```bat
-cd /d "%USERPROFILE%\Downloads\SportsOver"
-```
+With SportsOver running, copy the OBS URL from Settings (normally
+`http://127.0.0.1:17843/output`) into an OBS **Browser Source**. Set its dimensions
+to **472 × 100**, then scale it in OBS. The background is transparent. Desktop and
+OBS share the same engine and rotation; hiding the desktop banner keeps OBS running.
 
-Replace the example path with the folder's actual location and name. Keep the quotes if the path contains spaces. If npm reports that it cannot find `package.json`, you are probably in the wrong folder.
+The server is local to your computer. If port 17843 is occupied, free it and
+restart SportsOver. For temporary game-selection commands, copy the integration
+token from Settings and follow the [local API guide](desktop/API.md).
 
-Once you are in the SportsOver folder, run these commands one at a time:
+## Settings and recovery
 
-```sh
-npm install
-npm start
-```
-
-Wait for `npm install` to finish before running `npm start`. Keep that terminal session open while SportsOver runs; you can minimize the terminal window. On later launches, return to the same folder and run `npm start`.
-
-The first installation/start downloads Electron for your OS and architecture. Internet access is needed for installation, live sports feeds, logos, and catalog refresh. The banner and Settings open together. Closing Settings leaves the banner running; use **Quit SportsOver** in the tray/menu bar or application menu to exit.
-
-To update a downloaded source checkout, replace it with the newer source and run `npm install` again. If you obtained it with Git, pull from your configured source first. The source repository is [joelstanner/SportsOver](https://github.com/joelstanner/SportsOver). This remains the Windows installation method; the package is not published to the npm registry.
-
-## Desktop controls
-
-`npm start` preserves Electron's diagnostic output. If Chromium reports a macOS Keychain certificate with `Failed parsing extensions`, the launcher adds an explanation that Chromium skipped that certificate and is continuing. No action is needed when scores load normally; other certificate or network errors still need investigation.
-
-- **Navigate:** click the leftmost 20% of the banner for the previous rotation item; click elsewhere for the next item, including while its position is locked. With the banner focused, **Left arrow** goes back and **Right arrow** goes forward, including in fullscreen. Single clicks wait briefly to distinguish a double-click. Both directions wrap around and start a fresh display interval. Game locks and temporary overrides still apply. Desktop and OBS stay in sync.
-- **Move:** click anywhere on the unlocked banner and drag, including between monitors. Moving more than 5 screen pixels starts a drag; releasing after dragging never skips a game.
-- **Settings:** right-click the banner and choose **Settings…**. Right-clicking does not advance rotation.
-- **Banner size:** right-click the banner and choose **Banner size** → **50%–300%**. The current preset is checked; sizing is unavailable in fullscreen.
-- **Chess broadcast:** click the tournament title or **Lichess ↗** to open the displayed round and its games in your browser. Click a player name in a matchup or followed-player banner to open that board’s game; names in standings open the player’s broadcast card. These links work with the banner locked and do not advance rotation.
-- **PDGA scores:** click **Scores: PDGA ↗** to open scores for the displayed tournament, division, and round. Tournament titles and player names open their PDGA pages. Links work with the banner locked and do not advance rotation.
-- **Updates:** SportsOver checks the latest published GitHub release on launch, at most once every 24 hours. Normal launches prompt only when a newer version is available; background launches, up-to-date results, and automatic-check failures stay quiet. Choose **Check for updates…** in the tray dropdown, banner right-click menu, or application menu for an immediate manual check. **Open download page** opens the official release page for manual installation.
-- **Resize:** double-click the left half of the unlocked banner to shrink it, or the right half to enlarge it, stepping through 50%, 75%, 100%, 125%, 150%, 200%, and 300%. Double-clicks resize without changing games; dragging never resizes. Banner size in Settings and the tray menu also work. Proportional scaling keeps the full 472 × 100 design intact; transparent windows do not rely on platform-specific native resize borders.
-- **Fullscreen:** use **Fullscreen** in Settings, **Fullscreen banner** in the banner's right-click menu or tray/Banner menu, or **Ctrl/Cmd + Shift + F** while SportsOver is focused. The display becomes black with only the banner centered across its width. The banner instruction tooltip is hidden, and the cursor disappears after three seconds of inactivity; moving it shows it again. Rotation, game browsing, and player links continue; moving and resizing pause. Press **Escape** while SportsOver is focused, toggle the shortcut, or choose **Exit fullscreen** to restore the previous size, position, and transparent background. Opening Settings, hiding the banner, or recovering its position also exits fullscreen. Restarting returns to the normal banner size.
-- **Lock:** right-click the banner and check **Lock banner position** to prevent dragging and double-click resizing; uncheck it to unlock. Clicks stay on the banner: browsing games and the right-click menu still work. Lock/unlock is also available in Settings and the tray menu. Banner size in Settings and the tray menu remains available outside fullscreen.
-- Settings uses two stateful buttons: **Lock / Unlock** and **Hide / Show**. Their labels update after changes from Settings, the tray, or the application menu; each button controls its own state.
-- **Recover:** **Ctrl+Shift+U** on Windows or **Cmd+Shift+U** on macOS unlocks, shows, and moves the banner onto the primary display, then opens Settings. The Settings status reports if another application owns that shortcut. Tray and Settings controls remain available.
-- **Show/hide:** available in Settings and the tray menu. Position, size, lock state, visibility, and sports settings survive restarts. Settings opens on every launch so a hidden or locked banner always has a recovery path.
-- Launching a second instance recovers the existing banner. Disconnecting a monitor brings an offscreen banner into an available work area.
-
-## Sports settings
-
-MLB, NFL, college football, NHL, MLS, NBA, and NCAA men's basketball use MLB/ESPN providers and team directories. Rank sports and watched teams, enable/disable favorites, select time zone and fallback behavior, and configure provider polling. Settings changes save automatically and update the banner without reloading it. Number fields apply when you leave the field or press Enter; invalid values are not saved. If saving fails, your changes remain available and a **Retry save** button appears.
-
-**Disc golf · PDGA:** in its Settings card, paste a PDGA tournament URL/ID (or browse current events), load the tournament, choose a division, and click **Watch division**. Each division is one rotation entry. Choose the top-three leaderboard or **Followed player**, then load and select a player. Missing followed players fall back to the leaders. Rank, disable, or remove watched divisions independently; settings save automatically. No tournament is selected by default.
-
-Enable **Automatically follow the pro tour** to discover one main Elite Series or Major tournament, with **MPO** and **FPO** selected by default. Discovery starts off for existing and new installations. A live event takes priority; the selected tournament stays through round breaks and temporary feed failures. After its selected divisions finish, it stays for the normal one-hour final retention (or the configured final retention in Live mode), then discovery can move to the next event. With no active tournament, the upcoming/recent-final/hide fallback applies. Status comes from scorecards, not tournament dates.
-
-Discovered divisions are saved in Settings’ **Automatic watch list** and labeled **Automatic** in Live control. Available games omits divisions already in rotation. Temporary feed failures retain previously discovered divisions with a **Last received** label; they remain available until the directory or your settings makes them ineligible. Use **Exclude** to remove one from rotation, **Add** in available games to restore it, or **Watch division** to save it as a manual watch. A matching manual watch takes precedence, including its player view and Included setting. Turning discovery off or deselecting MPO/FPO removes automatic entries even in Live mode; manual watches keep their behavior. The shared desktop engine checks the directory every 15 minutes, examines up to 12 nearby Elite Series/Major candidates, shares tournament metadata across divisions, and limits PDGA requests to three at a time. Settings and OBS reuse engine discovery. Favorite-pro entry confirmation is not yet part of selection.
-
-PDGA uses an individual-competitor model and a compact banner within the existing 472 × 100 window, including 200% scaling. Hover a truncated name in Banner rotation to see its full name; names that fit do not show a tooltip. Before the first round starts, leaderboards show the highest PDGA-rated players first, with unrated players last; the rating column identifies these as player ratings. Once play starts, the banner uses tournament standings. The banner shows provider-reported ranks and ties, total relative to par, round score relative to par, holes completed, playoff winners, and DNF/withdrawal status for a followed player. A division is **Live** only when an unfinished, non-withdrawn player has started the current round. Completed and DNF cards cannot make a division live. Completed intermediate rounds, later rounds awaiting play, and gaps between finished and unstarted cards display **Break**, with the waiting reason shown; an unstarted first round displays **Upcoming**. Unchanged scores alone do not prove a suspension or feed outage. Tee times are labeled course local because the feed does not always provide a time zone. Watched divisions stay in automatic rotation, including finals, until removed; **Top watched team only** selects the first included PDGA division. Queue modes, locks, durations, and Live mode also apply.
-
-The PDGA Live provider uses publicly reachable, undocumented JSON endpoints without an API key. Defaults are 30 seconds for live scores, 60 for metadata/upcoming, and 300 for finished/idle scores. Requests share the existing cache, failures back off, and the banner retains the last successful scores with a **STALE** label. Only individual stroke-play events are supported. Provider access and response formats can change. Player/event links and PDGA attribution are included.
-
-**Chess · Lichess:** in Settings → Chess, browse current broadcasts or paste a Lichess broadcast URL/ID, load it, and click **Watch broadcast**. Follow the current round automatically or pin a specific round. Choose **Round overview** (three boards with White/Black names and results) or **Followed player** (matchup, ratings, last broadcast clocks, turn, and result). Missing players fall back to the overview. Rank, disable, and remove watches as with PDGA; saves, queue modes, locks, durations, and Live mode apply. Intermediate rounds show **Break**, and current-round watches advance while retaining their queue identity. No manual chess event is preselected. Automatic elite discovery starts on unless explicitly disabled.
-
-**Automatic elite watch lists:** Chess searches Lichess best-tier and high-tier tournaments on startup and every 15 minutes while the app is running. PDGA already searches Elite Series and Majors on that cadence; its existing on/off preference is preserved. Both save discoveries under their Settings card's **Automatic watch list**, update it as events are posted, and retain it through temporary feed failures. **Included** controls exclusions; **Keep watch** saves an event as a manual watch for player selection or indefinite retention. Manual choices take priority. Turning automatic discovery off removes automatic rotation entries while preserving manual watches and player selections. Searches resume on the next launch after the app has been closed.
-
-Chess covers public tournaments carried by Lichess. Clocks are broadcast snapshots and may be delayed; no locally ticking clock or engine evaluation is inferred. The shared engine caches feeds, serializes Lichess requests, pauses for at least a minute after rate limiting, and retains unavailable feeds with a **STALE** label. See [chess provider notes and research](sports/chess/README.md) for sources, scope, and tests.
-
-With no saved settings, watched teams start with Seattle Mariners, Seahawks, Kraken, and Sounders FC; Nebraska Cornhuskers and Washington Huskies in football and men's basketball; Seattle U Redhawks men's basketball; and Detroit Pistons. Existing saved selections are preserved; restoring defaults applies this starting list.
-
-When ESPN supplies spreads or moneylines in the existing scoreboard or game-summary response, the banner and Live control game cards show them in a compact odds row. NHL spreads are labeled **Puck line**; MLS moneylines include the draw when available. Spread prices appear in parentheses when supplied. Green marks **evenly matched teams**: both teams' displayed moneylines must be from **−120 to −100** or **+100 to +120**, inclusive, in the same pregame or live market. Close point spreads also turn green: **3 points or less** for NFL/NCAAF/NBA/NCAAM, or **0.5 goals or less** for NHL/MLS, including pick’em. Spread payout prices in parentheses and draw odds stay neutral; missing or mixed pregame/live team moneylines do not establish an even matchup. Pregame lines remain for five minutes after the display observes the game start, labeled **PRE**, then disappear. When joining an already live game, the scheduled start is used to avoid showing old pregame lines. Explicit live markets are labeled **LIVE** and remain while supplied; closing lines are never treated as live odds. Finals and missing odds hide the row. This adds no provider requests, and MLB's current feed does not supply odds.
-
-To follow NCAA men's basketball, choose **NCAA men’s basketball · NCAAM** in Team tracking, select a team; the change saves automatically. Existing saved watched lists do not gain college basketball teams automatically. The ESPN directory, scoreboard, schedules, and game summaries power this sport; these are public endpoints without a supported developer API contract. Refresh team data to update the bundled directory. The banner displays halves and overtime, including overtime finals. College timeouts appear as `TO n` only when ESPN reports a remaining count; missing counts stay hidden. It does not infer timeouts from NBA rules or partial play logs. See the [NCAA provider notes](sports/college-basketball/README.md).
-
-Automatic rotation includes one live or fallback game per included watched team, following sport and team rank. Shared matchups appear once. A live game takes priority over the fallback for that same team; other watched teams still contribute their own games. **Top watched team only** limits each sport to its first included team. Manual queue modes, exclusions, ordering, and locks still apply.
-
-In normal rotation, a watched team's final also stays for up to 24 hours after SportsOver detects the finish, or until that team's next game starts, whichever comes first. Its upcoming-game banner can rotate alongside the final. On a fresh launch without a known finish time, recent watched finals use a conservative cutoff of 24 hours from their reported start time. Non-watched spotlight finals keep their one-hour retention. Live mode uses its separate finished-game retention setting. Individual tournaments (including chess and disc golf) leave Live mode during breaks and return when play resumes; team-sport breaks such as halftime remain eligible. Game locks work in Live mode: lock one eligible game to hold it, or several to rotate among them. Locks on games that are not eligible do not bring those games into Live mode; when no locked game remains eligible, the other live games resume.
-
-**Live control** reads discovered games from that same engine and manages automatic, hybrid, or curated game rotation, game order and durations, and game locks. A game lock chooses what plays; the desktop position lock prevents dragging and double-click resizing. **Demo lab** previews deterministic sport/lifecycle examples without changing the live banner. Use the Electron overlay window to view the live output while changing Settings. Demo lab uses fixed data only.
-
-The desktop engine publishes each sport as it finishes loading, so ready games can enter rotation while slower feeds are still being checked. Live control names the sports still loading; score polling continues for games already displayed. Live control shows **Loading…** while the desktop engine searches for games or refreshes them. Previously received games stay visible during a discovery outage or engine restart, with a status message explaining that they are the last received results. A successful refresh replaces them, including when the provider confirms there are no games.
-
-**Refresh teams** saves current provider catalogs in app data, leaving the source checkout unchanged. A failed sport refresh retains its previous directory; other successful sports may still update. Live feeds can be unavailable or delayed. Existing provider fallback/error states apply; this app does not guarantee real-time scores.
-
-Turn off **Show sport** in a sport's Settings card to remove that sport
-from the banner and game selection, including manually added or locked games.
-Teams, ordering, and preferences stay saved. Turn it back on to restore
-the sport. All sports can be turned off; older configurations keep sports enabled.
-
-Live NHL games show **POWER PLAY ACTIVE** when ESPN's situation feed explicitly
-reports a power play. The separate **PP GOALS / OPP** row shows cumulative totals.
-The indicator names the team with more players on ice when both feeds share the
-latest play and ESPN explicitly reports no empty net. Otherwise it shows a generic
-active indicator. It does not infer a countdown from past plays and is hidden
-when situation data is unavailable. Live hockey refreshes fetch both the
-game summary and situation feed at the configured live refresh interval.
-
-## Background startup
-
-Run `npm start -- --background` to start the engine, local OBS server, and tray
-without showing the banner or Settings. For a packaged app, pass `--background`
-to its executable. Open Settings or show the banner from the tray when needed.
-The flag overrides visibility for this launch without changing the saved banner
-visibility preference. Normal startup still restores that preference and opens
-Settings. A second launch with `--background` leaves the existing instance alone;
-a normal second launch still recovers its windows. On macOS, use the tray to
-open a background-started app initially.
-
-## OBS browser source
-
-With SportsOver running, copy the OBS URL from Settings (normally `http://127.0.0.1:17843/output`) into an OBS Browser Source. Set width **472** and height **100**, then scale it in OBS as needed. The page has a transparent background. SportsOver must stay running; hiding or locking its desktop window has no effect on OBS. Closing OBS does not stop SportsOver.
-
-Desktop, OBS and embedded previews consume the same published HTML frame, rendered by one hidden engine. Outputs fetch local snapshots every 200 ms; they never call sports providers or own a rotation timer. Delivery is near-synchronous, not frame-locked video. CSS marquee animation phases may differ between clients. If SportsOver disconnects, the output labels the last received score as disconnected and reconnects automatically.
-
-The listener binds only to IPv4 loopback on port 17843. If that port is occupied, Settings reports the error and the desktop remains usable; free the port and restart for OBS/API access. This implementation intentionally does not expose the listener on your LAN.
-
-## Optional integrations
-
-The secured local API accepts temporary game-selection commands and owns their duration and restoration. See [desktop/API.md](desktop/API.md) for authentication, schemas, retry rules and examples. Copy the integration token from Settings. No Twitch reward mapping or live Twitchbot integration is configured here.
-
-## Storage and recovery
-
-App-owned files live in Electron's user-data directory:
+Saved settings and refreshed team catalogs live in:
 
 - macOS: `~/Library/Application Support/SportsOver`
 - Windows: `%APPDATA%\SportsOver`
 - Linux (experimental): typically `~/.config/SportsOver`
 
-`settings.json` contains normalized sports settings and desktop preferences. Changes use atomic file replacement and keep the previous valid file in `settings.json.bak`. If the main file is invalid, the app tries the backup, then defaults, and displays a recovery message in Settings. A damaged primary file is preserved with a `.recovered-<timestamp>` suffix on the next save. Close SportsOver before manually editing/restoring these files. Refreshed directories are under `sports/<sport>/teams.json` in the same data folder. Uninstalling/replacing the source folder does not delete app data.
+The app keeps a `settings.json.bak` backup and tries it if `settings.json` is
+invalid. Close SportsOver before manually restoring files. Updating or
+uninstalling the app leaves this data in place.
 
-## Architecture and security
+## Run from source
 
-`desktop/main.cjs` owns native windows, tray, single-instance handling, recovery, and a narrow IPC command handler. Renderers use sandboxing, context isolation, no Node integration, denied permissions, blocked popup/navigation targets, and a Content Security Policy. The private `sportsover://app` protocol serves an allowlisted renderer asset tree plus app-owned state/catalog endpoints. The separate loopback listener exposes passive output and a small bearer-authenticated command API; it does not expose settings writes, Electron IPC, or arbitrary source files. No Twitchbot service is involved. Its standard secure scheme allows the existing relative asset URLs and shared-state polling to work ([Electron protocol documentation](https://www.electronjs.org/docs/latest/api/protocol)).
-
-`desktop/store.cjs` validates through the existing configuration model and rejects stale revision writes. `desktop/bounds.cjs` clamps restored placement to connected work areas. `core/app.js` runs live providers and rotation only in the hidden engine window. `core/engine-host.js` publishes frames and game metadata to `desktop/engine-state.cjs`; `display.html` is the passive client shared by desktop, OBS and production previews. Existing `sports` layouts render once in the engine. Settings uses published discovery data. `desktop/server.cjs` serves output and authenticated integration commands. `scripts/serve.mjs` remains an optional browser development server, not the desktop runtime.
-
-## Verification
-
-```sh
-npm test
-npm run test:desktop
-npm run test:pdga
-node tests/browser/pdga-auto-follow.cjs
-npm run test:pdga:live
-```
-
-`npm test` runs the provider/rotation/configuration suite and desktop persistence, recovery, bounds, and protocol tests without windows. Desktop smoke commands default to **quiet** locally: real Electron renderers stay hidden, with no Dock entry, tray icon, or global recovery shortcut. `npm run test:desktop` checks shared rendering, settings, live mode, authenticated API access, override expiry/restoration, sandboxing, one-engine/provider ownership, and persistence after restart. Screenshots and isolated test data are left in the printed temporary directory; normal app preferences are untouched.
-
-Choose a saved local preference or override it for one run:
+Install [Node.js](https://nodejs.org/en/download/) **22 or newer**, clone or download
+this repository, and open a terminal in the folder containing `package.json`:
 
 ```sh
-npm run test:mode -- visible        # Save full visible mode for this checkout
-npm run test:mode -- quiet          # Save quiet mode again
-npm run test:desktop -- --visible   # Full visible suite once
-npm run test:desktop -- --quiet     # Quiet suite once
+npm ci
+npm start
 ```
 
-The preference is stored in Git-ignored `.sportsover-tests.json`, separate from app settings. Desktop commands (including chess, PDGA, and desktop auto-follow scripts) share it. Precedence is CI (always visible), `--visible`/`--quiet`, `SPORTSOVER_TEST_MODE`, saved preference, then quiet. CI ignores local preferences and overrides and runs the full desktop smoke suite. Browser-only tests remain headless.
+For startup with only the engine, OBS server, and tray, use
+`npm start -- --background` (or pass `--background` to the packaged executable).
+Open Settings or show the banner from the tray when needed.
 
-Quiet runs print the native coverage they skip: actual show/hide/recovery, focus and native keyboard routing, Dock/tray/shortcut behavior, fullscreen, context menus, and native dragging/gesture checks. Run visible mode for those changes and before release verification. Packaged-app tests using `SPORTSOVER_TEST_EXECUTABLE` require visible mode: older installed apps may not support hidden tests, so quiet mode stops before launching them.
+```sh
+npm test                              # Unit tests
+npm run test:desktop                  # Electron smoke tests (quiet by default)
+npm run test:desktop -- --visible     # Include native window interactions
+```
 
-`npm run test:pdga` uses Chrome with fixture scores to check PDGA settings, persistence, player selection, locks, stale data, and mixed-sport rendering. `npm run test:pdga:live` is an optional network check using a completed PDGA tournament in an isolated Electron instance; it verifies the native 200% banner and OBS, then simulates an active round to check removal from Live mode. Set `SPORTSOVER_TEST_EXECUTABLE` to test a built app instead of the source launcher. `node tests/browser/pdga-auto-follow.cjs` checks automatic discovery, division choices, exclusions, explicit watches, player preferences, and disabling during Live mode with fixture feeds. With `SPORTSOVER_TEST_EXECUTABLE` set, it runs the same flow in the packaged app and checks shared native/OBS output and directory request counts.
+See [desktop testing](desktop/TESTING.md) for coverage and platform limitations,
+and [packaging](desktop/PACKAGING.md) for GitHub Actions installer builds and
+release checks. Linux is experimental. Always-on-top behavior does not cover
+exclusive-fullscreen games or protected system screens.
 
-Platform results and remaining manual checks are recorded in [desktop/TESTING.md](desktop/TESTING.md). Always-on-top cannot cover exclusive-fullscreen games or protected system screens. macOS fullscreen-workspace visibility is requested but needs manual validation on the target setup. Windows support needs native Windows testing. Linux is experimental; Wayland does not provide Electron's always-on-top behavior.
-
-## License
-
-SportsOver is licensed under the [MIT License](LICENSE). Third-party dependencies and sports data, logos, and trademarks remain subject to their respective licenses and terms.
-
-### Provider access and request limits
-
-Reviewed October 3, 2026, excluding Lichess. No official numeric request quota was
-found for the ESPN, MLB Stats API or PDGA Live endpoints used here. Public access
-is not a redistribution license, and request pacing does not resolve permissions.
-
-| Provider | Published rules and open questions |
-| --- | --- |
-| ESPN | [Disney terms, section 2](https://disneytermsofuse.com/english/) cover ESPN and require express written permission for automated extraction and business use. Confirm permission for these endpoints, score overlays and team artwork. |
-| MLB Stats API | [MLB's data notice](https://gdx.mlb.com/components/copyright.txt) permits individual, noncommercial, non-bulk use and requires written authorization for other uses. Confirm how distribution, public overlays and team logos may be used; no numeric definition of non-bulk was found. |
-| PDGA Live | [Website terms](https://www.pdga.com/tos) restrict automated collection and public display. The separate [developer program](https://www.pdga.com/dev) requires membership, a signed agreement, authenticated access and prelaunch implementation review, plus attribution on every screen with PDGA data and links from player/event/course names. Confirm authorization specifically for the unauthenticated Live endpoints used here, applicable limits, caching and display requirements. The current agreement form requires login and has not been reviewed. |
-| GitHub releases | [Unauthenticated REST requests](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api) share a 60/hour budget per originating IP. Rate-limited 403/429 responses require respecting retry/reset headers and secondary-limit backoff. |
-
-ESPN, MLB and PDGA requests share a desktop-process queue per service, including
-Settings lookups and team-directory refreshes. Each service starts requests at
-least 250 ms apart and runs one request at a time. This is a SportsOver pacing
-choice, not a published provider allowance. ESPN's hosts and all its sports share
-one queue. Request timeouts start when a request is dispatched, not while queued.
-Requests for the game being displayed take priority over queued discovery and
-catalog work. After three display requests, a waiting background request gets a
-turn; both groups preserve their own arrival order. If discovery already queued
-the displayed game's data, that request is promoted without fetching it twice.
-Running requests are allowed to finish, and priority never bypasses a cooldown.
-HTTP 429 pauses the entire service for at least one minute; repeated throttling
-increases that delay up to five minutes. Longer `Retry-After` values are honored,
-including HTTP dates. HTTP 403/503 with `Retry-After` also pauses that service.
-Manual retries and new feed URLs cannot bypass an active cooldown; healthy cached
-responses remain available. Sports cooldowns last for the desktop process lifetime.
-In browser development mode, queues are per page and catalog refreshes use the
-development server's separate queue. These limits cannot coordinate other apps or
-machines sharing the same public IP.
-
-GitHub checks honor `Retry-After` and `X-RateLimit-Reset`, recognize secondary-limit
-errors, and retain cooldowns across app restarts when preferences can be saved.
-Manual checks explain when to retry without sending another request during the
-cooldown. Automatic checks remain at most daily and stay silent on errors.
-No provider permission or license approval is implied by these protections.
-
-## Local macOS app
-
-Run `npm run build:mac`, then open `dist/SportsOver.app` for the SportsOver application name and scoreboard Dock/Finder icon. This reuses the installed Electron runtime and creates a local ad-hoc signed bundle; it is not notarized for distribution. Rebuild after source changes. `npm start` remains the development launcher and macOS may identify it as Electron. Both launches use the same SportsOver settings.
-
-Future release installers are built in GitHub Actions: native Apple Silicon and
-Intel jobs build and test macOS DMGs, and the Windows job builds and tests the
-x64 installer. Download `SportsOver-macos-arm64`, `SportsOver-macos-x64`, and
-`SportsOver-windows-x64` artifacts from successful runs for the release commit.
-Each includes its installer, SHA-256 checksum, and installation instructions.
-Mac builds remain ad-hoc signed and unnotarized; Windows builds remain unsigned.
-CI produces artifacts without publishing a release. Local `dist:mac`/`dist:win`
-commands remain available for troubleshooting. See [desktop packaging](desktop/PACKAGING.md)
-for CI verification and the release checklist.
-
-The menu-bar scoreboard uses a compact template icon with a persistent position. Its initial position is near the right edge to avoid a crowded MacBook notch area; Cmd-drag can reposition it. Banner controls also remain available in the Banner application menu.
-
-### Tournament and player banners
-
-Disc golf and chess can each show a tournament leaderboard and a separate followed-player banner for the same event. Add the tournament in Settings, then choose **Add player banner** and select the player. Player banners stay out of rotation until a player is selected; clearing that selection removes the banner from rotation again. Each banner can be included, reordered, locked, or removed independently. A player banner also offers **Add tournament banner**.
-
-Tournament banners default to **Top 10 · scroll vertically**, showing three rows at a time in the existing compact banner. **Top 3 · static** is also available. Chess standings use Lichess's published tournament points and tiebreak order; broadcasts without published totals show an unavailable message. Hover or focus the list to pause it in place. Scroll over the rows with a mouse wheel, trackpad, or touch swipe; with keyboard focus, use arrow keys, Page Up/Down, or Home/End. Manual scrolling starts from the visible rows and keeps its position through score refreshes. Automatic scrolling resumes from that position after you leave the list and keyboard focus moves away. Reduced-motion mode stays manual. These controls also apply to live chess matchups and the desktop/OBS display; each display keeps its own scroll position.
-
-`node tests/browser/manual-scroll.cjs` checks manual scrolling for PDGA and chess, including keyboard and touch input, refresh preservation, boundaries, reduced motion, and the desktop mirror at 200% scale.
+[Version history](CHANGELOG.md) · [MIT License](LICENSE)
+Sports data, logos, trademarks, and dependencies remain subject to their respective terms.
