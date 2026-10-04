@@ -3,6 +3,18 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.31.3 — 2026-10-04
+
+### Fixed
+
+- Hockey power plays show a compact PP indicator beside the advantaged team
+  instead of a separate banner.
+- Rotating desktop and OBS cards start vertical scrolling at the top, even
+  when their rows match the previous card. Updates to the current card preserve
+  its scroll position.
+
+Existing settings are preserved. No migration is required.
+
 ## 0.31.2 — 2026-10-04
 
 ### Fixed
