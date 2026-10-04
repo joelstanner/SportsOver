@@ -3,6 +3,17 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.31.2 — 2026-10-04
+
+### Fixed
+
+- Scrolling banner text starts from the right without flashing left-aligned
+  during fast card navigation.
+- Tournament links in desktop Settings open in the default browser, including
+  newly added and updated watch cards.
+
+Existing settings are preserved. No migration is required.
+
 ## 0.31.1 — 2026-10-04
 
 ### Fixed
