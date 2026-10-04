@@ -510,29 +510,69 @@ const quiet = testMode() === 'quiet';
       const build = Menu.buildFromTemplate;
       Menu.buildFromTemplate = function(template) {
         const menu = build.call(this, template);
-        if (template[0]?.label === 'Settings…' && template.some(item => item.id === 'hide-banner')) globalThis.bannerTestMenu = menu;
+        if (template[0]?.label === 'Settings…' && template.some(item => item.id === 'hide-banner')) {
+          const popup = menu.popup.bind(menu);
+          menu.popup = options => {
+            menu.testClosed = new Promise(resolve => popup({ ...options, callback: () => {
+              options?.callback?.(); resolve();
+            } }));
+          };
+          // A native popup can be suppressed while another menu is active.
+          // Capture the menu that actually opens, rather than an unused model.
+          menu.once('menu-will-show', () => { globalThis.bannerTestMenu = menu; });
+        }
         return menu;
+      };
+      globalThis.closeBannerTestMenu = async () => {
+        const menu = globalThis.bannerTestMenu;
+        // Wait for native dismissal before an action rebuilds the app menus.
+        menu.closePopup();
+        let timeout;
+        try {
+          await Promise.race([menu.testClosed, new Promise((_, reject) => {
+            timeout = setTimeout(() => reject(Error('Banner context menu did not close')), 5000);
+          })]);
+        } finally { clearTimeout(timeout); }
+        // Let the native tracking loop unwind before opening another menu or
+        // changing its window's menu bar.
+        await new Promise(resolve => setTimeout(resolve, 100));
       };
       BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('/admin/')).hide();
     });
-    await banner.locator('.scorebug').click({ button: 'right' });
+    const openBannerContextMenu = async () => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        await application.evaluate(({ BrowserWindow }) => {
+          globalThis.bannerTestMenu = null;
+          BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('display.html?desktop')).focus();
+        });
+        await banner.waitForFunction(() => document.hasFocus());
+        await banner.locator('.scorebug').click({ button: 'right' });
+        const opened = await application.evaluate(async () => {
+          for (let i = 0; i < 50 && !globalThis.bannerTestMenu; i++) await new Promise(resolve => setTimeout(resolve, 20));
+          return !!globalThis.bannerTestMenu;
+        });
+        if (opened) return;
+      }
+      throw Error('Banner context menu did not open');
+    };
+    await openBannerContextMenu();
     await application.evaluate(async () => {
       for (let i = 0; i < 50 && !globalThis.bannerTestMenu; i++) await new Promise(resolve => setTimeout(resolve, 20));
       if (!globalThis.bannerTestMenu) throw Error('Banner context menu did not open');
-      globalThis.bannerTestMenu.closePopup();
+      await globalThis.closeBannerTestMenu();
       globalThis.bannerTestMenu.items[0].click();
     });
     assert.equal(await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
       .find(win => win.webContents.getURL().includes('/admin/')).isVisible()), true);
     assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame, 'right-click Settings does not skip');
     await application.evaluate(() => { globalThis.bannerTestMenu = null; });
-    await banner.locator('.scorebug').click({ button: 'right' });
+    await openBannerContextMenu();
     const contextSizes = await application.evaluate(async () => {
       for (let i = 0; i < 50 && !globalThis.bannerTestMenu; i++) await new Promise(resolve => setTimeout(resolve, 20));
       const size = globalThis.bannerTestMenu.getMenuItemById('banner-size');
       if (!size?.enabled) throw Error('Banner size submenu is unavailable');
       const labels = size.submenu.items.map(item => item.label);
-      globalThis.bannerTestMenu.closePopup();
+      await globalThis.closeBannerTestMenu();
       size.submenu.getMenuItemById('banner-size-1.25').click();
       return labels;
     });
@@ -551,13 +591,13 @@ const quiet = testMode() === 'quiet';
     assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame, 'context size does not browse games');
     const toggleContextLock = async expectedLocked => {
       await application.evaluate(() => { globalThis.bannerTestMenu = null; });
-      await banner.locator('.scorebug').click({ button: 'right' });
+      await openBannerContextMenu();
       await application.evaluate(async ({ Menu }, expectedLocked) => {
         for (let i = 0; i < 50 && !globalThis.bannerTestMenu; i++) await new Promise(resolve => setTimeout(resolve, 20));
         if (!globalThis.bannerTestMenu) throw Error('Banner context menu did not open');
         const item = globalThis.bannerTestMenu.getMenuItemById('lock-banner');
         if (!item || item.type !== 'checkbox' || item.checked !== !expectedLocked) throw Error('Context lock checkbox has incorrect state');
-        globalThis.bannerTestMenu.closePopup();
+        await globalThis.closeBannerTestMenu();
         item.click();
         if (Menu.getApplicationMenu().getMenuItemById('lock-banner').checked !== expectedLocked) throw Error('Application menu lock state did not update');
       }, expectedLocked);
@@ -591,22 +631,22 @@ const quiet = testMode() === 'quiet';
     });
     assert.deepEqual(await bannerBounds(), lockedFullBounds, 'position lock also prevents fullscreen dragging');
     await application.evaluate(() => { globalThis.bannerTestMenu = null; });
-    await banner.locator('.scorebug').click({ button: 'right' });
+    await openBannerContextMenu();
     await application.evaluate(async () => {
       for (let i = 0; i < 50 && !globalThis.bannerTestMenu; i++) await new Promise(resolve => setTimeout(resolve, 20));
       const item = globalThis.bannerTestMenu.getMenuItemById('fullscreen-banner');
       if (item.label !== 'Exit fullscreen') throw Error('Missing fullscreen exit');
       if (globalThis.bannerTestMenu.getMenuItemById('banner-size').enabled) throw Error('Size menu must be disabled in fullscreen');
-      globalThis.bannerTestMenu.closePopup();
+      await globalThis.closeBannerTestMenu();
       item.click();
     });
     assert.deepEqual(await waitBannerBounds(fixedBounds), fixedBounds, 'right-click menu exits fullscreen while locked');
     await application.evaluate(() => { globalThis.bannerTestMenu = null; });
-    await banner.locator('.scorebug').click({ button: 'right' });
+    await openBannerContextMenu();
     await application.evaluate(async () => {
       for (let i = 0; i < 50 && !globalThis.bannerTestMenu; i++) await new Promise(resolve => setTimeout(resolve, 20));
       if (!globalThis.bannerTestMenu) throw Error('Banner context menu did not open');
-      globalThis.bannerTestMenu.closePopup();
+      await globalThis.closeBannerTestMenu();
       globalThis.bannerTestMenu.getMenuItemById('hide-banner').click();
     });
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).visible), false, 'right-click Hide hides the banner');
