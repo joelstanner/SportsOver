@@ -46,7 +46,7 @@ async function fixture(extraFavorites = [], gameCount = 2, useRealSelection = fa
       if (holdNext) { holdNext = false; await new Promise(resolve => { release = resolve; }); }
       if (schedulesOffline && url.startsWith("schedule")) return new Response('{}', { status: 503 });
       const game = games.find(game => `game/${game.id}` === url);
-      return response(url.startsWith("schedule") ? { events: structuredClone(games) } : { id: url, state: game?.state || "live", competitionType: game?.competitionType });
+      return response(url.startsWith("schedule") ? { events: structuredClone(games) } : { id: url, state: game?.state || "live", detailedState: game?.detailedState, competitionType: game?.competitionType });
     },
     SportsOverlay: api, location: { search: "" }, addEventListener: () => {},
     matchMedia: () => ({ matches: true }),
@@ -562,6 +562,22 @@ test('a polled individual break leaves Live mode immediately and returns when pl
   app.games[0].state = 'live';
   await app.advance(60000);
   assert.equal(app.engine.describe().queue.length, 1);
+});
+
+test('polled interruptions publish the current description and clear it when play resumes', async () => {
+  const app = await fixture([], 1);
+  app.games[0].state = 'interrupted';
+  app.games[0].detailedState = 'Weather Delay';
+  await app.advance(12000);
+  for (const list of ['queue', 'normalQueue', 'availableEntries', 'automaticEntries']) {
+    assert.equal(app.engine.describe()[list][0].candidate.state, 'interrupted');
+    assert.equal(app.engine.describe()[list][0].candidate.detailedState, 'Weather Delay');
+  }
+  app.games[0].state = 'live';
+  delete app.games[0].detailedState;
+  await app.advance(12000);
+  assert.equal(app.engine.describe().queue[0].candidate.state, 'live');
+  assert.equal(app.engine.describe().queue[0].candidate.detailedState, undefined);
 });
 
 test('normal tournament rotation updates the queue and timer when a refresh detects a break', async () => {

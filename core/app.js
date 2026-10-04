@@ -469,7 +469,7 @@ async function renderGame(entry, revision, { animate = false, fast = false } = {
     const watchedGame = watchedTeams?.some(team => entry.candidate.teamKeys
       ?.some(id => String(id).toUpperCase() === String(team.teamId).toUpperCase()));
     if (!overrideEntry && (liveMode.isActive() || watchedGame || event.competitionType === "individual")) {
-      const observed = { ...entry, candidate: { ...entry.candidate, state: event.state,
+      const observed = { ...entry, candidate: { ...entry.candidate, state: event.state, detailedState: event.detailedState,
         competitionType: event.competitionType || entry.candidate.competitionType },
         ...(event.state === "final" ? { autoFinalDetectedAt: entry.autoFinalDetectedAt ?? Date.now() } : {}) };
       if (liveMode.isActive()) liveMode.observe(observed);

@@ -1112,9 +1112,12 @@
     const preseason = candidate.sport === "baseball"
       ? ["S", "E"].includes(candidate.raw?.gameType)
       : global.SportsOverlay.model.espnPreseason(candidate.raw || {}, candidate.sport !== "soccer");
-    const gameState = candidate.state === "live" ? "Live" : candidate.state === "final" ? "Final" : "Upcoming";
+    const status = candidate.raw?.competitions?.[0]?.status ?? candidate.raw?.status;
+    const gameState = candidate.state === "live" ? "Live" : candidate.state === "final" ? "Final"
+      : candidate.state === "interrupted" ? candidate.detailedState || status?.type?.description
+        || status?.type?.detail || status?.detailedState || "Interrupted" : "Upcoming";
     let state = preseason ? `PRESEASON · ${gameState}` : gameState;
-    if (candidate.state === "final" || candidate.state === "live") {
+    if (["final", "live", "interrupted"].includes(candidate.state)) {
       const teams = gameTeams(candidate);
       if (teams.length === 2 && teams.every(team =>
         ["number", "string"].includes(typeof team.score)
@@ -1133,7 +1136,6 @@
         if (inning) state += ` · ${half} ${inning}`;
         return state;
       }
-      const status = candidate.raw?.competitions?.[0]?.status ?? candidate.raw?.status;
       const clock = String(status?.displayClock ?? "").trim();
       const providerName = configApi.TEAM_CATALOG.find(team => team.sport === candidate.sport)?.provider;
       const provider = providerName ? registryApi.getProvider(providerName) : null;
@@ -1142,7 +1144,7 @@
       if (progress) state += ` · ${progress}`;
       return state;
     }
-    if (!candidate.startTime) return state;
+    if (candidate.state === "interrupted" || !candidate.startTime) return state;
     return `${state} · ${global.SportsOverlay.model.formatPregameStart(candidate.startTime, new Date(), workingConfig.timeZone === "local" ? undefined : workingConfig.timeZone)}`;
   }
 
