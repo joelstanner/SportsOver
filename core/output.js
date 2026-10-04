@@ -94,9 +94,14 @@
     interruptedTransition = false;
     const scrolling = window.SportsOverlay?.scrolling;
     const scrollSnapshot = scrolling?.capture(mount);
-    updateNode(mount, template.content.firstElementChild);
+    const sameGame = engineInstance === frame.instance && displayedGameKey === frame.gameKey;
+    // Identical rows on different cards still need a fresh animation. Reusing
+    // the track can carry its elapsed time (including the bottom hold) across
+    // rotation. Preserve running subtrees only for updates to the current card.
+    if (sameGame) updateNode(mount, template.content.firstElementChild);
+    else mount.replaceWith(template.content.firstElementChild);
     scrolling?.restore(document.querySelector('#sports-overlay'),
-      gameChanged || engineInstance !== frame.instance ? null : scrollSnapshot);
+      sameGame ? scrollSnapshot : null);
     window.SportsOverlay.countdown?.refresh();
     displayedGameKey = frame.gameKey;
     engineInstance = frame.instance;
