@@ -45,6 +45,36 @@ test('temporary overrides expire, retries do not extend them, conflicts and unkn
   assert.equal(engine.override, null);
   engine.stop();
 });
+test('banner sport filters cancel incompatible overrides and reject new ones without altering available games', () => {
+  const clearedTimers = [], changes = [];
+  const engine = new EngineState({ setTimer: () => 1, clearTimer: id => clearedTimers.push(id) });
+  engine.on('override', value => changes.push(value));
+  const entries = [...availableEntries, { candidate: { sport: 'chess', id: 'tournament' } }];
+  const command = { requestId: 'before-filter', type: 'show-game', gameKey: 'baseball:2', durationSeconds: 5 };
+  engine.publish({ html: '<main>Baseball</main>', metadata: { availableEntries: entries, renderedGameKey: 'baseball:1' } });
+  engine.command(command);
+  engine.publish({ html: '<main>No Chess games in rotation</main>', metadata: {
+    availableEntries: entries, bannerSportFilter: 'chess', queue: [], currentGameKey: null, renderedGameKey: null,
+  } });
+  assert.equal(engine.override, null);
+  assert.equal(changes.at(-1), null);
+  assert.deepEqual(clearedTimers, [1]);
+  assert.equal(engine.output().gameKey, null);
+  assert.match(engine.output().html, /No Chess games/);
+  assert.equal(engine.output().override, null);
+  assert.deepEqual(engine.state().availableEntries, entries);
+  assert.throws(() => engine.command({ ...command, requestId: 'filtered' }), error =>
+    error.status === 422 && /active banner sport filter/.test(error.message));
+  engine.command({ ...command, requestId: 'matching', gameKey: 'chess:tournament' });
+  engine.publish({ html: '<main>Chess</main>', metadata: { availableEntries: entries, bannerSportFilter: 'chess', renderedGameKey: 'chess:tournament' } });
+  assert.equal(engine.override.gameKey, 'chess:tournament', 'matching overrides remain active');
+  engine.clearOverride();
+  engine.publish({ html: '<main>Baseball</main>', metadata: { availableEntries: entries, bannerSportFilter: '', renderedGameKey: 'baseball:1' } });
+  engine.command({ ...command, requestId: 'filter-off' });
+  assert.equal(engine.override.gameKey, 'baseball:2', 'removing the filter restores integration access');
+  engine.stop();
+});
+
 test('public output and command server restrict hosts, origins, credentials, paths, and payloads', async t => {
   const engine = new EngineState();
   engine.publish({ html: '<main id="sports-overlay">same frame</main>', metadata: { availableEntries } });

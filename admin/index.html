@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SportsOver Settings</title>
   <link rel="stylesheet" href="../core/odds.css?v=3">
-  <link rel="stylesheet" href="admin.css?v=26">
+  <link rel="stylesheet" href="admin.css?v=27">
 </head>
 <body>
   <header class="masthead">
@@ -171,7 +171,8 @@
               <select id="queue-sport-filter" aria-label="Filter on banner list by sport" aria-describedby="queue-filter-note">
                 <option value="">All sports</option>
               </select>
-              <p id="queue-filter-note" class="game-filter-note">Filters this list only.</p>
+              <button id="apply-banner-sport-filter" class="button button--secondary banner-sport-filter-button" type="button" aria-pressed="false" aria-describedby="queue-filter-note" disabled>Apply to banner</button>
+              <p id="queue-filter-note" class="game-filter-note">Filters this list only. Turn on Apply to banner to also filter rotation.</p>
             </div>
             <div id="rotation-queue" class="game-list" aria-live="polite"></div>
           </section>
@@ -328,7 +329,7 @@
     </article>
   </template>
 
-  <script src="../core/config.js?v=21"></script>
+  <script src="../core/config.js?v=22"></script>
   <script src="../core/shared-state.js?v=1"></script>
   <script src="../core/automatic-watches.js?v=1"></script>
   <script src="../core/provider-network.js?v=1"></script>
@@ -352,7 +353,7 @@
   <script src="../sports/chess/providers/lichess.js?v=2"></script>
   <script src="chess-settings.js?v=2"></script>
   <script src="automatic-watches.js?v=2"></script>
-  <script src="admin.js?v=38"></script>
+  <script src="admin.js?v=39"></script>
   <script src="../core/desktop.js?v=16"></script>
 </body>
 </html>

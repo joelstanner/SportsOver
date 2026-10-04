@@ -25,6 +25,18 @@ function favoriteKeys(config, sport) {
   return config.sports.find(group => group.sport === sport).favorites.map(favorite => favorite.teamKey);
 }
 
+test('banner sport filters persist only supported, enabled sports and default off', () => {
+  assert.equal(configApi.normalizeConfig().bannerSportFilter, '');
+  assert.equal(configApi.normalizeConfig({ bannerSportFilter: 'chess' }).bannerSportFilter, 'chess');
+  for (const bannerSportFilter of ['missing', null, true, {}]) {
+    assert.equal(configApi.normalizeConfig({ bannerSportFilter }).bannerSportFilter, '');
+  }
+  assert.equal(configApi.normalizeConfig({ bannerSportFilter: 'chess', sports: [{ sport: 'chess', enabled: false }] }).bannerSportFilter, '');
+  const storage = memoryStorage();
+  configApi.saveConfig({ bannerSportFilter: 'baseball' }, storage);
+  assert.equal(configApi.loadConfig(storage).bannerSportFilter, 'baseball');
+});
+
 test('Live mode retention defaults to 20 minutes, validates limits, and never persists activation', () => {
   assert.equal(configApi.normalizeConfig().liveModeFinalMinutes, 20);
   for (const [value, expected] of [[0, 0], [5, 5], [30.5, 31], [-2, 0], [2000, 1440], [null, 20], ['10', 20], [NaN, 20]]) {

@@ -16,6 +16,8 @@ class EngineState extends EventEmitter {
         transition: frame.metadata.rotationTransition === 'quick' ? 'quick' : 'normal', updatedAt: this.now() };
     }
     this.metadata = frame.metadata;
+    if (this.override && this.metadata.bannerSportFilter
+      && !this.override.gameKey.startsWith(`${this.metadata.bannerSportFilter}:`)) this.clearOverride();
     this.emit('frame', this.output());
   }
   output() { return { ...this.frame, instance: this.instance, ready: this.ready && this.now() - this.lastSeen < 10000, override: this.override }; }
@@ -59,6 +61,7 @@ class EngineState extends EventEmitter {
       if (this.override) fail('An override is already active; cancel it before replacing it', 409);
       if (!Number.isInteger(body.durationSeconds) || body.durationSeconds < 5 || body.durationSeconds > 3600) fail('durationSeconds must be an integer from 5 to 3600');
       if (typeof body.gameKey !== 'string' || !this.metadata.availableEntries.some(entry => `${entry.candidate.sport}:${entry.candidate.id}` === body.gameKey)) fail('gameKey must identify a currently discovered game', 422);
+      if (this.metadata.bannerSportFilter && !body.gameKey.startsWith(`${this.metadata.bannerSportFilter}:`)) fail('gameKey must match the active banner sport filter', 422);
       this.override = { id: randomUUID(), gameKey: body.gameKey, startedAt: this.now(), expiresAt: this.now() + body.durationSeconds * 1000 };
       this.timer = this.setTimer(() => this.clearOverride(), body.durationSeconds * 1000);
       this.emit('override', this.override);

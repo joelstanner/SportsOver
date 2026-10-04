@@ -83,6 +83,52 @@ const standings=Array.from({length:12},(_,i)=>({name:i?'Player '+(i+1):'Leader',
   assert.equal(await page.locator('#rotation-queue .game-card').count(),4);
   assert.equal(await page.locator('#rotation-count').innerText(),'4 games');
   let banner=await context.newPage();banner.on('pageerror',e=>errors.push(e.message));
+  // Apply the list's sport choice to the actual engine without changing its saved queue.
+  assert.equal(await page.locator('#apply-banner-sport-filter').isDisabled(),true);
+  await page.locator('#queue-sport-filter').selectOption('chess');
+  await page.locator('#apply-banner-sport-filter').click();
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('sports-overlay.config.v1')).bannerSportFilter==='chess');
+  await banner.goto('http://overlay.test/index.html');
+  await banner.waitForFunction(()=>window.SportsOverlay.engine?.describe().queue.length===2);
+  assert.deepEqual(await banner.evaluate(()=>window.SportsOverlay.engine.describe().queue.map(e=>e.candidate.sport)),['chess','chess']);
+  assert.equal(await banner.evaluate(()=>window.SportsOverlay.engine.describe().normalQueue.length),4);
+  const beforeEmpty=await page.evaluate(()=>window.SportsOverlay.config.loadConfig().excludedGames);
+  for(let i=0;i<2;i++) {
+   await page.locator('#rotation-queue .remove-game').first().click();
+   await page.waitForFunction(count=>document.querySelectorAll('#rotation-queue .game-card').length===count,1-i);
+  }
+  await banner.waitForFunction(()=>window.SportsOverlay.engine?.describe().queue.length===0
+    && window.SportsOverlay.engine.describe().normalQueue.length===2 && window.SportsOverlay.engine.describe().renderedGameKey===null
+    && !window.SportsOverlay.engine.describe().discoveryPending);
+  assert.equal(await page.locator('#rotation-queue .game-card').count(),0);
+  assert.equal(await banner.locator('.chess-empty').innerText(),'No Chess games in rotation');
+  assert.equal(await banner.locator('.chess-focus, .chess-entry').count(),0,'the empty filter removes all previous score content');
+  await banner.evaluate(()=>window.SportsOverlay.engine.override({gameKey:'disc-golf:86076:MPO'}));
+  assert.equal(await banner.evaluate(()=>window.SportsOverlay.engine.describe().overrideGameKey),null);
+  assert.equal(await banner.locator('.chess-empty').innerText(),'No Chess games in rotation');
+  await page.evaluate(excludedGames=>window.SportsOverlay.config.saveConfig({...window.SportsOverlay.config.loadConfig(),excludedGames}),beforeEmpty);
+  await banner.waitForFunction(()=>window.SportsOverlay.engine?.describe().queue.length===2
+    && window.SportsOverlay.engine.describe().renderedGameKey?.startsWith('chess:'));
+  await page.locator('#queue-sport-filter').selectOption('disc-golf');
+  await banner.waitForFunction(()=>window.SportsOverlay.engine?.describe().queue.length===2 && window.SportsOverlay.engine.describe().queue.every(e=>e.candidate.sport==='disc-golf'));
+  await page.locator('#undo-live-change').click();
+  await banner.waitForFunction(()=>window.SportsOverlay.engine?.describe().queue.length===2 && window.SportsOverlay.engine.describe().queue.every(e=>e.candidate.sport==='chess'));
+  assert.equal(await page.locator('#queue-sport-filter').inputValue(),'chess');
+  await page.locator('#queue-sport-filter').selectOption('disc-golf');
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('sports-overlay.config.v1')).bannerSportFilter==='disc-golf');
+  await page.reload();
+  await page.getByRole('button',{name:'Live control',exact:true}).click();
+  await page.waitForFunction(()=>document.querySelector('#apply-banner-sport-filter').getAttribute('aria-pressed')==='true');
+  assert.equal(await page.locator('#queue-sport-filter').inputValue(),'disc-golf');
+  await page.locator('#rotation-queue .game-card').nth(1).waitFor();
+  await page.locator('.rotation-column').first().screenshot({path:'/tmp/sportsover-banner-sport-filter.png'});
+  await page.locator('#apply-banner-sport-filter').click();
+  await banner.waitForFunction(()=>window.SportsOverlay.engine?.describe().queue.length===4);
+  const afterToggle=await page.evaluate(()=>JSON.parse(localStorage.getItem('sports-overlay.config.v1')));
+  const beforeToggle=JSON.parse(beforeFilters);
+  for(const key of ['includedGames','excludedGames','rotationOrder','lockedGameKeys']) assert.deepEqual(afterToggle[key],beforeToggle[key]);
+  await page.locator('#queue-sport-filter').selectOption('');
+  assert.equal(await page.locator('#rotation-queue .game-card').count(),4);
   // Freeze the engine's selected banner with a saved lock, then inspect the real output.
   for(const sport of ['chess','disc-golf']){
    const group=saved.sports.find(g=>g.sport===sport),prefix=sport==='chess'?'chess':'pdga';
@@ -131,7 +177,7 @@ const standings=Array.from({length:12},(_,i)=>({name:i?'Player '+(i+1):'Leader',
   let frame={instance:'test',sequence:1,gameKey:'chess:Tour1234:auto',ready:true,
    html:'<div id="sports-overlay"><div class="scorebug-vertical-viewport"><div class="scorebug-vertical-track is-scrolling-vertically" style="--vertical-distance:-105px;--vertical-duration:20s;--vertical-delay:-5s"><div>Leader</div></div></div></div>'};
   await mirror.route('**/api/output',route=>route.fulfill({json:frame}));
-  await mirror.route('**/mirror',route=>route.fulfill({contentType:'text/html',body:'<link rel="stylesheet" href="/core/scrolling.css"><div id="sports-overlay"></div><script src="/core/output.js"></script>'}));
+  await mirror.route('**/mirror',route=>route.fulfill({contentType:'text/html',body:'<link rel="stylesheet" href="/core/scrolling.css"><div id="sports-overlay"></div><script src="/core/event-model.js"></script><script src="/core/countdown.js"></script><script src="/core/output.js"></script>'}));
   await mirror.goto('http://overlay.test/mirror');
   await mirror.waitForFunction(()=>document.body.dataset.sequence==='1');
   await mirror.locator('.scorebug-vertical-track').evaluate(el=>{window.oldTrack=el;el.getAnimations()[0].currentTime=5000;});

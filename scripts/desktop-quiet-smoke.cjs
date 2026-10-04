@@ -38,6 +38,19 @@ module.exports = async ({ pages, directory, launch, application }) => {
   await engine.waitForFunction(() => window.SportsOverlay.engine.describe().liveMode.active);
   await admin.locator('#available-games [data-game-key="baseball:2"] .add-game').click();
   await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 2);
+  await admin.locator('#queue-sport-filter').selectOption('baseball');
+  await admin.locator('#apply-banner-sport-filter').click();
+  await engine.waitForFunction(() => window.SportsOverlay.config.loadConfig().bannerSportFilter === 'baseball');
+  assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().queue.length), 2);
+  await admin.locator('#queue-sport-filter').selectOption('chess');
+  await engine.waitForFunction(() => window.SportsOverlay.config.loadConfig().bannerSportFilter === 'chess'
+    && window.SportsOverlay.engine.describe().queue.length === 0 && window.SportsOverlay.engine.describe().renderedGameKey === null);
+  await banner.locator('.chess-empty').waitFor({ state: 'visible' });
+  assert.match(await banner.locator('.chess-empty').innerText(), /No live Chess games in rotation/);
+  await admin.locator('#apply-banner-sport-filter').click();
+  await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 2);
+  await banner.locator('#game-view').waitFor({ state: 'visible' });
+  await admin.locator('#queue-sport-filter').selectOption('');
   await require('./settings-arrows-smoke.cjs')({ admin, engine });
   await admin.locator('#rotation-queue [data-game-key="baseball:2"] .remove-game').click();
   await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 1);

@@ -9,10 +9,11 @@ const frame = (sequence, transition = 'normal') => ({ instance: 'output-test', s
 (async () => {
   const browser = await chromium.launch({ headless: true, channel: process.env.PLAYWRIGHT_CHANNEL || 'chrome' });
   try {
-    const page = await browser.newPage();
+    const page = await browser.newPage({ reducedMotion: 'no-preference' });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.addInitScript(() => {
+      window.SportsOverlay = { countdown: { refresh() {} } };
       window.sportsDesktop = { onFrame: listener => { window.deliverFrame = listener; } };
       window.transitions = [];
       window.completedTransitions = [];
@@ -68,7 +69,21 @@ const frame = (sequence, transition = 'normal') => ({ instance: 'output-test', s
     assert.equal(await page.locator('#sports-overlay').innerText(), 'Game 9');
     assert.deepEqual(await page.evaluate(() => window.transitions.map(item => item.name)),
       ['sports-rotate-out', 'sports-rotate-in'], 'a newer snapshot must not restart the outgoing fade and flash the old game');
+    await page.evaluate(value => window.deliverFrame(value), frame(10));
+    await page.waitForFunction(() => document.querySelector('#sports-overlay').classList.contains('is-rotating-out'));
+    await page.evaluate(value => window.deliverFrame(value), { ...frame(11), gameKey: null,
+      html: '<main id="sports-overlay"><div class="no-game">No Chess games in rotation</div></main>' });
+    await page.waitForFunction(() => document.body.dataset.sequence === '11');
+    assert.equal(await page.locator('#sports-overlay').innerText(), 'No Chess games in rotation',
+      'desktop output replaces the old game with the empty filtered banner during a transition');
+    await page.evaluate(value => window.deliverFrame(value), frame(10));
+    await page.waitForTimeout(300);
+    assert.equal(await page.locator('#sports-overlay').innerText(), 'No Chess games in rotation',
+      'stale desktop and OBS polling frames cannot restore the excluded card');
+    await page.evaluate(value => window.deliverFrame(value), frame(12));
+    await page.waitForFunction(() => document.body.dataset.sequence === '12');
+    assert.equal(await page.locator('#sports-overlay').innerText(), 'Game 12', 'eligible games resume after an empty filter');
     assert.deepEqual(errors, []);
-    console.log('Output transitions passed: 100 ms arrows, stale polling, interrupted animation, and reduced motion.');
+    console.log('Output transitions passed: 100 ms arrows, stale polling, interrupted animation, empty filters, and reduced motion.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

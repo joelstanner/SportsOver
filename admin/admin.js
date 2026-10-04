@@ -68,7 +68,7 @@
   const catalogRefreshStatus = document.querySelector("#catalog-refresh-status");
   const undoLiveButton = document.querySelector("#undo-live-change");
   const resetDialog = document.querySelector("#reset-settings-dialog");
-  const liveConfigKeys = ["rotationMode", "includedGames", "excludedGames", "rotationOrder", "gameDurations", "defaultGameDurations", "lockedGameKeys"];
+  const liveConfigKeys = ["rotationMode", "bannerSportFilter", "includedGames", "excludedGames", "rotationOrder", "gameDurations", "defaultGameDurations", "lockedGameKeys"];
   let undoLiveConfig = null;
   let recentlyAddedTeamKey = null;
   let availableRotationEntries = [];
@@ -158,7 +158,13 @@
       if (!info.contains(event.target)) show(false);
     });
   });
-  document.querySelector("#queue-sport-filter").addEventListener("change", renderRotationControls);
+  document.querySelector("#queue-sport-filter").addEventListener("change", () => {
+    if (workingConfig.bannerSportFilter) applyBannerSportFilter(document.querySelector("#queue-sport-filter").value);
+    else renderRotationControls();
+  });
+  document.querySelector("#apply-banner-sport-filter").addEventListener("click", () => {
+    applyBannerSportFilter(workingConfig.bannerSportFilter ? "" : document.querySelector("#queue-sport-filter").value);
+  });
   document.querySelector("#available-sport-filter").addEventListener("change", renderRotationControls);
   document.querySelector("#game-search").addEventListener("input", renderRotationControls);
   document.querySelectorAll("[data-default-duration]").forEach(input => {
@@ -585,6 +591,7 @@
       filter.value = enabledSports.some(group => group.sport === selectedFilters[index]) ? selectedFilters[index] : "";
       filter.disabled = !enabledSports.length;
     });
+    if (workingConfig.bannerSportFilter) document.querySelector("#queue-sport-filter").value = workingConfig.bannerSportFilter;
     picker.disabled = !enabledSports.length;
     if (!enabledSports.length) picker.append(new Option("No sports enabled", ""));
     if (picker.value !== selectedSport) updateLive();
@@ -843,6 +850,15 @@
     queueList.replaceChildren();
     availableList.replaceChildren();
     const queueSportFilter = document.querySelector("#queue-sport-filter").value;
+    const bannerFilterButton = document.querySelector("#apply-banner-sport-filter");
+    const filteringBanner = Boolean(workingConfig.bannerSportFilter);
+    bannerFilterButton.setAttribute("aria-pressed", String(filteringBanner));
+    bannerFilterButton.disabled = !filteringBanner && !queueSportFilter;
+    bannerFilterButton.title = filteringBanner ? "Turn off the banner sport filter and restore the full rotation."
+      : queueSportFilter ? "Show only this sport on the banner." : "Choose a sport first.";
+    document.querySelector("#queue-filter-note").textContent = filteringBanner
+      ? "Filters this list and the banner. Turn off Apply to banner to restore the full rotation."
+      : "Filters this list only. Turn on Apply to banner to also filter rotation.";
     const shownCount = queue.filter(entry => !queueSportFilter || entry.candidate.sport === queueSportFilter).length;
     const loadingGames = engineLoading || engineRotationState?.discoveryPending === true;
     document.querySelector("#rotation-count").textContent = engineLoading && !queue.length ? "Loading…"
@@ -1188,6 +1204,7 @@
   function resetRotation() {
     const previousLiveConfig = savedLiveConfig();
     workingConfig.rotationMode = "automatic";
+    workingConfig.bannerSportFilter = "";
     workingConfig.includedGames = [];
     workingConfig.excludedGames = [];
     workingConfig.rotationOrder = [];
@@ -1200,6 +1217,13 @@
     const previousLiveConfig = savedLiveConfig();
     workingConfig.lockedGameKeys = [];
     autoApplyLiveChange(previousLiveConfig, "All games unlocked · rotation resumed");
+  }
+
+  function applyBannerSportFilter(sport) {
+    const previousLiveConfig = savedLiveConfig();
+    workingConfig.bannerSportFilter = sport;
+    autoApplyLiveChange(previousLiveConfig, sport
+      ? `${configApi.findSport(sport).name} filter applied to banner` : "Banner sport filter off · full rotation restored");
   }
 
   function toggleGameLock(entry) {

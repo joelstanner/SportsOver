@@ -78,6 +78,7 @@ window.SportsOverlay.engine = {
     renderedGameKey,
     rotationTransition,
     overrideGameKey: entryKey(overrideEntry) || null,
+    bannerSportFilter: savedConfig.bannerSportFilter || "",
   }),
   refresh: () => discoverGames(),
   next: options => stepRotation(1, options),
@@ -99,16 +100,26 @@ window.SportsOverlay.engine = {
     const previousKey = entryKey(rotationQueue[currentIndex]);
     rotationQueue = selectedRotationQueue((cachedDiscoveries || []).flatMap(result => result.availableEntries));
     currentIndex = Math.max(0, rotationQueue.findIndex(entry => entryKey(entry) === previousKey));
+    if (!rotationQueue.length && !overrideEntry) renderEmptyBanner();
     return discoverGames(sportContexts.some(context => ["disc-golf", "chess"].includes(context.sport)));
   },
   override(value) {
     overrideEntry = value ? (cachedDiscoveries || []).flatMap(result => result.availableEntries)
-      .find(entry => entryKey(entry) === value.gameKey) || null : null;
+      .find(entry => entryKey(entry) === value.gameKey && matchesBannerSport(entry)) || null : null;
     requestRevision++;
     clearTimeout(rotationTimer); rotationTimer = null; rotationGeneration++;
     clearTimeout(pollTimer); pollGeneration++;
-    if (overrideEntry || rotationQueue.length) renderCurrentGame().then(() => { schedulePoll(); scheduleRotation(); });
-    else discoverGames(false);
+    pendingRotation = null;
+    if (overrideEntry || rotationQueue.length) {
+      const rendering = renderCurrentGame();
+      const revision = requestRevision;
+      rendering.then(() => {
+        if (revision === requestRevision) { schedulePoll(); scheduleRotation(); }
+      });
+    } else {
+      renderEmptyBanner();
+      discoverGames(false);
+    }
   },
 };
 async function stepRotation(direction, { fast = false } = {}) {
@@ -268,14 +279,10 @@ async function discoverGamesOnce(refresh = true) {
   clearTimeout(discoveryTimer);
   if (!sportContexts.length) {
     loadingSports.clear();
-    clearTimeout(pollTimer); pollGeneration++;
     rotationQueue = []; normalRotationQueue = []; liveRotationQueue = []; automaticRotationEntries = []; cachedDiscoveries = [];
     liveMode.update({ enabledSports: [] });
     overrideEntry = null; currentIndex = 0;
-    requestRevision++; rotationGeneration++;
-    clearTimeout(rotationTimer); rotationTimer = null;
-    renderedGameKey = null;
-    layout.renderNoEvent("No sports enabled", CONFIG.showNoGameMessage);
+    renderEmptyBanner();
     return;
   }
 
@@ -329,12 +336,7 @@ async function applyDiscoveries(discoveries, generation, partial = false) {
   const changedGame = Boolean(previousKey && entryKey(rotationQueue[currentIndex]) !== previousKey);
 
   if (!rotationQueue.length && !overrideEntry) {
-    requestRevision += 1;
-    clearTimeout(rotationTimer);
-    rotationTimer = null;
-    rotationGeneration += 1;
-    renderedGameKey = null;
-    layout.renderNoEvent(loadingSports.size ? "Loading games…" : liveMode.isActive() ? "No live games in rotation" : discoveries.some(result => result.failures) ? "Scores unavailable · retrying automatically" : "No watched or live spotlight games found", liveMode.isActive() || CONFIG.showNoGameMessage);
+    renderEmptyBanner(discoveries);
     if (!partial) scheduleDiscovery();
     return;
   }
@@ -362,8 +364,36 @@ function selectedRotationQueue(availableEntries) {
   }) : [];
   // Filter for live eligibility before applying locks, so a paused tournament
   // or expired final cannot be kept on screen by its saved lock.
-  return window.SportsOverlay.selection.applyGameLocks(liveMode.isActive() ? liveRotationQueue : normalRotationQueue,
-    savedConfig.lockedGameKeys, entryKey);
+  const queue = liveMode.isActive() ? liveRotationQueue : normalRotationQueue;
+  const filtered = queue.filter(matchesBannerSport);
+  return window.SportsOverlay.selection.applyGameLocks(filtered, savedConfig.lockedGameKeys, entryKey);
+}
+
+function matchesBannerSport(entry) {
+  return !savedConfig.bannerSportFilter || entry.context.sport === savedConfig.bannerSportFilter;
+}
+
+function renderEmptyBanner(discoveries = cachedDiscoveries || []) {
+  requestRevision++;
+  clearTimeout(pollTimer); pollTimer = null; pollGeneration++;
+  scheduleRotation();
+  clearTransitionClasses();
+  renderedGameKey = null;
+  lastEventState = "idle";
+  const currentLayout = savedConfig.bannerSportFilter ? activateLayout(savedConfig.bannerSportFilter) : layout;
+  currentLayout.renderNoEvent(sportContexts.length ? rotationEmptyMessage(discoveries) : "No sports enabled",
+    liveMode.isActive() || Boolean(savedConfig.bannerSportFilter) || CONFIG.showNoGameMessage);
+}
+
+function rotationEmptyMessage(discoveries) {
+  if (savedConfig.bannerSportFilter) {
+    if (loadingSports.has(savedConfig.bannerSportFilter)) return "Loading games…";
+    const sport = window.SportsOverlay.config.findSport(savedConfig.bannerSportFilter);
+    return `No ${liveMode.isActive() ? "live " : ""}${sport?.name || savedConfig.bannerSportFilter} games in rotation`;
+  }
+  if (loadingSports.size) return "Loading games…";
+  return liveMode.isActive() ? "No live games in rotation" : discoveries.some(result => result.failures)
+    ? "Scores unavailable · retrying automatically" : "No watched or live spotlight games found";
 }
 
 async function discoverSport(context) {
@@ -434,7 +464,10 @@ async function discoverSportOnce(context) {
 
 function renderCurrentGame(options = {}) {
   const entry = overrideEntry || rotationQueue[currentIndex];
-  if (!entry) return Promise.resolve();
+  if (!entry) {
+    renderEmptyBanner();
+    return Promise.resolve();
+  }
   const revision = ++requestRevision;
   const cached = options.fast && renderedEvents.get(entryKey(entry));
   if (cached) {
@@ -624,6 +657,7 @@ if (!staticPreview) {
     const timingChanged = JSON.stringify(savedConfig.gameDurations) !== JSON.stringify(snapshot.config.gameDurations)
       || JSON.stringify(savedConfig.defaultGameDurations) !== JSON.stringify(snapshot.config.defaultGameDurations);
     const locksChanged = JSON.stringify(savedConfig.lockedGameKeys) !== JSON.stringify(snapshot.config.lockedGameKeys);
+    const bannerFilterChanged = savedConfig.bannerSportFilter !== snapshot.config.bannerSportFilter;
     const teamsChanged = JSON.stringify(savedConfig.sports) !== JSON.stringify(snapshot.config.sports)
       || JSON.stringify(savedConfig.includedGames) !== JSON.stringify(snapshot.config.includedGames);
     const pdgaSelectionChanged = savedConfig.liveModeFinalMinutes !== snapshot.config.liveModeFinalMinutes
@@ -637,7 +671,7 @@ if (!staticPreview) {
       .map(createSportContext).filter(Boolean);
     if (overrideEntry) {
       const context = sportContexts.find(context => context.sport === overrideEntry.context.sport);
-      overrideEntry = context && window.SportsOverlay.config.isCandidateEnabled(savedConfig, overrideEntry.candidate)
+      overrideEntry = context && matchesBannerSport(overrideEntry) && window.SportsOverlay.config.isCandidateEnabled(savedConfig, overrideEntry.candidate)
         ? { ...overrideEntry, context } : null;
     }
     if (teamsChanged || catalogChanged) {
@@ -666,9 +700,9 @@ if (!staticPreview) {
       }
     }
     requestRevision += 1;
-    if (locksChanged) {
+    if (locksChanged || bannerFilterChanged) {
       // A slow discovery must not leave the old queue or hover-delayed advance
-      // active after a lock changes. Apply locks to the games already received.
+      // active after locks or the sport filter change. Use games already received.
       const previousKey = entryKey(rotationQueue[currentIndex]);
       rotationQueue = selectedRotationQueue((cachedDiscoveries || []).flatMap(result => result.availableEntries));
       currentIndex = Math.max(0, rotationQueue.findIndex(entry => entryKey(entry) === previousKey));

@@ -54,6 +54,10 @@ show a countdown, then **Starting soon** until the feed reports play.
 
 ## Banner controls
 
+In Live control → ON BANNER, choose a sport and turn on **Apply to banner** to limit rotation to that sport. Changing the sport updates the active filter; turning the toggle off restores the full rotation and its saved locks. The filter also applies in Live mode and persists across restarts. With the toggle off, the dropdown filters only the list.
+
+When no games match, the banner shows a no-games message and resumes when eligible games return. Temporary game overrides must match the active sport filter; changing the filter ends an override for another sport.
+
 | Action | Control |
 | --- | --- |
 | Browse games | Click the leftmost 20% for previous; click elsewhere for next. With the banner or Settings focused, use Left/Right arrows. In Settings, arrows retain their normal behavior in fields, selectors, and dialogs. |

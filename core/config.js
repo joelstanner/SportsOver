@@ -43,6 +43,7 @@
     rotationSeconds: 10,
     timeZone: "local",
     rotationMode: "automatic",
+    bannerSportFilter: "",
     liveModeFinalMinutes: 20,
     includedGames: Object.freeze([]),
     excludedGames: Object.freeze([]),
@@ -142,6 +143,7 @@
         ? Math.min(300, Math.max(5, Math.round(rotationSeconds)))
         : DEFAULT_CONFIG.rotationSeconds,
       rotationMode: ROTATION_MODES.has(source.rotationMode) ? source.rotationMode : DEFAULT_CONFIG.rotationMode,
+      bannerSportFilter: sports.some(group => group.enabled && group.sport === source.bannerSportFilter) ? source.bannerSportFilter : "",
       liveModeFinalMinutes: typeof source.liveModeFinalMinutes === "number" && Number.isFinite(source.liveModeFinalMinutes)
         ? Math.min(1440, Math.max(0, Math.round(source.liveModeFinalMinutes))) : DEFAULT_CONFIG.liveModeFinalMinutes,
       includedGames: normalizeGameKeys(source.includedGames),
