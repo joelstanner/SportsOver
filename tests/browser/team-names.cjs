@@ -42,6 +42,8 @@ const root = path.resolve(__dirname, '../..');
         { state: 'final', detail: 'Final', expanded: true },
         { state: 'live', detail: 'In Progress', expanded: false },
         ...['Halftime', 'Half-time', 'Half Time', 'HT'].map(detail => ({ state: 'interrupted', detail, expanded: hasHalftime })),
+        ...['End of 1st Period', 'End of 2nd Period', 'End of Period', 'Intermission', '2nd Intermission']
+          .map(detail => ({ state: 'interrupted', detail, expanded: sport === 'hockey' })),
         { state: 'interrupted', detail: 'End of quarter', expanded: false },
         { state: 'interrupted', detail: 'Weather delay', expanded: false },
         { state: 'live', detail: 'In Progress', expanded: false },
@@ -61,7 +63,7 @@ const root = path.resolve(__dirname, '../..');
         }
         assert.equal(await page.locator('#sports-overlay').evaluate(el => el.scrollWidth <= el.clientWidth), true, `${sport} ${state} fits banner`);
       }
-      for (const state of ['pregame', 'final', ...(hasHalftime ? ['interrupted'] : [])]) {
+      for (const state of ['pregame', 'final', ...(hasHalftime || sport === 'hockey' ? ['interrupted'] : [])]) {
         if (sport === 'football') {
           for (const chargersSide of ['away', 'home']) {
             await page.evaluate(({ state, chargersSide }) => {
@@ -94,13 +96,13 @@ const root = path.resolve(__dirname, '../..');
           await output.close();
           await page.screenshot({ path: `/tmp/sportsover-chargers-${state}.png` });
         }
-        await page.evaluate(state => {
+        await page.evaluate(({ state, sport }) => {
           window.testEvent.state = state;
-          window.testEvent.detailedState = state === 'interrupted' ? 'Halftime' : state;
+          window.testEvent.detailedState = state === 'interrupted' ? sport === 'hockey' ? 'End of 1st Period' : 'Halftime' : state;
           window.testEvent.teams.away.name = 'An Extremely Long City and Team Name That Cannot Fit';
           window.testEvent.teams.home.name = 'Another Extremely Long City and Team Name That Cannot Fit';
           window.testLayout.render(window.testEvent);
-        }, state);
+        }, { state, sport });
         for (const [index, side] of ['away', 'home'].entries()) {
           assert.equal(await page.locator(ids[index]).innerText(), await page.evaluate(side => window.testEvent.teams[side].abbreviation, side), `${sport} long ${side} falls back`);
           assert.equal(await page.locator(ids[index]).evaluate(el => el.style.fontSize + el.style.letterSpacing), '', `${sport} fallback restores typography`);
@@ -141,6 +143,18 @@ const root = path.resolve(__dirname, '../..');
         window.testLayout.render(window.testEvent);
       }, { sport, state: 'pregame' });
       await page.screenshot({ path: `/tmp/sportsover-team-names-${sport}.png` });
+      if (sport === 'hockey') {
+        await page.evaluate(() => {
+          window.testEvent = window.SportsOverlay.registry.getDemo('hockey', 'interrupted');
+          window.testEvent.detailedState = 'End of 1st Period';
+          window.testLayout.render(window.testEvent);
+        });
+        assert.equal(await page.locator('#hockey-away-abbr').innerText(), 'Vancouver Canucks');
+        assert.equal(await page.locator('#hockey-home-abbr').innerText(), 'Seattle Kraken');
+        assert.equal(await page.locator('.hockey-center').isHidden(), true);
+        assert.equal(await page.locator('#hockey-status-text').innerText(), 'END OF 1ST PERIOD');
+        await page.screenshot({ path: '/tmp/sportsover-hockey-intermission.png' });
+      }
       console.log(`${sport}: full names, fallback, state transitions, and output fit passed`);
     }
     assert.deepEqual(errors, []);
