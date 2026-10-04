@@ -42,6 +42,7 @@ let currentIndex = 0;
 let requestRevision = 0;
 let pollTimer = null;
 let rotationTimer = null;
+let rotationDwellStartedAt = null;
 let bannerHovered = false;
 let pendingRotation = null;
 let discoveryTimer = null;
@@ -351,7 +352,9 @@ async function applyDiscoveries(discoveries, generation, partial = false) {
   }
   const tournamentStateChanged = rotationQueue[currentIndex]?.candidate.competitionType === "individual"
     && rotationQueue[currentIndex].candidate.state !== previousState;
-  if (!rotationTimer || changedGame || tournamentStateChanged || rotationQueue.length < 2) scheduleRotation();
+  if (!rotationTimer || changedGame || tournamentStateChanged || rotationQueue.length < 2) {
+    scheduleRotation({ preserveElapsed: !changedGame && !tournamentStateChanged });
+  }
 }
 
 function selectedRotationQueue(availableEntries) {
@@ -379,6 +382,7 @@ function renderEmptyBanner(discoveries = cachedDiscoveries || []) {
   scheduleRotation();
   clearTransitionClasses();
   renderedGameKey = null;
+  rotationDwellStartedAt = null;
   lastEventState = "idle";
   const currentLayout = savedConfig.bannerSportFilter ? activateLayout(savedConfig.bannerSportFilter) : layout;
   currentLayout.renderNoEvent(sportContexts.length ? rotationEmptyMessage(discoveries) : "No sports enabled",
@@ -473,6 +477,7 @@ function renderCurrentGame(options = {}) {
   if (cached) {
     clearTransitionClasses();
     activateLayout(entry.context.sport).render(cached);
+    if (renderedGameKey !== entryKey(entry)) rotationDwellStartedAt = Date.now();
     renderedGameKey = entryKey(entry);
     rotationTransition = "quick";
     lastEventState = cached.state;
@@ -530,7 +535,10 @@ async function renderGame(entry, revision, { animate = false, fast = false } = {
     renderedEvents.set(entryKey(entry), event);
     if (renderedEvents.size > 200) renderedEvents.delete(renderedEvents.keys().next().value);
     // Publish the displayed game, not the next queue entry while it is loading.
-    if (renderedGameKey !== entryKey(entry)) rotationTransition = fast ? "quick" : "normal";
+    if (renderedGameKey !== entryKey(entry)) {
+      rotationTransition = fast ? "quick" : "normal";
+      rotationDwellStartedAt = Date.now();
+    }
     renderedGameKey = entryKey(entry);
     if (animate) transitionIn();
     lastEventState = event.state;
@@ -554,11 +562,12 @@ function schedulePoll() {
   }, refresh.interval(sport, lastEventState));
 }
 
-function scheduleRotation() {
+function scheduleRotation({ preserveElapsed = false } = {}) {
   clearTimeout(rotationTimer);
   rotationTimer = null;
   pendingRotation = null;
   const generation = ++rotationGeneration;
+  if (!preserveElapsed || rotationDwellStartedAt === null) rotationDwellStartedAt = Date.now();
   const mount = document.querySelector("#sports-overlay");
   if (mount) mount.dataset.rotationActive = String(!overrideEntry && rotationQueue.length > 1);
   if (overrideEntry || rotationQueue.length < 2) return;
@@ -569,11 +578,15 @@ function scheduleRotation() {
     await renderCurrentGame({ animate: true });
     if (generation === rotationGeneration) { schedulePoll(); scheduleRotation(); }
   };
+  // Count time already visible, even if this was initially the only ready game.
+  // Slow discovery should not add another full dwell when a second sport joins.
+  const durationMs = window.SportsOverlay.selection.gameDurationSeconds(rotationQueue[currentIndex], savedConfig.gameDurations, entryKey, savedConfig.defaultGameDurations) * 1_000;
+  const remainingMs = Math.max(0, durationMs - (Date.now() - rotationDwellStartedAt));
   rotationTimer = setTimeout(() => {
     // Keep the elapsed timer registered so discovery does not start a new dwell.
     if (bannerHovered) pendingRotation = advance;
     else void advance();
-  }, window.SportsOverlay.selection.gameDurationSeconds(rotationQueue[currentIndex], savedConfig.gameDurations, entryKey, savedConfig.defaultGameDurations) * 1_000);
+  }, remainingMs);
 }
 
 async function transitionOut(revision) {

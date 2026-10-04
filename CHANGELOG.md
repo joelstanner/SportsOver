@@ -3,6 +3,15 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.31.1 — 2026-10-04
+
+### Fixed
+
+- Count the first banner's visible time while other sports, including chess,
+  load, avoiding an extra full display interval when another game joins rotation.
+
+Existing settings are preserved. No migration is required.
+
 ## 0.31.0 — 2026-10-04
 
 ### Added
