@@ -240,11 +240,11 @@
       els.lastPlayText.title = description || "";
       els.lastPlay.classList.remove("is-scrolling");
       if (description) {
-        requestAnimationFrame(() => {
-          const overflows = els.lastPlayText.scrollWidth > els.lastPlayViewport.clientWidth;
-          els.lastPlay.classList.toggle("is-scrolling", overflows);
-          els.lastPlay.style.setProperty("--scroll-duration", `${Math.max(20, description.length / 3.5)}s`);
-        });
+        // Finish initializing before the engine publishes this card; deferring
+        // the overflow check exposes a left-aligned frame during fast browsing.
+        const overflows = els.lastPlayText.scrollWidth > els.lastPlayViewport.clientWidth;
+        els.lastPlay.style.setProperty("--scroll-duration", `${Math.max(20, description.length / 3.5)}s`);
+        els.lastPlay.classList.toggle("is-scrolling", overflows);
       }
     }
 

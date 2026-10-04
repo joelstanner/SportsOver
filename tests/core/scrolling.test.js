@@ -5,7 +5,7 @@ const assert = require("node:assert/strict");
 
 test("unchanged live polling does not restart an active scroll", () => {
   global.SportsOverlay = {};
-  global.requestAnimationFrame = callback => callback();
+  global.requestAnimationFrame = () => assert.fail("horizontal scrolling must be ready before publishing a frame");
   delete require.cache[require.resolve("../../core/scrolling.js")];
   require("../../core/scrolling.js");
 

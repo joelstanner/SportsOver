@@ -12,12 +12,12 @@
     textElement.style.setProperty("--scroll-duration", `${Math.max(20, text.length / 3.5)}s`);
     textElement.classList.remove("is-scrolling");
     if (!text) return;
-    requestAnimationFrame(() => {
-      const overflow = textElement.scrollWidth - viewport.clientWidth;
-      const shouldScroll = overflow > 1;
-      textElement.dataset.scrollViewportWidth = String(viewport.clientWidth);
-      textElement.classList.toggle("is-scrolling", shouldScroll);
-    });
+    // Measure without scroll padding and enable the animation before this
+    // render can be painted or published to the desktop/OBS display.
+    const overflow = textElement.scrollWidth - viewport.clientWidth;
+    const shouldScroll = overflow > 1;
+    textElement.dataset.scrollViewportWidth = String(viewport.clientWidth);
+    textElement.classList.toggle("is-scrolling", shouldScroll);
   }
   function vertical(viewport, event, previous) {
     if (!viewport) return null;
