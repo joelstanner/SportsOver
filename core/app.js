@@ -623,6 +623,7 @@ if (!staticPreview) {
     lastInstance = snapshot.instance;
     const timingChanged = JSON.stringify(savedConfig.gameDurations) !== JSON.stringify(snapshot.config.gameDurations)
       || JSON.stringify(savedConfig.defaultGameDurations) !== JSON.stringify(snapshot.config.defaultGameDurations);
+    const locksChanged = JSON.stringify(savedConfig.lockedGameKeys) !== JSON.stringify(snapshot.config.lockedGameKeys);
     const teamsChanged = JSON.stringify(savedConfig.sports) !== JSON.stringify(snapshot.config.sports)
       || JSON.stringify(savedConfig.includedGames) !== JSON.stringify(snapshot.config.includedGames);
     const pdgaSelectionChanged = savedConfig.liveModeFinalMinutes !== snapshot.config.liveModeFinalMinutes
@@ -647,6 +648,7 @@ if (!staticPreview) {
       const allowed = entry => window.SportsOverlay.config.isCandidateEnabled(savedConfig, entry.candidate);
       const previousKey = entryKey(rotationQueue[currentIndex]);
       rotationQueue = rotationQueue.filter(allowed);
+      normalRotationQueue = normalRotationQueue.filter(allowed);
       liveRotationQueue = liveRotationQueue.filter(allowed);
       automaticRotationEntries = automaticRotationEntries.filter(allowed);
       cachedDiscoveries = cachedDiscoveries?.map(result => ({ ...result,
@@ -664,7 +666,20 @@ if (!staticPreview) {
       }
     }
     requestRevision += 1;
-    if (timingChanged) scheduleRotation();
+    if (locksChanged) {
+      // A slow discovery must not leave the old queue or hover-delayed advance
+      // active after a lock changes. Apply locks to the games already received.
+      const previousKey = entryKey(rotationQueue[currentIndex]);
+      rotationQueue = selectedRotationQueue((cachedDiscoveries || []).flatMap(result => result.availableEntries));
+      currentIndex = Math.max(0, rotationQueue.findIndex(entry => entryKey(entry) === previousKey));
+      clearTimeout(pollTimer); pollGeneration++;
+      scheduleRotation();
+      const generation = rotationGeneration;
+      // Show cached scores immediately and bypass unrelated in-flight renders.
+      void renderCurrentGame({ fast: true }).then(() => {
+        if (generation === rotationGeneration) schedulePoll();
+      });
+    } else if (timingChanged) scheduleRotation();
     discoverGames(teamsChanged || catalogChanged || selectionChanged);
   });
   window.addEventListener("storage", event => {

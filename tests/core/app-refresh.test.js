@@ -304,6 +304,61 @@ test('an override invalidates any rotation waiting for hover to end', async () =
   assert.equal(app.engine.describe().currentGameKey, 'baseball:2');
 });
 
+for (const liveMode of [false, true]) test(`locks take effect during a slow discovery and rotate only selected games (${liveMode ? 'Live mode' : 'normal mode'})`, async () => {
+  const app = await fixture([], 3);
+  if (liveMode) { await app.engine.setLiveMode(true); await app.flush(); }
+  app.engine.setHovered(true);
+  await app.advance(6000);
+  app.time(12000); app.hold();
+  const refresh = app.engine.refresh(); await app.flush();
+  assert.equal(app.engine.describe().discoveryPending, true);
+  await app.save({ lockedGameKeys: ['baseball:2'] });
+  assert.deepEqual(Array.from(app.engine.describe().queue, entry => entry.candidate.id), ['2']);
+  assert.equal(app.engine.describe().renderedGameKey, 'baseball:2');
+  assert.equal(app.mount.dataset.rotationActive, 'false');
+  await app.engine.setHovered(false);
+  await app.advance(15000);
+  assert.equal(app.engine.describe().renderedGameKey, 'baseball:2');
+  await app.save({ lockedGameKeys: ['baseball:2', 'baseball:3'] });
+  assert.deepEqual(Array.from(app.engine.describe().queue, entry => entry.candidate.id), ['2', '3']);
+  await app.advance(5000);
+  assert.equal(app.engine.describe().renderedGameKey, 'baseball:3');
+  await app.advance(5000);
+  assert.equal(app.engine.describe().renderedGameKey, 'baseball:2');
+  await app.release(); await refresh; await app.flush();
+  assert.deepEqual(Array.from(app.engine.describe().queue, entry => entry.candidate.id), ['2', '3']);
+  await app.save({ lockedGameKeys: [] });
+  assert.deepEqual(Array.from(app.engine.describe().queue, entry => entry.candidate.id), ['1', '2', '3']);
+  await app.advance(10000);
+  assert.equal(app.engine.describe().renderedGameKey, 'baseball:1');
+});
+
+test('a lock supersedes an in-flight unlocked render', async () => {
+  const app = await fixture([], 3);
+  app.time(12000); app.hold();
+  const next = app.engine.next(); await app.flush();
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:2');
+  await app.save({ lockedGameKeys: ['baseball:1'] });
+  assert.equal(app.engine.describe().renderedGameKey, 'baseball:1');
+  await app.advance(15000);
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:1');
+  await app.release(); await next;
+  assert.equal(app.engine.describe().renderedGameKey, 'baseball:1');
+  assert.deepEqual(Array.from(app.engine.describe().queue, entry => entry.candidate.id), ['1']);
+  assert.equal(app.mount.dataset.rotationActive, 'false');
+});
+
+test('changing locks while disabling a sport cannot restore its cached queue', async () => {
+  const app = await fixture();
+  app.time(12000); app.hold();
+  const refresh = app.engine.refresh(); await app.flush();
+  await app.save({ sports: [{ ...app.config.sports[0], enabled: false }], lockedGameKeys: ['baseball:1'] });
+  assert.equal(app.engine.describe().queue.length, 0);
+  assert.equal(app.engine.describe().renderedGameKey, null);
+  await app.release(); await refresh; await app.flush();
+  assert.equal(app.engine.describe().queue.length, 0);
+});
+
 test("default timing changes immediately reschedule banner rotation", async () => {
   const app = await fixture();
   await app.advance(1000);
