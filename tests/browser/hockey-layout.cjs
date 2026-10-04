@@ -39,15 +39,15 @@ const root = path.resolve(__dirname, '../..');
         if (!row.name.includes('last-play')) assert.ok(row.scrollWidth<=row.clientWidth+1,`${label}: ${row.name} overflows horizontally`);
       }
     }
-    // Put the reported power-play + live-odds state first to reproduce the bug.
-    for (const preseason of [false,true]) for (const powerPlay of [true,false]) for (const lastPlay of [false,true]) for (const odds of ['live','mixed','none']) {
+    // Exercise both teams' indicators with every optional footer combination.
+    for (const preseason of [false,true]) for (const powerPlay of ['home','away',null]) for (const lastPlay of [false,true]) for (const odds of ['live','mixed','none']) {
       const label = JSON.stringify({preseason,powerPlay,lastPlay,odds});
       await engine.evaluate(({preseason,powerPlay,lastPlay,odds})=>{
         const api=window.SportsOverlay;
         window.testLayout=api.hockeyLayout.createLayout();
         window.testEvent=api.registry.getDemo('hockey','live');
         testEvent.startTime=new Date().toISOString();
-        Object.assign(testEvent.details,{preseason,powerPlayActive:powerPlay,lastPlay:lastPlay ? 'A long play description that should scroll while keeping the complete odds footer visible.' : ''});
+        Object.assign(testEvent.details,{preseason,powerPlayActive:Boolean(powerPlay),powerPlayTeamId:powerPlay ? testEvent.teams[powerPlay].id : null,lastPlay:lastPlay ? 'A long play description that should scroll while keeping the complete odds footer visible.' : ''});
         if(odds!=='none') testEvent.details.odds={
           spread:{pregame:odds==='mixed'?{away:-1.5,home:1.5}:{},live:odds==='mixed'?{away:-2.5}:{away:-1.5,home:1.5},prices:{pregame:{away:-120,home:121},live:{away:120,home:-121}}},
           moneyline:{pregame:odds==='mixed'?{away:-185,home:154}:{},live:odds==='mixed'?{home:220}:{away:-120,home:-110}},
@@ -57,9 +57,22 @@ const root = path.resolve(__dirname, '../..');
       await engine.clock.runFor(20);
       await assertFits(engine,label);
       if(odds!=='none') assert.equal(await engine.locator('.sports-odds').count(),1);
-      assert.equal(await engine.locator('#hockey-advantage').isVisible(),powerPlay);
+      assert.equal(await engine.locator('#hockey-advantage').count(),0);
+      for (const side of ['away','home']) {
+        const indicator = engine.locator(`#hockey-${side}-pp`);
+        assert.equal(await indicator.isVisible(),powerPlay===side);
+        if (powerPlay===side) {
+          assert.equal(await indicator.innerText(),'PP');
+          const geometry = await indicator.evaluate(el=>{
+            const badge=el.getBoundingClientRect(), label=el.previousElementSibling.getBoundingClientRect(), team=el.closest('.hockey-team').getBoundingClientRect();
+            return {left:badge.left,right:badge.right,labelRight:label.right,teamRight:team.right};
+          });
+          assert.ok(geometry.left>=geometry.labelRight && geometry.left-geometry.labelRight<=5,`${label}: PP sits next to team name`);
+          assert.ok(geometry.right<=geometry.teamRight,`${label}: PP fits inside its team`);
+        }
+      }
       if (preseason) {
-        const marker = await engine.locator(powerPlay ? '#hockey-advantage' : '#sports-overlay')
+        const marker = await engine.locator('#sports-overlay')
           .evaluate(el=>({content:getComputedStyle(el,'::before').content,display:getComputedStyle(el,'::before').display}));
         assert.match(marker.content,/PRESEASON/);
         assert.notEqual(marker.display,'none',`${label}: preseason marker remains visible`);
@@ -70,6 +83,7 @@ const root = path.resolve(__dirname, '../..');
     frame={instance:'hockey-layout',sequence:1,ready:true,gameKey:'hockey:test',html:await engine.locator('#sports-overlay').evaluate(mount=>{
       window.testEvent.details.preseason=true;
       window.testEvent.details.powerPlayActive=true;
+      window.testEvent.details.powerPlayTeamId=window.testEvent.teams.home.id;
       window.testEvent.details.odds={spread:{live:{away:-1.5,home:1.5}},moneyline:{live:{away:-120,home:-110}}};
       window.testLayout.render(window.testEvent);
       return mount.outerHTML;
@@ -77,7 +91,7 @@ const root = path.resolve(__dirname, '../..');
     const display=await context.newPage();
     // The desktop preload exposes this API; enable the real resize/zoom path
     // without launching another sports engine in this passive browser fixture.
-    await display.addInitScript(()=>{window.sportsDesktop={action:async()=>({})};});
+    await display.addInitScript(()=>{window.sportsDesktop={action:async()=>({}),onFrame:()=>{},onFullscreenChange:()=>{},status:async()=>({fullscreen:false})};});
     display.on('pageerror',error=>errors.push(error.message));
     for (const scale of [0.5,1,2,3]) {
       await display.setViewportSize({width:472*scale,height:100*scale});
@@ -85,12 +99,15 @@ const root = path.resolve(__dirname, '../..');
       await display.locator('.hockey-scorebug .sports-odds').waitFor();
       await assertFits(display,`passive display ${scale}x`,scale);
       assert.match(await display.locator('.sports-odds').innerText(),/LIVE PUCK LINE.*LIVE ML/s);
+      assert.equal(await display.locator('#hockey-home-pp').isVisible(),true);
+      assert.equal(await display.locator('#hockey-away-pp').isHidden(),true);
       if(scale===2) await display.screenshot({path:'/private/tmp/sportsover-hockey-fixed-200.png'});
     }
     for (const state of ['pregame','interrupted','final']) {
       await engine.evaluate(state=>{testEvent.state=state;testLayout.render(testEvent)},state);
       await assertFits(engine,state);
-      assert.equal(await engine.locator('#hockey-advantage').isHidden(),true);
+      assert.equal(await engine.locator('#hockey-away-pp').isHidden(),true);
+      assert.equal(await engine.locator('#hockey-home-pp').isHidden(),true);
     }
     assert.deepEqual(errors,[]);
     console.log('NHL frame checks passed: power plays, last plays, live/mixed odds, preseason, state changes, and passive output at 50–300%.');

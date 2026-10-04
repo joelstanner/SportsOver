@@ -15,6 +15,9 @@
 .hockey-main { display: grid; grid-template-columns: 1fr 72px 1fr; align-items: center; min-height: 42px; padding: 0 13px; }
 .hockey-team { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .hockey-team--home { justify-content: flex-end; text-align: right; }
+.hockey-team-heading { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.hockey-team--home .hockey-team-heading { justify-content: flex-end; }
+.hockey-pp { flex: 0 0 auto; padding: 0 3px; border-radius: 3px; background: rgba(255, 209, 102, 0.18); color: #ffdc87; font-size: 0.55em; line-height: 13px; font-weight: 850; letter-spacing: 0.04em; }
 .hockey-mark { display: grid; place-items: center; width: 27px; height: 27px; flex: 0 0 27px; border-radius: 50%; background: rgba(var(--team-accent-rgb, 75, 180, 197), 0.2); color: var(--team-accent-text, #8de4ef); font-size: 8px; font-weight: 900; }
 .hockey-mark img { width: 26px; height: 26px; object-fit: contain; }
 .hockey-mark img:not([hidden]) + span { display: none; }
@@ -26,7 +29,6 @@
 .hockey-center span { color: #7fd8e5; font-size: 0.62em; line-height: 11px; font-weight: 800; letter-spacing: 0.08em; }
 .hockey-status { display: flex; justify-content: space-between; align-items: center; min-height: 26px; padding: 0 15px; border-top: 1px solid var(--hockey-line); }
 .hockey-status strong { color: #7fd8e5; font-size: 0.76em; letter-spacing: 0.05em; text-transform: uppercase; }
-.hockey-advantage { padding: 1px 10px; box-shadow: inset 0 1px rgba(255, 209, 102, 0.4); background: rgba(255, 209, 102, 0.14); color: #ffdc87; font-size: 0.6em; line-height: 11px; font-weight: 850; letter-spacing: 0.08em; text-align: center; white-space: nowrap; }
 .hockey-live-detail { display: grid; grid-template-columns: 1fr 1.35fr; box-shadow: inset 0 1px var(--hockey-line); background: rgba(2, 10, 17, 0.44); }
 .hockey-live-detail div { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 0.5px 8px; line-height: 12px; white-space: nowrap; border-right: 1px solid var(--hockey-line); }
 .hockey-live-detail div:last-child { border-right: 0; }
@@ -36,12 +38,9 @@
 
 /* Keep every optional row inside the shared 88px banner / 100px window. */
 .hockey-scorebug:has(.sports-odds) .hockey-main,
-.hockey-scorebug:has(.hockey-advantage:not([hidden])) .hockey-main,
 .hockey-scorebug[data-preseason="true"] .hockey-main { min-height: 30px; }
 .hockey-scorebug .sports-odds { column-gap: 10px; padding: 1px 6px; border-top: 0; box-shadow: inset 0 1px var(--hockey-line); line-height: 12px; }
 .hockey-scorebug .sports-odds:has(div:nth-child(3)) { column-gap: 4px; font-size: 8px; }
 .hockey-scorebug .sports-odds:has(div:nth-child(3)) div { gap: 4px; }
 .hockey-scorebug .sports-odds:has(div:nth-child(3)) .sports-odds-label { font-size: 7px; letter-spacing: 0; }
 #sports-overlay.hockey-scorebug[data-preseason="true"]::before { padding: 1px 12px; line-height: 10px; }
-#sports-overlay.hockey-scorebug[data-preseason="true"]:has(.hockey-advantage:not([hidden]))::before { display: none; }
-.hockey-scorebug[data-preseason="true"] .hockey-advantage::before { content: "PRESEASON · "; }

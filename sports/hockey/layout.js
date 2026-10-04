@@ -13,18 +13,17 @@
       <section class="hockey-main">
         <div class="hockey-team">
           <a id="hockey-away-mark" class="hockey-mark"><img alt="" hidden><span>AWY</span></a>
-          <div class="team-name-slot"><a class="team-name-label" id="hockey-away-abbr">AWY</a><span id="hockey-away-record" class="hockey-record"></span></div>
+          <div class="team-name-slot"><div class="hockey-team-heading"><a class="team-name-label" id="hockey-away-abbr">AWY</a><span id="hockey-away-pp" class="hockey-pp" hidden>PP</span></div><span id="hockey-away-record" class="hockey-record"></span></div>
           <strong id="hockey-away-score" class="hockey-score">—</strong>
         </div>
         <div class="hockey-center"><strong id="hockey-clock">—</strong><span id="hockey-period">—</span></div>
         <div class="hockey-team hockey-team--home">
           <strong id="hockey-home-score" class="hockey-score">—</strong>
-          <div class="team-name-slot"><a class="team-name-label" id="hockey-home-abbr">HME</a><span id="hockey-home-record" class="hockey-record"></span></div>
+          <div class="team-name-slot"><div class="hockey-team-heading"><a class="team-name-label" id="hockey-home-abbr">HME</a><span id="hockey-home-pp" class="hockey-pp" hidden>PP</span></div><span id="hockey-home-record" class="hockey-record"></span></div>
           <a id="hockey-home-mark" class="hockey-mark"><img alt="" hidden><span>HME</span></a>
         </div>
       </section>
       <section id="hockey-status" class="hockey-status" hidden><span id="hockey-matchup"></span><strong id="hockey-status-text"></strong></section>
-      <section id="hockey-advantage" class="hockey-advantage" hidden>POWER PLAY ACTIVE</section>
       <section id="hockey-live-detail" class="hockey-live-detail" hidden>
         <div><span>SHOTS</span><strong id="hockey-shots"></strong></div>
         <div><span title="Power-play goals / opportunities">PP GOALS / OPP</span><strong id="hockey-power-play"></strong></div>
@@ -41,7 +40,7 @@
       clock: find("#hockey-clock"), period: find("#hockey-period"),
       status: find("#hockey-status"), matchup: find("#hockey-matchup"), statusText: find("#hockey-status-text"),
       detail: find("#hockey-live-detail"), shots: find("#hockey-shots"), powerPlay: find("#hockey-power-play"),
-      advantage: find("#hockey-advantage"),
+      awayPp: find("#hockey-away-pp"), homePp: find("#hockey-home-pp"),
       lastPlay: find("#hockey-last-play"), lastPlayText: find("#hockey-last-play-text"), lastPlayViewport: find("#hockey-last-play .scorebug-scroll-viewport"),
     };
 
@@ -58,15 +57,18 @@
       const showScore = event.state !== EVENT_STATES.PREGAME;
       els.awayScore.textContent = showScore ? away.score ?? 0 : "";
       els.homeScore.textContent = showScore ? home.score ?? 0 : "";
-      hide(els.status); hide(els.detail); hide(els.lastPlay); hide(els.advantage);
+      hide(els.status); hide(els.detail); hide(els.lastPlay);
+      clearPowerPlay();
 
       if (event.state === EVENT_STATES.LIVE) {
         const details = event.details;
         if (details.powerPlayActive === true) {
-          const team = [away, home].find(team => team.id === details.powerPlayTeamId);
-          els.advantage.textContent = team ? `${team.abbreviation} POWER PLAY` : "POWER PLAY ACTIVE";
-          els.advantage.setAttribute("aria-label", team ? `${team.name} power play` : "Power play active");
-          show(els.advantage);
+          for (const [team, indicator] of [[away, els.awayPp], [home, els.homePp]]) {
+            if (team.id !== details.powerPlayTeamId) continue;
+            indicator.title = `${team.name} power play`;
+            indicator.setAttribute("aria-label", indicator.title);
+            show(indicator);
+          }
         }
         els.clock.textContent = details.clock || "—";
         els.period.textContent = details.period || "—";
@@ -97,7 +99,7 @@
       global.SportsOverlay.teamNames.clearLinks(els.awayAbbr, els.homeAbbr, els.awayMark, els.homeMark);
       global.SportsOverlay.odds?.clear(els.bug);
       delete els.bug.dataset.preseason;
-      hide(els.advantage);
+      clearPowerPlay();
       els.bug.classList.remove("is-loading");
       els.bug.classList.toggle("is-hidden", !visible);
       if (!visible) return;
@@ -106,6 +108,14 @@
       els.matchup.textContent = "Hockey";
       els.statusText.textContent = message;
       hide(els.detail); hide(els.lastPlay); show(els.status);
+    }
+
+    function clearPowerPlay() {
+      for (const indicator of [els.awayPp, els.homePp]) {
+        hide(indicator);
+        indicator.removeAttribute("title");
+        indicator.removeAttribute("aria-label");
+      }
     }
 
     function handleError(message, error) {

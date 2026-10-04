@@ -76,28 +76,40 @@ const root = path.resolve(__dirname, '../..');
             window.testEvent.details.powerPlayActive = active;
             window.testLayout.render(window.testEvent);
           }, { state, active });
-          assert.equal(await page.locator('#hockey-advantage').isVisible(), visible);
+          assert.equal(await page.locator('#hockey-advantage').count(), 0);
+          assert.equal(await page.locator('#hockey-home-pp').isVisible(), visible);
+          assert.equal(await page.locator('#hockey-away-pp').isHidden(), true);
           if (visible) {
-            assert.equal(await page.locator('#hockey-advantage').innerText(), 'SEA POWER PLAY');
+            assert.equal(await page.locator('#hockey-home-pp').innerText(), 'PP');
+            assert.equal(await page.locator('#hockey-home-pp').getAttribute('aria-label'), 'Seattle Kraken power play');
             assert.equal(await page.locator('#hockey-power-play').innerText(), 'VAN 0/2 · SEA 1/3');
             assert.equal(await page.locator('#sports-overlay').evaluate(el => el.scrollWidth <= el.clientWidth), true);
             await page.screenshot({ path: '/tmp/sportsover-hockey-power-play.png' });
           }
         }
-        for (const [teamId, text] of [['23', 'VAN POWER PLAY'], [null, 'POWER PLAY ACTIVE'], ['unknown', 'POWER PLAY ACTIVE']]) {
+        for (const teamId of ['23', '124292', null, 'unknown']) {
           await page.evaluate(teamId => {
             window.testEvent.state = 'live';
             window.testEvent.details.powerPlayActive = true;
             window.testEvent.details.powerPlayTeamId = teamId;
             window.testLayout.render(window.testEvent);
           }, teamId);
-          assert.equal(await page.locator('#hockey-advantage').innerText(), text);
+          for (const [side, id, name] of [['away', '23', 'Vancouver Canucks'], ['home', '124292', 'Seattle Kraken']]) {
+            const indicator = page.locator(`#hockey-${side}-pp`);
+            assert.equal(await indicator.isVisible(), teamId === id);
+            assert.equal(await indicator.getAttribute('aria-label'), teamId === id ? `${name} power play` : null);
+            assert.equal(await indicator.getAttribute('title'), teamId === id ? `${name} power play` : null);
+          }
         }
         await page.evaluate(() => {
-          window.testEvent.state = 'live'; window.testLayout.render(window.testEvent);
+          window.testEvent.state = 'live';
+          window.testEvent.details.powerPlayTeamId = window.testEvent.teams.home.id;
+          window.testLayout.render(window.testEvent);
           window.testLayout.renderNoEvent();
         });
-        assert.equal(await page.locator('#hockey-advantage').isHidden(), true);
+        assert.equal(await page.locator('#hockey-away-pp').isHidden(), true);
+        assert.equal(await page.locator('#hockey-home-pp').isHidden(), true);
+        assert.equal(await page.locator('#hockey-home-pp').getAttribute('aria-label'), null);
       }
       if (sport === 'college-basketball') {
         await page.evaluate(() => {
