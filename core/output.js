@@ -29,8 +29,8 @@
   }
   // Keep unchanged subtrees mounted so unrelated score/footer updates do not
   // restart their CSS animations. Changed text gets a fresh animation.
-  function updateNode(current, next) {
-    if (current.isEqualNode(next)) return;
+  function updateNode(current, next, restartChildren = false) {
+    if (!restartChildren && current.isEqualNode(next)) return;
     if (current.nodeType !== next.nodeType || current.nodeName !== next.nodeName
       || current.nodeType !== Node.ELEMENT_NODE || current.id !== next.id
       || (!current.children.length && !next.children.length && current.textContent !== next.textContent)) {
@@ -49,6 +49,10 @@
     }
     for (const attribute of next.attributes) {
       if (current.getAttribute(attribute.name) !== attribute.value) current.setAttribute(attribute.name, attribute.value);
+    }
+    if (restartChildren) {
+      current.replaceChildren(...next.childNodes);
+      return;
     }
     const children = [...current.childNodes];
     const nextChildren = [...next.childNodes];
@@ -98,8 +102,9 @@
     // Identical rows on different cards still need a fresh animation. Reusing
     // the track can carry its elapsed time (including the bottom hold) across
     // rotation. Preserve running subtrees only for updates to the current card.
-    if (sameGame) updateNode(mount, template.content.firstElementChild);
-    else mount.replaceWith(template.content.firstElementChild);
+    // Keep the mount for transition events that may still be queued by a
+    // hidden output window; only the incoming card's contents need replacing.
+    updateNode(mount, template.content.firstElementChild, !sameGame);
     scrolling?.restore(document.querySelector('#sports-overlay'),
       sameGame ? scrollSnapshot : null);
     window.SportsOverlay.countdown?.refresh();

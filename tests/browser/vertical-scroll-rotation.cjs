@@ -83,10 +83,20 @@ const root = path.resolve(__dirname, '../..');
         assert.equal(await output.evaluate(() => document.querySelector('.scorebug-vertical-track') === previousTrack), true,
           'same-card score updates keep the track');
         assert.ok(await position() >= scrolled - 1, 'same-card updates keep the scroll progress');
+        await output.evaluate(() => {
+          window.cardAnimations = [];
+          window.transitionController?.abort();
+          window.transitionController = new AbortController();
+          document.querySelector('#sports-overlay').addEventListener('animationstart', event => {
+            if (event.animationName.startsWith('sports-rotate-')) window.cardAnimations.push(event.animationName);
+          }, { signal: window.transitionController.signal });
+        });
         await deliver(second, transition);
         assert.equal(await position(), 0, `${sport}: ${transition} rotation from ${elapsed}ms starts at the first row`);
         assert.equal(await output.evaluate(() => document.querySelector('.scorebug-vertical-track').getAnimations()[0] === previousAnimation), false,
           'a different card gets a fresh animation');
+        assert.ok((await output.evaluate(() => window.cardAnimations)).includes(transition === 'quick' ? 'sports-rotate-quick' : 'sports-rotate-in'),
+          'rotation keeps the mount connected so its transition events remain observable');
         await deliver(first, 'quick');
         assert.equal(await position(), 0, `${sport}: returning to an earlier card starts at the first row`);
       }
