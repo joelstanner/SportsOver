@@ -3,6 +3,24 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.31.0 — 2026-10-04
+
+### Added
+
+- Apply the Live control sport filter to the banner, including Live mode, with
+  saved settings and restoration of the full rotation when the filter is off.
+- Browse banner games with Left/Right arrows while Settings is focused.
+
+### Fixed
+
+- Empty sport filters clear the previous card and show the selected sport's
+  no-games message. Temporary overrides respect the active sport filter.
+- Game locks apply immediately during pending refreshes and discard delayed
+  rotation changes, including those waiting for hover to end.
+- Halftime and interrupted game labels stay current as play pauses and resumes.
+
+Existing settings are preserved. No migration is required.
+
 ## 0.30.2 — 2026-10-03
 
 ### Changed
