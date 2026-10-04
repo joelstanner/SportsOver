@@ -367,6 +367,12 @@ else {
       else if (action === 'next') {
         engineWindow.webContents.send('engine:command', { type: 'next' });
       }
+      else if (action === 'browse-banner') {
+        if (event.sender !== settings?.webContents) throw Error('Settings access required');
+        if (value !== 'previous' && value !== 'next') throw Error('Banner browsing requires a direction');
+        bannerGesture({ phase: 'cancel' });
+        engineWindow.webContents.send('engine:command', { type: value, fast: true });
+      }
       else if (action === 'copy-obs') { if (obsUrl) clipboard.writeText(obsUrl); }
       else if (action === 'copy-token') {
         if (event.sender !== settings?.webContents) throw Error('Settings access required');

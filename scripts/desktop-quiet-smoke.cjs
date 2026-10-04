@@ -38,6 +38,7 @@ module.exports = async ({ pages, directory, launch, application }) => {
   await engine.waitForFunction(() => window.SportsOverlay.engine.describe().liveMode.active);
   await admin.locator('#available-games [data-game-key="baseball:2"] .add-game').click();
   await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 2);
+  await require('./settings-arrows-smoke.cjs')({ admin, engine });
   await admin.locator('#rotation-queue [data-game-key="baseball:2"] .remove-game').click();
   await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 1);
   await admin.locator('#live-mode').click();

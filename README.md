@@ -56,7 +56,7 @@ show a countdown, then **Starting soon** until the feed reports play.
 
 | Action | Control |
 | --- | --- |
-| Browse games | Click the leftmost 20% for previous; click elsewhere for next. With the banner focused, use Left/Right arrows. |
+| Browse games | Click the leftmost 20% for previous; click elsewhere for next. With the banner or Settings focused, use Left/Right arrows. In Settings, arrows retain their normal behavior in fields, selectors, and dialogs. |
 | Move | Drag anywhere on the unlocked banner. |
 | Resize | Double-click the unlocked banner's left half to shrink or right half to enlarge. Size presets (50–300%) are also in Settings and menus. |
 | Open Settings | Right-click the banner and choose **Settings…**, or use the tray/menu bar. |

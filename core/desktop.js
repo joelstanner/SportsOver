@@ -125,7 +125,7 @@
       <h3>Banner controls</h3>
       <dl class="desktop-gestures">
         <div><dt>Browse games <span>Click</span></dt><dd>Leftmost 20%: previous item. Anywhere else: next item. Team names and logos open the game in your browser. PDGA and chess links also open in your browser.</dd></div>
-        <div><dt>Browse games <span>Left / Right arrows</span></dt><dd>With the banner focused, press Left for the previous item or Right for the next item, with a quick transition. Works in fullscreen and while the banner position is locked.</dd></div>
+        <div><dt>Browse games <span>Left / Right arrows</span></dt><dd>With the banner or Settings focused, press Left for the previous item or Right for the next item, with a quick transition. In Settings, arrows keep their normal behavior while editing fields, choosing options, or using a dialog. Works in fullscreen and while the banner position is locked.</dd></div>
         <div><dt>Scroll lists <span>Wheel or trackpad</span></dt><dd>Scroll PDGA and chess rows while hovering to pause automatic movement. Touch swipes also work. With the list focused, use Up/Down arrows, Page Up/Down, or Home/End. Automatic scrolling resumes after you leave and move keyboard focus away.</dd></div>
         <div><dt>Resize <span>Double-click</span></dt><dd>When unlocked: left half makes it smaller; right half makes it bigger. Size ranges from 50% to 300%.</dd></div>
         <div><dt>Move <span>Drag</span></dt><dd>When unlocked: click anywhere and drag to reposition. Dragging and resizing keep the current game.</dd></div>
@@ -185,6 +185,15 @@
     if (document.activeElement !== select) select.value = String(Math.round(value.scale * 100) / 100);
   }
   async function action(name, value) { try { render(await api.action(name, value)); } catch (error) { showWarning(error.message); } }
+  document.addEventListener('keydown', event => {
+    if (event.defaultPrevented || event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
+      || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    const target = event.target;
+    if (target.isContentEditable || target.closest('input, textarea, select, [role="textbox"], [role="combobox"], [role="slider"], [role="spinbutton"], [role="listbox"], [role="tablist"], [role="menu"]')
+      || document.querySelector('dialog[open]')) return;
+    event.preventDefault();
+    void action('browse-banner', event.key === 'ArrowLeft' ? 'previous' : 'next');
+  });
   document.querySelectorAll('[data-desktop]').forEach(button => button.addEventListener('click', () => action(button.dataset.desktop)));
   section.querySelector('select').addEventListener('change', event => action('size', Number(event.target.value)));
   async function poll() { try { render(await api.status()); } catch (error) { showWarning(error.message); } }

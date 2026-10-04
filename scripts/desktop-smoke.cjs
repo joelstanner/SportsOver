@@ -309,10 +309,19 @@ const quiet = testMode() === 'quiet';
     await banner.waitForFunction(() => window.arrowTransitions.length >= 2);
     assert.deepEqual(await banner.evaluate(() => window.arrowTransitions.slice(0, 2)), [0.1, 0.1], 'arrows use a 100 ms transition');
     await nativeKey(banner, 'Right', ['control']);
+    await admin.evaluate(() => document.activeElement.blur());
+    await nativeKey(admin, 'Right');
+    await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey === key, initialGame);
+    await nativeKey(admin, 'Left');
+    await engine.waitForFunction(key => window.SportsOverlay.engine.describe().renderedGameKey === key, skippedGame);
+    await admin.getByRole('button', { name: 'Settings', exact: true }).click();
+    await admin.locator('#live-mode-final-minutes').focus();
     await nativeKey(admin, 'Right');
     await admin.waitForTimeout(250);
     assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame,
-      'modified arrows and arrows in Settings do not navigate the banner');
+      'modified arrows and Settings field arrows do not navigate the banner');
+    await admin.getByRole('button', { name: 'Live control', exact: true }).click();
+    await require('./settings-arrows-smoke.cjs')({ admin, engine });
 
     const doubleClickBanner = async direction => {
       const width = await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
