@@ -62,7 +62,14 @@ function secure(win) {
       setFullscreen(false);
     }
   });
-  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (win === settings) {
+      try {
+        shell.openExternal(bannerUrl(url)).catch(error => console.error('Could not open tournament link:', error));
+      } catch (_) { /* Only recognized sports links may leave Settings. */ }
+    }
+    return { action: 'deny' };
+  });
   win.webContents.on('will-navigate', (event, url) => { if (!trusted(url)) event.preventDefault(); });
   win.webContents.on('will-attach-webview', event => event.preventDefault());
   win.webContents.on('render-process-gone', () => { if (!quitting) { lock(false); openSettings(); } });
