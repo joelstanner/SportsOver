@@ -3,6 +3,16 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.30.1 — 2026-10-03
+
+### Changed
+
+- Hockey banners show full team names during intermissions, including
+  End of 1st Period and End of 2nd Period, then return to abbreviations
+  when play resumes.
+
+Existing settings are preserved. No migration is required.
+
 ## 0.30.0 — 2026-10-03
 
 ### Added
