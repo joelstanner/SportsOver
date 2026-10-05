@@ -836,7 +836,7 @@
     document.querySelector("#reset-rotation").disabled = active;
     document.querySelector("#unlock-all-games").disabled = workingConfig.lockedGameKeys.length === 0;
     document.querySelector("#live-mode-note").textContent = active
-      ? `Live mode is on. Game locks apply to eligible live games. Finished games stay for ${workingConfig.liveModeFinalMinutes} minutes. Turn off to restore your full rotation.`
+      ? `Live mode is on. Pins apply to eligible live games. Finished games stay for ${workingConfig.liveModeFinalMinutes} minutes. Turn off to restore your full rotation.`
       : "Show only live games from your rotation. Finished games stay for the time set in Settings.";
     const queue = currentRotationQueue();
     const queueList = document.querySelector("#rotation-queue");
@@ -944,11 +944,11 @@
     card.querySelector(".game-down").addEventListener("click", () => moveRotationGame(queue, index, 1));
     const lockButton = card.querySelector(".lock-game");
     const locked = workingConfig.lockedGameKeys.includes(key);
-    lockButton.textContent = locked ? "Locked" : "Lock";
+    lockButton.textContent = locked ? "Pinned" : "Pin";
     lockButton.classList.toggle("is-locked", locked);
     lockButton.setAttribute("aria-pressed", String(locked));
-    lockButton.title = locked ? "Unlock this game to resume the rest of the rotation."
-      : "Rotate only locked games that are eligible in the current mode.";
+    lockButton.title = locked ? "Unpin this game. When no games are pinned, the full rotation resumes."
+      : "Pin this game to show only pinned games that are eligible in the current mode.";
     lockButton.addEventListener("click", () => toggleGameLock(entry));
     card.querySelector(".remove-game").addEventListener("click", () => removeRotationGame(entry));
     list.append(card);
@@ -1216,7 +1216,7 @@
   function unlockAllGames() {
     const previousLiveConfig = savedLiveConfig();
     workingConfig.lockedGameKeys = [];
-    autoApplyLiveChange(previousLiveConfig, "All games unlocked · rotation resumed");
+    autoApplyLiveChange(previousLiveConfig, "All games unpinned · rotation resumed");
   }
 
   function applyBannerSportFilter(sport) {
@@ -1235,8 +1235,8 @@
       : workingConfig.lockedGameKeys.filter(item => item !== key);
     const lockCount = workingConfig.lockedGameKeys.length;
     autoApplyLiveChange(previousLiveConfig, locking
-      ? `${gameName(entry.candidate)} locked · ${lockCount} selected`
-      : `${gameName(entry.candidate)} unlocked${lockCount ? ` · ${lockCount} selected` : " · full rotation resumed"}`);
+      ? `${gameName(entry.candidate)} pinned · ${lockCount} pinned`
+      : `${gameName(entry.candidate)} unpinned${lockCount ? ` · ${lockCount} pinned` : " · full rotation resumed"}`);
   }
 
   function adjustGameDuration(entry, offset) {

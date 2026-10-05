@@ -172,6 +172,7 @@ const quiet = testMode() === 'quiet';
     await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.some(entry => entry.candidate.sport === 'baseball' && entry.candidate.id === '3'));
     await admin.getByRole('button', { name: 'Live control', exact: true }).click();
     await admin.locator('#rotation-queue [data-game-key="baseball:3"]').waitFor();
+    await require('./banner-game-lock-smoke.cjs')({ application, admin, engine, directory });
     // Manual refresh acknowledges engine completion, not an intermediate frame.
     await engine.evaluate(() => {
       const api = window.SportsOverlay.engine;

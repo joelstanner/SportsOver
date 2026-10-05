@@ -7,6 +7,7 @@ const { Store, applyCatalog } = require('./store.cjs');
 const { fitBounds, fullscreenBounds, BANNER_SCALES, stepBannerScale } = require('./bounds.cjs');
 const { createBannerGesture } = require('./banner-gesture.cjs');
 const { bannerUrl } = require('./banner-link.cjs');
+const { gameLockMenuItem } = require('./banner-game-lock.cjs');
 const { createHandler, ORIGIN } = require('./protocol.cjs');
 const { createUpdateChecker } = require('./updates.cjs');
 const updateChecker = createUpdateChecker({ app, dialog, shell, onStateChange: menus,
@@ -279,16 +280,18 @@ else {
     banner.webContents.on('did-start-loading', () => setBannerHovered(false));
     banner.webContents.on('render-process-gone', () => setBannerHovered(false));
     banner.webContents.on('context-menu', () => {
-      if (quietTest) return;
       bannerGesture({ phase: 'cancel' });
-      Menu.buildFromTemplate([
+      const menu = Menu.buildFromTemplate([
         { label: 'Settings…', click: openSettings },
+        gameLockMenuItem({ engine: engineState, store,
+          onError: error => showError('SportsOver could not pin or unpin this game', error.message) }),
         { id: 'lock-banner', label: 'Lock banner position', type: 'checkbox', checked: locked, click: item => lock(item.checked) },
         fullscreenMenuItem(),
         bannerSizeMenuItem(),
         { id: 'hide-banner', label: 'Hide banner', click: hideBanner },
         updateChecker.menuItem(),
-      ]).popup({ window: banner });
+      ]);
+      if (!quietTest) menu.popup({ window: banner });
     });
     banner.setAlwaysOnTop(true, process.platform === 'win32' ? 'pop-up-menu' : 'floating');
     if (process.platform === 'darwin') banner.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });

@@ -40,8 +40,8 @@ use the tray/menu-bar icon to reopen it or choose **Quit SportsOver**.
   score refresh intervals and fallback behavior. Changes save automatically.
   Use **Export settings** / **Import settings…** here or in the File menu for backups.
 - **Live control:** add or exclude games, reorder the rotation, set display
-  durations, and choose automatic, hybrid, or curated queues. Lock one game to
-  hold it, or several to rotate among them; **Unlock all** clears game locks.
+  durations, and choose automatic, hybrid, or curated queues. Pin one game to
+  hold it, or several to rotate among them; **Unpin all** clears game pins.
 - **Live mode:** show live games from your rotation, with configurable finished-game
   retention (20 minutes by default). Tournament breaks leave Live mode until play
   resumes; team-sport breaks remain eligible. Live mode starts off after a restart.

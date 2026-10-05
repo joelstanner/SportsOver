@@ -86,7 +86,7 @@
                 <p><strong>Automatic priority:</strong> Each included watched team contributes its live game or its selected fallback game, in team rank order. Shared matchups appear once. When no watched game is live, add a live spotlight game when available.</p>
                 <p><strong>Rotate watched teams + spotlight:</strong> Currently uses the same selection as Automatic priority. Selected games rotate using Live control’s order and durations.</p>
                 <p><strong>Top watched team only:</strong> For each enabled sport, show only the top included watched team’s live game or fallback game, without spotlight games.</p>
-                <p>The fallback choice applies separately to each watched team that is not playing live. Live control’s queue mode, manual choices, and locks determine the final rotation. Changes save automatically.</p>
+                <p>The fallback choice applies separately to each watched team that is not playing live. Live control’s queue mode, manual choices, and pins determine the final rotation. Changes save automatically.</p>
               </div>
             </div>
           </div>
@@ -156,14 +156,14 @@
           <label>Final <input type="number" data-default-duration="final" min="5" max="300" step="5" required></label>
           <span>5–300 seconds, in steps of 5. Type a value and press Enter or leave the field to apply. Individual game timings take priority.</span>
         </div>
-        <p class="timing-defaults">Lock one to hold; lock several to rotate only those games.</p>
+        <p class="timing-defaults">Pin one to hold; pin several to rotate only those games.</p>
 
         <div class="rotation-columns">
           <section class="rotation-column">
             <div class="rotation-column-heading">
               <div><p class="section-kicker">ON BANNER</p><h3 id="rotation-control-heading">Rotation order</h3></div>
               <div class="rotation-heading-actions">
-                <button id="unlock-all-games" class="button button--secondary" type="button" title="Unlock all games, including games hidden by the sport filter." disabled>Unlock all</button>
+                <button id="unlock-all-games" class="button button--secondary" type="button" title="Unpin all games, including games hidden by the sport filter." disabled>Unpin all</button>
                 <span id="rotation-count" class="count-badge">0 games</span>
               </div>
             </div>
@@ -264,7 +264,7 @@
 
   <dialog id="reset-settings-dialog" class="reset-settings-dialog" aria-labelledby="reset-settings-heading" aria-describedby="reset-settings-description reset-settings-warning">
     <h2 id="reset-settings-heading">Restore default settings?</h2>
-    <p id="reset-settings-description">This replaces your watched teams, display preferences, refresh intervals, and rotation customizations with SportsOver defaults. Your custom game queue and game locks will be cleared.</p>
+    <p id="reset-settings-description">This replaces your watched teams, display preferences, refresh intervals, and rotation customizations with SportsOver defaults. Your custom game queue and game pins will be cleared.</p>
     <p id="reset-settings-warning" class="reset-settings-warning">Changes will be saved immediately. This cannot be undone.</p>
     <div class="actions">
       <button id="cancel-reset-settings" class="button button--secondary" type="button" autofocus>Cancel</button>
@@ -315,7 +315,7 @@
         <button class="icon-button game-down" type="button" aria-label="Move game down">↓</button>
       </div>
       <div class="game-actions">
-        <button class="lock-game" type="button">Lock</button>
+        <button class="lock-game" type="button">Pin</button>
         <button class="remove-game" type="button">Remove</button>
       </div>
     </article>

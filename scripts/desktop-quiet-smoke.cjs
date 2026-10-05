@@ -51,6 +51,7 @@ module.exports = async ({ pages, directory, launch, application }) => {
   await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 2);
   await banner.locator('#game-view').waitFor({ state: 'visible' });
   await admin.locator('#queue-sport-filter').selectOption('');
+  await require('./banner-game-lock-smoke.cjs')({ application: application(), admin, engine, directory });
   await require('./settings-arrows-smoke.cjs')({ admin, engine });
   await admin.locator('#rotation-queue [data-game-key="baseball:2"] .remove-game').click();
   await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 1);
