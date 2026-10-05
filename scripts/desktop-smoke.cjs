@@ -179,11 +179,19 @@ const quiet = testMode() === 'quiet';
       window.realRefresh = api.refresh;
       window.realDescribe = api.describe;
       // Other sports intentionally have no fixtures in this desktop scenario.
-      api.describe = () => ({ ...window.realDescribe(), discoveryFailures: 0 });
-      api.refresh = () => new Promise(resolve => { window.finishTestRefresh = resolve; });
+      const state = { ...window.realDescribe(), discoveryFailures: 0 };
+      api.describe = () => state;
+      api.refresh = async () => {};
     });
     const refreshButton = admin.locator('#refresh-games');
     const refreshStatus = admin.locator('#refresh-games-status');
+    // Synchronize Settings with the fixed metadata before checking a delayed
+    // refresh. Background discovery can still finish after the menu scenario.
+    await refreshButton.click();
+    await admin.waitForFunction(() => !document.querySelector('#refresh-games').disabled);
+    await engine.evaluate(() => {
+      window.SportsOverlay.engine.refresh = () => new Promise(resolve => { window.finishTestRefresh = resolve; });
+    });
     await refreshButton.click();
     await engine.waitForFunction(() => !!window.finishTestRefresh);
     assert.equal(await refreshButton.isDisabled(), true);
