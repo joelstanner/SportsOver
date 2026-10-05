@@ -37,8 +37,14 @@ module.exports = async ({ application, admin, engine, directory }) => {
     const other = initial.queue.find(entry => `${entry.candidate.sport}:${entry.candidate.id}` !== key);
     const otherKey = `${other.candidate.sport}:${other.candidate.id}`;
     const card = key => admin.locator(`#rotation-queue [data-game-key="${key}"] .lock-game`);
+    const pinnedOnly = admin.locator('#pinned-only');
+    const visibleKeys = () => admin.locator('#rotation-queue .game-card').evaluateAll(cards => cards.map(card => card.dataset.gameKey));
     assert.equal(await card(key).innerText(), 'Pin');
     assert.equal(await admin.locator('#unlock-all-games').innerText(), 'Unpin all');
+    const availableCount = await admin.locator('#available-games .game-card').count();
+    assert.equal(await pinnedOnly.isDisabled(), true, 'pinned-only filtering is unavailable without pins');
+    assert.equal(await pinnedOnly.getAttribute('aria-pressed'), 'false');
+    assert.equal((await visibleKeys()).length, initial.queue.length);
     assert.deepEqual(await open(), { enabled: true, checked: false, label: 'Pin current game' });
     await click(true);
     await engine.waitForFunction(key => window.SportsOverlay.engine.describe().queue.length === 1
@@ -47,12 +53,31 @@ module.exports = async ({ application, admin, engine, directory }) => {
     await admin.waitForFunction(key => document.querySelector(`#rotation-queue [data-game-key="${key}"] .lock-game`)
       ?.getAttribute('aria-pressed') === 'true', key);
     assert.equal(await card(key).innerText(), 'Pinned');
+    assert.equal(await pinnedOnly.isEnabled(), true, 'pinning enables the filter');
+    const beforeFilter = await admin.evaluate(() => window.SportsOverlay.config.loadConfig());
+    await pinnedOnly.click();
+    assert.deepEqual(await visibleKeys(), [key]);
+    assert.equal(await pinnedOnly.getAttribute('aria-pressed'), 'true');
+    assert.deepEqual(await admin.evaluate(() => window.SportsOverlay.config.loadConfig()), beforeFilter, 'list filtering does not save rotation changes');
+    assert.equal(await admin.locator('#available-games .game-card').count(), availableCount, 'available games are not filtered');
+    assert.match(await admin.locator('#rotation-count').innerText(), new RegExp(`^1 of ${initial.queue.length} games`));
+    const pinnedConfig = await admin.evaluate(() => window.SportsOverlay.config.loadConfig());
+    await admin.locator('#queue-sport-filter').selectOption('chess');
+    assert.deepEqual(await visibleKeys(), []);
+    assert.equal(await admin.locator('#rotation-queue .rotation-empty').innerText(), 'No pinned games for this sport in rotation.');
+    await admin.locator('#queue-sport-filter').selectOption('');
+    assert.deepEqual(await visibleKeys(), [key]);
+    assert.deepEqual(await admin.evaluate(() => window.SportsOverlay.config.loadConfig()), pinnedConfig, 'pin and sport list filters preserve saved settings');
+    await admin.screenshot({ path: path.join(directory, 'pinned-only.png') });
     const saved = JSON.parse(await fs.readFile(path.join(directory, 'settings.json'), 'utf8'));
     assert.deepEqual(saved.config.lockedGameKeys, [key]);
     assert.equal(saved.desktop.locked, false, 'game locking does not lock banner position');
     assert.equal((await open()).checked, true);
     await card(key).click();
     await engine.waitForFunction(() => window.SportsOverlay.config.loadConfig().lockedGameKeys.length === 0);
+    assert.equal(await pinnedOnly.getAttribute('aria-pressed'), 'false', 'removing the last pin clears the filter');
+    assert.equal(await pinnedOnly.isDisabled(), true);
+    assert.equal((await visibleKeys()).length, initial.queue.length);
     assert.equal((await open()).checked, false, 'Live Control unlock updates banner menu');
     await card(key).click();
     await engine.waitForFunction(key => window.SportsOverlay.config.loadConfig().lockedGameKeys.includes(key), key);
@@ -61,6 +86,7 @@ module.exports = async ({ application, admin, engine, directory }) => {
     await engine.waitForFunction(() => window.SportsOverlay.config.loadConfig().lockedGameKeys.length === 2
       && window.SportsOverlay.engine.describe().queue.length === 2);
     await admin.waitForFunction(async () => (await window.sportsDesktop.engine()).queue.length === 2);
+    await pinnedOnly.click();
     // The captured menu still targets the original rendered game.
     await click(false);
     await engine.waitForFunction(otherKey => {
@@ -70,9 +96,14 @@ module.exports = async ({ application, admin, engine, directory }) => {
     }, otherKey);
     await admin.waitForFunction(key => document.querySelector(`#rotation-queue [data-game-key="${key}"] .lock-game`)
       ?.getAttribute('aria-pressed') === 'true', otherKey);
+    assert.deepEqual(await visibleKeys(), [otherKey]);
+    assert.equal(await pinnedOnly.getAttribute('aria-pressed'), 'true', 'the filter stays active while another pin remains');
     await admin.locator('#unlock-all-games').click();
+    assert.equal(await pinnedOnly.getAttribute('aria-pressed'), 'false', 'Unpin all immediately clears the filter');
+    assert.equal(await pinnedOnly.isDisabled(), true);
     await engine.waitForFunction(length => window.SportsOverlay.engine.describe().queue.length === length
       && window.SportsOverlay.config.loadConfig().lockedGameKeys.length === 0, initial.queue.length);
+    assert.equal((await visibleKeys()).length, initial.queue.length, 'Unpin all restores the full list');
     await admin.waitForFunction(() => [...document.querySelectorAll('#rotation-queue .lock-game')]
       .every(button => button.getAttribute('aria-pressed') === 'false'));
   } finally {

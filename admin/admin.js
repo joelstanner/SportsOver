@@ -81,6 +81,8 @@
   let engineLoading = Boolean(global.sportsDesktop);
   let bannerGameKey = null;
   let changingLiveMode = false;
+  let pinnedOnly = false;
+  const pinnedOnlyButton = document.querySelector("#pinned-only");
   const liveModeButton = document.querySelector("#live-mode");
   const liveModeFinalMinutes = document.querySelector("#live-mode-final-minutes");
 
@@ -184,6 +186,10 @@
   undoLiveButton.addEventListener("click", undoLastLiveChange);
   document.querySelector("#reset-rotation").addEventListener("click", resetRotation);
   document.querySelector("#unlock-all-games").addEventListener("click", unlockAllGames);
+  pinnedOnlyButton.addEventListener("click", () => {
+    pinnedOnly = !pinnedOnly;
+    renderRotationControls();
+  });
   document.querySelector("#live-sport").addEventListener("change", updateLive);
   document.querySelector("#refresh-live").addEventListener("click", updateLive);
   document.querySelector("#demo-sport").addEventListener("change", updateDemo);
@@ -834,10 +840,17 @@
       : canActivate ? "Show only live games from your rotation." : "No live games in rotation.";
     document.querySelector("#rotation-mode").disabled = active;
     document.querySelector("#reset-rotation").disabled = active;
-    document.querySelector("#unlock-all-games").disabled = workingConfig.lockedGameKeys.length === 0;
+    const hasPins = workingConfig.lockedGameKeys.length > 0;
+    document.querySelector("#unlock-all-games").disabled = !hasPins;
+    if (!hasPins) pinnedOnly = false;
+    pinnedOnlyButton.disabled = !hasPins;
+    pinnedOnlyButton.setAttribute("aria-pressed", String(pinnedOnly));
+    pinnedOnlyButton.title = !hasPins ? "Pin a game to filter this list by pinned games."
+      : pinnedOnly ? "Show pinned and unpinned games in this list."
+      : "Show only pinned games in this list.";
     document.querySelector("#live-mode-note").textContent = active
-      ? `Live mode is on. Pins apply to eligible live games. Finished games stay for ${workingConfig.liveModeFinalMinutes} minutes. Turn off to restore your full rotation.`
-      : "Show only live games from your rotation. Finished games stay for the time set in Settings.";
+      ? `Live mode filters the banner to live games from your rotation. Pins apply to eligible games; finished games stay for ${workingConfig.liveModeFinalMinutes} minutes.`
+      : "Show only live games from your rotation on the banner. Finished games stay for the time set in Settings.";
     const queue = currentRotationQueue();
     const queueList = document.querySelector("#rotation-queue");
     const availableList = document.querySelector("#available-games");
@@ -859,17 +872,21 @@
     document.querySelector("#queue-filter-note").textContent = filteringBanner
       ? "Filters this list and the banner. Turn off Apply to banner to restore the full rotation."
       : "Filters this list only. Turn on Apply to banner to also filter rotation.";
-    const shownCount = queue.filter(entry => !queueSportFilter || entry.candidate.sport === queueSportFilter).length;
+    const matchesListFilters = entry => (!queueSportFilter || entry.candidate.sport === queueSportFilter)
+      && (!pinnedOnly || workingConfig.lockedGameKeys.includes(rotationEntryKey(entry)));
+    const shownCount = queue.filter(matchesListFilters).length;
     const loadingGames = engineLoading || engineRotationState?.discoveryPending === true;
     document.querySelector("#rotation-count").textContent = engineLoading && !queue.length ? "Loading…"
-      : `${queueSportFilter ? `${shownCount} of ` : ""}${queue.length} game${queue.length === 1 ? "" : "s"}${loadingGames ? " · loading…" : ""}`;
+      : `${queueSportFilter || pinnedOnly ? `${shownCount} of ` : ""}${queue.length} game${queue.length === 1 ? "" : "s"}${loadingGames ? " · loading…" : ""}`;
 
     if (!queue.length) appendRotationEmpty(queueList, engineLoading ? "Loading games…" : active ? "No live games in rotation. Live mode is still on."
       : availableRotationEntries.length ? "No games selected for the banner." : "Refresh games to build the live queue.");
-    else if (!shownCount) appendRotationEmpty(queueList, "No games for this sport in rotation.");
+    else if (!shownCount) appendRotationEmpty(queueList, pinnedOnly
+      ? queueSportFilter ? "No pinned games for this sport in rotation." : "No pinned games in rotation."
+      : "No games for this sport in rotation.");
     // Filter only the cards; actions retain their positions in the full rotation.
     queue.forEach((entry, index) => {
-      if (!queueSportFilter || entry.candidate.sport === queueSportFilter) renderQueueGame(entry, index, queue, queueList);
+      if (matchesListFilters(entry)) renderQueueGame(entry, index, queue, queueList);
     });
     highlightBannerGame();
 
@@ -1216,6 +1233,8 @@
   function unlockAllGames() {
     const previousLiveConfig = savedLiveConfig();
     workingConfig.lockedGameKeys = [];
+    pinnedOnly = false;
+    renderRotationControls();
     autoApplyLiveChange(previousLiveConfig, "All games unpinned · rotation resumed");
   }
 
