@@ -8,6 +8,7 @@ const { fitBounds, fullscreenBounds, BANNER_SCALES, stepBannerScale } = require(
 const { createBannerGesture } = require('./banner-gesture.cjs');
 const { bannerUrl } = require('./banner-link.cjs');
 const { gameLockMenuItem } = require('./banner-game-lock.cjs');
+const { gameRemoveMenuItem } = require('./banner-game-remove.cjs');
 const { createHandler, ORIGIN } = require('./protocol.cjs');
 const { createUpdateChecker } = require('./updates.cjs');
 const updateChecker = createUpdateChecker({ app, dialog, shell, onStateChange: menus,
@@ -285,6 +286,8 @@ else {
         { label: 'Settings…', click: openSettings },
         gameLockMenuItem({ engine: engineState, store,
           onError: error => showError('SportsOver could not pin or unpin this game', error.message) }),
+        gameRemoveMenuItem({ engine: engineState, store,
+          onError: error => showError('SportsOver could not remove this game', error.message) }),
         { id: 'lock-banner', label: 'Lock banner position', type: 'checkbox', checked: locked, click: item => lock(item.checked) },
         fullscreenMenuItem(),
         bannerSizeMenuItem(),
