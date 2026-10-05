@@ -40,6 +40,9 @@ function fullscreenDisplay() {
     || screen.getDisplayMatching(banner.getBounds());
 }
 const bannerGesture = createBannerGesture({
+  isFocused: () => banner.isFocused(),
+  requireActivation: true,
+  focus: () => { if (!quietTest) banner.focus(); },
   bounds: () => banner.getBounds(),
   move: (x, y) => {
     if (!locked && !normalBounds) banner.setPosition(x, y);
@@ -52,6 +55,8 @@ const root = path.resolve(__dirname, '..');
 const trusted = url => url.startsWith(`${ORIGIN}/sports/`);
 function secure(win) {
   win.webContents.on('before-input-event', (event, input) => {
+    // Keyboard interaction also establishes focus without consuming a click.
+    if (win === banner && win.isFocused() && input.type === 'keyDown') bannerGesture({ phase: 'activate' });
     if (win === banner && win.isFocused() && input.type === 'keyDown'
       && !input.alt && !input.control && !input.meta && !input.shift
       && (input.key === 'ArrowLeft' || input.key === 'ArrowRight')) {
@@ -272,16 +277,20 @@ else {
     const bounds = fitBounds(store.value.desktop.bounds, screen.getAllDisplays());
     // A macOS panel can float above fullscreen apps without hiding the whole app
     // from the Dock, Cmd-Tab, and application menu bar.
-    banner = new BrowserWindow({ ...bounds, ...(process.platform === 'darwin' ? { type: 'panel' } : {}), title: 'SportsOver', transparent: true, backgroundColor: '#00000000', frame: false, hasShadow: false, alwaysOnTop: true, resizable: false, maximizable: false, fullscreenable: false, skipTaskbar: true, show: false, webPreferences: preferences() });
+    // Deliver the activation press so it is consumed exactly once by the gesture
+    // handler, including for nonactivating macOS panels.
+    banner = new BrowserWindow({ ...bounds, ...(process.platform === 'darwin' ? { type: 'panel', acceptFirstMouse: true } : {}), title: 'SportsOver', transparent: true, backgroundColor: '#00000000', frame: false, hasShadow: false, alwaysOnTop: true, resizable: false, maximizable: false, fullscreenable: false, skipTaskbar: true, show: false, webPreferences: preferences() });
     secure(banner);
     banner.webContents.on('did-finish-load', () => banner.webContents.send('desktop:fullscreen', !!normalBounds));
-    banner.on('blur', () => bannerGesture({ phase: 'cancel' }));
-    banner.on('hide', () => bannerGesture({ phase: 'cancel' }));
+    const cancelBannerGesture = () => bannerGesture({ phase: 'blur' });
+    banner.on('blur', cancelBannerGesture);
+    banner.on('hide', cancelBannerGesture);
     banner.on('hide', () => setBannerHovered(false));
     banner.webContents.on('did-start-loading', () => setBannerHovered(false));
     banner.webContents.on('render-process-gone', () => setBannerHovered(false));
     banner.webContents.on('context-menu', () => {
       bannerGesture({ phase: 'cancel' });
+      bannerGesture({ phase: 'activate' });
       const menu = Menu.buildFromTemplate([
         { label: 'Settings…', click: openSettings },
         gameLockMenuItem({ engine: engineState, store,
@@ -371,10 +380,13 @@ else {
       }
       else if (action === 'banner-pointer') {
         if (event.sender !== banner.webContents) throw Error('Banner access required');
+        // Only native window events may change activation state.
+        if (value?.phase === 'blur' || value?.phase === 'activate') throw Error('Invalid pointer phase');
         bannerGesture(value);
       }
       else if (action === 'open-banner-link') {
         if (event.sender !== banner.webContents) throw Error('Banner access required');
+        if (banner.isFocused()) bannerGesture({ phase: 'activate' });
         await shell.openExternal(bannerUrl(value));
       }
       else if (action === 'next') {

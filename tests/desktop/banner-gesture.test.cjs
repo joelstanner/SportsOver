@@ -130,15 +130,91 @@ test('left-side drags and cancellations never navigate', () => {
   assert.deepEqual(calls, []);
 });
 
-function resizingFixture(width = 472) {
+function resizingFixture(width = 472, options = {}) {
   const calls = [], moves = [];
   const gesture = createTestGesture({ bounds: () => ({ x: -900, y: 100, width }),
     move: (...point) => moves.push(point), next: () => calls.push('next'), previous: () => calls.push('previous'),
-    resize: direction => calls.push(direction > 0 ? 'bigger' : 'smaller') });
+    resize: direction => calls.push(direction > 0 ? 'bigger' : 'smaller'), ...options });
   const send = (phase, offset, y = 110) => gesture({ phase, x: -900 + offset, y });
   const click = offset => { send('start', offset); send('end', offset); };
   return { gesture, calls, moves, send, click, advance: gesture.advance };
 }
+
+test('an activation click focuses without browsing in either direction, even when focus changes before release', () => {
+  for (const offset of [20, 300]) {
+    let focused = false, focusCalls = 0;
+    const f = resizingFixture(472, { isFocused: () => focused, focus: () => { focused = true; focusCalls++; } });
+    f.send('start', offset);
+    assert.equal(focusCalls, 1);
+    f.send('move', offset + 2);
+    f.send('end', offset);
+    f.advance(1000);
+    assert.deepEqual(f.calls, []);
+    assert.deepEqual(f.moves, []);
+    f.click(offset); f.advance(400);
+    assert.deepEqual(f.calls, [offset === 20 ? 'previous' : 'next']);
+    assert.equal(focusCalls, 1);
+  }
+});
+
+test('an activation click clears pending navigation and does not seed a double-click', () => {
+  let focused = true;
+  const f = resizingFixture(472, { isFocused: () => focused, focus: () => { focused = true; } });
+  f.click(300); f.advance(100);
+  focused = false;
+  f.click(300); f.advance(100);
+  assert.deepEqual(f.calls, []);
+  f.click(300); f.advance(400);
+  assert.deepEqual(f.calls, ['next']);
+  f.click(300); f.advance(100); f.click(300);
+  assert.deepEqual(f.calls, ['next', 'bigger']);
+});
+
+test('blur consumes the next click even when native focus returns before pointerdown', () => {
+  for (const offset of [20, 300]) {
+    let focused = true;
+    const f = resizingFixture(472, { isFocused: () => focused });
+    f.click(offset); f.advance(100);
+    focused = false;
+    f.gesture({ phase: 'blur' });
+    focused = true; // Native activation happens before the renderer sends start.
+    f.click(offset); f.advance(400);
+    assert.deepEqual(f.calls, []);
+    f.click(offset); f.advance(400);
+    assert.deepEqual(f.calls, [offset === 20 ? 'previous' : 'next']);
+  }
+});
+
+test('startup activation is consumed even if the native window already reports focus', () => {
+  const f = resizingFixture(472, { requireActivation: true });
+  f.click(300); f.advance(100); f.click(300); f.advance(400);
+  assert.deepEqual(f.calls, ['next'], 'activation neither browses nor seeds a double-click');
+});
+
+test('keyboard activation allows browsing and ordinary cancellation preserves it', () => {
+  const f = resizingFixture(472);
+  f.gesture({ phase: 'blur' });
+  f.gesture({ phase: 'activate' });
+  f.gesture({ phase: 'cancel' });
+  f.click(300); f.advance(400);
+  assert.deepEqual(f.calls, ['next']);
+});
+
+test('cancellation does not erase the activation required after blur', () => {
+  const f = resizingFixture(472);
+  f.gesture({ phase: 'blur' });
+  f.gesture({ phase: 'cancel' });
+  f.click(300); f.advance(400);
+  assert.deepEqual(f.calls, []);
+});
+
+test('an unfocused banner can still be dragged without navigating or resizing', () => {
+  const f = resizingFixture(472, { isFocused: () => false });
+  f.send('start', 300); f.send('move', 320, 120); f.send('end', 300);
+  f.advance(1000);
+  assert.ok(f.moves.length > 0);
+  assert.deepEqual(f.calls, []);
+});
 
 test('double-click halves resize once without navigation at every banner size', () => {
   for (const width of [236, 472, 708, 1416]) {

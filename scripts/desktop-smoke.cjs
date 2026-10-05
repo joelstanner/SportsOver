@@ -269,10 +269,14 @@ const quiet = testMode() === 'quiet';
     await admin.getByRole('button', { name: 'Live control', exact: true }).click();
     await admin.locator('#available-games [data-game-key="baseball:2"] .add-game').click();
     await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 2);
+    await require('./banner-focus-smoke.cjs')({ application, admin, banner, engine, quiet: false });
     const initialGame = await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey);
     // Names and logos open game links. Browse and resize on the unlinked top
     // padding, using proportions so the target stays valid at every zoom.
     const browseBanner = async direction => {
+      await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
+        .find(win => win.webContents.getURL().includes('display.html?desktop')).focus());
+      await banner.waitForFunction(() => document.hasFocus());
       const box = await banner.locator('.scorebug').boundingBox();
       await banner.locator('.scorebug').click({ position: {
         x: box.width * (direction < 0 ? 0.05 : 0.75), y: box.height * 0.05,
@@ -333,6 +337,14 @@ const quiet = testMode() === 'quiet';
     await require('./settings-arrows-smoke.cjs')({ admin, engine });
 
     const doubleClickBanner = async direction => {
+      await application.evaluate(({ BrowserWindow }) => {
+        const win = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('display.html?desktop'));
+        win.focus();
+        // Establish keyboard focus before testing an ordinary double-click.
+        win.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Shift' });
+        win.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Shift' });
+      });
+      await banner.waitForFunction(() => document.hasFocus());
       const width = await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
         .find(win => win.webContents.getURL().includes('display.html?desktop')).getContentBounds().width);
       // Native resizing completes before the renderer necessarily receives it.

@@ -38,6 +38,8 @@ module.exports = async ({ pages, directory, launch, application }) => {
   await engine.waitForFunction(() => window.SportsOverlay.engine.describe().liveMode.active);
   await admin.locator('#available-games [data-game-key="baseball:2"] .add-game').click();
   await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 2);
+  await require('./banner-focus-smoke.cjs')({ application: application(), admin, banner, engine, quiet: true });
+  await assertHidden();
   await admin.locator('#queue-sport-filter').selectOption('baseball');
   await admin.locator('#apply-banner-sport-filter').click();
   await engine.waitForFunction(() => window.SportsOverlay.config.loadConfig().bannerSportFilter === 'baseball');

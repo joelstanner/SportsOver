@@ -3,6 +3,16 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.32.1 — 2026-10-04
+
+### Fixed
+
+- Clicking an unfocused banner focuses it without browsing games or playing a
+  rotation transition, even when native focus arrives before the click.
+  Subsequent clicks browse normally, including with the banner position locked.
+
+Existing settings are preserved. No migration is required.
+
 ## 0.32.0 — 2026-10-04
 
 ### Added
