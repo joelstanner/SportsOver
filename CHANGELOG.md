@@ -3,6 +3,24 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.32.0 — 2026-10-04
+
+### Added
+
+- Right-click the banner to pin the current game or remove it from rotation.
+  Removing a game also clears its pin; add it again from Available games.
+- Filter the rotation list to pinned games. The filter clears when all games
+  are unpinned and is unavailable when no pins remain.
+
+### Changed
+
+- Game rotation controls use Pin/Pinned labels to distinguish them from
+  Lock banner position.
+- Live mode appears beside the rotation filters, with distinct styling and
+  a clear ON/OFF indicator.
+
+Existing settings are preserved. No migration is required.
+
 ## 0.31.3 — 2026-10-04
 
 ### Fixed
