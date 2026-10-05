@@ -102,6 +102,14 @@ const quiet = testMode() === 'quiet';
   }
   try {
     let { admin, banner, engine } = await launch();
+    if (process.env.SPORTSOVER_FOCUS_SMOKE_ONLY === '1') {
+      await admin.getByRole('button', { name: 'Live control', exact: true }).click();
+      await admin.locator('#available-games [data-game-key="baseball:2"] .add-game').click();
+      await engine.waitForFunction(() => window.SportsOverlay.engine.describe().queue.length === 2);
+      await require('./banner-focus-smoke.cjs')({ application, admin, banner, engine, quiet });
+      console.log('Banner focus smoke passed.');
+      return;
+    }
     if (quiet) {
       await require('./desktop-quiet-smoke.cjs')({
         pages: { admin, banner, engine }, directory, launch, application: () => application,

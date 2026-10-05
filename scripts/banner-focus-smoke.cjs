@@ -4,6 +4,18 @@ const assert = require('node:assert/strict');
 
 module.exports = async ({ application, admin, banner, engine, quiet }) => {
   const locked = (await banner.evaluate(() => window.sportsDesktop.status())).locked;
+  await application.evaluate(({ BrowserWindow }) => {
+    const win = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('display.html?desktop'));
+    globalThis.activationEvents = [];
+    for (const type of ['focus', 'blur']) win.on(type, () => globalThis.activationEvents.push({ type, at: Date.now() }));
+    win.webContents.on('before-input-event', (_event, input) => {
+      if (input.type === 'keyDown') globalThis.activationEvents.push({ type: 'keyDown', key: input.key, at: Date.now() });
+    });
+  });
+  await engine.evaluate(() => {
+    window.activationCommands = [];
+    window.sportsDesktop.onEngineCommand(command => window.activationCommands.push({ command, at: Date.now() }));
+  });
   const settleOutput = async () => {
     await engine.waitForFunction(() => {
       const state = window.SportsOverlay.engine.describe();
@@ -36,6 +48,11 @@ module.exports = async ({ application, admin, banner, engine, quiet }) => {
             win.emit('blur'); win.emit('focus');
           });
         } else {
+          // Establish banner focus first so switching to Settings always emits a
+          // real blur, regardless of the preceding smoke scenario's window state.
+          await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
+            .find(win => win.webContents.getURL().includes('display.html?desktop')).focus());
+          await banner.waitForFunction(() => document.hasFocus());
           await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
             .find(win => win.webContents.getURL().includes('/admin/')).focus());
           await admin.waitForFunction(() => document.hasFocus());
@@ -58,6 +75,13 @@ module.exports = async ({ application, admin, banner, engine, quiet }) => {
         await settleOutput();
       }
     }
+  } catch (error) {
+    console.log('Activation diagnostics:', JSON.stringify({
+      native: await application.evaluate(() => globalThis.activationEvents),
+      engine: await engine.evaluate(() => ({ commands: window.activationCommands,
+        currentGameKey: window.SportsOverlay.engine.describe().currentGameKey })),
+    }));
+    throw error;
   } finally {
     await admin.evaluate(value => window.sportsDesktop.action(value ? 'lock' : 'unlock'), locked);
     if (quiet) {

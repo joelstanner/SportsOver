@@ -96,6 +96,10 @@ module.exports = async ({ application, admin, engine, directory }) => {
     }, otherKey);
     await admin.waitForFunction(key => document.querySelector(`#rotation-queue [data-game-key="${key}"] .lock-game`)
       ?.getAttribute('aria-pressed') === 'true', otherKey);
+    await admin.waitForFunction(key => {
+      const keys = [...document.querySelectorAll('#rotation-queue .game-card')].map(card => card.dataset.gameKey);
+      return keys.length === 1 && keys[0] === key;
+    }, otherKey);
     assert.deepEqual(await visibleKeys(), [otherKey]);
     assert.equal(await pinnedOnly.getAttribute('aria-pressed'), 'true', 'the filter stays active while another pin remains');
     await admin.locator('#unlock-all-games').click();

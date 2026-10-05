@@ -290,7 +290,7 @@ else {
     banner.webContents.on('render-process-gone', () => setBannerHovered(false));
     banner.webContents.on('context-menu', () => {
       bannerGesture({ phase: 'cancel' });
-      bannerGesture({ phase: 'activate' });
+      if (banner.isFocused()) bannerGesture({ phase: 'activate' });
       const menu = Menu.buildFromTemplate([
         { label: 'Settings…', click: openSettings },
         gameLockMenuItem({ engine: engineState, store,
