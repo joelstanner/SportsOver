@@ -16,8 +16,8 @@ module.exports = async ({ application, admin, engine, directory }) => {
       return menu;
     };
   });
-  const open = async expectedKey => {
-    const renderedKey = expectedKey || await engine.evaluate(() => window.SportsOverlay.engine.describe().renderedGameKey);
+  const open = async () => {
+    const renderedKey = await engine.evaluate(() => window.SportsOverlay.engine.describe().renderedGameKey);
     await admin.waitForFunction(async key => (await window.sportsDesktop.engine()).renderedGameKey === key, renderedKey);
     return application.evaluate(({ BrowserWindow }) => {
       globalThis.gameLockTestMenu = null;
@@ -110,20 +110,15 @@ module.exports = async ({ application, admin, engine, directory }) => {
     // Remove an automatic pinned game through the actual banner menu, then add
     // it back through Live Control. Preserve the scenario for subsequent checks.
     const beforeRemoval = await admin.evaluate(() => window.SportsOverlay.config.loadConfig());
-    await card(key).click();
-    await engine.waitForFunction(key => {
-      const state = window.SportsOverlay.engine.describe();
-      return state.queue.length === 1 && state.currentGameKey === key && state.renderedGameKey === key;
-    }, key);
+    await open();
+    // Both callbacks capture the displayed game from this menu. Rotation can
+    // advance while settings and rendered frames propagate between processes.
+    await click(true);
+    await engine.waitForFunction(() => window.SportsOverlay.config.loadConfig().lockedGameKeys.length === 1);
+    const removalKey = await engine.evaluate(() => window.SportsOverlay.config.loadConfig().lockedGameKeys[0]);
     await admin.waitForFunction(key => document.querySelector(`#rotation-queue [data-game-key="${key}"] .lock-game`)
-      ?.getAttribute('aria-pressed') === 'true', key);
+      ?.getAttribute('aria-pressed') === 'true', removalKey);
     await pinnedOnly.click();
-    await admin.waitForFunction(async key => {
-      const state = await window.sportsDesktop.engine();
-      return state.queue.length === 1 && state.currentGameKey === key && state.renderedGameKey === key;
-    }, key);
-    const removeMenu = await open(key);
-    assert.equal(removeMenu.checked, true, 'the removal menu targets the pinned game');
     await application.evaluate(() => {
       const item = globalThis.gameLockTestMenu.getMenuItemById('remove-current-game');
       if (!item || !item.enabled || item.label !== 'Remove from rotation') throw Error('Banner removal option is unavailable');
@@ -135,7 +130,7 @@ module.exports = async ({ application, admin, engine, directory }) => {
       return config.excludedGames.includes(key) && !config.lockedGameKeys.includes(key)
         && !state.queue.some(entry => `${entry.candidate.sport}:${entry.candidate.id}` === key)
         && state.renderedGameKey !== key;
-    }, key).catch(async error => {
+    }, removalKey).catch(async error => {
       const details = await engine.evaluate(() => {
         const config = window.SportsOverlay.config.loadConfig();
         const state = window.SportsOverlay.engine.describe();
@@ -143,20 +138,20 @@ module.exports = async ({ application, admin, engine, directory }) => {
           pins: config.lockedGameKeys, current: state.currentGameKey, rendered: state.renderedGameKey,
           queue: state.queue.map(entry => `${entry.candidate.sport}:${entry.candidate.id}`) };
       });
-      throw Error(`Banner removal of ${key} did not finish: ${JSON.stringify(details)}`, { cause: error });
+      throw Error(`Banner removal of ${removalKey} did not finish: ${JSON.stringify(details)}`, { cause: error });
     });
-    await admin.locator(`#available-games [data-game-key="${key}"] .add-game`).waitFor();
-    assert.equal(await admin.locator(`#rotation-queue [data-game-key="${key}"]`).count(), 0);
+    await admin.locator(`#available-games [data-game-key="${removalKey}"] .add-game`).waitFor();
+    assert.equal(await admin.locator(`#rotation-queue [data-game-key="${removalKey}"]`).count(), 0);
     assert.equal(await pinnedOnly.getAttribute('aria-pressed'), 'false', 'removing the last pinned game clears the list filter');
     assert.equal(await pinnedOnly.isDisabled(), true);
     const removed = JSON.parse(await fs.readFile(path.join(directory, 'settings.json'), 'utf8')).config;
-    assert.equal(removed.excludedGames.includes(key), true, 'automatic removal persists its exclusion');
-    assert.equal(removed.includedGames.includes(key), false);
-    assert.equal(removed.rotationOrder.includes(key), false);
-    assert.equal(removed.lockedGameKeys.includes(key), false);
-    await admin.locator(`#available-games [data-game-key="${key}"] .add-game`).click();
+    assert.equal(removed.excludedGames.includes(removalKey), true, 'automatic removal persists its exclusion');
+    assert.equal(removed.includedGames.includes(removalKey), false);
+    assert.equal(removed.rotationOrder.includes(removalKey), false);
+    assert.equal(removed.lockedGameKeys.includes(removalKey), false);
+    await admin.locator(`#available-games [data-game-key="${removalKey}"] .add-game`).click();
     await engine.waitForFunction(key => window.SportsOverlay.engine.describe().queue
-      .some(entry => `${entry.candidate.sport}:${entry.candidate.id}` === key), key);
+      .some(entry => `${entry.candidate.sport}:${entry.candidate.id}` === key), removalKey);
     await admin.evaluate(config => window.SportsOverlay.config.saveConfig(config, {
       fields: ['rotationMode', 'includedGames', 'excludedGames', 'rotationOrder', 'lockedGameKeys'],
     }), beforeRemoval);
