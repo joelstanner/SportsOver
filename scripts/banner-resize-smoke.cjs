@@ -29,7 +29,7 @@ module.exports = async ({ application, admin, banner }) => {
     assert.ok(Math.abs(beforeMenu.x + beforeMenu.width / 2 - afterMenu.x - afterMenu.width / 2) <= 0.5);
     assert.equal(afterMenu.y, beforeMenu.y);
     await admin.evaluate(() => window.sportsDesktop.action('size', 1));
-    for (const [page, key, scale] of [[admin, 'ArrowUp', 0.95], [banner, 'ArrowDown', 1]]) {
+    for (const [page, key, scale] of [[admin, 'ArrowUp', 0.9], [banner, 'ArrowDown', 1]]) {
       const before = await bounds();
       await application.evaluate(({ BrowserWindow }) => {
         const win = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('display.html?desktop'));
@@ -59,11 +59,11 @@ module.exports = async ({ application, admin, banner }) => {
       assert.deepEqual(geometry, { width: '472px', height: '100px', zoom: '' }, 'layout remains stable during scaling');
       assert.ok(Math.abs(before.x + before.width / 2 - after.x - after.width / 2) <= 0.5);
       assert.equal(after.y, before.y);
-      assert.ok(Math.abs(after.width - before.width) >= 23 && Math.abs(after.width - before.width) <= 24, 'arrows adjust by five percentage points');
+      assert.ok(Math.abs(after.width - before.width) >= 47 && Math.abs(after.width - before.width) <= 48, 'arrows adjust by ten percentage points');
       await admin.waitForFunction(scale => document.querySelector('#desktop-size').value === String(scale), scale);
       assert.equal(await admin.locator('#desktop-size option:checked').innerText(), `${Math.round(scale * 100)}%`);
     }
-    for (let percent = 95; percent >= 10; percent -= 5) {
+    for (let percent = 90; percent >= 10; percent -= 10) {
       await admin.evaluate(() => window.sportsDesktop.action('step-banner-size', -1));
       await banner.waitForFunction(width => innerWidth === width, Math.round(472 * percent / 100));
     }
@@ -75,15 +75,15 @@ module.exports = async ({ application, admin, banner }) => {
     await admin.evaluate(() => window.sportsDesktop.action('step-banner-size', -1));
     assert.deepEqual(await bounds(), tiny, '10% is the arrow minimum');
     await admin.evaluate(() => window.sportsDesktop.action('step-banner-size', 1));
-    await banner.waitForFunction(() => innerWidth === 71);
+    await banner.waitForFunction(() => innerWidth === 94);
     await admin.evaluate(() => window.sportsDesktop.action('size', 1));
     await admin.evaluate(async () => {
       await Promise.all(Array.from({ length: 8 }, () => window.sportsDesktop.action('step-banner-size', -1)));
     });
-    await banner.waitForFunction(() => innerWidth === 283);
+    await banner.waitForFunction(() => innerWidth === 94);
     const repeated = await bounds();
     assert.equal(repeated.y, beforeMenu.y);
-    await admin.waitForFunction(() => document.querySelector('#desktop-size').value === '0.6');
+    await admin.waitForFunction(() => document.querySelector('#desktop-size').value === '0.2');
   } finally {
     await admin.evaluate(() => window.sportsDesktop.action('size', 1));
     await application.evaluate(({ BrowserWindow }, original) => BrowserWindow.getAllWindows()

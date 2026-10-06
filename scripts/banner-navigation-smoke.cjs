@@ -49,11 +49,11 @@ module.exports = async ({ admin, banner, engine, application }) => {
   const waitForSize = scale => banner.waitForFunction(scale => innerWidth === Math.round(472 * scale) && Math.abs(innerHeight - Math.round(100 * scale)) <= 1, scale);
   await admin.evaluate(() => window.sportsDesktop.action('size', 1));
   assert.equal(await resizeKey(admin, 'ArrowUp'), true);
-  await waitForSize(0.95);
+  await waitForSize(0.9);
   assert.equal(await resizeKey(admin, 'ArrowDown'), true);
   await waitForSize(1);
   assert.equal(await resizeKey(banner, 'ArrowUp'), true);
-  await waitForSize(0.95);
+  await waitForSize(0.9);
   assert.equal(await resizeKey(banner, 'ArrowDown'), true);
   await waitForSize(1);
   assert.equal(await resizeKey(admin, 'ArrowUp', { ctrlKey: true }), false);

@@ -10,7 +10,7 @@ function stepBannerScale(scale, direction) {
 }
 
 function stepArrowScale(scale, direction) {
-  return Math.max(0.1, Math.min(3, (Math.round(scale * 100) + direction * 5) / 100));
+  return Math.max(0.1, Math.min(3, (Math.round(scale * 100) + direction * 10) / 100));
 }
 
 function fitBounds(saved = {}, displays) {

@@ -79,15 +79,15 @@ test('top flush with the screen stays fixed even above the monitor work area', (
   assert.equal(after.height, 200);
 });
 
-test('arrows step five percentage points, reach 10%, and restore small saved sizes', () => {
+test('arrows step ten percentage points, reach 10%, and restore small saved sizes', () => {
   const { stepArrowScale, stepBannerScale, fitBounds } = require('../../desktop/bounds.cjs');
   let scale = 1;
-  for (let percent = 95; percent >= 10; percent -= 5) {
+  for (let percent = 90; percent >= 10; percent -= 10) {
     scale = stepArrowScale(Math.round(472 * scale) / 472, -1);
     assert.equal(scale, percent / 100);
   }
   assert.equal(stepArrowScale(47 / 472, -1), 0.1);
-  assert.equal(stepArrowScale(47 / 472, 1), 0.15);
+  assert.equal(stepArrowScale(47 / 472, 1), 0.2);
   assert.equal(stepArrowScale(0.12, -1), 0.1, 'shrinking near the minimum stops at 10%');
   assert.equal(stepArrowScale(2.98, 1), 3, 'growing near the maximum stops at 300%');
   assert.equal(stepArrowScale(3, 1), 3);

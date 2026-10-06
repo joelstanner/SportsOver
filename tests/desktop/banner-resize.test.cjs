@@ -25,14 +25,14 @@ function assertAnchor(frames) {
   }
 }
 
-test('one arrow press interpolates monotonically to the exact 5% destination', () => {
+test('one arrow press interpolates monotonically to the exact 10% destination', () => {
   const f = fixture();
   f.resize.step(-1);
-  assert.equal(f.resize.targetWidth(), 448);
+  assert.equal(f.resize.targetWidth(), 425);
   assert.equal(f.bounds().width, 472, 'does not jump before the first frame');
   f.finish();
   assert.ok(f.frames.length > 2, 'uses multiple intermediate sizes');
-  assert.equal(f.bounds().width, 448);
+  assert.equal(f.bounds().width, 425);
   assertAnchor(f.frames);
   for (let i = 1; i < f.frames.length; i++) assert.ok(f.frames[i].width <= f.frames[i - 1].width);
   assert.equal(f.resize.targetWidth(), undefined);
@@ -42,9 +42,9 @@ test('one arrow press interpolates monotonically to the exact 5% destination', (
 test('rapid repeats count every press from the target and preserve one anchor', () => {
   const f = fixture();
   for (let i = 0; i < 8; i++) { f.resize.step(-1); f.tick(); }
-  assert.equal(f.resize.targetWidth(), 283, 'eight presses request 60% despite intermediate widths');
+  assert.equal(f.resize.targetWidth(), 94, 'eight presses request 20% despite intermediate widths');
   f.finish();
-  assert.equal(f.bounds().width, 283);
+  assert.equal(f.bounds().width, 94);
   assertAnchor(f.frames);
   for (let i = 1; i < f.frames.length; i++) assert.ok(f.frames[i].width <= f.frames[i - 1].width);
   for (let i = 0; i < 8; i++) { f.resize.step(1); f.tick(); }
@@ -59,7 +59,7 @@ test('reversing an in-flight resize keeps the final target and anchor without ov
   f.resize.step(1); f.finish();
   assert.deepEqual(f.bounds(), { x: 700, y: 30, width: 472, height: 100 });
   assertAnchor(f.frames);
-  assert.ok(f.frames.every(frame => frame.width >= 448 && frame.width <= 472));
+  assert.ok(f.frames.every(frame => frame.width >= 425 && frame.width <= 472));
 });
 
 test('cancellation prevents stale frames from moving a dragged, locked, or fullscreen banner', () => {
@@ -79,11 +79,11 @@ test('rapid requests stop at 10% and at the available monitor space without targ
   f.finish();
   assert.equal(f.bounds().width, 47);
   f.resize.step(1); f.finish();
-  assert.equal(f.bounds().width, 71);
+  assert.equal(f.bounds().width, 94);
   const constrained = fixture({ x: 0, y: 30, width: 1920, height: 100 });
   for (let i = 0; i < 30; i++) constrained.resize.step(1);
   constrained.finish();
   assert.equal(constrained.bounds().width, 472);
   constrained.resize.step(-1); constrained.finish();
-  assert.equal(constrained.bounds().width, 448);
+  assert.equal(constrained.bounds().width, 425);
 });

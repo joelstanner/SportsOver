@@ -19,7 +19,7 @@ Quiet mode uses hidden real Electron windows and checks settings/engine propagat
 
 ## Manual platform checks still required
 
-For resizing, verify that Up/Down keys, double-clicks, Settings size presets, and menu sizes keep the top edge and horizontal center fixed. Up/Down adjusts by 5 percentage points and can shrink to 10%; double-clicks and presets use 50–300%. Confirm Settings shows intermediate sizes. At monitor edges, growth should shift sideways only enough to stay on that monitor and stop when there is no space below; repeated growing and shrinking should not drift.
+For resizing, verify that Up/Down keys, double-clicks, Settings size presets, and menu sizes keep the top edge and horizontal center fixed. Up/Down adjusts by 10 percentage points and can shrink to 10%; double-clicks and presets use 50–300%. Confirm Settings shows intermediate sizes. At monitor edges, growth should shift sideways only enough to stay on that monitor and stop when there is no space below; repeated growing and shrinking should not drift.
 
 For keyboard movement, hold Shift and press each arrow with the banner or Settings focused. Confirm 5-pixel steps, repeated movement while held, and unchanged size and game. Fields, selectors, and dialogs retain their own shortcuts. Locked and fullscreen banners must stay in place with explanatory feedback; movement interrupts pending resize animation. Confirm the position is saved after movement.
 
