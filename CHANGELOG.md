@@ -3,6 +3,34 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.33.0 — 2026-10-05
+
+### Added
+
+- Resize the banner with Up/Down arrows while the banner or Settings is focused.
+  Editing controls and focused tournament lists keep their normal arrow behavior.
+- Quit SportsOver from the banner's right-click menu.
+- Explain unavailable arrow-key browsing while games load, when only one game
+  is pinned or in rotation, and during temporary overrides.
+
+### Changed
+
+- Give scores and logos more relative space at smaller desktop banner sizes
+  while retaining team names, clock/status, and game details.
+- Keep live NBA and NFL score rows compact, including NFL timeout messages
+  without down/field data and final-game banners.
+- Center the live PRESEASON label in amber above the clock.
+
+### Fixed
+
+- Prevent Windows banner dragging from gradually enlarging the window and its
+  clickable area.
+- Keep live team-sport rows within the desktop frame and reduce excess hockey
+  spacing. Prioritize play descriptions over odds when both cannot fit.
+- Update the vulnerable http-cache-semantics dependency.
+
+Existing settings are preserved. No migration is required.
+
 ## 0.32.1 — 2026-10-04
 
 ### Fixed

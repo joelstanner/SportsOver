@@ -9,6 +9,8 @@
 
 ## Ideas
 
+- Add keyboard shortcuts for more features, extending the existing game-browsing and banner-resizing shortcuts.
+
 - Support multiple banner windows at once with different sports in each banner, including across monitors. Each banner should have its own sport selection and game rotation, size, position, fullscreen, and position lock; save window layouts and share score fetching through the existing engine.
 - Favorite players across events: per-event followed-player banners already exist for PDGA and chess. Add a saved favorites list, including clicking a player's name on a leaderboard to add them, and discover/follow their tournaments or matches across events wherever supported providers offer usable data, including outside the main pro tour.
 - Explore additional sports with public APIs that require no authentication (PDGA and Lichess chess broadcasts are already supported):
