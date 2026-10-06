@@ -9,8 +9,6 @@
 
 ## Ideas
 
-- As the banner shrinks, give score numbers a larger percentage of the banner so scores remain prominent and readable at smaller sizes.
-
 - Support multiple banner windows at once with different sports in each banner, including across monitors. Each banner should have its own sport selection and game rotation, size, position, fullscreen, and position lock; save window layouts and share score fetching through the existing engine.
 - Favorite players across events: per-event followed-player banners already exist for PDGA and chess. Add a saved favorites list, including clicking a player's name on a leaderboard to add them, and discover/follow their tournaments or matches across events wherever supported providers offer usable data, including outside the main pro tour.
 - Explore additional sports with public APIs that require no authentication (PDGA and Lichess chess broadcasts are already supported):
@@ -21,5 +19,7 @@
   - Before integrating, verify access requirements and usage terms; avoid providers whose terms prohibit automated collection.
 
 ## Completed
+
+- [x] Make scores and logos proportionally larger at smaller desktop banner sizes while retaining team names, clock/status, and detail rows at every size.
 
 - [x] Give every supported sport clickable game-info links on the banner. Team names and logos open the current MLB/ESPN game page when available (added in **0.29.0**); PDGA and chess already have tournament/player links. See [version history](CHANGELOG.md).

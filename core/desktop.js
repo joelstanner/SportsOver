@@ -94,6 +94,10 @@
     window.addEventListener('blur', cancelPointer);
     const scale = () => {
       const zoom = window.innerWidth / 472;
+      // Retain more of the score's size as the whole banner gets smaller.
+      const shrink = Math.max(0, 1 - zoom);
+      document.body.style.setProperty('--desktop-score-emphasis', String(1 + shrink * 0.8));
+      document.body.style.setProperty('--desktop-logo-emphasis', String(1 + shrink * 0.6));
       document.body.style.zoom = String(zoom);
       document.body.style.width = '472px';
       document.body.style.height = `${window.innerHeight / zoom}px`;
