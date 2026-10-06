@@ -9,7 +9,7 @@
 
 ## Ideas
 
-- [ ] Add an OBS layout option for a small score banner with a more square shape, emphasizing readable team logos and scores. Queued for later; do not start until requested.
+- [ ] Give upcoming games a compact desktop layout below 50%, similar to live games: team logos on either side with the game date/time in the middle. Queued only; do not start until requested.
 - [x] Add a compact desktop layout below 50% for live and final team games, emphasizing logos and scores. Other game states and OBS keep their existing layouts.
 - [ ] Audit outbound API request volume by sport, provider, and endpoint during startup, idle polling, live games, and Settings/OBS use. Check whether disabled sports still make score, schedule, catalog, or tournament-discovery requests and explain any exceptions. Identify duplicate calls, measure calls per minute, and recommend changes to polling, caching, or sport gating where needed.
 - Add keyboard shortcuts for more features, extending the existing game-browsing and banner-resizing shortcuts.

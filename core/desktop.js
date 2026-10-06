@@ -186,17 +186,15 @@
   const demoMode = demoPanel.querySelector('#inspection-state');
   let demoState = null;
   const startDemo = () => action('demo-inspection', { mode: demoMode.value, sport: demoSport.value });
-  demoPanel.querySelector('#start-inspection').addEventListener('click', startDemo);
+  demoPanel.querySelector('#start-inspection').addEventListener('click', () => demoState ? action('demo-inspection', null) : startDemo());
   for (const select of [demoSport, demoMode]) select.addEventListener('change', () => { if (demoState) void startDemo(); });
   demoPanel.querySelector('#inspection-previous').addEventListener('click', () => action('browse-banner', 'previous'));
   demoPanel.querySelector('#inspection-next').addEventListener('click', () => action('browse-banner', 'next'));
   demoPanel.querySelector('#inspection-play').addEventListener('click', () => action('demo-play', !demoState?.playing));
-  demoPanel.querySelector('#stop-inspection').addEventListener('click', () => action('demo-inspection', null));
   function renderDemo(value) {
     demoState = value || null;
     for (const id of ['inspection-previous', 'inspection-next', 'inspection-play']) demoPanel.querySelector(`#${id}`).disabled = !value?.ready || value.count < 2;
-    demoPanel.querySelector('#stop-inspection').disabled = !value;
-    demoPanel.querySelector('#start-inspection').textContent = value ? 'Restart demo' : 'Show demo on banner + OBS';
+    demoPanel.querySelector('#start-inspection').textContent = value ? 'Return to live output' : 'Show demo on banner + OBS';
     demoPanel.querySelector('#inspection-play').textContent = value?.playing ? 'Pause rotation' : 'Play rotation';
     demoPanel.querySelector('#inspection-status').textContent = !value ? 'Live output. Demo inspection is off.'
       : !value.ready ? 'Loading demo fixtures for the banner and OBS…'

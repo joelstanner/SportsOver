@@ -86,7 +86,9 @@ module.exports = async ({ application, admin, banner, engine, directory }) => {
     await waitState('final');
     await banner.locator('[data-fixture-state="final"] .demo-mark').waitFor();
     await obs.locator('[data-fixture-state="final"] .demo-mark').waitFor();
-    await admin.locator('#stop-inspection').click();
+    assert.equal(await admin.locator('#start-inspection').innerText(), 'Return to live output');
+    await admin.locator('#start-inspection').click();
+    await admin.waitForFunction(() => document.querySelector('#start-inspection').textContent === 'Show demo on banner + OBS');
     await banner.locator('.demo-mark').waitFor({ state: 'detached' });
     await obs.locator('.demo-mark').waitFor({ state: 'detached' });
     assert.equal(await state(), null);
