@@ -599,3 +599,37 @@ test("recurring directory discovery is capped independently of long score refres
   await f.update(3600);
   assert.ok([...f.timers.values()].some(timer => timer.at === 900000), "directory discovery remains scheduled at fifteen minutes");
 });
+
+test('compact rotation skips individual games before pins and restores pins and overrides', async () => {
+  const app = await fixture([], 3);
+  app.games[0].competitionType = 'individual';
+  await app.save({ lockedGameKeys: ['baseball:1'] });
+  await app.advance(12000);
+  await app.engine.refresh(); await app.flush();
+  const saved = structuredClone(app.config);
+  app.engine.override({ gameKey: 'baseball:1' }); await app.flush();
+  await app.engine.setCompact(true); await app.flush();
+  assert.deepEqual(Array.from(app.engine.describe().queue, entry => entry.candidate.id), ['2', '3']);
+  assert.notEqual(app.engine.describe().currentGameKey, 'baseball:1');
+  assert.equal(app.engine.describe().overrideGameKey, null);
+  assert.deepEqual(app.config, saved);
+  await app.engine.setCompact(false); await app.flush();
+  assert.deepEqual(Array.from(app.engine.describe().queue, entry => entry.candidate.id), ['1']);
+  assert.equal(app.engine.describe().overrideGameKey, 'baseball:1');
+  await app.engine.setCompact(true); await app.flush();
+  app.engine.override(null); await app.flush();
+  await app.engine.setCompact(false); await app.flush();
+  assert.equal(app.engine.describe().overrideGameKey, null, 'expired overrides do not return');
+});
+
+test('compact rotation with only individual games becomes empty and restores without saving config', async () => {
+  const app = await fixture([], 2, false, undefined, true);
+  await app.engine.setCompact(true); await app.flush();
+  assert.equal(app.engine.describe().queue.length, 0);
+  assert.equal(app.engine.describe().currentGameKey, null);
+  assert.equal(app.engine.describe().renderedGameKey, null);
+  await app.engine.next();
+  await app.engine.setCompact(false); await app.flush();
+  assert.equal(app.engine.describe().queue.length, 2);
+  assert.ok(app.engine.describe().currentGameKey);
+});

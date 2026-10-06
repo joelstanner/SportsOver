@@ -41,6 +41,14 @@ const arrowResize = createBannerResize({
   apply: next => banner.setBounds(next),
   settled: () => menus(),
 });
+function compactRotation() { return !!banner && !normalBounds && banner.getBounds().width < 236 && store?.value.desktop.skipIndividualWhenSmall !== false; }
+let lastCompactRotation;
+function syncCompactRotation() {
+  const value = compactRotation();
+  if (lastCompactRotation === value) return;
+  lastCompactRotation = value;
+  for (const win of [engineWindow, inspectionWindow]) if (win && !win.isDestroyed()) win.webContents.send('engine:command', { type: 'compact-rotation', value });
+}
 let bannerHovered = false;
 function browseBanner(type, sender) {
   if (inspectionSettings) {
@@ -308,7 +316,7 @@ function resize(scale) {
   banner.setBounds(topAnchoredResizeBounds(current, Math.round(472 * scale), screen.getDisplayMatching(current)));
   menus();
 }
-function status() { return { inspection: inspectionSettings ? { ...inspectionEngine.state().inspection, ...inspectionSettings, ready: inspectionEngine.ready } : null, version: app.getVersion(), trayAvailable: !!tray && !tray.isDestroyed(), trayBounds: tray && !tray.isDestroyed() ? tray.getBounds() : null, appIconAvailable: !!appIcon, obsUrl, engineReady: engineState.ready, override: engineState.override, locked, visible: banner.isVisible(), fullscreen: !!normalBounds, scale: (normalBounds?.width ?? arrowResize.targetWidth() ?? banner.getBounds().width) / 472, shortcut, warning: store.warning }; }
+function status() { return { skipIndividualWhenSmall: store.value.desktop.skipIndividualWhenSmall !== false, inspection: inspectionSettings ? { ...inspectionEngine.state().inspection, ...inspectionSettings, ready: inspectionEngine.ready } : null, version: app.getVersion(), trayAvailable: !!tray && !tray.isDestroyed(), trayBounds: tray && !tray.isDestroyed() ? tray.getBounds() : null, appIconAvailable: !!appIcon, obsUrl, engineReady: engineState.ready, override: engineState.override, locked, visible: banner.isVisible(), fullscreen: !!normalBounds, scale: (normalBounds?.width ?? arrowResize.targetWidth() ?? banner.getBounds().width) / 472, shortcut, warning: store.warning }; }
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', (_event, argv) => {
@@ -356,6 +364,11 @@ else {
     ipcMain.on('engine:publish', (event, frame) => {
       if (event.senderFrame !== event.sender.mainFrame) return;
       if (typeof frame?.html !== 'string' || frame.html.length > 1000000 || !Array.isArray(frame.metadata?.availableEntries)) return;
+      if (event.sender !== inspectionWindow?.webContents && event.sender !== engineWindow.webContents) return;
+      if (banner && frame.metadata.compactRotation !== compactRotation()) {
+        event.sender.send('engine:command', { type: 'compact-rotation', value: compactRotation() });
+        return;
+      }
       if (event.sender === inspectionWindow?.webContents) {
         if (frame.metadata.inspection?.revision !== inspectionSettings?.revision) return;
         inspectionEngine.publish(frame);
@@ -411,6 +424,7 @@ else {
     const saveBounds = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => persist({ bounds: normalBounds || banner.getBounds() }), 250); };
     banner.on('move', saveBounds);
     banner.on('resize', saveBounds);
+    banner.on('resize', syncCompactRotation);
     const fit = () => {
       arrowResize.cancel();
       if (normalBounds) {
@@ -483,6 +497,11 @@ else {
       else if (action === 'hide') hideBanner();
       else if (action === 'toggle-fullscreen') setFullscreen(!normalBounds);
       else if (action === 'recover') recover();
+      else if (action === 'skip-individual-small') {
+        if (event.sender !== settings?.webContents || typeof value !== 'boolean') throw Error('Settings access and a boolean value required');
+        store.desktop({ skipIndividualWhenSmall: value });
+        syncCompactRotation();
+      }
       else if (action === 'size') resize(value);
       else if (action === 'step-banner-position') {
         if (event.sender !== banner.webContents && event.sender !== settings?.webContents) throw Error('Banner or Settings access required');

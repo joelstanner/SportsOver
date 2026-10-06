@@ -62,7 +62,8 @@ let renderedGameKey = null;
 let rotationTransition = "normal";
 const renderedEvents = new Map();
 let automaticRotationEntries = [];
-let overrideEntry = null;
+let overrideEntry = null, suppressedOverrideEntry = null;
+let compactRotation = false;
 let discoveryPending = null;
 let loadingSports = new Set();
 let rediscover = false;
@@ -73,6 +74,7 @@ const liveMode = window.SportsOverlay.liveMode.create();
 // The desktop host is the sole live engine. Outputs receive rendered snapshots.
 window.SportsOverlay.engine = {
   describe: () => ({
+    compactRotation,
     discoveryComplete: cachedDiscoveries !== null,
     discoveryPending: Boolean(discoveryPending),
     loadingSports: [...loadingSports],
@@ -100,6 +102,25 @@ window.SportsOverlay.engine = {
       return advance();
     }
   },
+  async setCompact(value) {
+    if (compactRotation === value) return;
+    compactRotation = value;
+    const previousKey = entryKey(rotationQueue[currentIndex]);
+    if (value && overrideEntry && !compactEligible(overrideEntry)) {
+      suppressedOverrideEntry = overrideEntry; overrideEntry = null;
+    } else if (!value && suppressedOverrideEntry) {
+      overrideEntry = suppressedOverrideEntry; suppressedOverrideEntry = null;
+    }
+    requestRevision++;
+    clearTimeout(rotationTimer); rotationTimer = null; rotationGeneration++;
+    clearTimeout(pollTimer); pollTimer = null; pollGeneration++;
+    pendingRotation = null;
+    rotationQueue = selectedRotationQueue((cachedDiscoveries || []).flatMap(result => result.availableEntries));
+    currentIndex = Math.max(0, rotationQueue.findIndex(entry => entryKey(entry) === previousKey));
+    if (!rotationQueue.length && !overrideEntry) { renderEmptyBanner(); return; }
+    await renderCurrentGame({ fast: true });
+    schedulePoll(); scheduleRotation();
+  },
   setLiveMode(active) {
     if (typeof active !== "boolean") return;
     liveMode.setActive(active, normalRotationQueue);
@@ -113,8 +134,12 @@ window.SportsOverlay.engine = {
     return discoverGames(sportContexts.some(context => ["disc-golf", "chess"].includes(context.sport)));
   },
   override(value) {
+    suppressedOverrideEntry = null;
     overrideEntry = value ? (cachedDiscoveries || []).flatMap(result => result.availableEntries)
-      .find(entry => entryKey(entry) === value.gameKey && matchesBannerSport(entry)) || null : null;
+      .find(entry => entryKey(entry) === value.gameKey && (!savedConfig.bannerSportFilter || entry.context.sport === savedConfig.bannerSportFilter)) || null : null;
+    if (compactRotation && overrideEntry && !compactEligible(overrideEntry)) {
+      suppressedOverrideEntry = overrideEntry; overrideEntry = null;
+    }
     requestRevision++;
     clearTimeout(rotationTimer); rotationTimer = null; rotationGeneration++;
     clearTimeout(pollTimer); pollGeneration++;
@@ -290,7 +315,7 @@ async function discoverGamesOnce(refresh = true) {
     loadingSports.clear();
     rotationQueue = []; normalRotationQueue = []; liveRotationQueue = []; automaticRotationEntries = []; cachedDiscoveries = [];
     liveMode.update({ enabledSports: [] });
-    overrideEntry = null; currentIndex = 0;
+    overrideEntry = null; suppressedOverrideEntry = null; currentIndex = 0;
     renderEmptyBanner();
     return;
   }
@@ -380,8 +405,11 @@ function selectedRotationQueue(availableEntries) {
   return window.SportsOverlay.selection.applyGameLocks(filtered, savedConfig.lockedGameKeys, entryKey);
 }
 
+function compactEligible(entry) {
+  return entry.candidate.competitionType !== "individual" && !["chess", "disc-golf"].includes(entry.context.sport);
+}
 function matchesBannerSport(entry) {
-  return !savedConfig.bannerSportFilter || entry.context.sport === savedConfig.bannerSportFilter;
+  return (!compactRotation || compactEligible(entry)) && (!savedConfig.bannerSportFilter || entry.context.sport === savedConfig.bannerSportFilter);
 }
 
 function renderEmptyBanner(discoveries = cachedDiscoveries || []) {
@@ -398,6 +426,7 @@ function renderEmptyBanner(discoveries = cachedDiscoveries || []) {
 }
 
 function rotationEmptyMessage(discoveries) {
+  if (compactRotation) return "No team games · enlarge banner to show all sports";
   if (savedConfig.bannerSportFilter) {
     if (loadingSports.has(savedConfig.bannerSportFilter)) return "Loading games…";
     const sport = window.SportsOverlay.config.findSport(savedConfig.bannerSportFilter);
@@ -690,6 +719,12 @@ if (!staticPreview) {
     if (teamsChanged || catalogChanged) sportContexts = savedConfig.sports
       .filter(group => !requestedSport || group.sport === requestedSport)
       .map(createSportContext).filter(Boolean);
+    if (suppressedOverrideEntry) {
+      const context = sportContexts.find(context => context.sport === suppressedOverrideEntry.context.sport);
+      suppressedOverrideEntry = context && (!savedConfig.bannerSportFilter || context.sport === savedConfig.bannerSportFilter)
+        && window.SportsOverlay.config.isCandidateEnabled(savedConfig, suppressedOverrideEntry.candidate)
+        ? { ...suppressedOverrideEntry, context } : null;
+    }
     if (overrideEntry) {
       const context = sportContexts.find(context => context.sport === overrideEntry.context.sport);
       overrideEntry = context && matchesBannerSport(overrideEntry) && window.SportsOverlay.config.isCandidateEnabled(savedConfig, overrideEntry.candidate)

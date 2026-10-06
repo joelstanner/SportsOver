@@ -147,6 +147,7 @@
       </div>
       <label class="field">Banner size<select id="desktop-size"><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option><option value="3">300%</option></select></label>
     </div>
+    <label class="field"><span><input id="skip-individual-small" type="checkbox"> Skip individual sports below 50%</span><small>Temporarily skips chess and disc golf in the shared desktop and OBS rotation. Turn off to keep every sport in OBS. All selected sports return at 50% or larger.</small></label>
     <div class="desktop-info-guide">
       <h3>Banner controls</h3>
       <dl class="desktop-gestures">
@@ -179,6 +180,7 @@
   const lockButton = section.querySelector('[data-desktop="toggle-lock"]');
   const visibilityButton = section.querySelector('[data-desktop="toggle-visibility"]');
   const fullscreenButton = section.querySelector('[data-desktop="toggle-fullscreen"]');
+  section.querySelector('#skip-individual-small').addEventListener('change', event => action('skip-individual-small', event.target.checked));
   const demoPanel = document.querySelector('#desktop-demo-controls');
   demoPanel.hidden = false;
   const demoSport = demoPanel.querySelector('#inspection-sport');
@@ -198,6 +200,7 @@
     demoPanel.querySelector('#inspection-play').textContent = value?.playing ? 'Pause rotation' : 'Play rotation';
     demoPanel.querySelector('#inspection-status').textContent = !value ? 'Live output. Demo inspection is off.'
       : !value.ready ? 'Loading demo fixtures for the banner and OBS…'
+      : !value.count ? 'DEMO on banner + OBS · Individual sports skipped below 50%. Enlarge the banner or turn off skipping in Settings.'
       : `DEMO on banner + OBS · ${value.label} · ${value.index + 1} of ${value.count} · ${value.playing ? 'Rotating every 4 seconds' : 'Paused for inspection'}`;
     if (value) {
       if (document.activeElement !== demoMode) demoMode.value = value.mode;
@@ -206,6 +209,7 @@
   }
   function render(value) {
     renderDemo(value.inspection);
+    section.querySelector('#skip-individual-small').checked = value.skipIndividualWhenSmall;
     const version = document.querySelector('#app-version');
     version.textContent = value.version ? `v${value.version}` : '';
     version.hidden = !value.version;

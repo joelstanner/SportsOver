@@ -102,6 +102,11 @@ const quiet = testMode() === 'quiet';
   }
   try {
     let { admin, banner, engine } = await launch();
+    if (process.env.SPORTSOVER_COMPACT_ROTATION_ONLY === '1') {
+      await require('./compact-rotation-smoke.cjs')({ application, admin, banner });
+      assert.deepEqual(errors, []);
+      return;
+    }
     if (process.env.SPORTSOVER_COMPACT_SMOKE_ONLY === '1') {
       await require('./compact-banner-smoke.cjs')({ application, admin, banner, directory });
       assert.deepEqual(errors, []);

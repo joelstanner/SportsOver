@@ -2,10 +2,10 @@
 (() => {
   if (!new URLSearchParams(location.search).has('engine') || !window.sportsDesktop) return;
   let last = '', lastSent = 0, refreshResult = null;
-  let bannerHovered = false;
+  let bannerHovered = false, compactPending = 0;
   function publish() {
     const mount = document.querySelector('#sports-overlay');
-    if (!mount || !window.SportsOverlay.engine) return;
+    if (!mount || !window.SportsOverlay.engine || compactPending) return;
     window.SportsOverlay.engine.setHovered(bannerHovered);
     const copy = mount.cloneNode(true);
     // Outputs run their own complete transitions when the rendered game changes;
@@ -19,6 +19,10 @@
     window.sportsDesktop.publish(frame);
   }
   window.sportsDesktop.onEngineCommand(async command => {
+    if (command.type === 'compact-rotation') {
+      compactPending++;
+      try { await window.SportsOverlay.engine?.setCompact(command.value); } finally { compactPending--; }
+    }
     if (command.type === 'inspection-config') window.SportsOverlay.engine?.configure(command.value);
     if (command.type === 'inspection-play') window.SportsOverlay.engine?.setPlaying(command.value);
     if (command.type === 'hover') bannerHovered = command.value === true;
