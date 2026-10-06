@@ -115,6 +115,12 @@
     window.addEventListener('resize', scale);
     scale();
     fullscreen((await api.status()).fullscreen);
+    document.addEventListener('keydown', event => {
+      if (event.defaultPrevented || event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
+        || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+      event.preventDefault();
+      api.action('step-banner-size', event.key === 'ArrowUp' ? -1 : 1).catch(console.error);
+    });
     return;
   }
   const inspection = document.querySelector('.live-preview-block');
@@ -143,7 +149,7 @@
         <div><dt>Browse games <span>Click</span></dt><dd>Click an unfocused banner to focus it without changing games. Once focused, click the leftmost 20% for the previous item or anywhere else for the next item. Team names and logos open the game in your browser. PDGA and chess links also open in your browser.</dd></div>
         <div><dt>Browse games <span>Left / Right arrows</span></dt><dd>With the banner or Settings focused, press Left for the previous item or Right for the next item, with a quick transition. In Settings, arrows keep their normal behavior while editing fields, choosing options, or using a dialog. Works in fullscreen and while the banner position is locked.</dd></div>
         <div><dt>Scroll lists <span>Wheel or trackpad</span></dt><dd>Scroll PDGA and chess rows while hovering to pause automatic movement. Touch swipes also work. With the list focused, use Up/Down arrows, Page Up/Down, or Home/End. Automatic scrolling resumes after you leave and move keyboard focus away.</dd></div>
-        <div><dt>Resize <span>Double-click</span></dt><dd>When unlocked: left half makes it smaller; right half makes it bigger. Size ranges from 50% to 300%.</dd></div>
+        <div><dt>Resize <span>Up / Down arrows or double-click</span></dt><dd>With the banner or Settings focused and the position unlocked, press Up to shrink or Down to grow. Double-click the left half to shrink or the right half to grow. Size ranges from 50% to 300%. In Settings, editing controls keep their normal arrow behavior; focused PDGA and chess lists keep Up/Down for scrolling. Resizing pauses in fullscreen.</dd></div>
         <div><dt>Move <span>Drag</span></dt><dd>When unlocked: click anywhere and drag to reposition. Dragging and resizing keep the current game.</dd></div>
         <div><dt>Fullscreen <span>Ctrl/Cmd + Shift + F</span></dt><dd>Show only the banner, centered across a black screen. The cursor hides after 3 seconds of inactivity; move it to show it again. Press Escape or choose Exit fullscreen to restore the previous size and position. Moving and resizing pause in fullscreen. Opening Settings also exits fullscreen.</dd></div>
         <div><dt>Banner menu <span>Right-click</span></dt><dd>Pin, unpin, or remove the current game from rotation, open Settings, choose a banner size, lock or unlock the banner position, toggle fullscreen, hide the banner, or quit SportsOver.</dd></div>
@@ -203,12 +209,13 @@
   async function action(name, value) { try { render(await api.action(name, value)); } catch (error) { showWarning(error.message); } }
   document.addEventListener('keydown', event => {
     if (event.defaultPrevented || event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
-      || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+      || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
     const target = event.target;
     if (target.isContentEditable || target.closest('input, textarea, select, [role="textbox"], [role="combobox"], [role="slider"], [role="spinbutton"], [role="listbox"], [role="tablist"], [role="menu"]')
       || document.querySelector('dialog[open]')) return;
     event.preventDefault();
-    void action('browse-banner', event.key === 'ArrowLeft' ? 'previous' : 'next');
+    if (event.key === 'ArrowUp' || event.key === 'ArrowDown') void action('step-banner-size', event.key === 'ArrowUp' ? -1 : 1);
+    else void action('browse-banner', event.key === 'ArrowLeft' ? 'previous' : 'next');
   });
   document.querySelectorAll('[data-desktop]').forEach(button => button.addEventListener('click', () => action(button.dataset.desktop)));
   section.querySelector('select').addEventListener('change', event => action('size', Number(event.target.value)));

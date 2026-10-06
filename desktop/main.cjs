@@ -386,6 +386,14 @@ else {
       else if (action === 'toggle-fullscreen') setFullscreen(!normalBounds);
       else if (action === 'recover') recover();
       else if (action === 'size') resize(value);
+      else if (action === 'step-banner-size') {
+        if (event.sender !== banner.webContents && event.sender !== settings?.webContents) throw Error('Banner or Settings access required');
+        if (value !== -1 && value !== 1) throw Error('Banner resizing requires a direction');
+        bannerGesture({ phase: 'cancel' });
+        const message = normalBounds ? 'Exit fullscreen to resize the banner.' : locked ? 'Unlock the banner to resize it.' : '';
+        for (const contents of new Set([banner.webContents, event.sender])) contents.send('desktop:browse-feedback', message);
+        if (!message) resize(stepBannerScale(banner.getBounds().width / 472, value));
+      }
       else if (action === 'settings') openSettings();
       else if (action === 'banner-hover') {
         if (event.sender !== banner.webContents) throw Error('Banner access required');
