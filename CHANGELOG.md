@@ -3,6 +3,13 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.34.1 — 2026-10-06
+
+### Changed
+
+- Lower the minimum banner-size preset to 25% in the right-click menu,
+  Settings, and double-click resizing. The default banner size is unchanged.
+
 ## 0.34.0 — 2026-10-06
 
 ### Added

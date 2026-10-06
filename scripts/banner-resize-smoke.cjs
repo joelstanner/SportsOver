@@ -15,7 +15,7 @@ module.exports = async ({ application, admin, banner }) => {
   const bounds = () => application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
     .find(win => win.webContents.getURL().includes('display.html?desktop')).getBounds());
   try {
-    for (const scale of [1.25, 0.75, 2, 0.5, 3, 1]) {
+    for (const scale of [1.25, 0.75, 2, 0.5, 0.25, 3, 1]) {
       const before = await bounds();
       await admin.locator('#desktop-size').selectOption(String(scale));
       const expectedWidth = Math.round(Math.min(472 * scale, area.width, area.height * 472 / 100));
@@ -26,12 +26,14 @@ module.exports = async ({ application, admin, banner }) => {
       assert.equal(after.y, before.y);
     }
     const beforeMenu = await bounds();
-    await application.evaluate(({ Menu }) => Menu.getApplicationMenu().getMenuItemById('banner-size-1.25').click());
-    const menuWidth = Math.round(Math.min(590, area.width, area.height * 472 / 100));
-    await banner.waitForFunction(width => innerWidth === width, menuWidth);
-    const afterMenu = await bounds();
-    assert.ok(Math.abs(beforeMenu.x + beforeMenu.width / 2 - afterMenu.x - afterMenu.width / 2) <= 0.5);
-    assert.equal(afterMenu.y, beforeMenu.y);
+    for (const scale of [0.25, 1.25]) {
+      await application.evaluate(({ Menu }, scale) => Menu.getApplicationMenu().getMenuItemById(`banner-size-${scale}`).click(), scale);
+      const menuWidth = Math.round(Math.min(472 * scale, area.width, area.height * 472 / 100));
+      await banner.waitForFunction(width => innerWidth === width, menuWidth);
+      const afterMenu = await bounds();
+      assert.ok(Math.abs(beforeMenu.x + beforeMenu.width / 2 - afterMenu.x - afterMenu.width / 2) <= 0.5);
+      assert.equal(afterMenu.y, beforeMenu.y);
+    }
     await admin.evaluate(() => window.sportsDesktop.action('size', 1));
     for (const [page, key, scale] of [[admin, 'ArrowUp', 0.9], [banner, 'ArrowDown', 1]]) {
       const before = await bounds();

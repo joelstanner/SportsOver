@@ -92,7 +92,7 @@ test('arrows step ten percentage points, reach 10%, and restore small saved size
   assert.equal(stepArrowScale(2.98, 1), 3, 'growing near the maximum stops at 300%');
   assert.equal(stepArrowScale(3, 1), 3);
   assert.equal(stepBannerScale(47 / 472, -1), 0.1, 'double-click shrink cannot enlarge a small banner');
-  assert.equal(stepBannerScale(47 / 472, 1), 0.5);
+  assert.equal(stepBannerScale(47 / 472, 1), 0.25);
   const display = { workArea: { x: 0, y: 30, width: 1920, height: 1050 } };
   const tiny = topAnchoredResizeBounds({ x: 600, y: 30, width: 472, height: 100 }, 47, display);
   assert.equal(tiny.width, 47);

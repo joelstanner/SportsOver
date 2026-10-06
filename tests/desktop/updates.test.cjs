@@ -256,6 +256,6 @@ test('tray and application menus expose the checker and preserve Quit and banner
     }
     const sizes = bannerMenu.find(item => item.id === 'banner-size');
     assert.equal(sizes.label, 'Banner size');
-    assert.equal(sizes.submenu.map(item => item.label).join(','), '50%,75%,100%,125%,150%,200%,300%');
+    assert.equal(sizes.submenu.map(item => item.label).join(','), '25%,50%,75%,100%,125%,150%,200%,300%');
   }
 });

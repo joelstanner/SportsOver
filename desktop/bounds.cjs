@@ -1,4 +1,4 @@
-const BANNER_SCALES = Object.freeze([0.5, 0.75, 1, 1.25, 1.5, 2, 3]);
+const BANNER_SCALES = Object.freeze([0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3]);
 
 function stepBannerScale(scale, direction) {
   if (direction < 0 && scale <= BANNER_SCALES[0]) return Math.max(0.1, scale);

@@ -145,7 +145,7 @@
         <button class="button button--secondary" data-desktop="toggle-fullscreen" disabled>Fullscreen</button>
         <button class="button button--secondary" data-desktop="recover">Recover position</button>
       </div>
-      <label class="field">Banner size<select id="desktop-size"><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option><option value="3">300%</option></select></label>
+      <label class="field">Banner size<select id="desktop-size"><option value="0.25">25%</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option><option value="3">300%</option></select></label>
     </div>
     <label class="field"><span><input id="skip-individual-small" type="checkbox"> Skip individual sports below 50%</span><small>Temporarily skips chess and disc golf in the shared desktop and OBS rotation. Turn off to keep every sport in OBS. All selected sports return at 50% or larger.</small></label>
     <div class="desktop-info-guide">

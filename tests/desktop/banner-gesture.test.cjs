@@ -295,7 +295,7 @@ test('a completed drag does not seed a double-click', () => {
   assert.deepEqual(f.calls, ['next']);
 });
 
-test('size steps follow settings presets, bounded at 50 and 300 percent', () => {
+test('size steps follow settings presets, bounded at 25 and 300 percent', () => {
   const { BANNER_SCALES, stepBannerScale } = require('../../desktop/bounds.cjs');
   for (const [index, scale] of BANNER_SCALES.entries()) {
     assert.equal(stepBannerScale(scale, 1), BANNER_SCALES[Math.min(index + 1, BANNER_SCALES.length - 1)]);
