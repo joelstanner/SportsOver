@@ -1,9 +1,5 @@
 # TODO
 
-## Bugs to investigate
-
-- At startup, Left/Right arrow-key browsing must work immediately when banners are ready, or show a clear "Banners are loading" message while initialization prevents navigation. The apparent lack of response may instead have been caused by a single pinned item leaving no other banner to browse; confirm this before treating it as a startup/loading bug.
-
 ## Provider permissions
 
 - Confirm written ESPN permission for automated access to the current score/situation endpoints, redistribution in desktop/OBS overlays and team artwork. Ask for aggregate request limits across sports and hosts, plus caching/attribution requirements.
@@ -12,6 +8,8 @@
 - These questions remain open; no outreach or agreement acceptance has been performed. See the dated [provider-access findings](desktop/PROVIDERS.md).
 
 ## Ideas
+
+- As the banner shrinks, give score numbers a larger percentage of the banner so scores remain prominent and readable at smaller sizes.
 
 - Support multiple banner windows at once with different sports in each banner, including across monitors. Each banner should have its own sport selection and game rotation, size, position, fullscreen, and position lock; save window layouts and share score fetching through the existing engine.
 - Favorite players across events: per-event followed-player banners already exist for PDGA and chess. Add a saved favorites list, including clicking a player's name on a leaderboard to add them, and discover/follow their tournaments or matches across events wherever supported providers offer usable data, including outside the main pro tour.

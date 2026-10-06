@@ -9,6 +9,7 @@ const { createBannerGesture } = require('./banner-gesture.cjs');
 const { bannerUrl } = require('./banner-link.cjs');
 const { gameLockMenuItem } = require('./banner-game-lock.cjs');
 const { gameRemoveMenuItem } = require('./banner-game-remove.cjs');
+const { browseFeedback } = require('./banner-navigation.cjs');
 const { createHandler, ORIGIN } = require('./protocol.cjs');
 const { createUpdateChecker } = require('./updates.cjs');
 const updateChecker = createUpdateChecker({ app, dialog, shell, onStateChange: menus,
@@ -31,6 +32,13 @@ let appIcon, trayIcon, outputServer, engineWindow, obsUrl, integrationToken;
 let banner, settings, tray, store, quitting = false, locked = false, shortcut = false, saveTimer;
 let normalBounds = null, fullscreenDisplayId = null;
 let bannerHovered = false;
+function browseBanner(type, sender) {
+  const message = browseFeedback(engineState.state(), store?.value.config.lockedGameKeys);
+  for (const contents of new Set([banner?.webContents, sender])) {
+    if (contents && !contents.isDestroyed()) contents.send('desktop:browse-feedback', message);
+  }
+  if (!message) engineWindow.webContents.send('engine:command', { type, fast: true });
+}
 function setBannerHovered(value) {
   bannerHovered = value;
   if (engineWindow && !engineWindow.isDestroyed()) engineWindow.webContents.send('engine:command', { type: 'hover', value });
@@ -66,7 +74,7 @@ function secure(win) {
       && (input.key === 'ArrowLeft' || input.key === 'ArrowRight')) {
       event.preventDefault();
       bannerGesture({ phase: 'cancel' });
-      engineWindow.webContents.send('engine:command', { type: input.key === 'ArrowLeft' ? 'previous' : 'next', fast: true });
+      browseBanner(input.key === 'ArrowLeft' ? 'previous' : 'next', win.webContents);
     }
     if (normalBounds && input.type === 'keyDown' && input.key === 'Escape') {
       event.preventDefault();
@@ -402,7 +410,7 @@ else {
         if (event.sender !== settings?.webContents) throw Error('Settings access required');
         if (value !== 'previous' && value !== 'next') throw Error('Banner browsing requires a direction');
         bannerGesture({ phase: 'cancel' });
-        engineWindow.webContents.send('engine:command', { type: value, fast: true });
+        browseBanner(value, event.sender);
       }
       else if (action === 'copy-obs') { if (obsUrl) clipboard.writeText(obsUrl); }
       else if (action === 'copy-token') {

@@ -2,6 +2,18 @@
 (async () => {
   const api = window.sportsDesktop;
   if (!api || window.top !== window) return;
+  const browseNotice = document.createElement('p');
+  browseNotice.className = 'desktop-browse-notice';
+  browseNotice.setAttribute('role', 'status');
+  browseNotice.hidden = true;
+  document.body.append(browseNotice);
+  let browseNoticeTimer;
+  api.onBrowseFeedback?.(message => {
+    clearTimeout(browseNoticeTimer);
+    browseNotice.textContent = message;
+    browseNotice.hidden = !message;
+    if (message) browseNoticeTimer = setTimeout(() => { browseNotice.hidden = true; }, 4500);
+  });
   if (new URLSearchParams(location.search).has('desktop')) {
     document.body.classList.add('desktop-banner');
     const bannerHint = 'Click: browse · Drag: move · Double-click: resize · Right-click: menu';

@@ -102,6 +102,11 @@ const quiet = testMode() === 'quiet';
   }
   try {
     let { admin, banner, engine } = await launch();
+    if (process.env.SPORTSOVER_NAVIGATION_SMOKE_ONLY === '1') {
+      await require('./banner-navigation-smoke.cjs')({ application, admin, banner, engine });
+      assert.deepEqual(errors, []);
+      return;
+    }
     if (process.env.SPORTSOVER_FOCUS_SMOKE_ONLY === '1') {
       await admin.getByRole('button', { name: 'Live control', exact: true }).click();
       await admin.locator('#available-games [data-game-key="baseball:2"] .add-game').click();

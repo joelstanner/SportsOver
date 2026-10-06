@@ -15,9 +15,35 @@
 .desktop-banner #sports-overlay.hockey-scorebug > :is(.hockey-live-detail, .hockey-status) { flex: 1; }
 .desktop-banner #sports-overlay.hockey-scorebug[data-preseason="true"][data-state="live"] > .hockey-main { min-height: 42px; }
 .desktop-banner #sports-overlay.hockey-scorebug[data-preseason="true"][data-state="live"] .hockey-center { padding-top: 6px; }
+/* Keep live NBA scores compact when optional footer rows are absent. */
+.desktop-banner #sports-overlay.basketball-scorebug[data-sport="basketball"][data-state="live"] > .basketball-main { flex: 0 0 auto; }
+.desktop-banner #sports-overlay.basketball-scorebug[data-sport="basketball"][data-state="live"] > .basketball-live-detail { flex: 1; align-items: center; }
+/* Keep live NFL scores compact while the down/field row fills spare height. */
+.desktop-banner #sports-overlay.football-scorebug[data-sport="football"][data-state="live"]:has(.football-live-detail:not([hidden])) > .football-main { flex: 0 1 auto; }
+.desktop-banner #sports-overlay.football-scorebug[data-sport="football"][data-state="live"] > .football-live-detail { flex: 1; }
 .desktop-banner #sports-overlay.is-hidden { display: none; }
 html.desktop-fullscreen, .desktop-banner.desktop-fullscreen { background: #000; }
 .desktop-banner.desktop-fullscreen { display: flex; align-items: center; justify-content: center; cursor: default; }
 .desktop-banner.desktop-fullscreen #sports-overlay { flex: none; cursor: pointer; }
 .desktop-banner.desktop-fullscreen.cursor-idle,
 .desktop-banner.desktop-fullscreen.cursor-idle * { cursor: none !important; }
+/* Browsing feedback floats over the frame without changing its size or hit area. */
+.desktop-browse-notice {
+  position: fixed;
+  z-index: 1000;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  box-sizing: border-box;
+  max-width: calc(100% - 24px);
+  width: max-content;
+  margin: 0;
+  padding: 5px 9px;
+  border-radius: 5px;
+  background: #17252f;
+  color: #fff;
+  font: 11px/1.3 system-ui, sans-serif;
+  text-align: center;
+  pointer-events: none;
+}
+.desktop-browse-notice[hidden] { display: none; }

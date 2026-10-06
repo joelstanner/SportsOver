@@ -19,7 +19,7 @@ const empty = { ready: true, discoveryComplete: false, discoveryPending: true, a
     await context.exposeFunction('readTestEngine', () => engineState);
     await context.addInitScript(config => {
       localStorage.setItem('sports-overlay.config.v1', JSON.stringify(config));
-      window.sportsDesktop = { engine: () => window.readTestEngine(), status: async () => ({ scale: 1 }), action: async () => ({ engine: await window.readTestEngine() }) };
+      window.sportsDesktop = { onFrame: () => {}, engine: () => window.readTestEngine(), status: async () => ({ scale: 1 }), action: async () => ({ engine: await window.readTestEngine() }) };
     }, config);
     await context.route('**/*', async route => {
       const url = new URL(route.request().url());
