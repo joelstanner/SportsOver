@@ -130,7 +130,7 @@
         <div><dt>Resize <span>Double-click</span></dt><dd>When unlocked: left half makes it smaller; right half makes it bigger. Size ranges from 50% to 300%.</dd></div>
         <div><dt>Move <span>Drag</span></dt><dd>When unlocked: click anywhere and drag to reposition. Dragging and resizing keep the current game.</dd></div>
         <div><dt>Fullscreen <span>Ctrl/Cmd + Shift + F</span></dt><dd>Show only the banner, centered across a black screen. The cursor hides after 3 seconds of inactivity; move it to show it again. Press Escape or choose Exit fullscreen to restore the previous size and position. Moving and resizing pause in fullscreen. Opening Settings also exits fullscreen.</dd></div>
-        <div><dt>Banner menu <span>Right-click</span></dt><dd>Pin, unpin, or remove the current game from rotation, open Settings, choose a banner size, lock or unlock the banner position, toggle fullscreen, or hide the banner.</dd></div>
+        <div><dt>Banner menu <span>Right-click</span></dt><dd>Pin, unpin, or remove the current game from rotation, open Settings, choose a banner size, lock or unlock the banner position, toggle fullscreen, hide the banner, or quit SportsOver.</dd></div>
       </dl>
       <p class="desktop-info-note">Browsing wraps around and restarts the display timer. Hovering lets the timer run down, then holds the banner until the pointer leaves. Clicks pause briefly to detect double-clicks. Game pins and temporary overrides still apply.</p>
     </div>

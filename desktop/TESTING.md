@@ -25,6 +25,7 @@ The automated test invokes native APIs but does **not** establish that physical 
    Check Pin current game and confirm the same game shows Pinned in Live Control and stays in rotation. Uncheck it to resume the remaining rotation. Pin a game from Live Control and confirm the banner menu is checked. Repeat in Live mode and with multiple pinned games; existing pins must remain selected. With no game displayed, Pin current game must be disabled.
    Choose Remove from rotation and confirm the displayed game leaves the banner and Live Control rotation list, its pin is cleared, and it can be added again from Available games. Repeat with an automatic game and in Live mode. With no game displayed, Remove from rotation must be disabled.
 3. Hide the banner, close Settings, and reopen from the tray. Launch a second instance and confirm the existing app recovers.
+   Right-click the banner and choose Quit SportsOver. Confirm the whole app exits, including Settings, the tray icon, and the local output server; it must not just hide the banner. Repeat while the banner is locked and fullscreen.
 4. Disconnect the monitor containing the banner, including while locked. Check recovery on the remaining display.
 5. Test macOS Spaces/fullscreen and Windows ordinary/maximized apps. Test tray visibility in light/dark modes and Windows taskbar overflow.
 6. Check operation when Ctrl/Cmd+Shift+U is already registered elsewhere. Settings should report shortcut unavailability; the tray and Settings buttons remain alternatives.

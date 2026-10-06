@@ -306,6 +306,8 @@ else {
         bannerSizeMenuItem(),
         { id: 'hide-banner', label: 'Hide banner', click: hideBanner },
         updateChecker.menuItem(),
+        { type: 'separator' },
+        { id: 'quit-sportsover', label: 'Quit SportsOver', accelerator: 'CommandOrControl+Q', click: () => app.quit() },
       ]);
       if (!quietTest) menu.popup({ window: banner });
     });

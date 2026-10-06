@@ -1,8 +1,8 @@
 # TODO
 
-## Windows bugs to investigate
+## Bugs to investigate
 
-- Windows has no obvious way to quit SportsOver from the banner. Add a discoverable quit action, such as one in the banner's right-click menu; currently Quit is only in the tray and application menus.
+- At startup, Left/Right arrow-key browsing must work immediately when banners are ready, or show a clear "Banners are loading" message while initialization prevents navigation. The apparent lack of response may instead have been caused by a single pinned item leaving no other banner to browse; confirm this before treating it as a startup/loading bug.
 
 ## Provider permissions
 

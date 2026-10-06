@@ -11,6 +11,10 @@
 }
 .desktop-banner #sports-overlay > :is(.game-view, .football-main, .basketball-main, .hockey-main, .soccer-main) { flex: 1; }
 .desktop-banner #sports-overlay > :not(.game-view, .football-main, .basketball-main, .hockey-main, .soccer-main) { flex-shrink: 0; }
+.desktop-banner #sports-overlay.hockey-scorebug > .hockey-main { flex: 0 0 auto; }
+.desktop-banner #sports-overlay.hockey-scorebug > :is(.hockey-live-detail, .hockey-status) { flex: 1; }
+.desktop-banner #sports-overlay.hockey-scorebug[data-preseason="true"][data-state="live"] > .hockey-main { min-height: 42px; }
+.desktop-banner #sports-overlay.hockey-scorebug[data-preseason="true"][data-state="live"] .hockey-center { padding-top: 6px; }
 .desktop-banner #sports-overlay.is-hidden { display: none; }
 html.desktop-fullscreen, .desktop-banner.desktop-fullscreen { background: #000; }
 .desktop-banner.desktop-fullscreen { display: flex; align-items: center; justify-content: center; cursor: default; }
