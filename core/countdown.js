@@ -1,7 +1,7 @@
 "use strict";
 
 (function initializeCountdown(global) {
-  const attributes = ["pregameStart", "pregamePrefix", "pregameSuffix", "pregameFallback", "pregameZone"];
+  const attributes = ["pregameStart", "pregamePrefix", "pregameSuffix", "pregameFallback", "pregameZone", "compactDate", "compactTime"];
 
   function clear(element) {
     for (const attribute of attributes) delete element.dataset[attribute];
@@ -28,6 +28,9 @@
       : new Intl.DateTimeFormat().resolvedOptions().timeZone);
     Object.assign(element.dataset, { pregameStart: startTime, pregamePrefix: prefix,
       pregameSuffix: suffix, pregameFallback: fallback, pregameZone: timeZone });
+    const start = new Date(startTime);
+    element.dataset.compactDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone }).format(start);
+    element.dataset.compactTime = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZoneName: "short", timeZone }).format(start);
     paint(element, new Date());
   }
 

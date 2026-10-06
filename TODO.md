@@ -9,8 +9,8 @@
 
 ## Ideas
 
-- [ ] Give upcoming games a compact desktop layout below 50%, similar to live games: team logos on either side with the game date/time in the middle. Queued only; do not start until requested.
-- [x] Add a compact desktop layout below 50% for live and final team games, emphasizing logos and scores. Other game states and OBS keep their existing layouts.
+- [x] Give upcoming games a compact desktop layout below 50%, similar to live games: team logos on either side with the game date/time in the middle.
+- [x] Add a compact desktop layout below 50% for live and final team games, emphasizing logos and scores. Upcoming games have a matching compact layout; interrupted games and OBS keep their existing layouts.
 - [ ] Audit outbound API request volume by sport, provider, and endpoint during startup, idle polling, live games, and Settings/OBS use. Check whether disabled sports still make score, schedule, catalog, or tournament-discovery requests and explain any exceptions. Identify duplicate calls, measure calls per minute, and recommend changes to polling, caching, or sport gating where needed.
 - Add keyboard shortcuts for more features, extending the existing game-browsing and banner-resizing shortcuts.
 - [ ] Plan a simplification of Settings and its relationship to Live control: identify confusing or redundant controls, propose a clearer layout and wording, then implement an initial set of concrete improvements while preserving saved preferences.

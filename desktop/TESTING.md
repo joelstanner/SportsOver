@@ -4,7 +4,7 @@ Implementation tested on macOS (Darwin 24.6.0, Apple Silicon), Electron 44.5.0, 
 
 ## Automated checks
 
-`SPORTSOVER_COMPACT_SMOKE_ONLY=1 npm run test:desktop -- --quiet` checks compact desktop layouts across seven team sports, live/final states, the 50% boundary, and 10–40% sizes. It verifies other states and narrow OBS output retain their layouts, and saves screenshots in the isolated test directory.
+`SPORTSOVER_COMPACT_SMOKE_ONLY=1 npm run test:desktop -- --quiet` checks compact desktop layouts across seven team sports, live/final/upcoming states, the 50% boundary, and 10–40% sizes. It verifies other states and narrow OBS output retain their layouts, and saves screenshots in the isolated test directory.
 
 Local desktop tests default to quiet mode. Use `npm run test:mode -- visible` to save a full visible preference for this checkout, or `npm run test:desktop -- --visible` for one run. `npm run test:mode -- quiet` restores quiet mode. The Git-ignored `.sportsover-tests.json` holds this preference; `SPORTSOVER_TEST_MODE=quiet|visible` overrides it, and command flags override that environment variable. CI always forces visible mode. Packaged executable tests require visible mode.
 

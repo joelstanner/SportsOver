@@ -29,6 +29,8 @@ test("countdown ticks from wall time, enters the final hour, and stops updating 
   const start = new Date(now + 3_600_000).toISOString();
   api.render(element, start, { prefix: "Upcoming · ", suffix: " · Favorite", timeZone: "America/Los_Angeles" });
   assert.equal(element.textContent, "Upcoming · 1:00 PM PDT · Favorite");
+  assert.equal(element.dataset.compactDate, "Oct 3");
+  assert.equal(element.dataset.compactTime, "1:00 PM PDT");
   now += 1000; tick();
   assert.equal(element.textContent, "Upcoming · Starts in 59:59 · Favorite");
   now += 15_000; tick(); // A delayed tick must catch up without accumulating drift.
@@ -36,7 +38,10 @@ test("countdown ticks from wall time, enters the final hour, and stops updating 
   assert.equal(element.title, element.textContent);
   now += 3_584_000; tick();
   assert.equal(element.textContent, "Upcoming · Starting soon · Favorite");
+  assert.equal(element.dataset.compactTime, "1:00 PM PDT", "compact time stays scheduled while countdown ticks");
   api.clear(element);
+  assert.equal(element.dataset.compactDate, undefined);
+  assert.equal(element.dataset.compactTime, undefined);
   element.textContent = "FINAL";
   tick();
   assert.equal(element.textContent, "FINAL");

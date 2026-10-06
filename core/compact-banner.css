@@ -1,7 +1,7 @@
-/* Keep the native 472 × 100 canvas, but give small live/final team games
+/* Keep the native 472 × 100 canvas, but give small live/final/upcoming team games
    a dedicated layout. OBS and the other game states retain their layouts. */
 @media (width < 236px) {
-  .desktop-banner #sports-overlay:is(.scorebug, .football-scorebug, .basketball-scorebug, .hockey-scorebug, .soccer-scorebug):is([data-state="live"], [data-state="final"]) {
+  .desktop-banner #sports-overlay:is(.scorebug, .football-scorebug, .basketball-scorebug, .hockey-scorebug, .soccer-scorebug):is([data-state="live"], [data-state="final"], [data-state="pregame"]) {
     height: 88px;
     position: relative;
 
@@ -73,6 +73,38 @@
     }
     :is(.football-team--home, .basketball-team--home, .hockey-team--home, .soccer-team--away) { justify-content: flex-end; }
     #home-team { flex-direction: row-reverse; }
+    &[data-state="pregame"] {
+      :is(.status-details, .football-status, .basketball-status, .hockey-status, .soccer-status) {
+        display: flex !important;
+        position: absolute;
+        inset: 0 96px;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        border: 0;
+        min-height: 0;
+        background: none;
+        > :is(#matchup, #football-matchup, #basketball-matchup, #hockey-matchup, #soccer-matchup) { display: none; }
+      }
+      :is(#status, #football-status-text, #basketball-status-text, #hockey-status-text, #soccer-status-text) {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        color: #fff;
+        font-size: 26px;
+        font-weight: 800;
+        line-height: 1.15;
+        letter-spacing: 0;
+        text-transform: none;
+        text-align: center;
+        &[data-compact-date] {
+          font-size: 0;
+          &::before { content: attr(data-compact-date); font-size: 32px; }
+          &::after { content: attr(data-compact-time); font-size: 26px; }
+        }
+      }
+    }
     .demo-mark { font-size: 12px; line-height: 14px; }
   }
 }

@@ -35,7 +35,7 @@ module.exports = async ({ application, admin, banner, directory }) => {
     }, obsUrl);
     obs = application.windows().find(page => page.url().startsWith(new URL(obsUrl).origin));
     for (const sport of ['baseball', 'football', 'college-football', 'basketball', 'college-basketball', 'hockey', 'soccer']) {
-      for (const mode of ['live', 'final']) {
+      for (const mode of ['live', 'final', 'pregame']) {
         await fixture(sport, mode);
         for (const percent of [50, 49, 40, 30, 20, 10]) {
           await resize(percent);
@@ -43,9 +43,9 @@ module.exports = async ({ application, admin, banner, directory }) => {
           assert.equal(result.font.length, 2);
           if (percent === 50) { assert.ok(result.font.every(size => size < 60), '50% keeps full layout'); continue; }
           assert.deepEqual(result.font, [60, 60], `${sport} ${mode} ${percent}% scores`);
-          assert.equal(result.detailsVisible, false, 'details give space to scores');
+          assert.equal(result.detailsVisible, mode === 'pregame', 'only upcoming date/time remains visible');
           assert.notEqual(result.demo, 'none', 'DEMO remains visible');
-          for (let i = 0; i < 2; i++) {
+          for (let i = 0; mode !== 'pregame' && i < 2; i++) {
             const score = result.scores[i], team = result.teams[i];
             assert.ok(score.left >= team.left - 0.1 && score.right <= team.right + 0.1, `${sport}: score fits team`);
             assert.ok(score.top >= result.root.top && score.bottom <= result.root.bottom, `${sport}: score fits height`);
@@ -61,7 +61,7 @@ module.exports = async ({ application, admin, banner, directory }) => {
         const obsFont = await obs.locator('.team__score, .football-score, .basketball-score, .hockey-score, .soccer-score').first().evaluate(el => parseFloat(getComputedStyle(el).fontSize));
         assert.ok(obsFont < 60, 'narrow OBS retains its original layout');
       }
-      for (const mode of ['pregame', 'interrupted', 'no-event', 'offline', 'error']) {
+      for (const mode of ['interrupted', 'no-event', 'offline', 'error']) {
         await fixture(sport, mode);
         assert.ok((await geometry()).font.every(size => size < 60), `${sport} ${mode} retains original layout`);
       }
@@ -71,7 +71,7 @@ module.exports = async ({ application, admin, banner, directory }) => {
     for (const mode of ['live', 'pregame', 'interrupted', 'final']) {
       if (mode !== 'live') await admin.evaluate(() => window.sportsDesktop.action('browse-banner', 'next'));
       await banner.waitForFunction(mode => document.querySelector('#sports-overlay').dataset.fixtureState === mode, mode);
-      assert.equal((await geometry()).font[0] === 60, ['live', 'final'].includes(mode));
+      assert.equal((await geometry()).font[0] === 60, ['live', 'final', 'pregame'].includes(mode));
     }
     await fixture('basketball', 'final');
     await banner.evaluate(() => {
