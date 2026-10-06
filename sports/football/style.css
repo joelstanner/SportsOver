@@ -39,7 +39,7 @@
 .football-status strong { color: #a9d9ad; font-size: 0.76em; letter-spacing: 0.05em; text-transform: uppercase; }
 .football-live-detail { display: grid; grid-template-columns: repeat(2, 1fr); border-top: 1px solid var(--football-line); background: rgba(2, 10, 17, 0.42); }
 .football-live-detail.is-single { grid-template-columns: 1fr; }
-.football-live-detail div { display: grid; gap: 1px; padding: 2px 11px; border-right: 1px solid var(--football-line); }
+.football-live-detail div { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; padding: 2px 11px; border-right: 1px solid var(--football-line); }
 .football-live-detail div:last-child { border-right: 0; }
 .football-live-detail span { color: #a9d9ad; font-size: 0.55em; font-weight: 800; letter-spacing: 0.08em; }
 .football-live-detail strong { font-size: 0.78em; }

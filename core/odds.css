@@ -15,3 +15,11 @@
 .sports-odds .sports-odds-label { color: #aebbc6; font-size: 8px; font-weight: 800; letter-spacing: .05em; }
 .sports-odds strong { color: #f7fbff; font-weight: 600; white-space: nowrap; }
 .sports-odds .is-near-even { color: #71efb3; font-weight: 800; }
+
+/* Live play descriptions take the remaining footer space in compact banners.
+   Show odds when the play row is absent; hockey has room for both. */
+.football-scorebug[data-state="live"]:has(.football-last-play:not([hidden])) > .sports-odds,
+.soccer-scorebug[data-state="live"]:has(.soccer-last-event:not([hidden])) > .sports-odds,
+.basketball-scorebug[data-state="live"]:has(.basketball-last-play:not([hidden])) > .sports-odds {
+  display: none;
+}

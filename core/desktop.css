@@ -2,6 +2,16 @@
 .desktop-banner:active { cursor: grabbing; }
 .desktop-banner img { -webkit-user-drag: none; }
 .desktop-banner .chess-scorebug a[href], .desktop-banner .pdga-scorebug a[href], .desktop-banner a.team-game-link[href] { cursor: pointer; }
+/* The native banner is 100px high at 100%. Keep the scoreboard frame at 88px
+   even when score updates add or remove optional detail rows. */
+.desktop-banner #sports-overlay:is(.scorebug, .football-scorebug, .basketball-scorebug, .hockey-scorebug, .soccer-scorebug) {
+  height: 88px;
+  display: flex;
+  flex-direction: column;
+}
+.desktop-banner #sports-overlay > :is(.game-view, .football-main, .basketball-main, .hockey-main, .soccer-main) { flex: 1; }
+.desktop-banner #sports-overlay > :not(.game-view, .football-main, .basketball-main, .hockey-main, .soccer-main) { flex-shrink: 0; }
+.desktop-banner #sports-overlay.is-hidden { display: none; }
 html.desktop-fullscreen, .desktop-banner.desktop-fullscreen { background: #000; }
 .desktop-banner.desktop-fullscreen { display: flex; align-items: center; justify-content: center; cursor: default; }
 .desktop-banner.desktop-fullscreen #sports-overlay { flex: none; cursor: pointer; }

@@ -12,6 +12,28 @@
   text-align: center;
 }
 
+/* During live games the full-height preseason strip would push detail rows
+   below the fixed banner. Keep the label in the upper edge instead. */
+#sports-overlay[data-preseason="true"][data-state="live"] { position: relative; }
+#sports-overlay[data-preseason="true"][data-state="live"]::before {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  padding: 0 4px;
+  border-radius: 0 0 3px 3px;
+  font-size: 7px;
+  line-height: 8px;
+  color: #ffd68a;
+  background: #3c2915;
+  white-space: nowrap;
+  pointer-events: none;
+}
+#sports-overlay[data-preseason="true"][data-state="live"] :is(.football-center, .basketball-center, .soccer-center) {
+  padding-top: 6px;
+}
+
 #sports-overlay {
   transform-origin: left center;
   will-change: opacity, transform;
