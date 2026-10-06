@@ -102,6 +102,11 @@ const quiet = testMode() === 'quiet';
   }
   try {
     let { admin, banner, engine } = await launch();
+    if (process.env.SPORTSOVER_COMPACT_SMOKE_ONLY === '1') {
+      await require('./compact-banner-smoke.cjs')({ application, admin, banner, directory });
+      assert.deepEqual(errors, []);
+      return;
+    }
     if (process.env.SPORTSOVER_DEMO_SMOKE_ONLY === '1') {
       await require('./demo-inspection-smoke.cjs')({ application, admin, banner, engine, directory });
       assert.deepEqual(errors, []);

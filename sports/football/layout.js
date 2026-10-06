@@ -101,6 +101,7 @@
     }
 
     function renderNoEvent(message = "No selected football game", visible = true) {
+      delete els.bug.dataset.state;
       global.SportsOverlay.countdown?.clear(els.statusText);
       global.SportsOverlay.teamNames.clearLinks(els.awayAbbr, els.homeAbbr, els.awayMark, els.homeMark);
       global.SportsOverlay.odds?.clear(els.bug);

@@ -1,0 +1,78 @@
+/* Keep the native 472 × 100 canvas, but give small live/final team games
+   a dedicated layout. OBS and the other game states retain their layouts. */
+@media (width < 236px) {
+  .desktop-banner #sports-overlay:is(.scorebug, .football-scorebug, .basketball-scorebug, .hockey-scorebug, .soccer-scorebug):is([data-state="live"], [data-state="final"]) {
+    height: 88px;
+    position: relative;
+
+    > :not(.game-view, .football-main, .basketball-main, .hockey-main, .soccer-main, .demo-mark) { display: none; }
+
+    > :is(.game-view, .football-main, .basketball-main, .hockey-main, .soccer-main) {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: 1fr;
+      gap: 14px;
+      padding: 0 10px;
+      min-height: 0;
+      height: 100%;
+      flex: 1;
+      align-items: center;
+      > :not(.team, .football-team, .basketball-team, .hockey-team, .soccer-team) { display: none; }
+    }
+
+    :is(.team, .football-team, .basketball-team, .hockey-team, .soccer-team) {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px;
+      min-width: 0;
+      padding: 0;
+      border: 0;
+      background: none;
+      height: 100%;
+    }
+    :is(.team-name-slot, .team__abbr) { display: none; }
+    :is(.team__score, .football-score, .basketball-score, .hockey-score, .soccer-score) {
+      font-size: 60px !important;
+      font-weight: 850;
+      line-height: 1;
+      letter-spacing: -2px !important;
+      color: #fff;
+      /* Share spare space around the score while keeping the logo at the edge. */
+      margin: 0 auto;
+      min-width: 0;
+      flex: 0 0 auto;
+      text-shadow: 0 1px 2px #000;
+    }
+    :is(.team-logo-link, .football-mark, .basketball-mark, .hockey-mark, .soccer-mark) {
+      display: grid;
+      place-items: center;
+      width: 76px;
+      height: 76px;
+      flex: 0 0 76px;
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+    :is(.team__logo, .football-mark img, .basketball-mark img, .hockey-mark img, .soccer-mark img) {
+      width: 76px;
+      height: 76px;
+      flex-basis: 76px;
+      object-fit: contain;
+    }
+    /* Baseball uses a name fallback instead of a mark's embedded label. */
+    .team:has(.team__logo[hidden]) .team-logo-link { display: none; }
+    .team:has(.team__logo[hidden]) .team__abbr {
+      display: block;
+      width: 76px;
+      flex: 0 0 76px;
+      overflow: hidden;
+      font-size: 0 !important;
+      letter-spacing: 0;
+      &::after { content: attr(data-abbreviation); font-size: 22px; }
+    }
+    :is(.football-team--home, .basketball-team--home, .hockey-team--home, .soccer-team--away) { justify-content: flex-end; }
+    #home-team { flex-direction: row-reverse; }
+    .demo-mark { font-size: 12px; line-height: 14px; }
+  }
+}

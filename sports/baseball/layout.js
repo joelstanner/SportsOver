@@ -259,6 +259,7 @@
     }
 
     function renderNoEvent(message = "No selected game today", visible = true) {
+      delete els.bug.dataset.state;
       global.SportsOverlay.countdown?.clear(els.status);
       global.SportsOverlay.teamNames.clearLinks(els.awayAbbr, els.homeAbbr, els.awayMark, els.homeMark);
       delete els.bug.dataset.preseason;
@@ -294,6 +295,7 @@
   function setTeam(container, logo, abbreviation, team) {
     logo.title = team.name?.trim() || team.abbreviation;
     abbreviation.textContent = team.abbreviation;
+    abbreviation.dataset.abbreviation = team.abbreviation;
     container.classList.toggle("is-featured", team.featured);
     if (!team.logoUrl) {
       logo.hidden = true;
