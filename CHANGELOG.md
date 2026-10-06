@@ -3,6 +3,25 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.33.1 — 2026-10-06
+
+### Changed
+
+- Clarify Automatic game selection in Settings and Rotation source in Live
+  control, with contextual help explaining how they work together.
+- Combine the identical Automatic priority and Rotate watched teams + spotlight
+  options into All watched teams + live spotlight. Saved choices retain their behavior.
+- Explain team-directory refreshes, distinguish them from score/schedule refreshes,
+  and confirm the selected scope before replacing saved team data.
+
+### Fixed
+
+- Grow and shrink the banner around its center through Up/Down arrows,
+  double-clicks, size presets, and menus. Shift only as needed to stay on its
+  monitor, without accumulating rounding drift during repeated resizing.
+
+Existing settings are preserved. No manual migration is required.
+
 ## 0.33.0 — 2026-10-05
 
 ### Added
