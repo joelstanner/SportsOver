@@ -1,5 +1,10 @@
 # TODO
 
+## Windows bugs to investigate
+
+- Banner information content appears to grow and shrink while the app runs, shifting elements inside the window. Investigate separately after the outer-window growth and hit-area fix; no cause or solution has been established yet.
+- Windows has no obvious way to quit SportsOver from the banner. Add a discoverable quit action, such as one in the banner's right-click menu; currently Quit is only in the tray and application menus.
+
 ## Provider permissions
 
 - Confirm written ESPN permission for automated access to the current score/situation endpoints, redistribution in desktop/OBS overlays and team artwork. Ask for aggregate request limits across sports and hosts, plus caching/attribution requirements.

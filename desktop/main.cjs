@@ -44,8 +44,12 @@ const bannerGesture = createBannerGesture({
   requireActivation: true,
   focus: () => { if (!quietTest) banner.focus(); },
   bounds: () => banner.getBounds(),
-  move: (x, y) => {
-    if (!locked && !normalBounds) banner.setPosition(x, y);
+  move: (x, y, origin) => {
+    if (locked || normalBounds) return;
+    // Windows can change the size of a frameless window on repeated setPosition
+    // calls, particularly with display scaling. Keep the press-time size fixed.
+    if (process.platform === 'win32') banner.setBounds({ x, y, width: origin.width, height: origin.height });
+    else banner.setPosition(x, y);
   },
   next: () => engineWindow.webContents.send('engine:command', { type: 'next' }),
   previous: () => engineWindow.webContents.send('engine:command', { type: 'previous' }),
@@ -279,7 +283,7 @@ else {
     // from the Dock, Cmd-Tab, and application menu bar.
     // Deliver the activation press so it is consumed exactly once by the gesture
     // handler, including for nonactivating macOS panels.
-    banner = new BrowserWindow({ ...bounds, ...(process.platform === 'darwin' ? { type: 'panel', acceptFirstMouse: true } : {}), title: 'SportsOver', transparent: true, backgroundColor: '#00000000', frame: false, hasShadow: false, alwaysOnTop: true, resizable: false, maximizable: false, fullscreenable: false, skipTaskbar: true, show: false, webPreferences: preferences() });
+    banner = new BrowserWindow({ ...bounds, ...(process.platform === 'darwin' ? { type: 'panel', acceptFirstMouse: true } : {}), ...(process.platform === 'win32' ? { thickFrame: false } : {}), title: 'SportsOver', transparent: true, backgroundColor: '#00000000', frame: false, hasShadow: false, alwaysOnTop: true, resizable: false, maximizable: false, fullscreenable: false, skipTaskbar: true, show: false, webPreferences: preferences() });
     secure(banner);
     banner.webContents.on('did-finish-load', () => banner.webContents.send('desktop:fullscreen', !!normalBounds));
     const cancelBannerGesture = () => bannerGesture({ phase: 'blur' });

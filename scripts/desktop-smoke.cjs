@@ -484,6 +484,8 @@ const quiet = testMode() === 'quiet';
     const box = await banner.locator('.scorebug').boundingBox();
     await banner.mouse.move(box.x + 40, box.y + 5);
     await banner.mouse.down();
+    await banner.waitForTimeout(300);
+    assert.deepEqual(await bannerBounds(), beforeDrag, 'holding the banner still does not enlarge its native window');
     await banner.mouse.move(box.x + 70, box.y + 25);
     await banner.mouse.up();
     // Flush pointer IPC, then wait for native movement to settle before using
@@ -503,6 +505,8 @@ const quiet = testMode() === 'quiet';
       return bounds;
     }, beforeDrag);
     assert.ok(afterDrag.x !== beforeDrag.x || afterDrag.y !== beforeDrag.y, 'dragging moves the native window');
+    assert.equal(afterDrag.width, beforeDrag.width, 'dragging preserves native window width');
+    assert.equal(afterDrag.height, beforeDrag.height, 'dragging preserves native window height');
     assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame, 'drag release does not skip');
     await banner.evaluate(async origin => {
       const send = value => window.sportsDesktop.action('banner-pointer', value);

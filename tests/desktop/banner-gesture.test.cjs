@@ -25,7 +25,7 @@ function createTestGesture(options) {
 function fixture() {
   const moves = [], skips = [];
   const gesture = createTestGesture({ bounds: () => ({ x: -100, y: 200 }),
-    move: (...point) => moves.push(point), next: () => skips.push(true) });
+    move: (x, y) => moves.push([x, y]), next: () => skips.push(true) });
   return { moves, skips, advance: gesture.advance, send: (phase, x = 20, y = 30) => gesture({ phase, x, y }) };
 }
 test('click tolerates slight motion and waits after release to distinguish a double-click', () => {
@@ -47,6 +47,19 @@ test('drag uses screen deltas and never skips even after returning to its origin
   assert.deepEqual(f.moves.at(-1), [-100, 200]);
   assert.equal(f.skips.length, 0);
 });
+test('drag keeps the press-time bounds for every native move', () => {
+  const origin = { x: 100, y: 200, width: 472, height: 100 };
+  const moves = [];
+  const gesture = createTestGesture({ bounds: () => origin,
+    move: (x, y, bounds) => moves.push({ x, y, bounds }), next() {} });
+  gesture({ phase: 'start', x: 120, y: 220 });
+  gesture({ phase: 'move', x: 140, y: 230 });
+  gesture({ phase: 'move', x: 150, y: 240 });
+  assert.deepEqual(moves, [
+    { x: 120, y: 210, bounds: origin },
+    { x: 130, y: 220, bounds: origin },
+  ]);
+});
 test('release beyond threshold counts as a drag even without a move event', () => {
   const f = fixture(); f.send('start'); f.send('end', 50, 30);
   assert.equal(f.skips.length, 0);
@@ -65,7 +78,7 @@ test('invalid pointer coordinates cancel the gesture without a native move or sk
     for (const axis of ['x', 'y']) {
       const moves = [], skips = [];
       const gesture = createTestGesture({ bounds: () => ({ x: 0, y: 0 }),
-        move: (...point) => moves.push(point), next: () => skips.push(true) });
+        move: (x, y) => moves.push([x, y]), next: () => skips.push(true) });
       gesture({ phase: 'start', x: 0, y: 0 });
       gesture({ phase: 'move', x: 10, y: 10, [axis]: invalid });
       gesture({ phase: 'end', x: 0, y: 0 });
@@ -82,7 +95,7 @@ test('invalid pointer coordinates cancel the gesture without a native move or sk
 test('derived coordinates cannot overflow the native integer range', () => {
   for (const origin of [{ x: 2147483640, y: 0 }, { x: 0, y: -2147483640 }, { x: undefined, y: 0 }]) {
     const moves = [], skips = [];
-    const gesture = createTestGesture({ bounds: () => origin, move: (...point) => moves.push(point), next: () => skips.push(true) });
+    const gesture = createTestGesture({ bounds: () => origin, move: (x, y) => moves.push([x, y]), next: () => skips.push(true) });
     gesture({ phase: 'start', x: 0, y: 0 });
     gesture({ phase: 'move', x: 20, y: -20 });
     gesture({ phase: 'end', x: 0, y: 0 });
@@ -93,7 +106,7 @@ test('derived coordinates cannot overflow the native integer range', () => {
 
 test('fractional drag coordinates round to integers and canonicalize negative zero', () => {
   const moves = [];
-  const gesture = createTestGesture({ bounds: () => ({ x: -10, y: -10 }), move: (...point) => moves.push(point), next() {} });
+  const gesture = createTestGesture({ bounds: () => ({ x: -10, y: -10 }), move: (x, y) => moves.push([x, y]), next() {} });
   gesture({ phase: 'start', x: 0, y: 0 });
   gesture({ phase: 'move', x: 9.8, y: 9.6 });
   assert.deepEqual(moves, [[0, 0]]);
@@ -104,7 +117,7 @@ test('leftmost 20 percent goes backwards and the boundary or remainder goes forw
     for (const [offset, expected] of [[0, 'previous'], [width * 0.1, 'previous'], [width * 0.2 - 0.01, 'previous'], [width * 0.2, 'next'], [width * 0.8, 'next']]) {
       const calls = [], moves = [];
       const gesture = createTestGesture({ bounds: () => ({ x: -900, y: 100, width }),
-        move: (...point) => moves.push(point), next: () => calls.push('next'), previous: () => calls.push('previous') });
+        move: (x, y) => moves.push([x, y]), next: () => calls.push('next'), previous: () => calls.push('previous') });
       gesture({ phase: 'start', x: -900 + offset, y: 110 });
       assert.deepEqual(calls, []);
       gesture({ phase: 'end', x: -900 + offset, y: 110 });
@@ -118,7 +131,7 @@ test('leftmost 20 percent goes backwards and the boundary or remainder goes forw
 test('left-side drags and cancellations never navigate', () => {
   const calls = [], moves = [];
   const gesture = createTestGesture({ bounds: () => ({ x: 100, y: 200, width: 472 }),
-    move: (...point) => moves.push(point), next: () => calls.push('next'), previous: () => calls.push('previous') });
+    move: (x, y) => moves.push([x, y]), next: () => calls.push('next'), previous: () => calls.push('previous') });
   gesture({ phase: 'start', x: 110, y: 220 });
   gesture({ phase: 'move', x: 125, y: 230 });
   gesture({ phase: 'end', x: 110, y: 220 });
@@ -133,7 +146,7 @@ test('left-side drags and cancellations never navigate', () => {
 function resizingFixture(width = 472, options = {}) {
   const calls = [], moves = [];
   const gesture = createTestGesture({ bounds: () => ({ x: -900, y: 100, width }),
-    move: (...point) => moves.push(point), next: () => calls.push('next'), previous: () => calls.push('previous'),
+    move: (x, y) => moves.push([x, y]), next: () => calls.push('next'), previous: () => calls.push('previous'),
     resize: direction => calls.push(direction > 0 ? 'bigger' : 'smaller'), ...options });
   const send = (phase, offset, y = 110) => gesture({ phase, x: -900 + offset, y });
   const click = offset => { send('start', offset); send('end', offset); };

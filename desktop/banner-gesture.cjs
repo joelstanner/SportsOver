@@ -56,7 +56,7 @@ function createBannerGesture({ bounds, move, next, previous, resize,
       const x = Math.round(gesture.bounds.x + dx) + 0;
       const y = Math.round(gesture.bounds.y + dy) + 0;
       if (!validCoordinate(x) || !validCoordinate(y)) { cancel(); return; }
-      move(x, y);
+      move(x, y, gesture.bounds);
     }
     if (value.phase === 'end') {
       const skip = !gesture.dragging;
