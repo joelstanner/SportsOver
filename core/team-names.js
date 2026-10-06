@@ -21,6 +21,7 @@
     const halftime = hasHalftime && /\bhalf[\s-]?time\b|^HT$/i.test(event.detailedState || "");
     const intermission = event.sport === "hockey" && event.state === "interrupted"
       && /\bintermission\b|\bend of (?:\d+(?:st|nd|rd|th)\s+)?period\b/i.test(event.detailedState || "");
+    awayLabel.closest("#sports-overlay").dataset.halftime = String(halftime && ["live", "interrupted"].includes(event.state));
     const expand = event.state === "pregame" || event.state === "final" || halftime || intermission;
     awayLabel.closest("#sports-overlay").dataset.teamNames = expand ? "full" : "short";
     for (const [side, label] of [["away", awayLabel], ["home", homeLabel]]) {

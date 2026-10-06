@@ -21,7 +21,7 @@ module.exports = async ({ application, admin, banner, directory }) => {
     const scores = [...root.querySelectorAll('.team__score, .football-score, .basketball-score, .hockey-score, .soccer-score')];
     const teams = [...root.querySelectorAll('.team, .football-team, .basketball-team, .hockey-team, .soccer-team')];
     const rect = element => { const r = element.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom }; };
-    return { font: scores.map(el => parseFloat(getComputedStyle(el).fontSize)),
+    return { halftime: root.dataset.halftime === "true", marker: getComputedStyle(root, "::after").content, font: scores.map(el => parseFloat(getComputedStyle(el).fontSize)),
       scores: scores.map(rect), teams: teams.map(rect), root: rect(root),
       detailsVisible: [...root.querySelectorAll('.football-center, .basketball-center, .hockey-center, .soccer-center, .live-panel, .status-details, .football-status, .hockey-status, .soccer-status, .basketball-status')].some(el => el.getBoundingClientRect().height > 0),
       demo: getComputedStyle(root.querySelector('.demo-mark')).display };
@@ -35,13 +35,14 @@ module.exports = async ({ application, admin, banner, directory }) => {
     }, obsUrl);
     obs = application.windows().find(page => page.url().startsWith(new URL(obsUrl).origin));
     for (const sport of ['baseball', 'football', 'college-football', 'basketball', 'college-basketball', 'hockey', 'soccer']) {
-      for (const mode of ['live', 'final', 'pregame']) {
+      for (const mode of ['live', 'final', 'pregame', 'interrupted']) {
         await fixture(sport, mode);
         for (const percent of [50, 49, 40, 30, 20, 10]) {
           await resize(percent);
           const result = await geometry();
           assert.equal(result.font.length, 2);
-          if (percent === 50) { assert.ok(result.font.every(size => size < 60), '50% keeps full layout'); continue; }
+          if (percent === 50 || mode === 'interrupted' && !result.halftime) { assert.ok(result.font.every(size => size < 60), 'full layout outside compact states'); continue; }
+          if (result.halftime) assert.match(result.marker, /H.*T/s, 'halftime marker is visible');
           assert.deepEqual(result.font, [60, 60], `${sport} ${mode} ${percent}% scores`);
           assert.equal(result.detailsVisible, mode === 'pregame', 'only upcoming date/time remains visible');
           assert.notEqual(result.demo, 'none', 'DEMO remains visible');
@@ -61,7 +62,7 @@ module.exports = async ({ application, admin, banner, directory }) => {
         const obsFont = await obs.locator('.team__score, .football-score, .basketball-score, .hockey-score, .soccer-score').first().evaluate(el => parseFloat(getComputedStyle(el).fontSize));
         assert.ok(obsFont < 60, 'narrow OBS retains its original layout');
       }
-      for (const mode of ['interrupted', 'no-event', 'offline', 'error']) {
+      for (const mode of ['no-event', 'offline', 'error']) {
         await fixture(sport, mode);
         assert.ok((await geometry()).font.every(size => size < 60), `${sport} ${mode} retains original layout`);
       }
@@ -71,7 +72,7 @@ module.exports = async ({ application, admin, banner, directory }) => {
     for (const mode of ['live', 'pregame', 'interrupted', 'final']) {
       if (mode !== 'live') await admin.evaluate(() => window.sportsDesktop.action('browse-banner', 'next'));
       await banner.waitForFunction(mode => document.querySelector('#sports-overlay').dataset.fixtureState === mode, mode);
-      assert.equal((await geometry()).font[0] === 60, ['live', 'final', 'pregame'].includes(mode));
+      assert.equal((await geometry()).font[0], 60, 'football halftime stays compact');
     }
     await fixture('basketball', 'final');
     await banner.evaluate(() => {

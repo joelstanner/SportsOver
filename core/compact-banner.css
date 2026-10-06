@@ -1,7 +1,7 @@
 /* Keep the native 472 × 100 canvas, but give small live/final/upcoming team games
    a dedicated layout. OBS and the other game states retain their layouts. */
 @media (width < 236px) {
-  .desktop-banner #sports-overlay:is(.scorebug, .football-scorebug, .basketball-scorebug, .hockey-scorebug, .soccer-scorebug):is([data-state="live"], [data-state="final"], [data-state="pregame"]) {
+  .desktop-banner #sports-overlay:is(.scorebug, .football-scorebug, .basketball-scorebug, .hockey-scorebug, .soccer-scorebug):is([data-state="live"], [data-state="final"], [data-state="pregame"], [data-halftime="true"]:is([data-state="live"], [data-state="interrupted"])) {
     height: 88px;
     position: relative;
 
@@ -103,6 +103,24 @@
           &::before { content: attr(data-compact-date); font-size: 32px; }
           &::after { content: attr(data-compact-time); font-size: 26px; }
         }
+      }
+    }
+    &[data-halftime="true"]:is([data-state="live"], [data-state="interrupted"]) {
+      > :is(.football-main, .basketball-main, .soccer-main) { gap: 44px; }
+      &::after {
+        content: "H\A T";
+        white-space: pre;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        padding: 3px 5px;
+        border-radius: 4px;
+        background: #ffd45a;
+        color: #17202a;
+        font: 900 30px/1 system-ui, sans-serif;
+        text-align: center;
+        pointer-events: none;
       }
     }
     .demo-mark { font-size: 12px; line-height: 14px; }
