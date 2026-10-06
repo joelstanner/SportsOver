@@ -3,6 +3,33 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.34.0 — 2026-10-06
+
+### Added
+
+- Inspect fixture games in Demo Lab on both desktop and OBS, with state and sport
+  selection, manual stepping, pause/play, and a visible DEMO mark. One button
+  switches between demo and live output.
+- Use compact desktop layouts below 50%: large logos and scores for live/final
+  games, logos with centered date/time for upcoming games, and a vertical HT
+  marker during halftime.
+- Optionally skip individual sports below 50% in the shared desktop/OBS rotation.
+  Enabled by default; selected sports return at 50% or larger, and saved pins
+  and selections are preserved. Turn this off in Desktop banner settings to
+  keep every sport in OBS.
+- Move the banner with Shift + arrow keys in 5-pixel steps.
+
+### Changed
+
+- Resize with Up/Down arrows in 10-percentage-point steps, down to 10%.
+  Keep the top edge fixed and resize around the horizontal center.
+
+### Fixed
+
+- Smooth rapid arrow resizing with a stable layout and animated window bounds.
+
+Existing settings are preserved. No manual migration is required.
+
 ## 0.33.1 — 2026-10-06
 
 ### Changed
