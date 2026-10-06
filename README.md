@@ -48,7 +48,7 @@ use the tray/menu-bar icon to reopen it or choose **Quit SportsOver**.
 - **Live mode:** show live games from your rotation, with configurable finished-game
   retention (20 minutes by default). Tournament breaks leave Live mode until play
   resumes; team-sport breaks remain eligible. Live mode starts off after a restart.
-- **Demo lab:** preview sample banners without changing the live output.
+- **Demo lab:** preview individual samples, or use **Inspect the banner and OBS** to show marked fixture data on both outputs. Choose all-live, all-upcoming, final, interrupted, mixed, or fallback states across all sports or one sport. Inspection starts paused; use Previous/Next fixture or Play rotation. **Return to live output** restores real games. Demo mode preserves saved selections and ends when the app quits.
 
 **Automatic game selection** in Settings chooses which games are suggested:
 **All watched teams + live spotlight**, or **Top watched team per sport**.

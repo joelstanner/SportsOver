@@ -16,6 +16,7 @@ Quiet mode uses hidden real Electron windows and checks settings/engine propagat
   and activation reset plus retention-setting persistence after app restart.
 - Test traffic is mocked. This does not establish current live API availability, logo availability, or feed accuracy.
 - `SPORTSOVER_RESIZE_SMOKE_ONLY=1 node scripts/desktop-smoke.cjs --quiet`: focused source-app check of native bounds during resizing with a fixed top and horizontal center through Settings presets, the menu, and Up/Down keys in both renderers. Checks intermediate animation frames, stable renderer layout, and the final size after rapid presses. Uses hidden windows and isolated data; it does not verify perceived smoothness or physical double-clicks.
+- `SPORTSOVER_DEMO_SMOKE_ONLY=1 node scripts/desktop-smoke.cjs --quiet`: checks Demo Lab inspection across game states and sports, paused/automatic fixture rotation, the DEMO mark in the desktop and separate HTTP output renderer, preserved preferences, and restoration of live output. Uses mocked score feeds and isolated data; captures wide/narrow Demo Lab and both banner outputs.
 
 ## Manual platform checks still required
 

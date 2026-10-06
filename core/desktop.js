@@ -179,7 +179,35 @@
   const lockButton = section.querySelector('[data-desktop="toggle-lock"]');
   const visibilityButton = section.querySelector('[data-desktop="toggle-visibility"]');
   const fullscreenButton = section.querySelector('[data-desktop="toggle-fullscreen"]');
+  const demoPanel = document.querySelector('#desktop-demo-controls');
+  demoPanel.hidden = false;
+  const demoSport = demoPanel.querySelector('#inspection-sport');
+  for (const option of document.querySelector('#demo-sport').options) demoSport.append(option.cloneNode(true));
+  const demoMode = demoPanel.querySelector('#inspection-state');
+  let demoState = null;
+  const startDemo = () => action('demo-inspection', { mode: demoMode.value, sport: demoSport.value });
+  demoPanel.querySelector('#start-inspection').addEventListener('click', startDemo);
+  for (const select of [demoSport, demoMode]) select.addEventListener('change', () => { if (demoState) void startDemo(); });
+  demoPanel.querySelector('#inspection-previous').addEventListener('click', () => action('browse-banner', 'previous'));
+  demoPanel.querySelector('#inspection-next').addEventListener('click', () => action('browse-banner', 'next'));
+  demoPanel.querySelector('#inspection-play').addEventListener('click', () => action('demo-play', !demoState?.playing));
+  demoPanel.querySelector('#stop-inspection').addEventListener('click', () => action('demo-inspection', null));
+  function renderDemo(value) {
+    demoState = value || null;
+    for (const id of ['inspection-previous', 'inspection-next', 'inspection-play']) demoPanel.querySelector(`#${id}`).disabled = !value?.ready || value.count < 2;
+    demoPanel.querySelector('#stop-inspection').disabled = !value;
+    demoPanel.querySelector('#start-inspection').textContent = value ? 'Restart demo' : 'Show demo on banner + OBS';
+    demoPanel.querySelector('#inspection-play').textContent = value?.playing ? 'Pause rotation' : 'Play rotation';
+    demoPanel.querySelector('#inspection-status').textContent = !value ? 'Live output. Demo inspection is off.'
+      : !value.ready ? 'Loading demo fixtures for the banner and OBS…'
+      : `DEMO on banner + OBS · ${value.label} · ${value.index + 1} of ${value.count} · ${value.playing ? 'Rotating every 4 seconds' : 'Paused for inspection'}`;
+    if (value) {
+      if (document.activeElement !== demoMode) demoMode.value = value.mode;
+      if (document.activeElement !== demoSport) demoSport.value = value.sport;
+    }
+  }
   function render(value) {
+    renderDemo(value.inspection);
     const version = document.querySelector('#app-version');
     version.textContent = value.version ? `v${value.version}` : '';
     version.hidden = !value.version;
@@ -219,7 +247,13 @@
       select.value = size;
     }
   }
-  async function action(name, value) { try { render(await api.action(name, value)); } catch (error) { showWarning(error.message); } }
+  async function action(name, value) {
+    try { render(await api.action(name, value)); }
+    catch (error) {
+      showWarning(error.message);
+      if (name.startsWith('demo-')) demoPanel.querySelector('#inspection-status').textContent = error.message;
+    }
+  }
   document.addEventListener('keydown', event => {
     if (event.defaultPrevented || event.isComposing || event.altKey || event.ctrlKey || event.metaKey
       || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;

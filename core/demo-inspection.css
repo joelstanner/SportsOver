@@ -1,0 +1,14 @@
+#sports-overlay[data-demo-inspection="true"] { position: relative; }
+.demo-mark {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  padding: 0 4px;
+  border-radius: 3px 0 0 0;
+  background: #ffd45a;
+  color: #17202a;
+  font: 800 8px/10px system-ui, sans-serif;
+  letter-spacing: .5px;
+  pointer-events: none;
+}

@@ -7,6 +7,14 @@ if (window.SportsOverlay.shared) await window.SportsOverlay.shared.waitForConfig
 
 const savedConfig = window.SportsOverlay.config.loadConfig();
 const query = new URLSearchParams(window.location.search);
+if (query.get('scenario') === 'inspection') {
+  window.SportsOverlay.engine = window.SportsOverlay.demoInspection.create({
+    registry: window.SportsOverlay.registry, catalog: window.SportsOverlay.config.SPORT_CATALOG,
+    mount: document.querySelector('#sports-overlay'),
+    options: { mode: query.get('mode') || 'live', sport: query.get('sport') || 'all', playing: false, revision: Number(query.get('revision')) },
+  });
+  return;
+}
 if (query.get("surface") === "admin") {
   document.documentElement.style.background = "#26373b";
   document.body.style.background = "#26373b";

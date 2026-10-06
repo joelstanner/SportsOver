@@ -235,6 +235,7 @@ test('tray and application menus expose the checker and preserve Quit and banner
         if (name === './updates.cjs') return updates;
         if (name === './bounds.cjs') return require('../../desktop/bounds.cjs');
         if (name === './banner-resize.cjs') return require('../../desktop/banner-resize.cjs');
+        if (name === './output-source.cjs') return require('../../desktop/output-source.cjs');
         if (name === './engine-state.cjs') return { EngineState: class {} };
         if (name === './banner-gesture.cjs') return { createBannerGesture: () => () => {} };
         if (name === './protocol.cjs') return { ORIGIN: 'sportsover://app' };

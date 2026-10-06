@@ -19,6 +19,8 @@
     window.sportsDesktop.publish(frame);
   }
   window.sportsDesktop.onEngineCommand(async command => {
+    if (command.type === 'inspection-config') window.SportsOverlay.engine?.configure(command.value);
+    if (command.type === 'inspection-play') window.SportsOverlay.engine?.setPlaying(command.value);
     if (command.type === 'hover') bannerHovered = command.value === true;
     if (command.type === 'override') window.SportsOverlay.engine?.override(command.value);
     if (command.type === 'refresh') {

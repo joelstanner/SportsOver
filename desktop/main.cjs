@@ -2,6 +2,7 @@ const { app, BrowserWindow, Menu, Tray, nativeImage, globalShortcut, ipcMain, pr
 const path = require('node:path');
 const fs = require('node:fs');
 const { EngineState } = require('./engine-state.cjs');
+const { createOutputSource } = require('./output-source.cjs');
 const { startServer, credentials } = require('./server.cjs');
 const { Store, applyCatalog } = require('./store.cjs');
 const { fitBounds, fullscreenBounds, topAnchoredResizeBounds, BANNER_SCALES, stepBannerScale } = require('./bounds.cjs');
@@ -29,6 +30,8 @@ app.setName('SportsOver');
 if (process.env.SPORTSOVER_TEST_DATA) app.setPath('userData', process.env.SPORTSOVER_TEST_DATA);
 protocol.registerSchemesAsPrivileged([{ scheme: 'sportsover', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
 const engineState = new EngineState();
+const outputSource = createOutputSource(engineState);
+let inspectionWindow = null, inspectionEngine = null, inspectionSettings = null, inspectionRevision = 0;
 let appIcon, trayIcon, outputServer, engineWindow, obsUrl, integrationToken;
 let banner, settings, tray, store, quitting = false, locked = false, shortcut = false, saveTimer;
 let normalBounds = null, fullscreenDisplayId = null;
@@ -40,6 +43,10 @@ const arrowResize = createBannerResize({
 });
 let bannerHovered = false;
 function browseBanner(type, sender) {
+  if (inspectionSettings) {
+    inspectionWindow?.webContents.send('engine:command', { type, fast: true });
+    return;
+  }
   const message = browseFeedback(engineState.state(), store?.value.config.lockedGameKeys);
   for (const contents of new Set([banner?.webContents, sender])) {
     if (contents && !contents.isDestroyed()) contents.send('desktop:browse-feedback', message);
@@ -48,6 +55,10 @@ function browseBanner(type, sender) {
 }
 function setBannerHovered(value) {
   bannerHovered = value;
+  if (inspectionSettings) {
+    inspectionWindow?.webContents.send('engine:command', { type: 'hover', value });
+    return;
+  }
   if (engineWindow && !engineWindow.isDestroyed()) engineWindow.webContents.send('engine:command', { type: 'hover', value });
 }
 function fullscreenDisplay() {
@@ -79,8 +90,8 @@ const bannerGesture = createBannerGesture({
   focus: () => { if (!quietTest) banner.focus(); },
   bounds: () => banner.getBounds(),
   move: moveBanner,
-  next: () => engineWindow.webContents.send('engine:command', { type: 'next' }),
-  previous: () => engineWindow.webContents.send('engine:command', { type: 'previous' }),
+  next: () => (inspectionWindow || engineWindow).webContents.send('engine:command', { type: 'next' }),
+  previous: () => (inspectionWindow || engineWindow).webContents.send('engine:command', { type: 'previous' }),
   resize: direction => { if (!locked && !normalBounds) resize(stepBannerScale(banner.getBounds().width / 472, direction)); },
 });
 const root = path.resolve(__dirname, '..');
@@ -114,6 +125,47 @@ function secure(win) {
   win.webContents.on('render-process-gone', () => { if (!quitting) { lock(false); openSettings(); } });
 }
 function preferences() { return { preload: path.join(__dirname, 'preload.cjs'), sandbox: true, contextIsolation: true, nodeIntegration: false, webSecurity: true, ...(quietTest ? { backgroundThrottling: false } : {}) }; }
+function stopInspection() {
+  inspectionRevision++;
+  inspectionSettings = null;
+  outputSource.select(engineState);
+  const old = inspectionWindow;
+  inspectionWindow = null;
+  inspectionEngine?.stop();
+  inspectionEngine = null;
+  old?.destroy();
+  if (banner && !banner.isDestroyed()) banner.webContents.send('desktop:frame', outputSource.output());
+  setBannerHovered(bannerHovered);
+  menus();
+}
+async function startInspection(value) {
+  const modes = ['mixed', 'live', 'pregame', 'interrupted', 'final', 'no-event', 'offline', 'error'];
+  const sports = globalThis.SportsOverlay.config.SPORT_CATALOG.map(sport => sport.key);
+  if (!value || !modes.includes(value.mode) || !['all', ...sports].includes(value.sport)) throw Error('Choose a valid demo state and sport.');
+  const reuseWindow = inspectionWindow && inspectionEngine?.ready && !inspectionWindow.webContents.isLoading();
+  const revision = ++inspectionRevision;
+  inspectionSettings = { mode: value.mode, sport: value.sport, playing: false, revision };
+  inspectionEngine = new EngineState();
+  inspectionEngine.frame.html = '<main id="sports-overlay" data-demo-inspection="true">Loading demo…<span class="demo-mark">DEMO</span></main>';
+  outputSource.select(inspectionEngine);
+  engineWindow.webContents.send('engine:command', { type: 'hover', value: false });
+  if (reuseWindow) {
+    inspectionWindow.webContents.send('engine:command', { type: 'inspection-config', value: inspectionSettings });
+  } else {
+    const old = inspectionWindow;
+    inspectionWindow = null;
+    old?.destroy();
+    const win = new BrowserWindow({ width: 472, height: 100, show: false, webPreferences: { ...preferences(), backgroundThrottling: false } });
+    inspectionWindow = win;
+    secure(win);
+    win.webContents.on('render-process-gone', () => { if (inspectionWindow === win) stopInspection(); });
+    const params = new URLSearchParams({ engine: '1', scenario: 'inspection', mode: value.mode, sport: value.sport, revision: String(revision) });
+    try { await win.loadURL(`${ORIGIN}/sports/index.html?${params}`); }
+    catch (error) { if (inspectionRevision === revision) { stopInspection(); throw error; } }
+  }
+  setBannerHovered(bannerHovered);
+  menus();
+}
 function showError(title, message) {
   if (quietTest) console.error(`${title}: ${message}`);
   else dialog.showErrorBox(title, message);
@@ -220,13 +272,14 @@ function menus() {
     fullscreenMenuItem(),
     { id: 'recover-banner', label: 'Recover banner (unlock and reposition)', accelerator: 'CommandOrControl+Shift+U', click: recover },
     bannerSizeMenuItem(),
+    ...(inspectionSettings ? [{ id: 'exit-demo', label: 'Return to live output', click: stopInspection }] : []),
     { type: 'separator' }, updateItem,
     { type: 'separator' }, { label: 'Quit SportsOver', accelerator: 'CommandOrControl+Q', click: () => app.quit() },
   ];
   tray?.setContextMenu(Menu.buildFromTemplate(controls));
   const mac = process.platform === 'darwin';
   const settingsItem = controls[0];
-  const bannerControls = controls.slice(1, 6);
+  const bannerControls = controls.slice(1, inspectionSettings ? 7 : 6);
   const quitItem = controls.at(-1);
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     ...(mac ? [{ label: 'SportsOver', submenu: [
@@ -255,7 +308,7 @@ function resize(scale) {
   banner.setBounds(topAnchoredResizeBounds(current, Math.round(472 * scale), screen.getDisplayMatching(current)));
   menus();
 }
-function status() { return { version: app.getVersion(), trayAvailable: !!tray && !tray.isDestroyed(), trayBounds: tray && !tray.isDestroyed() ? tray.getBounds() : null, appIconAvailable: !!appIcon, obsUrl, engineReady: engineState.ready, override: engineState.override, locked, visible: banner.isVisible(), fullscreen: !!normalBounds, scale: (normalBounds?.width ?? arrowResize.targetWidth() ?? banner.getBounds().width) / 472, shortcut, warning: store.warning }; }
+function status() { return { inspection: inspectionSettings ? { ...inspectionEngine.state().inspection, ...inspectionSettings, ready: inspectionEngine.ready } : null, version: app.getVersion(), trayAvailable: !!tray && !tray.isDestroyed(), trayBounds: tray && !tray.isDestroyed() ? tray.getBounds() : null, appIconAvailable: !!appIcon, obsUrl, engineReady: engineState.ready, override: engineState.override, locked, visible: banner.isVisible(), fullscreen: !!normalBounds, scale: (normalBounds?.width ?? arrowResize.targetWidth() ?? banner.getBounds().width) / 472, shortcut, warning: store.warning }; }
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', (_event, argv) => {
@@ -274,7 +327,7 @@ else {
     app.setAboutPanelOptions({ applicationName: 'SportsOver', applicationVersion: app.getVersion(), ...(appIcon ? { iconPath: appIconPath } : {}) });
     const { updateCatalogs } = await import('../scripts/team-catalog.mjs');
     const fetchProvider = require('../core/provider-network.js').create({ fetchImpl: (...args) => net.fetch(...args) });
-    protocol.handle('sportsover', createHandler({ root, dataRoot: app.getPath('userData'), store, engine: engineState, fetchProvider, fetchImpl: (...args) => net.fetch(...args), refresh: async sport => {
+    protocol.handle('sportsover', createHandler({ root, dataRoot: app.getPath('userData'), store, engine: outputSource, fetchProvider, fetchImpl: (...args) => net.fetch(...args), refresh: async sport => {
       try { return await updateCatalogs(sport, app.getPath('userData'), fetchProvider); }
       finally {
         for (const entry of globalThis.SportsOverlay.config.SPORT_CATALOG) {
@@ -287,7 +340,7 @@ else {
     session.defaultSession.setPermissionCheckHandler(() => false);
     integrationToken = credentials(app.getPath('userData')).token;
     try {
-      const output = await startServer({ root, engine: engineState, token: integrationToken, port: process.env.SPORTSOVER_TEST_DATA ? 0 : 17843 });
+      const output = await startServer({ root, engine: outputSource, token: integrationToken, port: process.env.SPORTSOVER_TEST_DATA ? 0 : 17843 });
       outputServer = output.server; obsUrl = output.url;
     } catch (error) { store.warning += ` OBS/API listener unavailable: ${error.message}. Free port 17843 and restart.`; }
     engineWindow = new BrowserWindow({ width: 472, height: 100, show: false, webPreferences: { ...preferences(), backgroundThrottling: false } });
@@ -301,12 +354,19 @@ else {
       if (engineWindow && !engineWindow.isDestroyed() && !engineWindow.webContents.isCrashed()) engineWindow.webContents.send('engine:command', { type: 'override', value });
     });
     ipcMain.on('engine:publish', (event, frame) => {
-      if (event.sender !== engineWindow.webContents || event.senderFrame !== event.sender.mainFrame) return;
+      if (event.senderFrame !== event.sender.mainFrame) return;
       if (typeof frame?.html !== 'string' || frame.html.length > 1000000 || !Array.isArray(frame.metadata?.availableEntries)) return;
+      if (event.sender === inspectionWindow?.webContents) {
+        if (frame.metadata.inspection?.revision !== inspectionSettings?.revision) return;
+        inspectionEngine.publish(frame);
+        banner.webContents.send('desktop:frame', outputSource.output());
+        return;
+      }
+      if (event.sender !== engineWindow.webContents) return;
       const sequence = engineState.frame.sequence;
       engineState.publish(frame);
-      if (engineState.frame.sequence !== sequence && banner && !banner.isDestroyed()) {
-        banner.webContents.send('desktop:frame', engineState.output());
+      if (!inspectionSettings && engineState.frame.sequence !== sequence && banner && !banner.isDestroyed()) {
+        banner.webContents.send('desktop:frame', outputSource.output());
       }
     });
     ipcMain.handle('engine:state', event => { authorize(event); return engineState.state(); });
@@ -329,10 +389,12 @@ else {
       if (banner.isFocused()) bannerGesture({ phase: 'activate' });
       const menu = Menu.buildFromTemplate([
         { label: 'Settings…', click: openSettings },
-        gameLockMenuItem({ engine: engineState, store,
-          onError: error => showError('SportsOver could not pin or unpin this game', error.message) }),
-        gameRemoveMenuItem({ engine: engineState, store,
-          onError: error => showError('SportsOver could not remove this game', error.message) }),
+        ...(inspectionSettings ? [{ id: 'exit-demo', label: 'Return to live output', click: stopInspection }] : [
+          gameLockMenuItem({ engine: engineState, store,
+            onError: error => showError('SportsOver could not pin or unpin this game', error.message) }),
+          gameRemoveMenuItem({ engine: engineState, store,
+            onError: error => showError('SportsOver could not remove this game', error.message) }),
+        ]),
         { id: 'lock-banner', label: 'Lock banner position', type: 'checkbox', checked: locked, click: item => lock(item.checked) },
         fullscreenMenuItem(),
         bannerSizeMenuItem(),
@@ -400,6 +462,17 @@ else {
     ipcMain.handle('desktop:action', async (event, action, value) => {
       authorize(event);
       if (action === 'unlock') { lock(false); showBanner(); }
+      else if (action === 'demo-inspection') {
+        if (event.sender !== settings?.webContents) throw Error('Settings access required');
+        if (value === null) stopInspection();
+        else await startInspection(value);
+      }
+      else if (action === 'demo-play') {
+        if (event.sender !== settings?.webContents) throw Error('Settings access required');
+        if (typeof value !== 'boolean' || !inspectionEngine?.ready) throw Error('Start demo inspection first.');
+        inspectionWindow.webContents.send('engine:command', { type: 'inspection-play', value });
+        inspectionSettings.playing = value;
+      }
       else if (action === 'lock') lock(true);
       else if (action === 'toggle-lock') lock(!locked);
       else if (action === 'toggle-visibility') {
@@ -443,7 +516,7 @@ else {
         await shell.openExternal(bannerUrl(value));
       }
       else if (action === 'next') {
-        engineWindow.webContents.send('engine:command', { type: 'next' });
+        (inspectionWindow || engineWindow).webContents.send('engine:command', { type: 'next' });
       }
       else if (action === 'browse-banner') {
         if (event.sender !== settings?.webContents) throw Error('Settings access required');
@@ -498,5 +571,5 @@ function authorize(event) {
 }
 app.on('activate', () => { if (banner && !backgroundStartup) openSettings(); });
 app.on('window-all-closed', () => { /* Tray owns the application lifetime. */ });
-app.on('before-quit', () => { quitting = true; arrowResize.cancel(); bannerGesture({ phase: 'cancel' }); clearTimeout(saveTimer); if (banner && store) persist({ bounds: normalBounds || banner.getBounds() }); });
+app.on('before-quit', () => { quitting = true; inspectionWindow?.destroy(); inspectionEngine?.stop(); arrowResize.cancel(); bannerGesture({ phase: 'cancel' }); clearTimeout(saveTimer); if (banner && store) persist({ bounds: normalBounds || banner.getBounds() }); });
 app.on('will-quit', () => { globalShortcut.unregisterAll(); tray?.destroy(); engineState.stop(); outputServer?.close(); });

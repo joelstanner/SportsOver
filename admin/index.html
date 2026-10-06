@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SportsOver Settings</title>
   <link rel="stylesheet" href="../core/odds.css?v=3">
-  <link rel="stylesheet" href="admin.css?v=29">
+  <link rel="stylesheet" href="admin.css?v=30">
   <link rel="stylesheet" href="../core/desktop.css?v=15">
 </head>
 <body>
@@ -232,8 +232,31 @@
     <section id="demo-panel" class="panel" data-panel="demo" hidden>
       <div class="panel-heading">
         <div><p class="section-kicker">FIXED TEST DATA</p><h2>Demo lab</h2></div>
-        <p>Preview-only. No live APIs, polling, or saved-setting changes.</p>
+        <p>Inspect layouts with sample data. Preview here, or send marked demo output to the desktop banner and OBS.</p>
       </div>
+      <section id="desktop-demo-controls" class="demo-inspection-panel" aria-labelledby="desktop-demo-heading" hidden>
+        <h3 id="desktop-demo-heading">Inspect the banner and OBS</h3>
+        <p>Use fixtures for every sport, including disabled sports. Live games keep updating in the background; your saved selections stay intact. Demo mode ends when you return to live output or quit.</p>
+        <div class="demo-controls">
+          <label class="field">Game states<select id="inspection-state">
+            <option value="live">All live</option><option value="pregame">All upcoming</option>
+            <option value="final">All final</option><option value="interrupted">All interrupted</option>
+            <option value="mixed">Mixed states</option><option value="no-event">No events</option>
+            <option value="offline">Offline</option><option value="error">Provider errors</option>
+          </select></label>
+          <label class="field">Sports<select id="inspection-sport"><option value="all">All sports</option></select></label>
+          <button id="start-inspection" class="button button--primary" type="button">Show demo on banner + OBS</button>
+        </div>
+        <div class="actions">
+          <button id="inspection-previous" class="button button--secondary" type="button" disabled>Previous fixture</button>
+          <button id="inspection-play" class="button button--secondary" type="button" disabled>Play rotation</button>
+          <button id="inspection-next" class="button button--secondary" type="button" disabled>Next fixture</button>
+          <button id="stop-inspection" class="button button--secondary" type="button" disabled>Return to live output</button>
+        </div>
+        <p id="inspection-status" role="status">Live output. Demo inspection is off.</p>
+      </section>
+      <h3>Preview only</h3>
+      <p>Try individual samples here without changing the banner or OBS.</p>
       <div class="demo-controls">
         <label class="field">Sport
           <select id="demo-sport"><option value="baseball">Baseball · MLB</option><option value="football">Football · NFL</option><option value="college-football">College football · NCAAF</option><option value="hockey">Hockey · NHL</option><option value="soccer">Soccer · MLS</option><option value="basketball">Basketball · NBA</option><option value="college-basketball">NCAA men’s basketball · NCAAM</option><option value="disc-golf">Disc golf · PDGA</option><option value="chess">Chess</option></select>
@@ -365,6 +388,6 @@
   <script src="chess-settings.js?v=2"></script>
   <script src="automatic-watches.js?v=2"></script>
   <script src="admin.js?v=41"></script>
-  <script src="../core/desktop.js?v=25"></script>
+  <script src="../core/desktop.js?v=26"></script>
 </body>
 </html>
