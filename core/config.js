@@ -55,7 +55,8 @@
     displayMode: "automatic",
   });
   const FALLBACK_MODES = new Set(["up-next", "recent-final", "hide"]);
-  const DISPLAY_MODES = new Set(["automatic", "rotate", "top-favorite"]);
+  // Legacy "rotate" used the same selection as "automatic"; normalize both to one choice.
+  const DISPLAY_MODES = new Set(["automatic", "top-favorite"]);
   const ROTATION_MODES = new Set(["automatic", "hybrid", "curated"]);
 
   function loadTeamCatalogSync() {

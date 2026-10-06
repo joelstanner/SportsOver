@@ -1,5 +1,17 @@
 # Project instructions
 
+## New chat initialization
+
+Before beginning implementation in a new chat, fetch `origin` and inspect the
+current branch, its origin tracking branch, local changes, and ahead/behind state.
+Ensure the current branch includes the latest commits from its corresponding
+origin branch; do not rely on cached remote refs. Fast-forward when possible.
+Preserve uncommitted changes and local commits when integrating incoming work;
+never discard work, reset the branch, or force-push to achieve synchronization.
+Local commits ahead of origin do not need to be published for this check.
+If fetching fails, the origin branch cannot be identified, or synchronization
+cannot be completed safely, report the blocker before beginning implementation.
+
 ## User shorthand
 
 - `gst` means `git status`. When requested, show the current Git status.

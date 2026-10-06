@@ -18,6 +18,7 @@ const root = path.resolve(__dirname, '../..');
         if (url.hostname !== '127.0.0.1') {
           if (route.request().frame().url().endsWith('/sports/admin/')) adminSchedules.add(url.pathname);
           if (url.hostname === 'lichess.org' && url.pathname === '/api/broadcast/top') return route.fulfill({ json: { active: [] } });
+          if (url.hostname === 'www.pdga.com') return route.fulfill({ json: [] });
           return route.fulfill({ json: { dates: [], events: [] } });
         }
         if (url.pathname.startsWith('/api/sports/state')) {
@@ -74,11 +75,11 @@ const root = path.resolve(__dirname, '../..');
     const other = await contexts[1].newPage();
     await other.goto('http://127.0.0.1:8000/sports/admin/');
     await other.waitForFunction(() => document.querySelector('#display-mode').value === 'top-favorite');
-    await other.locator('#display-mode').selectOption('rotate');
-    await chrome.waitForFunction(() => document.querySelector('#display-mode').value === 'rotate');
+    await other.locator('#display-mode').selectOption('automatic');
+    await chrome.waitForFunction(() => document.querySelector('#display-mode').value === 'automatic');
     await chrome.locator('#fallback-mode').selectOption('hide');
     await obs.waitForFunction(() => window.SportsOverlay.config.loadConfig().fallbackMode === 'hide');
-    assert.equal(state.config.displayMode, 'rotate'); // Unrelated change survives.
+    assert.equal(state.config.displayMode, 'automatic'); // Unrelated change survives.
     await chrome.locator('#time-zone').selectOption('America/Los_Angeles');
     await obs.waitForFunction(() => window.SportsOverlay.config.loadConfig().timeZone === 'America/Los_Angeles');
     assert.equal(await obs.evaluate(() => window.SportsOverlay.model.formatGameTime('2026-07-01T19:00:00Z')), '12:00 PM PDT');
@@ -127,6 +128,10 @@ const root = path.resolve(__dirname, '../..');
     await chrome.getByRole('button', { name: 'Settings', exact: true }).click();
     await chrome.locator('.chess-auto-follow').uncheck();
     await chrome.waitForFunction(() => window.SportsOverlay.config.loadConfig().sports.find(group => group.sport === 'chess').autoFollow === false);
+    for (const selector of ['.chess-second-tier', '.pdga-second-tier']) {
+      await chrome.locator(selector).uncheck();
+      await chrome.getByText('Saved automatically. Banner updated.', { exact: true }).waitFor();
+    }
     const hourlyAdmin = await contexts[0].newPage();
     await hourlyAdmin.clock.install();
     await hourlyAdmin.goto('http://127.0.0.1:8000/sports/admin/');

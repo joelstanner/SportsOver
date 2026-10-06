@@ -40,7 +40,8 @@ use the tray/menu-bar icon to reopen it or choose **Quit SportsOver**.
   score refresh intervals and fallback behavior. Changes save automatically.
   Use **Export settings** / **Import settings…** here or in the File menu for backups.
 - **Live control:** add or exclude games, reorder the rotation, set display
-  durations, and choose automatic, hybrid, or curated queues. Pin one game to
+  durations, and set **Rotation source** to automatic selections, automatic selections
+  plus your games, or only games you choose. Pin one game to
   hold it, or several to rotate among them; **Unpin all** clears game pins.
   **Pinned only** filters the rotation list to pinned games and combines with its sport filter.
   It is disabled when nothing is pinned; clearing the last pin also clears this filter.
@@ -48,6 +49,12 @@ use the tray/menu-bar icon to reopen it or choose **Quit SportsOver**.
   retention (20 minutes by default). Tournament breaks leave Live mode until play
   resumes; team-sport breaks remain eligible. Live mode starts off after a restart.
 - **Demo lab:** preview sample banners without changing the live output.
+
+**Automatic game selection** in Settings chooses which games are suggested:
+**All watched teams + live spotlight**, or **Top watched team per sport**.
+**Rotation source** in Live control decides whether the banner uses those selections,
+your chosen games, or both. The top-team option limits automatic suggestions;
+you can still add other teams’ games manually. Order, durations, and pins are set in Live control.
 
 Automatic rotation follows included watched teams in rank order, showing shared
 matchups once. Watched-team finals can rotate alongside upcoming games for up to
@@ -64,7 +71,7 @@ When no games match, the banner shows a no-games message and resumes when eligib
 | --- | --- |
 | Browse games | Click the leftmost 20% for previous; click elsewhere for next. With the banner or Settings focused, use Left/Right arrows. In Settings, arrows retain their normal behavior in fields, selectors, and dialogs. |
 | Move | Drag anywhere on the unlocked banner. |
-| Resize | Double-click the unlocked banner's left half to shrink or right half to enlarge. Size presets (50–300%) are also in Settings and menus. |
+| Resize | With the banner or Settings focused and the position unlocked, press Up to shrink or Down to grow. Double-click the banner's left half to shrink or right half to enlarge. Size presets (50–300%) are also in Settings and menus. Resizing keeps the banner’s center fixed, shifting only when needed to stay on its monitor. Fields, selectors, and focused tournament lists retain their own arrow behavior. |
 | Open Settings | Right-click the banner and choose **Settings…**, or use the tray/menu bar. |
 | Lock position / hide | Use Settings, the tray, or the banner's right-click menu. Position locking keeps game browsing available. |
 | Fullscreen | Use **Fullscreen** or **Ctrl/Cmd + Shift + F**; press **Escape** to restore the previous size and position. |

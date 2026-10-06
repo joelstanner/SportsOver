@@ -10,6 +10,8 @@ const root = path.resolve(__dirname, '../..');
     const context = await browser.newContext();
     await context.route('**/*', async route => {
       const url = new URL(route.request().url());
+      if (url.hostname === 'lichess.org') return route.fulfill({ json: { active: [] } });
+      if (url.hostname === 'www.pdga.com') return route.fulfill({ json: [] });
       if (url.hostname !== 'overlay.test') return route.fulfill({ json: {} });
       let relative = url.pathname.replace(/^\/sports\/(?=admin\/|core\/|sports\/|$|index\.html)/, '/').slice(1);
       if (!relative || relative.endsWith('/')) relative += 'index.html';
@@ -114,7 +116,7 @@ const root = path.resolve(__dirname, '../..');
     await admin.getByRole('button', { name: 'Live control', exact: true }).click();
     await admin.getByText('Games refreshed', { exact: true }).waitFor();
     await admin.locator('#rotation-mode').selectOption('curated');
-    await admin.getByText('Queue mode applied', { exact: true }).waitFor();
+    await admin.getByText('Rotation source applied', { exact: true }).waitFor();
     for (const sport of ['football', 'college-football', 'basketball', 'college-basketball', 'hockey', 'soccer']) {
       const card = admin.locator(`#available-games [data-game-key="${sport}:900001"]`);
       assert.match(await card.locator('.sports-odds').innerText(), /AWY -3\.5 \(-120\).*HME \+3\.5 \(-121\)/s);

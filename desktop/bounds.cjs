@@ -22,4 +22,17 @@ function fitBounds(saved = {}, displays) {
   return { x: Math.round(Math.max(area.x, Math.min(x, area.x + area.width - w))), y: Math.round(Math.max(area.y, Math.min(y, area.y + area.height - h))), width: w, height: h };
 }
 function fullscreenBounds(display) { return { ...display.bounds }; }
-module.exports = { fitBounds, fullscreenBounds, BANNER_SCALES, stepBannerScale };
+
+function centeredResizeBounds(current, width, display) {
+  // Fit the size first so monitor limits do not change the intended center.
+  const fitted = fitBounds({ width }, [display]);
+  // Alternate half-pixel rounding with size parity so grow/shrink cycles cannot drift.
+  const origin = (start, size, nextSize) => (nextSize % 2 ? Math.floor : Math.ceil)(start + (size - nextSize) / 2);
+  return fitBounds({
+    x: origin(current.x, current.width, fitted.width),
+    y: origin(current.y, current.height, fitted.height),
+    width: fitted.width,
+  }, [display]);
+}
+
+module.exports = { fitBounds, fullscreenBounds, centeredResizeBounds, BANNER_SCALES, stepBannerScale };

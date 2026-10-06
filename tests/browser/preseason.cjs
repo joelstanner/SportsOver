@@ -12,6 +12,8 @@ const root = path.resolve(__dirname, '../..');
     let sharedState = { initialized: false, config: null, revision: 0, instance: 'preseason-test' };
     await context.route('**/*', async route => {
       const url = new URL(route.request().url());
+      if (url.hostname === 'lichess.org') return route.fulfill({ json: { active: [] } });
+      if (url.hostname === 'www.pdga.com') return route.fulfill({ json: [] });
       if (url.hostname !== 'overlay.test') return route.fulfill({ json: {} });
       if (url.pathname.startsWith('/api/sports/state')) {
         if (route.request().method() !== 'GET') {
@@ -182,7 +184,7 @@ const root = path.resolve(__dirname, '../..');
     await admin.getByRole('button', { name: 'Live control', exact: true }).click();
     await admin.getByText('Games refreshed', { exact: true }).waitFor();
     await admin.locator('#rotation-mode').selectOption('curated');
-    await admin.getByText('Queue mode applied', { exact: true }).waitFor();
+    await admin.getByText('Rotation source applied', { exact: true }).waitFor();
     for (const sport of ['baseball', 'basketball', 'football', 'college-football', 'hockey', 'soccer', 'college-basketball']) {
       const available = admin.locator(`#available-games [data-game-key="${sport}:900001"]`);
       assert.match(await available.locator('.game-meta').innerText(), /^PRESEASON · Upcoming/);

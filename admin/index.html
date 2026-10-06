@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SportsOver Settings</title>
   <link rel="stylesheet" href="../core/odds.css?v=3">
-  <link rel="stylesheet" href="admin.css?v=27">
+  <link rel="stylesheet" href="admin.css?v=29">
   <link rel="stylesheet" href="../core/desktop.css?v=15">
 </head>
 <body>
@@ -51,13 +51,13 @@
         <div>
           <p class="section-kicker">TEAM DIRECTORY</p>
           <h3 id="catalog-refresh-heading">Refresh team data</h3>
-          <p>Pull current names, IDs, logos, and colors from MLB and ESPN.</p>
+          <p id="catalog-refresh-description">Update the saved team directory from MLB/ESPN when a team is missing or its name, logo, or colors are out of date. Requires internet; your watched teams and rankings stay the same. For scores and schedules, use Refresh games in Live control.</p>
         </div>
         <div class="watch-team-controls">
           <label class="field" for="catalog-refresh-sport">Sport</label>
           <div class="watch-team-inputs">
             <select id="catalog-refresh-sport">
-              <option value="all">All sports</option>
+              <option value="all">All team sports</option>
               <option value="baseball">Baseball · MLB</option>
               <option value="football">Football · NFL</option>
               <option value="college-football">College football · NCAAF</option>
@@ -66,7 +66,7 @@
               <option value="basketball">Basketball · NBA</option>
               <option value="college-basketball">NCAA men’s basketball · NCAAM</option>
             </select>
-            <button id="refresh-team-catalog" class="button button--secondary" type="button">Refresh teams</button>
+            <button id="refresh-team-catalog" class="button button--secondary" type="button" aria-describedby="catalog-refresh-description" aria-haspopup="dialog">Refresh directory…</button>
           </div>
           <span id="catalog-refresh-status" class="catalog-refresh-status" role="status"></span>
         </div>
@@ -80,22 +80,21 @@
         </label>
         <div class="field">
           <div class="field-label-help">
-            <label for="display-mode">Display mode</label>
+            <label for="display-mode">Automatic game selection</label>
             <div class="display-mode-info">
-              <button class="info-button" type="button" aria-label="Explain display modes" aria-describedby="display-mode-tooltip" aria-expanded="false">i</button>
+              <button class="info-button" type="button" aria-label="Explain automatic game selection" aria-describedby="display-mode-tooltip" aria-expanded="false">i</button>
               <div id="display-mode-tooltip" class="info-tooltip" role="tooltip" hidden>
-                <p><strong>Automatic priority:</strong> Each included watched team contributes its live game or its selected fallback game, in team rank order. Shared matchups appear once. When no watched game is live, add a live spotlight game when available.</p>
-                <p><strong>Rotate watched teams + spotlight:</strong> Currently uses the same selection as Automatic priority. Selected games rotate using Live control’s order and durations.</p>
-                <p><strong>Top watched team only:</strong> For each enabled sport, show only the top included watched team’s live game or fallback game, without spotlight games.</p>
-                <p>The fallback choice applies separately to each watched team that is not playing live. Live control’s queue mode, manual choices, and pins determine the final rotation. Changes save automatically.</p>
+                <p><strong>All watched teams + live spotlight:</strong> Each included watched team contributes its live game or selected fallback game, in team rank order. Shared matchups appear once. When no watched game is live, add a live spotlight game when available.</p>
+                <p><strong>Top watched team per sport:</strong> Suggest only the highest-ranked included watched team’s live game or fallback game for each enabled sport, without spotlight games. For chess and disc golf, use the first included watch.</p>
+                <p>The fallback choice applies separately to each watched team that is not playing live. Rotation source in Live control decides whether to use these automatic selections, your chosen games, or both. Manual additions can include other teams. Order, durations, and pins are set in Live control. Changes save automatically.</p>
               </div>
             </div>
           </div>
-          <select id="display-mode">
-            <option value="automatic">Automatic priority</option>
-            <option value="rotate">Rotate watched teams + spotlight</option>
-            <option value="top-favorite">Top watched team only</option>
+          <select id="display-mode" aria-describedby="automatic-selection-description">
+            <option value="automatic">All watched teams + live spotlight</option>
+            <option value="top-favorite">Top watched team per sport</option>
           </select>
+          <small id="automatic-selection-description">Chooses which games are suggested automatically. Rotation source in Live control decides whether to use these suggestions, your chosen games, or both.</small>
         </div>
         <label class="field">When a watched team is not live
           <select id="fallback-mode">
@@ -133,13 +132,15 @@
 
       <section class="rotation-control" aria-labelledby="rotation-control-heading">
         <div class="rotation-toolbar">
-          <label class="field">Queue mode
-            <select id="rotation-mode">
-              <option value="automatic">Automatic suggestions</option>
-              <option value="hybrid">Automatic + my changes</option>
+          <div class="field">
+            <label for="rotation-mode">Rotation source</label>
+            <select id="rotation-mode" aria-describedby="rotation-source-description">
+              <option value="automatic">Automatic selections</option>
+              <option value="hybrid">Automatic selections + my games</option>
               <option value="curated">Only games I choose</option>
             </select>
-          </label>
+            <small id="rotation-source-description">Uses Automatic game selection in Settings, skipping games you remove. Adding a game switches to Automatic selections + my games.</small>
+          </div>
           <div class="field game-refresh-controls">
             <span>Game data</span>
             <button id="refresh-games" class="button button--secondary" type="button" title="Check enabled sports for new games and tournament updates, then update Available games and the rotation using your existing settings. Feed refresh limits still apply." aria-describedby="refresh-games-status">Refresh games</button>
@@ -262,7 +263,17 @@
     </section>
   </main>
 
-  <dialog id="reset-settings-dialog" class="reset-settings-dialog" aria-labelledby="reset-settings-heading" aria-describedby="reset-settings-description reset-settings-warning">
+  <dialog id="refresh-team-catalog-dialog" class="settings-dialog" aria-labelledby="catalog-refresh-dialog-heading" aria-describedby="catalog-refresh-dialog-description catalog-refresh-dialog-note">
+    <h2 id="catalog-refresh-dialog-heading">Refresh team directory?</h2>
+    <p id="catalog-refresh-dialog-description"></p>
+    <p id="catalog-refresh-dialog-note">Requires internet. Your watched teams, rankings, and settings stay the same. This does not refresh game scores or schedules.</p>
+    <div class="actions">
+      <button id="cancel-refresh-team-catalog" class="button button--secondary" type="button" autofocus>Cancel</button>
+      <button id="confirm-refresh-team-catalog" class="button button--primary" type="button">Refresh directory</button>
+    </div>
+  </dialog>
+
+  <dialog id="reset-settings-dialog" class="settings-dialog" aria-labelledby="reset-settings-heading" aria-describedby="reset-settings-description reset-settings-warning">
     <h2 id="reset-settings-heading">Restore default settings?</h2>
     <p id="reset-settings-description">This replaces your watched teams, display preferences, refresh intervals, and rotation customizations with SportsOver defaults. Your custom game queue and game pins will be cleared.</p>
     <p id="reset-settings-warning" class="reset-settings-warning">Changes will be saved immediately. This cannot be undone.</p>
@@ -329,7 +340,7 @@
     </article>
   </template>
 
-  <script src="../core/config.js?v=22"></script>
+  <script src="../core/config.js?v=23"></script>
   <script src="../core/shared-state.js?v=1"></script>
   <script src="../core/automatic-watches.js?v=1"></script>
   <script src="../core/provider-network.js?v=1"></script>
@@ -353,7 +364,7 @@
   <script src="../sports/chess/providers/lichess.js?v=2"></script>
   <script src="chess-settings.js?v=2"></script>
   <script src="automatic-watches.js?v=2"></script>
-  <script src="admin.js?v=39"></script>
+  <script src="admin.js?v=41"></script>
   <script src="../core/desktop.js?v=21"></script>
 </body>
 </html>

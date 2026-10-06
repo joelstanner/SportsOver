@@ -133,7 +133,7 @@ test("normalizes independent sport and favorite rankings", () => {
   assert.deepEqual(config.gameDurations, { "football:401": 25, "baseball:777": 300 });
   assert.deepEqual(config.lockedGameKeys, ["football:401", "baseball:777"]);
   assert.equal(config.fallbackMode, "hide");
-  assert.equal(config.displayMode, "rotate");
+  assert.equal(config.displayMode, "automatic", "legacy rotate maps to the equivalent automatic selection");
 });
 
 test("migrates flat version four favorites into ranked sport groups", () => {

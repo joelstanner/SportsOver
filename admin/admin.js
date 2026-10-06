@@ -66,6 +66,9 @@
   const addTeamButton = document.querySelector("#add-team");
   const refreshCatalogButton = document.querySelector("#refresh-team-catalog");
   const catalogRefreshStatus = document.querySelector("#catalog-refresh-status");
+  const catalogRefreshSport = document.querySelector("#catalog-refresh-sport");
+  const catalogRefreshDialog = document.querySelector("#refresh-team-catalog-dialog");
+  let pendingCatalogSport = null;
   const undoLiveButton = document.querySelector("#undo-live-change");
   const resetDialog = document.querySelector("#reset-settings-dialog");
   const liveConfigKeys = ["rotationMode", "bannerSportFilter", "includedGames", "excludedGames", "rotationOrder", "gameDurations", "defaultGameDurations", "lockedGameKeys"];
@@ -103,7 +106,24 @@
   }
   teamSportPicker.addEventListener("change", renderTeamPicker);
   addTeamButton.addEventListener("click", addTeam);
-  refreshCatalogButton.addEventListener("click", refreshTeamCatalog);
+  refreshCatalogButton.addEventListener("click", () => {
+    if (refreshCatalogButton.disabled || catalogRefreshDialog.open) return;
+    pendingCatalogSport = catalogRefreshSport.value;
+    const scope = pendingCatalogSport === "all" ? "all seven team sports (MLB, NFL, NCAAF, NHL, MLS, NBA, and NCAAM)"
+      : catalogRefreshSport.selectedOptions[0].textContent;
+    document.querySelector("#catalog-refresh-dialog-description").textContent =
+      `Download current team names, IDs, logos, and colors from MLB/ESPN for ${scope}, replacing the saved directory for that selection.`;
+    catalogRefreshDialog.showModal();
+  });
+  document.querySelector("#cancel-refresh-team-catalog").addEventListener("click", () => catalogRefreshDialog.close());
+  catalogRefreshDialog.addEventListener("close", () => { pendingCatalogSport = null; });
+  document.querySelector("#confirm-refresh-team-catalog").addEventListener("click", () => {
+    if (!catalogRefreshDialog.open || !pendingCatalogSport || refreshCatalogButton.disabled) return;
+    const sport = pendingCatalogSport;
+    pendingCatalogSport = null;
+    catalogRefreshDialog.close();
+    refreshTeamCatalog(sport);
+  });
   const timeZonePicker = document.querySelector("#time-zone");
   const commonZones = {
     local: "Device time zone (automatic)",
@@ -512,9 +532,9 @@
     addTeamButton.disabled = !teamPicker.value;
   }
 
-  async function refreshTeamCatalog() {
-    const sport = document.querySelector("#catalog-refresh-sport").value;
+  async function refreshTeamCatalog(sport) {
     refreshCatalogButton.disabled = true;
+    catalogRefreshSport.disabled = true;
     catalogRefreshStatus.textContent = sport === "all" ? "Refreshing all team directories…" : "Refreshing team directory…";
     catalogRefreshStatus.className = "catalog-refresh-status";
     try {
@@ -538,6 +558,7 @@
       catalogRefreshStatus.className = "catalog-refresh-status is-error";
     } finally {
       refreshCatalogButton.disabled = false;
+      catalogRefreshSport.disabled = false;
     }
   }
 
@@ -644,7 +665,7 @@
   function updateRotationControls() {
     const previousLiveConfig = savedLiveConfig();
     workingConfig.rotationMode = document.querySelector("#rotation-mode").value;
-    autoApplyLiveChange(previousLiveConfig, "Queue mode applied");
+    autoApplyLiveChange(previousLiveConfig, "Rotation source applied");
   }
 
   function liveModeActive() {
@@ -824,6 +845,11 @@
   }
 
   function renderRotationControls() {
+    document.querySelector("#rotation-source-description").textContent = {
+      automatic: "Uses Automatic game selection in Settings, skipping games you remove. Adding a game switches to Automatic selections + my games.",
+      hybrid: "Combines Automatic game selection in Settings with games you add here, leaving out games you remove.",
+      curated: "Uses only games you add here. Automatic game selection in Settings does not add games to this rotation.",
+    }[workingConfig.rotationMode];
     document.querySelectorAll("[data-default-duration]").forEach(input => {
       // Desktop engine refreshes must not replace a value being typed.
       if (document.activeElement !== input) {

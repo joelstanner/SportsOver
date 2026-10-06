@@ -9,11 +9,28 @@ const root = path.resolve(__dirname, '../..');
     let state = { initialized: false, config: null, revision: 0, instance: 'autosave-test', catalogRevision: 0 };
     let hold = false, release, failed = false, conflict = false, discoveryConflict = false;
     const requests = [], errors = [];
+    const catalogRequests = [];
+    let catalogReads = 0, releaseCatalog, failCatalog = false;
     const context = await browser.newContext();
     context.setDefaultTimeout(15000);
     await context.route('**/*', async route => {
       const url = new URL(route.request().url());
       if (url.hostname !== '127.0.0.1') return route.fulfill({ json: { events: [], dates: [] } });
+      if (url.pathname.endsWith('/api/team-catalog/refresh')) {
+        assert.equal(route.request().method(), 'POST');
+        const body = route.request().postDataJSON();
+        catalogRequests.push(body);
+        await new Promise(resolve => { releaseCatalog = resolve; });
+        releaseCatalog = undefined;
+        if (failCatalog) {
+          failCatalog = false;
+          return route.fulfill({ status: 503, json: { error: 'Team provider unavailable' } });
+        }
+        const sports = body.sport === 'all'
+          ? ['baseball', 'football', 'college-football', 'hockey', 'soccer', 'basketball', 'college-basketball'] : [body.sport];
+        return route.fulfill({ json: { results: sports.map(sport => ({ sport, count: 30 })) } });
+      }
+      if (url.pathname.endsWith('/teams.json')) catalogReads++;
       if (url.pathname.startsWith('/api/sports/state')) {
         if (route.request().method() !== 'GET') {
           const body = route.request().postDataJSON();
@@ -83,13 +100,13 @@ const root = path.resolve(__dirname, '../..');
     await page.locator('#display-mode').selectOption('top-favorite');
     await page.waitForFunction(() => document.querySelector('#save-status').textContent === 'Saving…');
     while (!release) await new Promise(resolve => setTimeout(resolve, 10));
-    await page.locator('#display-mode').selectOption('rotate');
+    await page.locator('#display-mode').selectOption('automatic');
     await page.locator('#fallback-mode').selectOption('hide');
     release(); release = undefined;
     await saved();
-    assert.equal(state.config.displayMode, 'rotate');
+    assert.equal(state.config.displayMode, 'automatic');
     assert.equal(state.config.fallbackMode, 'hide');
-    assert.equal(await page.locator('#display-mode').inputValue(), 'rotate');
+    assert.equal(await page.locator('#display-mode').inputValue(), 'automatic');
     // Number fields are only committed when complete and valid.
     const interval = page.locator('#provider-refresh-fields input[data-sport="baseball"][data-state="live"]');
     const previous = state.config.providerRefreshSeconds.baseball.live;
@@ -125,22 +142,75 @@ const root = path.resolve(__dirname, '../..');
     assert.equal(await page.locator('#save-settings').isVisible(), false);
     // Conflicts preserve both the user's pending change and unrelated remote edits.
     conflict = true;
-    await page.locator('#display-mode').selectOption('automatic');
+    await page.locator('#display-mode').selectOption('top-favorite');
     await page.getByRole('button', { name: 'Retry save' }).waitFor();
-    assert.equal(await page.locator('#display-mode').inputValue(), 'automatic');
+    assert.equal(await page.locator('#display-mode').inputValue(), 'top-favorite');
     await page.getByRole('button', { name: 'Retry save' }).click();
     await saved();
-    assert.equal(state.config.displayMode, 'automatic');
+    assert.equal(state.config.displayMode, 'top-favorite');
     assert.equal(state.config.timeZone, 'UTC');
     // A discovery-owned watch list update must not require a manual retry.
     discoveryConflict = true;
-    await page.locator('#display-mode').selectOption('rotate');
+    await page.locator('#display-mode').selectOption('automatic');
     await saved();
-    assert.equal(state.config.displayMode, 'rotate');
+    assert.equal(state.config.displayMode, 'automatic');
     assert.equal(state.config.automaticWatchLists.chess[0].tournamentId, 'Elite001');
     assert.equal(await page.locator('#save-settings').isVisible(), false);
     assert.deepEqual(errors, []);
     assert.ok(requests.slice(1).every(request => Object.keys(request.config).length < Object.keys(state.config).length), 'autosaves only send changed fields');
+    // Directory replacement requires explicit confirmation and preserves settings.
+    const beforeCatalog = structuredClone(state.config);
+    const beforeCatalogSaves = requests.length;
+    const refreshButton = page.locator('#refresh-team-catalog');
+    const catalogSport = page.locator('#catalog-refresh-sport');
+    const catalogDialog = page.getByRole('dialog', { name: 'Refresh team directory?' });
+    const cancelCatalog = page.locator('#cancel-refresh-team-catalog');
+    await refreshButton.click();
+    assert.equal(await catalogDialog.isVisible(), true);
+    assert.match(await catalogDialog.textContent(), /all seven team sports/);
+    assert.equal(await cancelCatalog.evaluate(button => button === document.activeElement), true);
+    await cancelCatalog.click();
+    assert.equal(await refreshButton.evaluate(button => button === document.activeElement), true);
+    await refreshButton.click();
+    await page.keyboard.press('Escape');
+    assert.equal(await catalogDialog.isVisible(), false);
+    await refreshButton.click();
+    await page.keyboard.press('Enter');
+    assert.equal(await catalogDialog.isVisible(), false, 'Enter on initial focus cancels');
+    assert.deepEqual(catalogRequests, [], 'opening, Cancel, Escape, and Enter send no refresh');
+    for (const sport of ['football', 'all']) {
+      await catalogSport.selectOption(sport);
+      await refreshButton.click();
+      assert.match(await catalogDialog.textContent(), sport === 'all' ? /all seven team sports/ : /Football · NFL/);
+      const readsBeforeRefresh = catalogReads;
+      await page.locator('#confirm-refresh-team-catalog').click();
+      await page.waitForFunction(() => document.querySelector('#catalog-refresh-status').textContent.startsWith('Refreshing'));
+      assert.equal(await catalogDialog.isVisible(), false);
+      assert.equal(await refreshButton.isDisabled(), true);
+      assert.equal(await catalogSport.isDisabled(), true);
+      await page.waitForFunction(() => document.querySelector('#refresh-team-catalog').disabled);
+      while (!releaseCatalog) await new Promise(resolve => setTimeout(resolve, 10));
+      assert.deepEqual(catalogRequests.at(-1), { sport });
+      releaseCatalog();
+      await page.locator('#catalog-refresh-status.is-saved').waitFor();
+      assert.equal(catalogReads - readsBeforeRefresh, 7, 'successful refresh reloads the directories');
+      assert.equal(await refreshButton.isEnabled(), true);
+      assert.equal(await catalogSport.isEnabled(), true);
+      assert.equal(await page.locator('#catalog-refresh-status').textContent(), sport === 'all'
+        ? '7 directories refreshed · 210 teams' : '1 directory refreshed · 30 teams');
+    }
+    failCatalog = true;
+    await refreshButton.click();
+    await page.locator('#confirm-refresh-team-catalog').click();
+    while (!releaseCatalog) await new Promise(resolve => setTimeout(resolve, 10));
+    releaseCatalog();
+    await page.locator('#catalog-refresh-status.is-error').waitFor();
+    assert.match(await page.locator('#catalog-refresh-status').textContent(), /Team provider unavailable/);
+    assert.equal(await refreshButton.isEnabled(), true, 'failed refresh can be retried');
+    assert.equal(await catalogSport.isEnabled(), true);
+    assert.equal(requests.length, beforeCatalogSaves, 'directory refresh sends no settings save');
+    assert.deepEqual(state.config, beforeCatalog, 'watched teams, rankings, and settings remain intact');
+    assert.deepEqual(errors, []);
     // Opening or dismissing the confirmation must never reset or save settings.
     const beforeReset = structuredClone(state.config);
     const beforeResetRequests = requests.length;
@@ -165,7 +235,7 @@ const root = path.resolve(__dirname, '../..');
     assert.equal(requests.length, beforeResetRequests, 'cancellation sends no save');
     // Restoring defaults and a new edit must survive an older in-flight save.
     hold = true;
-    await page.locator('#display-mode').selectOption('rotate');
+    await page.locator('#display-mode').selectOption('top-favorite');
     await page.waitForFunction(() => document.querySelector('#save-status').textContent === 'Saving…');
     while (!release) await new Promise(resolve => setTimeout(resolve, 10));
     await page.locator('#reset-settings').click();
@@ -182,6 +252,14 @@ const root = path.resolve(__dirname, '../..');
     local.on('pageerror', error => errors.push(error.message));
     await local.goto('http://127.0.0.1:8000/admin/');
     await local.waitForFunction(() => document.querySelector('#sports-list').children.length > 0);
+    // A saved legacy choice still opens with a valid, equivalent selection.
+    await local.evaluate(() => {
+      const api = window.SportsOverlay.config;
+      localStorage.setItem(api.STORAGE_KEY, JSON.stringify({ ...api.loadConfig(), displayMode: 'rotate' }));
+    });
+    await local.reload();
+    await local.waitForFunction(() => document.querySelector('#display-mode').value === 'automatic');
+    assert.equal(await local.evaluate(() => window.SportsOverlay.config.loadConfig().displayMode), 'automatic');
     await local.locator('#display-mode').selectOption('top-favorite');
     await local.getByText('Saved automatically locally (preview only).', { exact: true }).waitFor();
     await local.reload();
@@ -195,6 +273,6 @@ const root = path.resolve(__dirname, '../..');
     await local.reload();
     await local.waitForFunction(() => document.querySelector('#display-mode').value === 'automatic');
     assert.deepEqual(errors, []);
-    console.log('Settings autosave passed: selections, sports/teams, rapid edits, numbers, remote refresh, failure/retry, conflict, confirmed restore and safe cancellation.');
+    console.log('Settings autosave passed: selections, sports/teams, rapid edits, numbers, remote refresh, failure/retry, conflict, confirmed directory refresh, confirmed restore and safe cancellation.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

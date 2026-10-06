@@ -15,8 +15,11 @@ Quiet mode uses hidden real Electron windows and checks settings/engine propagat
   smoke test checks its button, game-lock override/restoration, removal persistence,
   and activation reset plus retention-setting persistence after app restart.
 - Test traffic is mocked. This does not establish current live API availability, logo availability, or feed accuracy.
+- `SPORTSOVER_RESIZE_SMOKE_ONLY=1 node scripts/desktop-smoke.cjs --quiet`: focused source-app check of native bounds during centered resizing through Settings presets, the menu, and Up/Down keys in both renderers. Uses hidden windows and isolated data; it does not verify physical double-clicks.
 
 ## Manual platform checks still required
+
+For resizing, verify that Up/Down keys, double-clicks, Settings size presets, and menu sizes keep the center fixed. At monitor edges, growth should shift only enough to keep the banner on that monitor; repeated growing and shrinking should not drift.
 
 The automated test invokes native APIs but does **not** establish that physical mouse clicks pass through to another application or that OS drag regions track real mouse movement correctly. Before relying on the app during a broadcast/session, check:
 
