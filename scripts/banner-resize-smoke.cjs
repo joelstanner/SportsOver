@@ -3,6 +3,10 @@ const assert = require('node:assert/strict');
 module.exports = async ({ application, admin, banner }) => {
   const { original, area } = await application.evaluate(({ BrowserWindow, screen }) => {
     const win = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('display.html?desktop'));
+    if (process.platform === 'win32') {
+      globalThis.originalBannerSetShape = win.setShape.bind(win);
+      win.setShape = rects => { globalThis.lastBannerShape = rects; return globalThis.originalBannerSetShape(rects); };
+    }
     const original = win.getBounds(), area = screen.getDisplayMatching(original).workArea;
     win.setBounds({ ...original, x: Math.round(area.x + (area.width - original.width) / 2),
       y: area.y });
@@ -69,7 +73,11 @@ module.exports = async ({ application, admin, banner }) => {
     }
     const tiny = await bounds();
     assert.equal(tiny.width, 47);
-    assert.equal(tiny.height, 10);
+    if (process.platform === 'win32') {
+      assert.ok(tiny.height >= 10, 'Windows may retain its native caption-height minimum');
+      assert.deepEqual(await application.evaluate(() => globalThis.lastBannerShape),
+        [{ x: 0, y: 0, width: 47, height: 10 }], 'drawing and mouse input are clipped to the 10% banner');
+    } else assert.equal(tiny.height, 10);
     assert.equal(tiny.y, beforeMenu.y);
     await admin.waitForFunction(() => document.querySelector('#desktop-size').value === '0.1');
     await admin.evaluate(() => window.sportsDesktop.action('step-banner-size', -1));
@@ -86,7 +94,10 @@ module.exports = async ({ application, admin, banner }) => {
     await admin.waitForFunction(() => document.querySelector('#desktop-size').value === '0.2');
   } finally {
     await admin.evaluate(() => window.sportsDesktop.action('size', 1));
-    await application.evaluate(({ BrowserWindow }, original) => BrowserWindow.getAllWindows()
-      .find(win => win.webContents.getURL().includes('display.html?desktop')).setBounds(original), original);
+    await application.evaluate(({ BrowserWindow }, original) => {
+      const win = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('display.html?desktop'));
+      win.setBounds(original);
+      if (globalThis.originalBannerSetShape) { win.setShape = globalThis.originalBannerSetShape; delete globalThis.originalBannerSetShape; }
+    }, original);
   }
 };

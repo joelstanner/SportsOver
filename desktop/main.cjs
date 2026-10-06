@@ -41,6 +41,13 @@ const arrowResize = createBannerResize({
   apply: next => banner.setBounds(next),
   settled: () => menus(),
 });
+function updateBannerShape() {
+  if (process.platform !== 'win32' || !banner || banner.isDestroyed()) return;
+  // Electron can retain a caption-sized native height even for frameless windows.
+  // Clip both drawing and mouse input to the banner's logical aspect ratio.
+  const { width } = banner.getBounds();
+  banner.setShape(normalBounds ? [] : [{ x: 0, y: 0, width, height: Math.round(width * 100 / 472) }]);
+}
 function compactRotation() { return !!banner && !normalBounds && banner.getBounds().width < 236 && store?.value.desktop.skipIndividualWhenSmall !== false; }
 let lastCompactRotation;
 function syncCompactRotation() {
@@ -224,6 +231,7 @@ function setFullscreen(value) {
     if (process.platform === 'win32') banner.setAlwaysOnTop(true, 'pop-up-menu');
     persist({ bounds });
   }
+  updateBannerShape();
   banner.webContents.send('desktop:fullscreen', !!normalBounds);
   menus();
 }
@@ -425,6 +433,8 @@ else {
     banner.on('move', saveBounds);
     banner.on('resize', saveBounds);
     banner.on('resize', syncCompactRotation);
+    banner.on('resize', updateBannerShape);
+    updateBannerShape();
     const fit = () => {
       arrowResize.cancel();
       if (normalBounds) {

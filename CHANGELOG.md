@@ -27,6 +27,8 @@ publication to an app store or a GitHub release.
 ### Fixed
 
 - Smooth rapid arrow resizing with a stable layout and animated window bounds.
+- Clip tiny Windows banners to their visible size so the native minimum window
+  height does not leave an oversized mouse-interaction area.
 
 Existing settings are preserved. No manual migration is required.
 
