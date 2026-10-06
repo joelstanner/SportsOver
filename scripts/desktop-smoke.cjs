@@ -399,7 +399,7 @@ const quiet = testMode() === 'quiet';
     await doubleClickBanner(-1);
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).scale), 1, 'left-half double-click shrinks');
     assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), skippedGame, 'shrinking does not navigate');
-    for (const [scale, direction] of [[0.5, -1], [3, 1]]) {
+    for (const [scale, direction] of [[0.25, -1], [3, 1]]) {
       await admin.evaluate(scale => window.sportsDesktop.action('size', scale), scale);
       const area = await application.evaluate(({ BrowserWindow, screen }) => {
         const win = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('display.html?desktop'));
@@ -641,7 +641,7 @@ const quiet = testMode() === 'quiet';
       size.submenu.getMenuItemById('banner-size-1.25').click();
       return labels;
     });
-    assert.deepEqual(contextSizes, ['50%', '75%', '100%', '125%', '150%', '200%', '300%']);
+    assert.deepEqual(contextSizes, ['25%', '50%', '75%', '100%', '125%', '150%', '200%', '300%']);
     await admin.waitForFunction(() => document.querySelector('#desktop-size').value === '1.25');
     assert.equal((await bannerBounds()).width, 590, 'context size changes the native banner');
     assert.equal(await application.evaluate(({ Menu }) => Menu.getApplicationMenu().getMenuItemById('banner-size-1.25').checked), true, 'size checkmark stays synchronized');
