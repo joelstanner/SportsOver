@@ -15,7 +15,8 @@ module.exports = async ({ admin, engine }) => {
   assert.equal(await key('ArrowLeft'), true);
   await engine.waitForFunction(initial => window.SportsOverlay.engine.describe().renderedGameKey === initial, initial);
 
-  for (const modifier of ['altKey', 'ctrlKey', 'metaKey', 'shiftKey', 'isComposing']) {
+  assert.equal(await key('ArrowRight', { shiftKey: true }), true, 'Shift + arrows move the banner');
+  for (const modifier of ['altKey', 'ctrlKey', 'metaKey', 'isComposing']) {
     assert.equal(await key('ArrowRight', { [modifier]: true }), false);
   }
   for (const tag of ['input', 'textarea', 'select', 'editable', 'slider']) {

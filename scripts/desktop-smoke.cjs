@@ -103,6 +103,7 @@ const quiet = testMode() === 'quiet';
   try {
     let { admin, banner, engine } = await launch();
     if (process.env.SPORTSOVER_NAVIGATION_SMOKE_ONLY === '1') {
+      await require('./banner-movement-smoke.cjs')({ application, admin, banner, engine });
       await require('./banner-navigation-smoke.cjs')({ application, admin, banner, engine });
       assert.deepEqual(errors, []);
       return;
@@ -113,6 +114,7 @@ const quiet = testMode() === 'quiet';
       console.log('Banner resize smoke passed: fixed top, horizontal center, fine arrow steps to 10%, and Settings size feedback.');
       return;
     }
+    await require('./banner-movement-smoke.cjs')({ application, admin, banner, engine });
     if (process.env.SPORTSOVER_FOCUS_SMOKE_ONLY === '1') {
       await admin.getByRole('button', { name: 'Live control', exact: true }).click();
       await admin.locator('#available-games [data-game-key="baseball:2"] .add-game').click();
@@ -452,6 +454,10 @@ const quiet = testMode() === 'quiet';
       return { entered, covering: entered };
     });
     assert.deepEqual(nativeFullscreen, { entered: true, covering: true }, 'platform fullscreen entered with the banner covering desktop chrome');
+    await nativeKey(banner, 'Right', ['shift']);
+    await banner.locator('.desktop-browse-notice').waitFor({ state: 'visible' });
+    assert.match(await banner.locator('.desktop-browse-notice').innerText(), /Exit fullscreen to move/);
+    assert.deepEqual(await bannerBounds(), fullBounds, 'Shift + arrows cannot move a fullscreen banner');
     await admin.waitForFunction(() => document.querySelector('#desktop-size').disabled);
     await doubleClickBanner(1);
     assert.deepEqual(await bannerBounds(), fullBounds, 'fullscreen ignores double-click resizing');

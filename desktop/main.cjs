@@ -54,18 +54,31 @@ function fullscreenDisplay() {
   return screen.getAllDisplays().find(display => display.id === fullscreenDisplayId)
     || screen.getDisplayMatching(banner.getBounds());
 }
+function moveBanner(x, y, origin) {
+  if (locked || normalBounds) return;
+  // Keep the press-time size on Windows, where repeated setPosition calls can
+  // resize frameless windows at fractional display scaling.
+  if (process.platform === 'win32') banner.setBounds({ x, y, width: origin.width, height: origin.height });
+  else banner.setPosition(x, y);
+}
+function nudgeBanner(key, sender) {
+  const message = normalBounds ? 'Exit fullscreen to move the banner.' : locked ? 'Unlock the banner to move it.' : '';
+  for (const contents of new Set([banner.webContents, sender])) contents.send('desktop:browse-feedback', message);
+  if (message) return;
+  arrowResize.cancel();
+  bannerGesture({ phase: 'cancel' });
+  const current = banner.getBounds();
+  const offsets = { ArrowLeft: [-5, 0], ArrowRight: [5, 0], ArrowUp: [0, -5], ArrowDown: [0, 5] };
+  const [dx, dy] = offsets[key];
+  const coordinate = value => Math.max(-2147483648, Math.min(2147483647, value));
+  moveBanner(coordinate(current.x + dx), coordinate(current.y + dy), current);
+}
 const bannerGesture = createBannerGesture({
   isFocused: () => banner.isFocused(),
   requireActivation: true,
   focus: () => { if (!quietTest) banner.focus(); },
   bounds: () => banner.getBounds(),
-  move: (x, y, origin) => {
-    if (locked || normalBounds) return;
-    // Windows can change the size of a frameless window on repeated setPosition
-    // calls, particularly with display scaling. Keep the press-time size fixed.
-    if (process.platform === 'win32') banner.setBounds({ x, y, width: origin.width, height: origin.height });
-    else banner.setPosition(x, y);
-  },
+  move: moveBanner,
   next: () => engineWindow.webContents.send('engine:command', { type: 'next' }),
   previous: () => engineWindow.webContents.send('engine:command', { type: 'previous' }),
   resize: direction => { if (!locked && !normalBounds) resize(stepBannerScale(banner.getBounds().width / 472, direction)); },
@@ -398,6 +411,11 @@ else {
       else if (action === 'toggle-fullscreen') setFullscreen(!normalBounds);
       else if (action === 'recover') recover();
       else if (action === 'size') resize(value);
+      else if (action === 'step-banner-position') {
+        if (event.sender !== banner.webContents && event.sender !== settings?.webContents) throw Error('Banner or Settings access required');
+        if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(value)) throw Error('Banner movement requires an arrow direction');
+        nudgeBanner(value, event.sender);
+      }
       else if (action === 'step-banner-size') {
         if (event.sender !== banner.webContents && event.sender !== settings?.webContents) throw Error('Banner or Settings access required');
         if (value !== -1 && value !== 1) throw Error('Banner resizing requires a direction');
