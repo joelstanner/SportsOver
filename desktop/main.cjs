@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const { EngineState } = require('./engine-state.cjs');
 const { startServer, credentials } = require('./server.cjs');
 const { Store, applyCatalog } = require('./store.cjs');
-const { fitBounds, fullscreenBounds, centeredResizeBounds, BANNER_SCALES, stepBannerScale } = require('./bounds.cjs');
+const { fitBounds, fullscreenBounds, topAnchoredResizeBounds, BANNER_SCALES, stepBannerScale, stepArrowScale } = require('./bounds.cjs');
 const { createBannerGesture } = require('./banner-gesture.cjs');
 const { bannerUrl } = require('./banner-link.cjs');
 const { gameLockMenuItem } = require('./banner-game-lock.cjs');
@@ -225,11 +225,11 @@ function menus() {
   ]));
 }
 function resize(scale) {
-  if (typeof scale !== 'number' || !Number.isFinite(scale) || scale < 0.5 || scale > 3) throw Error('Invalid banner size');
+  if (typeof scale !== 'number' || !Number.isFinite(scale) || scale < 0.1 || scale > 3) throw Error('Invalid banner size');
   if (normalBounds) return;
   bannerGesture({ phase: 'cancel' });
   const current = banner.getBounds();
-  banner.setBounds(centeredResizeBounds(current, Math.round(472 * scale), screen.getDisplayMatching(current)));
+  banner.setBounds(topAnchoredResizeBounds(current, Math.round(472 * scale), screen.getDisplayMatching(current)));
   menus();
 }
 function status() { return { version: app.getVersion(), trayAvailable: !!tray && !tray.isDestroyed(), trayBounds: tray && !tray.isDestroyed() ? tray.getBounds() : null, appIconAvailable: !!appIcon, obsUrl, engineReady: engineState.ready, override: engineState.override, locked, visible: banner.isVisible(), fullscreen: !!normalBounds, scale: (normalBounds || banner.getBounds()).width / 472, shortcut, warning: store.warning }; }
@@ -393,7 +393,7 @@ else {
         bannerGesture({ phase: 'cancel' });
         const message = normalBounds ? 'Exit fullscreen to resize the banner.' : locked ? 'Unlock the banner to resize it.' : '';
         for (const contents of new Set([banner.webContents, event.sender])) contents.send('desktop:browse-feedback', message);
-        if (!message) resize(stepBannerScale(banner.getBounds().width / 472, value));
+        if (!message) resize(stepArrowScale(banner.getBounds().width / 472, value));
       }
       else if (action === 'settings') openSettings();
       else if (action === 'banner-hover') {

@@ -52,8 +52,8 @@ test('bounds recover disconnected monitors, allow negative origins and clamp ove
   const off = fitBounds({ x: 5000, y: 5000, width: 944 }, displays);
   assert.ok(off.x + off.width <= 1440 && off.y + off.height <= 900);
   const bad = fitBounds({ x: NaN, y: Infinity, width: -2 }, displays);
-  assert.equal(bad.width, 236);
-  assert.equal(bad.height, 50);
+  assert.equal(bad.width, 47);
+  assert.equal(bad.height, 10);
 });
 test('fullscreen covers the entire monitor, including negative origins and portrait displays', () => {
   const display = { bounds: { x: -2560, y: -200, width: 2560, height: 1440 } };

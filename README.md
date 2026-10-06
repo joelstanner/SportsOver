@@ -71,7 +71,7 @@ When no games match, the banner shows a no-games message and resumes when eligib
 | --- | --- |
 | Browse games | Click the leftmost 20% for previous; click elsewhere for next. With the banner or Settings focused, use Left/Right arrows. In Settings, arrows retain their normal behavior in fields, selectors, and dialogs. |
 | Move | Drag anywhere on the unlocked banner. |
-| Resize | With the banner or Settings focused and the position unlocked, press Up to shrink or Down to grow. Double-click the banner's left half to shrink or right half to enlarge. Size presets (50–300%) are also in Settings and menus. Resizing keeps the banner’s center fixed, shifting only when needed to stay on its monitor. Fields, selectors, and focused tournament lists retain their own arrow behavior. |
+| Resize | With the banner or Settings focused and the position unlocked, press Up to shrink or Down to grow by 5 percentage points (10–300%). Double-click the banner's left half to shrink or right half to enlarge. Size presets (50–300%) are also in Settings and menus. Resizing keeps the top edge fixed and the width centered horizontally, shifting sideways only when needed to stay on its monitor. Growth stops when there is no room below. Fields, selectors, and focused tournament lists retain their own arrow behavior. |
 | Open Settings | Right-click the banner and choose **Settings…**, or use the tray/menu bar. |
 | Lock position / hide | Use Settings, the tray, or the banner's right-click menu. Position locking keeps game browsing available. |
 | Fullscreen | Use **Fullscreen** or **Ctrl/Cmd + Shift + F**; press **Escape** to restore the previous size and position. |

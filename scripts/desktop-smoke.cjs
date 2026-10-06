@@ -110,7 +110,7 @@ const quiet = testMode() === 'quiet';
     await require('./banner-resize-smoke.cjs')({ application, admin, banner });
     if (process.env.SPORTSOVER_RESIZE_SMOKE_ONLY === '1') {
       assert.deepEqual(errors, []);
-      console.log('Banner resize smoke passed: native bounds stay centered through Settings presets, the menu, and arrow keys.');
+      console.log('Banner resize smoke passed: fixed top, horizontal center, fine arrow steps to 10%, and Settings size feedback.');
       return;
     }
     if (process.env.SPORTSOVER_FOCUS_SMOKE_ONLY === '1') {

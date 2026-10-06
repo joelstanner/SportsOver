@@ -149,7 +149,7 @@
         <div><dt>Browse games <span>Click</span></dt><dd>Click an unfocused banner to focus it without changing games. Once focused, click the leftmost 20% for the previous item or anywhere else for the next item. Team names and logos open the game in your browser. PDGA and chess links also open in your browser.</dd></div>
         <div><dt>Browse games <span>Left / Right arrows</span></dt><dd>With the banner or Settings focused, press Left for the previous item or Right for the next item, with a quick transition. In Settings, arrows keep their normal behavior while editing fields, choosing options, or using a dialog. Works in fullscreen and while the banner position is locked.</dd></div>
         <div><dt>Scroll lists <span>Wheel or trackpad</span></dt><dd>Scroll PDGA and chess rows while hovering to pause automatic movement. Touch swipes also work. With the list focused, use Up/Down arrows, Page Up/Down, or Home/End. Automatic scrolling resumes after you leave and move keyboard focus away.</dd></div>
-        <div><dt>Resize <span>Up / Down arrows or double-click</span></dt><dd>With the banner or Settings focused and the position unlocked, press Up to shrink or Down to grow. Double-click the left half to shrink or the right half to grow. Size ranges from 50% to 300%. In Settings, editing controls keep their normal arrow behavior; focused PDGA and chess lists keep Up/Down for scrolling. Resizing pauses in fullscreen.</dd></div>
+        <div><dt>Resize <span>Up / Down arrows or double-click</span></dt><dd>With the banner or Settings focused and the position unlocked, press Up to shrink or Down to grow by 5 percentage points, from 10% to 300%. Double-click the left half to shrink or the right half to grow through the 50–300% presets. The top edge stays fixed and the width changes around the horizontal center. Growth stops when there is no room below. In Settings, editing controls keep their normal arrow behavior; focused PDGA and chess lists keep Up/Down for scrolling. Resizing pauses in fullscreen.</dd></div>
         <div><dt>Move <span>Drag</span></dt><dd>When unlocked: click anywhere and drag to reposition. Dragging and resizing keep the current game.</dd></div>
         <div><dt>Fullscreen <span>Ctrl/Cmd + Shift + F</span></dt><dd>Show only the banner, centered across a black screen. The cursor hides after 3 seconds of inactivity; move it to show it again. Press Escape or choose Exit fullscreen to restore the previous size and position. Moving and resizing pause in fullscreen. Opening Settings also exits fullscreen.</dd></div>
         <div><dt>Banner menu <span>Right-click</span></dt><dd>Pin, unpin, or remove the current game from rotation, open Settings, choose a banner size, lock or unlock the banner position, toggle fullscreen, hide the banner, or quit SportsOver.</dd></div>
@@ -204,7 +204,16 @@
     output.querySelector('#override-status').textContent = value.override ? `Temporary game: ${value.override.gameKey} · ends ${new Date(value.override.expiresAt).toLocaleTimeString()}` : 'Normal rotation · no temporary override';
     const select = section.querySelector('select');
     select.disabled = !!value.fullscreen;
-    if (document.activeElement !== select) select.value = String(Math.round(value.scale * 100) / 100);
+    if (document.activeElement !== select) {
+      const size = String(Math.round(value.scale * 100) / 100);
+      select.querySelector('[data-current-size]')?.remove();
+      if (![...select.options].some(option => option.value === size)) {
+        const option = new Option(`${Math.round(value.scale * 100)}%`, size);
+        option.dataset.currentSize = '';
+        select.append(option);
+      }
+      select.value = size;
+    }
   }
   async function action(name, value) { try { render(await api.action(name, value)); } catch (error) { showWarning(error.message); } }
   document.addEventListener('keydown', event => {
