@@ -39,7 +39,7 @@ const { chromium } = require(path.join(root, 'node_modules/playwright'));
   let original=null;
   for(const scale of [1,0.75,0.5,1.25]) {
    await output.setViewportSize({width:472*scale,height:100*scale});
-   await output.waitForFunction(({scale})=>Number(document.body.style.zoom)===scale,{scale});
+   await output.waitForFunction(({scale})=>Math.abs(new DOMMatrix(getComputedStyle(document.body).transform).a-scale)<0.001,{scale});
    if(scale===0.5) {
     await output.mouse.click(120,25);
     frame={...frame,sequence:++sequence,gameKey:`${sport}:${state}:browse`};

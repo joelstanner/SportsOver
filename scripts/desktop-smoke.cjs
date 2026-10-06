@@ -367,9 +367,9 @@ const quiet = testMode() === 'quiet';
       const width = await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()
         .find(win => win.webContents.getURL().includes('display.html?desktop')).getContentBounds().width);
       // Native resizing completes before the renderer necessarily receives it.
-      // Measure click coordinates only after its viewport and CSS zoom catch up.
+      // Measure click coordinates only after its viewport and CSS scale catch up.
       await banner.waitForFunction(width => window.innerWidth === width
-        && Math.abs(Number(document.body.style.zoom) - width / 472) < 0.001, width);
+        && Math.abs(new DOMMatrix(getComputedStyle(document.body).transform).a - width / 472) < 0.001, width);
       const box = await banner.locator('.scorebug').boundingBox();
       await banner.locator('.scorebug').dblclick({ position: { x: box.width * (direction > 0 ? 0.75 : 0.25), y: box.height * 0.05 } });
       // Let any incorrectly retained single-click timer fire before checking.
@@ -424,7 +424,7 @@ const quiet = testMode() === 'quiet';
       const zoom = width / 472;
       return document.body.classList.contains('desktop-fullscreen')
         && innerWidth === width && innerHeight === height
-        && Math.abs(Number(document.body.style.zoom) - zoom) < 0.001
+        && Math.abs(new DOMMatrix(getComputedStyle(document.body).transform).a - zoom) < 0.001
         && Math.abs(parseFloat(document.body.style.height) * zoom - height) < 1;
     }, fullBounds);
     const presentation = await banner.evaluate(() => {

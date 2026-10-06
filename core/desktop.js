@@ -98,9 +98,12 @@
       const shrink = Math.max(0, 1 - zoom);
       document.body.style.setProperty('--desktop-score-emphasis', String(1 + shrink * 0.8));
       document.body.style.setProperty('--desktop-logo-emphasis', String(1 + shrink * 0.6));
-      document.body.style.zoom = String(zoom);
+      // Scale a stable layout as one layer instead of laying out text at each
+      // rounded native window size during a rapid sequence of arrow presses.
+      document.body.style.transformOrigin = 'top left';
+      document.body.style.transform = `scale(${zoom})`;
       document.body.style.width = '472px';
-      document.body.style.height = `${window.innerHeight / zoom}px`;
+      document.body.style.height = document.body.classList.contains('desktop-fullscreen') ? `${window.innerHeight / zoom}px` : '100px';
     };
     const fullscreen = value => {
       cancelPointer();

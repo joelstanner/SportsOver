@@ -4,7 +4,8 @@ const fs = require('node:fs');
 const { EngineState } = require('./engine-state.cjs');
 const { startServer, credentials } = require('./server.cjs');
 const { Store, applyCatalog } = require('./store.cjs');
-const { fitBounds, fullscreenBounds, topAnchoredResizeBounds, BANNER_SCALES, stepBannerScale, stepArrowScale } = require('./bounds.cjs');
+const { fitBounds, fullscreenBounds, topAnchoredResizeBounds, BANNER_SCALES, stepBannerScale } = require('./bounds.cjs');
+const { createBannerResize } = require('./banner-resize.cjs');
 const { createBannerGesture } = require('./banner-gesture.cjs');
 const { bannerUrl } = require('./banner-link.cjs');
 const { gameLockMenuItem } = require('./banner-game-lock.cjs');
@@ -31,6 +32,12 @@ const engineState = new EngineState();
 let appIcon, trayIcon, outputServer, engineWindow, obsUrl, integrationToken;
 let banner, settings, tray, store, quitting = false, locked = false, shortcut = false, saveTimer;
 let normalBounds = null, fullscreenDisplayId = null;
+const arrowResize = createBannerResize({
+  bounds: () => banner.getBounds(),
+  display: current => screen.getDisplayMatching(current),
+  apply: next => banner.setBounds(next),
+  settled: () => menus(),
+});
 let bannerHovered = false;
 function browseBanner(type, sender) {
   const message = browseFeedback(engineState.state(), store?.value.config.lockedGameKeys);
@@ -103,16 +110,18 @@ function persist(patch) {
   catch (error) { showError('SportsOver could not save preferences', error.message); }
 }
 function lock(value) {
+  arrowResize.cancel();
   bannerGesture({ phase: 'cancel' });
   locked = !!value;
   persist({ locked });
   menus();
 }
 function showBanner() { backgroundStartup = false; if (!quietTest) banner.showInactive(); persist({ visible: true }); menus(); }
-function hideBanner() { setFullscreen(false); banner.hide(); persist({ visible: false }); menus(); }
+function hideBanner() { arrowResize.cancel(); setFullscreen(false); banner.hide(); persist({ visible: false }); menus(); }
 function setFullscreen(value) {
   if (quietTest && value) throw Error('Fullscreen requires a visible test run.');
   if (value === !!normalBounds) return;
+  arrowResize.cancel();
   bannerGesture({ phase: 'cancel' });
   clearTimeout(saveTimer);
   if (value) {
@@ -227,12 +236,13 @@ function menus() {
 function resize(scale) {
   if (typeof scale !== 'number' || !Number.isFinite(scale) || scale < 0.1 || scale > 3) throw Error('Invalid banner size');
   if (normalBounds) return;
+  arrowResize.cancel();
   bannerGesture({ phase: 'cancel' });
   const current = banner.getBounds();
   banner.setBounds(topAnchoredResizeBounds(current, Math.round(472 * scale), screen.getDisplayMatching(current)));
   menus();
 }
-function status() { return { version: app.getVersion(), trayAvailable: !!tray && !tray.isDestroyed(), trayBounds: tray && !tray.isDestroyed() ? tray.getBounds() : null, appIconAvailable: !!appIcon, obsUrl, engineReady: engineState.ready, override: engineState.override, locked, visible: banner.isVisible(), fullscreen: !!normalBounds, scale: (normalBounds || banner.getBounds()).width / 472, shortcut, warning: store.warning }; }
+function status() { return { version: app.getVersion(), trayAvailable: !!tray && !tray.isDestroyed(), trayBounds: tray && !tray.isDestroyed() ? tray.getBounds() : null, appIconAvailable: !!appIcon, obsUrl, engineReady: engineState.ready, override: engineState.override, locked, visible: banner.isVisible(), fullscreen: !!normalBounds, scale: (normalBounds?.width ?? arrowResize.targetWidth() ?? banner.getBounds().width) / 472, shortcut, warning: store.warning }; }
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', (_event, argv) => {
@@ -327,6 +337,7 @@ else {
     banner.on('move', saveBounds);
     banner.on('resize', saveBounds);
     const fit = () => {
+      arrowResize.cancel();
       if (normalBounds) {
         const display = fullscreenDisplay();
         fullscreenDisplayId = display.id;
@@ -393,7 +404,7 @@ else {
         bannerGesture({ phase: 'cancel' });
         const message = normalBounds ? 'Exit fullscreen to resize the banner.' : locked ? 'Unlock the banner to resize it.' : '';
         for (const contents of new Set([banner.webContents, event.sender])) contents.send('desktop:browse-feedback', message);
-        if (!message) resize(stepArrowScale(banner.getBounds().width / 472, value));
+        if (!message) arrowResize.step(value);
       }
       else if (action === 'settings') openSettings();
       else if (action === 'banner-hover') {
@@ -405,6 +416,7 @@ else {
         if (event.sender !== banner.webContents) throw Error('Banner access required');
         // Only native window events may change activation state.
         if (value?.phase === 'blur' || value?.phase === 'activate') throw Error('Invalid pointer phase');
+        if (value?.phase === 'start') arrowResize.cancel();
         bannerGesture(value);
       }
       else if (action === 'open-banner-link') {
@@ -468,5 +480,5 @@ function authorize(event) {
 }
 app.on('activate', () => { if (banner && !backgroundStartup) openSettings(); });
 app.on('window-all-closed', () => { /* Tray owns the application lifetime. */ });
-app.on('before-quit', () => { quitting = true; bannerGesture({ phase: 'cancel' }); clearTimeout(saveTimer); if (banner && store) persist({ bounds: normalBounds || banner.getBounds() }); });
+app.on('before-quit', () => { quitting = true; arrowResize.cancel(); bannerGesture({ phase: 'cancel' }); clearTimeout(saveTimer); if (banner && store) persist({ bounds: normalBounds || banner.getBounds() }); });
 app.on('will-quit', () => { globalShortcut.unregisterAll(); tray?.destroy(); engineState.stop(); outputServer?.close(); });
