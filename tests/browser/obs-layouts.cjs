@@ -4,7 +4,7 @@ const path=require('node:path');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const root=process.env.SPORTSOVER_ROOT||path.resolve(__dirname,'../..');
 const sizes={small:[360,76],normal:[647,137],large:[2304,280]};
-const sports=['baseball','football','basketball','hockey','soccer','chess','disc-golf'];
+const sports=['baseball','football','college-football','basketball','hockey','soccer','chess','disc-golf'];
 (async()=>{
  const browser=await chromium.launch({headless:true,...(process.env.BROWSER_EXE?{executablePath:process.env.BROWSER_EXE}:{channel:'chrome'})});
  try {
@@ -38,6 +38,13 @@ const sports=['baseball','football','basketball','hockey','soccer','chess','disc
      const b=el.getBoundingClientRect();return b.width&&b.height&&(b.bottom>r.bottom+1||b.right>r.right+1||b.top<r.top-1||b.left<r.left-1);
     }).map(el=>el.className);
    });
+   if(state==='final' && sport.includes('football') && mode!=='small') {
+    const scores=await page.locator('.football-score').evaluateAll(els=>els.map(el=>({font:parseFloat(getComputedStyle(el).fontSize),box:el.getBoundingClientRect().toJSON(),row:el.closest('.football-main').getBoundingClientRect().toJSON()})));
+    assert.deepEqual(scores.map(score=>score.font),[44,44],`${sport} final ${mode}: prominent scores`);
+    for(const score of scores) assert(score.box.top>=score.row.top && score.box.bottom<=score.row.bottom,`${sport} final ${mode}: score fits team row`);
+    assert(await page.locator('.team-name-label').first().isVisible(),`${sport} final ${mode}: team names retained`);
+    assert(await page.locator('#football-status-text').isVisible(),`${sport} final ${mode}: final status retained`);
+   }
    if(mode==='small' && !['chess','disc-golf'].includes(sport)){
     const compact=await page.evaluate(()=>{const r=document.querySelector('#sports-overlay');return {fonts:[...r.querySelectorAll('.team__score,.football-score,.basketball-score,.hockey-score,.soccer-score')].map(el=>parseFloat(getComputedStyle(el).fontSize)),date:!!r.querySelector('[data-compact-date]')};});
     assert.deepEqual(compact.fonts,[60,60],sport+' '+state+' compact scores');

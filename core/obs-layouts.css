@@ -54,6 +54,10 @@
   body:not(.desktop-banner) .sports-odds { font-size:9px; line-height:12px; padding:1px 18px; }
 }
 
+/* Final football scores use the open team row in OBS, including college games. */
+body:not(.desktop-banner) #sports-overlay.football-scorebug[data-state="final"] .football-main { min-height:64px; }
+body:not(.desktop-banner) #sports-overlay.football-scorebug[data-state="final"] .football-score { font-size:44px !important; line-height:1; }
+
 /* Shared compact team layout: generated from core/compact-banner.css. */
 /* OBS Small uses the desktop below-50% treatment at its own viewport size. */
 @media (max-width:400px) {

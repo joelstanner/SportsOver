@@ -3,6 +3,18 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.35.1 — 2026-10-06
+
+### Changed
+
+- Use the shared compact desktop treatment for OBS Small, with larger logos and
+  scores, centered upcoming game dates and times, and a halftime marker.
+
+### Fixed
+
+- Enlarge final NFL and college football scores in OBS and give the team row
+  more vertical room while retaining team names and the FINAL label.
+
 ## 0.35.0 — 2026-10-06
 
 ### Added
