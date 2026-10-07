@@ -121,9 +121,13 @@ token from Settings and follow the [local API guide](desktop/API.md).
 
 The passive output supports Small (360 × 76), Normal (647 × 137), and Large
 (2304 × 280) through `core/obs-layouts.css`. Large presents one game across a
-wide strip; Small prioritizes scores and phase and omits play/odds footers.
+wide strip; Small uses the desktop below-50% treatment: large logos and scores,
+centered upcoming date/time, and a vertical halftime marker.
 Normal retains the current card. Game selection and rotation remain shared.
 Desktop banner sizing is unchanged.
+
+The compact OBS rules are generated from `core/compact-banner.css`; run
+`node scripts/sync-obs-compact.cjs` after changing the shared desktop treatment.
 
 For an older installed build, paste the contents of `core/obs-layouts.css`
 into the source Custom CSS field and use those browser viewport dimensions.

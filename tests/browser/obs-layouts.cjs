@@ -11,7 +11,7 @@ const sports=['baseball','football','basketball','hockey','soccer','chess','disc
   const context=await browser.newContext();
   await context.route('**/*',async route=>{
    const url=new URL(route.request().url());
-   if(url.hostname!=='overlay.test')return route.abort();
+   if(url.hostname!=='overlay.test')return route.request().resourceType()==='image' ? route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="76" height="76"><rect width="76" height="76" fill="white"/></svg>'}) : route.abort();
    const relative=url.pathname==='/'?'index.html':url.pathname.slice(1);
    try {return route.fulfill({body:await fs.readFile(path.join(root,relative)),contentType:({'.html':'text/html','.js':'text/javascript','.css':'text/css'})[path.extname(relative)]||'application/octet-stream'});}
    catch{return route.fulfill({status:404,body:''});}
@@ -19,6 +19,8 @@ const sports=['baseball','football','basketball','hockey','soccer','chess','disc
   const page=await context.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   const css=await fs.readFile(path.join(root,'core/obs-layouts.css'),'utf8');
+  const {compactCSS,marker}=require('../../scripts/sync-obs-compact.cjs');
+  assert.equal(css.split(marker+'\n')[1]?.replace(/\r\n/g,'\n'),compactCSS().replace(/\r\n/g,'\n'),'Regenerate compact styles with node scripts/sync-obs-compact.cjs');
   let count=0;
   for(const sport of sports)for(const state of ['live','pregame','final'])for(const [mode,viewport]of Object.entries(sizes)){
    await page.setViewportSize({width:viewport[0],height:viewport[1]});
@@ -27,6 +29,8 @@ const sports=['baseball','football','basketball','hockey','soccer','chess','disc
    await page.addStyleTag({content:css});
    const box=await page.locator('#sports-overlay').boundingBox();
    assert(Math.abs(box.width-viewport[0])<1,`${sport} ${state} ${mode} width ${box.width}`);
+   const bodyBox=await page.locator('body').boundingBox();
+   assert(bodyBox.y+bodyBox.height>=box.y+box.height-1,`${sport} ${state} ${mode}: body clips banner`);
    assert(Math.abs(box.height-viewport[1])<1,`${sport} ${state} ${mode} height ${box.height}`);
    const clipped=await page.evaluate(()=>{
     const root=document.querySelector('#sports-overlay'),r=root.getBoundingClientRect();
@@ -34,8 +38,17 @@ const sports=['baseball','football','basketball','hockey','soccer','chess','disc
      const b=el.getBoundingClientRect();return b.width&&b.height&&(b.bottom>r.bottom+1||b.right>r.right+1||b.top<r.top-1||b.left<r.left-1);
     }).map(el=>el.className);
    });
+   if(mode==='small' && !['chess','disc-golf'].includes(sport)){
+    const compact=await page.evaluate(()=>{const r=document.querySelector('#sports-overlay');return {fonts:[...r.querySelectorAll('.team__score,.football-score,.basketball-score,.hockey-score,.soccer-score')].map(el=>parseFloat(getComputedStyle(el).fontSize)),date:!!r.querySelector('[data-compact-date]')};});
+    assert.deepEqual(compact.fonts,[60,60],sport+' '+state+' compact scores');
+    if(state==='pregame')assert(compact.date,sport+' compact upcoming date');
+    if(state==='live' && ['football','basketball','soccer'].includes(sport)){
+     await page.evaluate(()=>document.querySelector('#sports-overlay').dataset.halftime='true');
+     assert.match(await page.locator('#sports-overlay').evaluate(el=>getComputedStyle(el,'::after').content),/H.*T/s,sport+' halftime marker');
+    }
+   }
    assert.deepEqual(clipped,[],`${sport} ${state} ${mode}: core scores/clocks clipped`);
-   if(process.env.SCREENSHOT_DIR&&state==='live'&&mode==='large')await page.screenshot({path:path.join(process.env.SCREENSHOT_DIR,`${sport}-large.png`)});
+   if(process.env.SCREENSHOT_DIR&&state==='live'&&['small','large'].includes(mode))await page.screenshot({path:path.join(process.env.SCREENSHOT_DIR,`${sport}-${mode}.png`)});
    count++;
   }
   assert.deepEqual(errors,[]);

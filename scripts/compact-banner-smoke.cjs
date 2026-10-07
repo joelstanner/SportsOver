@@ -60,7 +60,8 @@ module.exports = async ({ application, admin, banner, directory }) => {
           return root.dataset.sport === sport && root.dataset.fixtureState === mode;
         }, { sport, mode });
         const obsFont = await obs.locator('.team__score, .football-score, .basketball-score, .hockey-score, .soccer-score').first().evaluate(el => parseFloat(getComputedStyle(el).fontSize));
-        assert.ok(obsFont < 60, 'narrow OBS retains its original layout');
+        if (mode === 'interrupted' && await obs.locator('#sports-overlay').getAttribute('data-halftime') !== 'true') assert.ok(obsFont < 60, 'other interruptions retain their layout');
+        else assert.equal(obsFont, 60, 'OBS Small uses the compact team layout');
       }
       for (const mode of ['no-event', 'offline', 'error']) {
         await fixture(sport, mode);
