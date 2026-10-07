@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '../..');
  try {
   const page = await browser.newPage({viewport:{width:472,height:100}}), errors=[];
   page.on('pageerror',error=>errors.push(error.message));
+  await page.route('**/*', route=>route.abort());
   await page.route('http://overlay.test/', route=>route.fulfill({contentType:'text/html',body:'<main id="sports-overlay"></main>'}));
   await page.route('**/teams.json', route=>route.fulfill({json:{teams:[]}}));
   await page.goto('http://overlay.test/');

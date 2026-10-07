@@ -36,15 +36,38 @@ function testMode() {
 const electron = {
   async launch(options) {
     const quiet = testMode() === 'quiet';
-    if (!options.env?.SPORTSOVER_TEST_DATA) throw Error('Desktop tests require isolated SPORTSOVER_TEST_DATA.');
-    // Older packaged apps do not understand the hidden-test flag. Never risk
-    // silently showing their windows when the user requested a quiet run.
-    if (quiet && options.executablePath) throw Error('Packaged-app tests require --visible (or SPORTSOVER_TEST_MODE=visible). Quiet mode is supported for source launches.');
-    return require('playwright')._electron.launch({ ...options,
-      env: { ...options.env, SPORTSOVER_TEST_QUIET: quiet ? '1' : '0' },
-    });
+    const launch = launchOptions(options, quiet);
+    if (launch.executablePath && options.network !== 'live') assertFixtureSupport(launch.executablePath);
+    console.log(`Desktop test network: ${launch.env.SPORTSOVER_TEST_NETWORK}.`);
+    return require('playwright')._electron.launch(launch);
   },
 };
+function launchOptions({ network = 'fixtures', ...options }, quiet) {
+  if (!['fixtures', 'live'].includes(network)) throw Error('Test network must be "fixtures" or "live".');
+  if (!options.env?.SPORTSOVER_TEST_DATA) throw Error('Desktop tests require isolated SPORTSOVER_TEST_DATA.');
+  // Older packaged apps do not understand the hidden-test flag. Never risk
+  // silently showing their windows when the user requested a quiet run.
+  if (quiet && options.executablePath) throw Error('Packaged-app tests require --visible (or SPORTSOVER_TEST_MODE=visible). Quiet mode is supported for source launches.');
+  return { ...options, env: { ...options.env, SPORTSOVER_TEST_QUIET: quiet ? '1' : '0',
+    // Inherited environment must never turn a routine test into a live check.
+    SPORTSOVER_TEST_NETWORK: network } };
+}
+function assertFixtureSupport(executablePath) {
+  const directory = path.dirname(path.resolve(executablePath));
+  const resources = path.join(directory, path.basename(directory) === 'MacOS' ? '../Resources' : 'resources');
+  try {
+    const archive = path.join(resources, 'app.asar');
+    const read = file => fs.existsSync(archive)
+      ? require('@electron/asar').extractFile(archive, file).toString()
+      : fs.readFileSync(path.join(resources, 'app', file), 'utf8');
+    const main = read('desktop/main.cjs');
+    if (!read('desktop/test-network.cjs').includes('installTestNetwork')
+      || !main.includes('installTestNetwork({ session: session.defaultSession });')
+      || !main.includes('installHttpLogging(session.defaultSession, testNetwork);')) throw Error('Missing startup guard');
+  } catch (error) {
+    throw Error(`Packaged app lacks verified fixture-network protection: ${error.message}. Use the current source or a CI build containing the test network guard.`);
+  }
+}
 if (require.main === module) {
   try {
     const args = process.argv.slice(2);
@@ -53,4 +76,4 @@ if (require.main === module) {
     console.log(`Local desktop test preference saved: ${args[0]} (${settingsPath}). CI always uses visible mode.`);
   } catch (error) { console.error(error.message); process.exitCode = 1; }
 }
-module.exports = { resolveMode, saveMode, testMode, electron };
+module.exports = { resolveMode, saveMode, testMode, launchOptions, assertFixtureSupport, electron };

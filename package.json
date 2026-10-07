@@ -12,6 +12,7 @@
     "test": "node --test tests/core/*.test.js tests/sports/*/*.test.js tests/desktop/*.test.cjs",
     "test:desktop": "node scripts/desktop-smoke.cjs",
     "test:mode": "node scripts/test-mode.cjs",
+    "test:network": "node scripts/test-network-smoke.cjs",
     "build:mac": "node scripts/build-mac.cjs",
     "dist:mac": "node scripts/dist-mac.cjs",
     "test:elite": "node tests/browser/elite-auto-follow.cjs",

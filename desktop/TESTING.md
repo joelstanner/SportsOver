@@ -12,13 +12,33 @@ Local desktop tests default to quiet mode. Use `npm run test:mode -- visible` to
 
 Quiet mode uses hidden real Electron windows and checks settings/engine propagation, passive desktop/HTTP output, API authorization and overrides, live mode, sandboxing, persistence, and that windows remain hidden and unfocused. The full suite below additionally exercises actual native visibility, focus, Dock, tray, shortcuts, fullscreen, context menus, and dragging/gestures; quiet mode prints these omissions and does not claim native-window coverage.
 
+Routine desktop launches use `SPORTSOVER_TEST_DATA` and default to fixture-only
+network access, in both quiet and visible modes. The app installs request
+cancellation before creating windows or checking for updates; HTTPS requests are
+allowed once a fixture handler is registered. Local HTTP OBS and control API
+requests and local redirects are permitted; redirects to external hosts are
+blocked. Reloading the engine after
+installing fixtures starts a fresh fixture-backed discovery pass; it is no longer
+relied on to prevent live startup requests. The launcher overrides inherited
+`SPORTSOVER_TEST_NETWORK=live` and refuses old packaged apps without the startup
+guard before launching them.
+
+`npm run test:network` checks this boundary in real Electron: startup update
+checks and unknown remote URLs are blocked, fixture replacement works, local
+POST/OBS requests remain functional, and a local redirect cannot escape to a
+live host. Unit tests check explicit live opt-in, ordinary app isolation, and
+guard detection in both unpacked and ASAR packages. Packaging CI runs this
+network check before building installers. `npm run test:pdga:live` is
+the explicit real-network exception and limits discovery to its watched PDGA
+division. Custom live tests pass `network: 'live'` to `scripts/test-mode.cjs`.
+
 - `npm test`: existing sports/configuration/rotation tests plus desktop atomic persistence, restart readback, stale-write conflicts, backup recovery, failed-write rollback, disconnected-monitor bounds, negative monitor coordinates, protocol asset restrictions, origin/Host checks, bearer authentication, command validation, idempotent override expiry/cancellation, public-source restrictions, and app-data catalog refresh with mocked upstream responses.
 - `npm run test:desktop -- --visible`: full suite, actual macOS Electron process, isolated temporary data, deterministic mocked live rendering, Settings and embedded previews, renderer sandbox/context isolation, native always-on-top flag, lock/unlock controls, show/hide/recover, proportional resizing, configuration propagation between windows, and size/lock/visibility/settings retained after relaunch. A second browser client loads the local HTTP OBS output; the test verifies output equality, continued output with desktop hidden, API authorization, duplicate-command handling, override expiry/restoration, and that only the single engine window sends provider requests. This is an HTTP browser-source compatibility test, not a test inside the OBS application. Screenshots inspected for banner and Settings layout.
 - Live mode unit checks simulate finish detection, exact expiry, zero retention,
   missing/stale discoveries, manual removals, and empty active queues. The desktop
   smoke test checks its button, game-lock override/restoration, removal persistence,
   and activation reset plus retention-setting persistence after app restart.
-- Test traffic is mocked. This does not establish current live API availability, logo availability, or feed accuracy.
+- Routine test traffic is mocked and unmocked external requests are blocked. This does not establish current live API availability, logo availability, or feed accuracy. The dedicated `test:pdga:live` command intentionally checks a real feed.
 - `SPORTSOVER_RESIZE_SMOKE_ONLY=1 node scripts/desktop-smoke.cjs --quiet`: focused source-app check of native bounds during resizing with a fixed top and horizontal center through Settings presets, the menu, and Up/Down keys in both renderers. Checks intermediate animation frames, stable renderer layout, and the final size after rapid presses. Uses hidden windows and isolated data; it does not verify perceived smoothness or physical double-clicks.
 - `SPORTSOVER_DEMO_SMOKE_ONLY=1 node scripts/desktop-smoke.cjs --quiet`: checks Demo Lab inspection across game states and sports, paused/automatic fixture rotation, the DEMO mark in the desktop and separate HTTP output renderer, preserved preferences, and restoration of live output. Uses mocked score feeds and isolated data; captures wide/narrow Demo Lab and both banner outputs.
 
@@ -54,7 +74,7 @@ After restart, locate the compact scoreboard icon in the right menu bar. Single-
 
 Dock/About artwork now uses the supplied scoreboard PNG; see `assets/README.md`. `npm run build:mac` creates a local SportsOver.app with the same icon and native application name. Check its Finder/Dock icon and application menu separately from the `npm start` development launcher. The bundle is ad-hoc signed, not notarized.
 
-The local bundle passed `codesign --verify --deep --strict` and the desktop smoke test using `SPORTSOVER_TEST_EXECUTABLE` set to its executable (renamed from `Contents/MacOS/Electron` to `Contents/MacOS/SportsOver` in 0.16.0). The smoke test reloads the engine after installing request fixtures to avoid a packaged-startup race with live feeds. The running bundle was checked through macOS accessibility: its application menu is named SportsOver. A native placement probe confirmed the default moves the status item to x=1180 on the 1470-point display instead of the center/notch area; physical tray visibility still depends on the OS layout.
+The local bundle previously passed `codesign --verify --deep --strict` and the desktop smoke test using `SPORTSOVER_TEST_EXECUTABLE` set to its executable (renamed from `Contents/MacOS/Electron` to `Contents/MacOS/SportsOver` in 0.16.0). Those historical tests reloaded the engine after installing fixtures, which did not prevent earlier startup requests. Current routine packaged tests require the startup network guard described above. The running bundle was checked through macOS accessibility: its application menu is named SportsOver. A native placement probe confirmed the default moves the status item to x=1180 on the 1470-point display instead of the center/notch area; physical tray visibility still depends on the OS layout.
 
 ## DMG packaging verification — 2026-10-01
 

@@ -20,9 +20,9 @@ const quiet = testMode() === 'quiet';
     application.on('window', page => page.on('pageerror', error => errors.push(error.message)));
     await application.evaluate(async ({ session }, fixture) => {
       globalThis.sportsTestRequests = [];
-      session.defaultSession.webRequest.onBeforeRequest({ urls: ['https://*/*'] }, (details, callback) => {
+      // Keep the startup HTTP guard's onBeforeRequest listener installed.
+      session.defaultSession.webRequest.onResponseStarted({ urls: ['https://*/*'] }, details => {
         if (/statsapi\.mlb|site\.api\.espn/.test(details.url)) globalThis.sportsTestRequests.push({ id: details.webContentsId, url: details.url });
-        callback({});
       });
       await session.defaultSession.protocol.handle('https', request => {
         const url = new URL(request.url);
@@ -93,8 +93,8 @@ const quiet = testMode() === 'quiet';
         .find(win => win.webContents.getURL().includes('display.html?desktop')).isVisibleOnAllWorkspaces()), true,
       'banner still follows macOS workspaces');
     }
-    // Packaged apps can start fetching before Playwright installs the fixtures.
-    // Restart the engine after interception so assertions never use live data.
+    // Startup requests are blocked until fixtures replace HTTPS. Restart the
+    // engine so discovery begins again with those fixtures installed.
     await engine.reload();
     await admin.waitForFunction(async () => (await window.sportsDesktop.engine()).availableEntries.length >= 2);
     await banner.waitForFunction(() => /SEA|Mariners/i.test(document.body.innerText));

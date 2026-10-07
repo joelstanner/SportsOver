@@ -15,7 +15,10 @@ const { browseFeedback } = require('./banner-navigation.cjs');
 const { createHandler, ORIGIN } = require('./protocol.cjs');
 const { createUpdateChecker } = require('./updates.cjs');
 const { installHttpLogging } = require('./http-logging.cjs');
+const { installTestNetwork } = require('./test-network.cjs');
 const updateChecker = createUpdateChecker({ app, dialog, shell, onStateChange: menus,
+  // Node's default fetch bypasses Electron's test protocol handlers.
+  ...(process.env.SPORTSOVER_TEST_DATA ? { fetchImpl: (...args) => net.fetch(...args) } : {}),
   readLastCheck: () => store?.value.desktop.lastUpdateCheck,
   saveLastCheck: timestamp => store.desktop({ lastUpdateCheck: timestamp }),
   readRateLimit: () => store?.value.desktop.updateRateLimit,
@@ -332,7 +335,8 @@ else {
     if (!argv.includes('--background') && banner) recover();
   });
   app.whenReady().then(async () => {
-    installHttpLogging(session.defaultSession);
+    const testNetwork = installTestNetwork({ session: session.defaultSession });
+    installHttpLogging(session.defaultSession, testNetwork);
     store = new Store(app.getPath('userData'));
     // Source launches have no bundle icon. Load custom artwork when supplied.
     const appIconPath = path.join(__dirname, 'assets', 'SportsOver.png');

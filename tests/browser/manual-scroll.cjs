@@ -9,6 +9,10 @@ const root = path.resolve(__dirname, '../..');
   let server;
   try {
     const context = await browser.newContext({ viewport: { width: 944, height: 400 }, hasTouch: true });
+    await context.route('**/*', route => {
+      const url = new URL(route.request().url());
+      return url.protocol === 'http:' && url.hostname === '127.0.0.1' ? route.continue() : route.abort();
+    });
     const page = await context.newPage(), errors = [];
     context.on('page', p => p.on('pageerror', e => errors.push(e.message)));
     page.on('pageerror', e => errors.push(e.message));

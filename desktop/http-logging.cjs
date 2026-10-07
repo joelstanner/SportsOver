@@ -9,7 +9,8 @@ function displayUrl(value) {
   return url.href;
 }
 
-function installHttpLogging(session, { log = message => console.log(message), now = Date.now } = {}) {
+function installHttpLogging(session, { log = message => console.log(message), now = Date.now,
+  allowRequest = () => true, onRedirect = () => {}, onFinished = () => {} } = {}) {
   const requests = new Map();
   const filter = { urls: ['http://*/*', 'https://*/*'] };
   const write = message => {
@@ -22,18 +23,23 @@ function installHttpLogging(session, { log = message => console.log(message), no
     return start === undefined ? '' : ` · ${Math.max(0, now() - start)} ms`;
   };
   session.webRequest.onBeforeRequest(filter, (details, callback) => {
+    let allowed = false;
     try {
+      allowed = allowRequest(details);
       requests.set(details.id, now());
       write(`#${details.id} → ${describe(details)}`);
-    } finally { callback({}); }
+    } finally { callback(allowed ? {} : { cancel: true }); }
   });
   session.webRequest.onBeforeRedirect(filter, details => {
+    onRedirect(details);
     write(`#${details.id} ← ${details.statusCode} ${describe(details)} · redirect to ${displayUrl(details.redirectURL)}`);
   });
   session.webRequest.onCompleted(filter, details => {
+    onFinished(details);
     write(`#${details.id} ← ${details.statusCode} ${describe(details)}${elapsed(details)}${details.fromCache ? ' · cache' : ''}`);
   });
   session.webRequest.onErrorOccurred(filter, details => {
+    onFinished(details);
     write(`#${details.id} ✕ ${describe(details)} · ${details.error}${elapsed(details)}`);
   });
 }

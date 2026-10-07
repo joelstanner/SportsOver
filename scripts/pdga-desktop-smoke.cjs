@@ -9,11 +9,13 @@ require('../core/config.js');
   const directory = await fs.mkdtemp(path.join(os.tmpdir(),'sportsover-pdga-'));
   const config = global.SportsOverlay.config.normalizeConfig();
   config.sports.forEach(group=>{ group.enabled = group.sport === 'disc-golf'; });
+  config.sports.find(group=>group.sport === 'disc-golf').autoFollow = false;
+  config.sports.find(group=>group.sport === 'disc-golf').discoverSecondTier = false;
   config.sports.find(group=>group.sport === 'disc-golf').events = [{tournamentId:'86076',division:'MPO',name:'New Zealand Open',enabled:true,view:'leaderboard',playerId:''}];
   await fs.writeFile(path.join(directory,'settings.json'),JSON.stringify({version:1,config,desktop:{visible:false}}));
   let application;
   try {
-    application = await electron.launch({...(process.env.SPORTSOVER_TEST_EXECUTABLE
+    application = await electron.launch({network:'live', ...(process.env.SPORTSOVER_TEST_EXECUTABLE
       ? {executablePath:process.env.SPORTSOVER_TEST_EXECUTABLE,args:[]}
       : {args:[path.resolve(__dirname,'..')]}),env:{...process.env,SPORTSOVER_TEST_DATA:directory}});
     await application.firstWindow();

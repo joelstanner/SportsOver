@@ -5,7 +5,7 @@ const asar = require('@electron/asar');
 const archive = process.argv[2];
 assert.ok(archive, 'Usage: npm run verify:package -- <resources/app.asar>');
 const files = asar.listPackage(path.resolve(archive)).map(file => file.replaceAll('\\', '/').replace(/^\//, ''));
-for (const file of ['desktop/main.cjs', 'desktop/preload.cjs', 'desktop/assets/SportsOver.png',
+for (const file of ['desktop/main.cjs', 'desktop/preload.cjs', 'desktop/test-network.cjs', 'desktop/assets/SportsOver.png',
   'scripts/team-catalog.mjs', 'core/registry.js', 'index.html', 'display.html', 'package.json', 'LICENSE']) {
   assert.ok(files.includes(file), `Missing runtime file: ${file}`);
 }

@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { resolveMode, saveMode } = require('../../scripts/test-mode.cjs');
+const { resolveMode, saveMode, launchOptions, assertFixtureSupport } = require('../../scripts/test-mode.cjs');
 
 test('local preference round trip, command/environment overrides, and CI enforcement', t => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'sportsover-test-mode-'));
@@ -30,4 +30,40 @@ test('local preference round trip, command/environment overrides, and CI enforce
   assert.throws(() => mode(), /Cannot read test preference/);
   assert.equal(mode(['--visible']), 'visible', 'explicit override can bypass a malformed preference');
   assert.equal(mode([], { CI: 'true' }), 'visible', 'CI ignores local files entirely');
+});
+
+test('routine launches override inherited live access; live checks require a launch option', () => {
+  const options = { args: ['/source'], env: { SPORTSOVER_TEST_DATA: '/isolated', SPORTSOVER_TEST_NETWORK: 'live' } };
+  for (const quiet of [false, true]) {
+    const launch = launchOptions(options, quiet);
+    assert.equal(launch.env.SPORTSOVER_TEST_NETWORK, 'fixtures');
+    assert.equal(launch.env.SPORTSOVER_TEST_QUIET, quiet ? '1' : '0');
+    assert.equal(launchOptions({ ...options, network: 'live' }, quiet).env.SPORTSOVER_TEST_NETWORK, 'live');
+    assert.ok(!('network' in launch), 'custom option is not passed to Playwright');
+  }
+  assert.equal(options.env.SPORTSOVER_TEST_NETWORK, 'live', 'caller environment is preserved');
+  assert.throws(() => launchOptions({ ...options, network: 'typo' }, false), /network/);
+  assert.throws(() => launchOptions({ env: {} }, false), /isolated/);
+  assert.throws(() => launchOptions({ ...options, executablePath: '/old-app' }, true), /visible/);
+});
+
+test('old packaged apps are refused before launch, while protected unpacked and ASAR apps are accepted', async t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'sportsover-network-package-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  for (const platform of ['mac', 'win']) {
+    const executable = path.join(directory, platform === 'mac' ? 'SportsOver.app/Contents/MacOS/SportsOver' : 'win/SportsOver.exe');
+    const resources = path.join(path.dirname(executable), platform === 'mac' ? '../Resources' : 'resources');
+    const appRoot = path.join(resources, 'app');
+    fs.mkdirSync(path.join(appRoot, 'desktop'), { recursive: true });
+    fs.writeFileSync(path.join(appRoot, 'desktop/main.cjs'), '// old app');
+    assert.throws(() => assertFixtureSupport(executable), /lacks verified fixture-network protection/);
+    for (const file of ['main.cjs', 'test-network.cjs']) fs.copyFileSync(path.join(__dirname, '../../desktop', file), path.join(appRoot, 'desktop', file));
+    assert.doesNotThrow(() => assertFixtureSupport(executable));
+    fs.writeFileSync(path.join(appRoot, 'desktop/main.cjs'), '// guard exists but is not installed');
+    assert.throws(() => assertFixtureSupport(executable), /Missing startup guard/);
+    fs.copyFileSync(path.join(__dirname, '../../desktop/main.cjs'), path.join(appRoot, 'desktop/main.cjs'));
+    await require('@electron/asar').createPackage(appRoot, path.join(resources, 'app.asar'));
+    fs.rmSync(appRoot, { recursive: true, force: true });
+    assert.doesNotThrow(() => assertFixtureSupport(executable));
+  }
 });

@@ -222,7 +222,23 @@ Open Settings or show the banner from the tray when needed.
 npm test                              # Unit tests
 npm run test:desktop                  # Electron smoke tests (quiet by default)
 npm run test:desktop -- --visible     # Include native window interactions
+npm run test:network                  # Verify startup network isolation
 ```
+
+Routine desktop tests use isolated preferences and block external HTTP/HTTPS
+before startup, including provider discovery, logos, and update checks. HTTPS
+requests are allowed once a fixture handler is installed; local OBS and control
+API connections still work, with external redirect destinations blocked.
+Quiet and visible tests use the same network protection. Older packaged apps
+without this protection are refused before launch; use the current source or a
+CI build containing the guard.
+
+`npm run test:pdga:live` explicitly enables real provider requests for its watched
+PDGA division. A custom desktop test must pass `network: 'live'` to the shared
+launcher to opt in; inherited environment settings cannot enable live traffic
+in routine tests. For a manual isolated source launch, `SPORTSOVER_TEST_DATA`
+defaults to fixtures only; set `SPORTSOVER_TEST_NETWORK=live` explicitly for a
+live check. Normal app launches continue to use live providers.
 
 See [desktop testing](desktop/TESTING.md) for coverage and platform limitations,
 and [packaging](desktop/PACKAGING.md) for GitHub Actions installer builds and
