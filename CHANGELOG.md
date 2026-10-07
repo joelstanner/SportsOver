@@ -3,6 +3,32 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.36.0 — 2026-10-07
+
+### Added
+
+- Collapse individual sports in Settings, with saved expansion state and
+  keyboard-accessible controls.
+- Save timestamped runtime and HTTP diagnostic logs with `npm start -- --debug`.
+
+### Changed
+
+- Show followed player names prominently in chess and disc golf game cards.
+- Cache team schedules for at least fifteen minutes and chess/PDGA metadata
+  separately from live scores, while discovering new rounds promptly and
+  respecting longer refresh settings and provider cooldowns.
+- Default finished chess round refreshes to fifteen minutes and show a red
+  indicator while Live mode is active.
+
+### Fixed
+
+- Stop provider requests for disabled sports, including queued requests and
+  player loading, while preserving watched selections for re-enabling.
+- Share chess request pacing and cooldowns across desktop windows and prevent
+  automatic watch refresh races.
+
+Existing settings are preserved. No manual migration is required.
+
 ## 0.35.1 — 2026-10-06
 
 ### Changed
