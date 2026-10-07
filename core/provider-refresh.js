@@ -1,6 +1,19 @@
 "use strict";
 
 (function initializeProviderRefresh(global) {
+  function scheduleInterval(url) {
+    let target;
+    try { target = new URL(url); } catch (_) { return 0; }
+    // Team schedules describe the season or a date range. Daily league feeds
+    // also carry live scores, including MLB's /schedule?date= endpoint.
+    const espn = target.origin === 'https://site.api.espn.com'
+      && /^\/apis\/site\/v2\/sports\/[^/]+\/[^/]+\/teams\/[^/]+\/schedule$/.test(target.pathname)
+      && target.searchParams.get('season');
+    const mlb = target.origin === 'https://statsapi.mlb.com' && target.pathname === '/api/v1/schedule'
+      && ['teamId', 'startDate', 'endDate'].every(key => target.searchParams.get(key))
+      && !target.searchParams.has('date');
+    return espn || mlb ? 15 * 60_000 : 0;
+  }
   // One cache per page, shared by discovery, rotation and all provider clients.
   // Cache raw responses so featured-team normalization remains caller-specific.
   function create({ config, fetchImpl = global.fetch.bind(global), now = () => performance.now(), wallNow = Date.now, sleep = ms => new Promise(resolve => setTimeout(resolve, ms)) }) {
@@ -75,7 +88,9 @@
         const failureBackoff = typeof provider.failureBackoff === "function"
           ? provider.failureBackoff(record.state) : provider.failureBackoff;
         const configuredDelay = interval(sport, record.state);
-        const baseDelay = provider.refreshIntervalMs?.(url, record.state, configuredDelay) ?? configuredDelay;
+        const feedDelay = provider.refreshIntervalMs?.(url, record.state, configuredDelay) ?? configuredDelay;
+        // Cache healthy schedules longer without delaying recovery from errors.
+        const baseDelay = Math.max(feedDelay, record.error ? 0 : scheduleInterval(url));
         const delay = record.error?.status === 429 ? Math.max(record.error.retryAfterMs || 60000, Math.min(300000, 30000 * 2 ** (record.failures - 1))) : failureBackoff && record.failures
           ? Math.max(baseDelay, Math.min(300000, 30000 * 2 ** (record.failures - 1)))
           : baseDelay;

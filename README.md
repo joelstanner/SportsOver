@@ -188,6 +188,14 @@ round expires metadata so the next round can be selected promptly. Desktop chess
 requests share one paced queue and rate-limit cooldown across windows, with
 displayed-game requests taking priority over background discovery.
 
+ESPN season schedules and MLB watched-team date-range schedules use a minimum
+15-minute cache, respecting longer configured intervals. Daily league scoreboards,
+NFL week scoreboards, and individual game feeds keep their configured refresh
+intervals. Fresh league data takes precedence over cached schedule data for the
+same game. Schedule changes outside the current league scoreboard can take up to
+15 minutes to appear at default settings; failed requests retain normal retry and
+rate-limit recovery timing.
+
 For startup with only the engine, OBS server, and tray, use
 `npm start -- --background` (or pass `--background` to the packaged executable).
 Open Settings or show the banner from the tray when needed.
