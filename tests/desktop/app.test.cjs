@@ -7,6 +7,31 @@ const { Store } = require('../../desktop/store.cjs');
 const { fitBounds, fullscreenBounds } = require('../../desktop/bounds.cjs');
 const { createHandler } = require('../../desktop/protocol.cjs');
 const temp = t => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sportsover-test-')); t.after(() => fs.rmSync(dir, { recursive: true, force: true })); return dir; };
+test('desktop bridges reject disabled sports from stale windows and directory refresh skips them', async t => {
+  const store = new Store(temp(t));
+  const sports = store.snapshot().config.sports.map(group => ({ ...group, enabled: group.sport === 'hockey' }));
+  store.patch({ instance: store.instance, expectedRevision: store.revision, config: { sports } });
+  const calls = [];
+  const handler = createHandler({ store, fetchProvider: async url => { calls.push(url); return Response.json({}); },
+    refresh: async (_sport, isEnabled) => sports.filter(group => isEnabled(group.sport)).map(group => ({ sport: group.sport, count: 1 })) });
+  for (const url of ['https://statsapi.mlb.com/api/v1/schedule',
+    'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=1',
+    'https://www.pdga.com/api/v1/feat/current-events/tournaments', 'https://lichess.org/api/broadcast/top']) {
+    const response = await handler(new Request(`sportsover://app/api/provider?${new URLSearchParams({ url })}`));
+    assert.equal(response.status, 409);
+  }
+  assert.equal((await handler(new Request('sportsover://app/api/chess/broadcast/Tour1234/players'))).status, 409);
+  const nhl = 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard';
+  assert.equal((await handler(new Request(`sportsover://app/api/provider?${new URLSearchParams({ url: nhl })}`))).status, 200);
+  assert.deepEqual(calls, [nhl]);
+  const request = enabledSports => handler(new Request('sportsover://app/sports/api/team-catalog/refresh', {
+    method: 'POST', body: JSON.stringify({ sport: 'all', enabledSports }),
+  }));
+  assert.deepEqual((await (await request(['baseball', 'hockey'])).json()).results, [{ sport: 'hockey', count: 1 }]);
+  assert.deepEqual((await (await request(['baseball'])).json()).results, []);
+  const { updateCatalogs } = await import('../../scripts/team-catalog.mjs');
+  assert.deepEqual(await updateCatalogs('all', '/unused', async () => { assert.fail('Disabled directories must not fetch'); }, () => false), []);
+});
 test('clean desktop startup seeds Nebraska and Seattle watched teams, then preserves saved choices', t => {
   const directory = temp(t), store = new Store(directory);
   const initial = store.snapshot();

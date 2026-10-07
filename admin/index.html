@@ -57,7 +57,7 @@
           <label class="field" for="catalog-refresh-sport">Sport</label>
           <div class="watch-team-inputs">
             <select id="catalog-refresh-sport">
-              <option value="all">All team sports</option>
+              <option value="all">All enabled team sports</option>
               <option value="baseball">Baseball · MLB</option>
               <option value="football">Football · NFL</option>
               <option value="college-football">College football · NCAAF</option>
@@ -309,15 +309,17 @@
   <template id="sport-template">
     <section class="sport-card">
       <header class="sport-heading">
-        <div><span class="sport-rank"></span><span class="sport-icon" aria-hidden="true"></span><h3 class="sport-name"></h3><span class="sport-league"></span></div>
+        <div><button class="sport-disclosure icon-button" type="button" aria-expanded="true"><span aria-hidden="true">▾</span></button><span class="sport-rank"></span><span class="sport-icon" aria-hidden="true"></span><h3 class="sport-name"></h3><span class="sport-league"></span></div>
         <div class="order-buttons">
           <label class="toggle"><input class="sport-enabled" type="checkbox"><span>Show sport</span></label>
           <button class="icon-button move-sport-up" type="button" aria-label="Move sport up">↑</button>
           <button class="icon-button move-sport-down" type="button" aria-label="Move sport down">↓</button>
         </div>
       </header>
-      <div class="sport-favorites"></div>
-      <p class="sport-disabled-note empty-state" hidden>Off — this sport will not appear in the banner. Turn Show sport on to restore your saved selections and preferences.</p>
+      <div class="sport-details">
+        <div class="sport-favorites"></div>
+        <p class="sport-disabled-note empty-state" hidden>Off — no API requests are made for this sport. Turn Show sport on to restore your saved selections and preferences.</p>
+      </div>
     </section>
   </template>
 

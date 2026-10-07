@@ -344,9 +344,12 @@ else {
     if (process.platform === 'darwin' && appIcon) app.dock.setIcon(appIcon);
     app.setAboutPanelOptions({ applicationName: 'SportsOver', applicationVersion: app.getVersion(), ...(appIcon ? { iconPath: appIconPath } : {}) });
     const { updateCatalogs } = await import('../scripts/team-catalog.mjs');
-    const fetchProvider = require('../core/provider-network.js').create({ fetchImpl: (...args) => net.fetch(...args) });
-    protocol.handle('sportsover', createHandler({ root, dataRoot: app.getPath('userData'), store, engine: outputSource, fetchProvider, fetchImpl: (...args) => net.fetch(...args), refresh: async sport => {
-      try { return await updateCatalogs(sport, app.getPath('userData'), fetchProvider); }
+    const providerNetwork = require('../core/provider-network.js');
+    const isSportEnabled = sport => store.snapshot().config.sports.find(group => group.sport === sport)?.enabled !== false;
+    const fetchProvider = providerNetwork.create({ fetchImpl: (...args) => net.fetch(...args),
+      isAllowed: url => isSportEnabled(providerNetwork.sportFor(url)) });
+    protocol.handle('sportsover', createHandler({ root, dataRoot: app.getPath('userData'), store, engine: outputSource, fetchProvider, fetchImpl: (...args) => net.fetch(...args), refresh: async (sport, isSelected = isSportEnabled) => {
+      try { return await updateCatalogs(sport, app.getPath('userData'), fetchProvider, isSelected); }
       finally {
         for (const entry of globalThis.SportsOverlay.config.SPORT_CATALOG) {
           try { applyCatalog(JSON.parse(require('node:fs').readFileSync(path.join(app.getPath('userData'), 'sports', entry.key, 'teams.json'), 'utf8'))); }

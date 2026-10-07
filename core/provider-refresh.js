@@ -74,7 +74,15 @@
       return (provider.normalizeFeed || provider.normalizeEvent)(payload).state;
     }
     function fetchFor(sport, provider) {
+      const isAllowed = () => config().sports?.find(group => group.sport === sport)?.enabled !== false;
+      function checkEnabled() {
+        if (isAllowed()) return;
+        const error = new Error(`${sport} is disabled`);
+        error.name = 'AbortError'; error.code = 'SPORT_DISABLED';
+        throw error;
+      }
       const fetchCached = async (url, options) => {
+        checkEnabled();
         const key = `${sport}:${url}`;
         let record = records.get(key);
         if (!record) {
@@ -97,11 +105,17 @@
         const due = record.error?.retryAt ? wallNow() >= record.error.retryAt : now() >= record.completed + delay;
         if (!record.pending && due) {
           const invalidated = record.invalidated || 0;
+          let cancelled = false;
           record.priority = options?.priority;
           record.pending = networkRequest(sport, provider, async () => {
-            const response = await dispatch(url, { ...options, priority: record.priority });
+            checkEnabled();
+            const response = await dispatch(url, { ...options, priority: record.priority, isAllowed });
             if (!response.ok) {
               const error = new Error(`Score provider returned HTTP ${response.status}`);
+              if (response.status === 409 && global.location?.protocol === 'sportsover:') {
+                error.name = 'AbortError'; error.code = 'SPORT_DISABLED';
+                throw error;
+              }
               error.status = response.status;
               const retry = response.headers?.get('Retry-After');
               if (retry) {
@@ -122,10 +136,11 @@
             record.error = null;
             record.failures = 0;
           }).catch(error => {
+            if (error.code === 'SPORT_DISABLED') { cancelled = true; throw error; }
             record.error = error;
             record.failures++;
           }).finally(() => {
-            record.completed = record.error || (record.invalidated || 0) === invalidated ? now() : -Infinity;
+            if (!cancelled) record.completed = record.error || (record.invalidated || 0) === invalidated ? now() : -Infinity;
             record.pending = null;
             // Retire old schedules/games, never in-flight or still throttled records.
             for (const [oldKey, old] of records) {
@@ -134,6 +149,7 @@
           });
         }
         if (record.pending) await record.pending;
+        checkEnabled();
         if (record.error) throw record.error;
         return record.response.clone();
       };
@@ -146,6 +162,7 @@
         record.completed = -Infinity;
       };
       fetchCached.prioritize = url => {
+        if (!isAllowed()) return;
         const record = records.get(`${sport}:${url}`);
         const target = upstreamUrl(url);
         if (!record?.pending || record.priority === 'display' || !network?.serviceFor(target)) return;

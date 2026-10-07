@@ -56,6 +56,16 @@ use the tray/menu-bar icon to reopen it or choose **Quit SportsOver**.
 your chosen games, or both. The top-team option limits automatic suggestions;
 you can still add other teams’ games manually. Order, durations, and pins are set in Live control.
 
+Each category under **Sports & watched events** has a twirldown beside its name.
+Collapse it to hide its details; this choice is remembered on that device and does
+not change watched selections or polling. **Show sport** controls the sport itself:
+unchecking it stops score, schedule, tournament discovery, metadata, and player-list
+API requests for that sport in the banner, Settings, and OBS. Queued requests are
+checked again before dispatch; a request already sent may finish. Watched selections
+and preferences are retained for re-enabling. **Refresh directory…** skips disabled
+sports, including when **All enabled team sports** is selected. Bundled/saved team
+directories and demo fixtures remain available locally.
+
 Automatic rotation follows included watched teams in rank order, showing shared
 matchups once. Watched-team finals can rotate alongside upcoming games for up to
 24 hours, ending when the next game starts. Games starting in less than an hour

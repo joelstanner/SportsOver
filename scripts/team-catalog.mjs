@@ -104,9 +104,10 @@ async function updateEspnSport(metadata, outputRoot, fetchImpl) {
   return writeCatalog(metadata.sport, catalog({ sport: metadata.sport, league: metadata.league, provider: metadata.provider }, teams), outputRoot);
 }
 
-export async function updateCatalogs(selection = "all", outputRoot = root, fetchImpl = fetchProvider) {
-  const sports = selection === "all" ? SUPPORTED_SPORTS : [selection];
-  if (sports.some(sport => !SUPPORTED_SPORTS.includes(sport))) throw new Error(`Unsupported sport: ${selection}`);
+export async function updateCatalogs(selection = "all", outputRoot = root, fetchImpl = fetchProvider, isEnabled = () => true) {
+  const selected = selection === "all" ? SUPPORTED_SPORTS : [selection];
+  if (selected.some(sport => !SUPPORTED_SPORTS.includes(sport))) throw new Error(`Unsupported sport: ${selection}`);
+  const sports = selected.filter(isEnabled);
   const results = await Promise.allSettled(sports.map(sport => sport === "baseball"
     ? updateMlb(outputRoot, fetchImpl)
     : updateEspnSport(ESPN_SPORTS.find(item => item.sport === sport), outputRoot, fetchImpl)));

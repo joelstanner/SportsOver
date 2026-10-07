@@ -7,6 +7,7 @@ const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/cs
 function createHandler({ root, dataRoot, store, refresh, engine, fetchImpl = globalThis.fetch,
   fetchProvider = providerNetwork.create({ fetchImpl }) }) {
   let refreshing = false;
+  const isEnabled = target => store?.snapshot().config.sports.find(group => group.sport === providerNetwork.sportFor(target))?.enabled !== false;
   const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
   return async request => {
     try {
@@ -18,6 +19,7 @@ function createHandler({ root, dataRoot, store, refresh, engine, fetchImpl = glo
         if (request.method !== (promote ? 'POST' : 'GET')) return new Response('Method not allowed', { status: 405 });
         const target = url.searchParams.get('url');
         if (!providerNetwork.serviceFor(target)) return json({ error: 'Unsupported score provider URL' }, 400);
+        if (!isEnabled(target)) return json({ error: 'Sport is disabled' }, 409);
         if (promote) { fetchProvider.prioritize(target); return json({}); }
         const response = await fetchProvider(target, { requestTimeoutMs: Number(url.searchParams.get('timeout')),
           priority: url.searchParams.get('priority') === 'display' ? 'display' : 'background' });
@@ -30,6 +32,7 @@ function createHandler({ root, dataRoot, store, refresh, engine, fetchImpl = glo
       const chessPlayers = /^\/api\/chess\/broadcast\/([a-zA-Z0-9]{8})\/players$/.exec(url.pathname);
       if (chessPlayers) {
         if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
+        if (!isEnabled(`https://lichess.org/broadcast/${chessPlayers[1]}/players`)) return json({ error: 'Sport is disabled' }, 409);
         // Lichess's website standings route does not allow our custom renderer
         // origin. Fetch only this fixed public endpoint in the desktop process.
         const response = await fetchProvider(`https://lichess.org/broadcast/${chessPlayers[1]}/players`, {
@@ -57,9 +60,13 @@ function createHandler({ root, dataRoot, store, refresh, engine, fetchImpl = glo
         if (refreshing) return json({ error: 'A refresh is already running' }, 409);
         const text = await request.text();
         if (text.length > 1024) return json({ error: 'Request too large' }, 413);
-        const { sport } = JSON.parse(text);
+        const { sport, enabledSports } = JSON.parse(text);
+        // The renderer may have unchecked a sport just before its autosave.
+        // Intersect that selection with the authoritative desktop settings.
+        const isSportEnabled = key => store?.snapshot().config.sports.find(group => group.sport === key)?.enabled !== false
+          && (!Array.isArray(enabledSports) || enabledSports.includes(key));
         refreshing = true;
-        try { return json({ results: await refresh(sport) }); }
+        try { return json({ results: await refresh(sport, isSportEnabled) }); }
         finally { refreshing = false; store.catalogRevision++; }
       }
       if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
@@ -75,6 +82,7 @@ function createHandler({ root, dataRoot, store, refresh, engine, fetchImpl = glo
       }
       return new Response(await fs.readFile(file), { headers: { 'Content-Type': types[path.extname(file)], 'Content-Security-Policy': CSP, 'Cache-Control': 'no-store' } });
     } catch (error) {
+      if (error.code === 'SPORT_DISABLED') return json({ error: error.message }, 409);
       if (error.code === 'ENOENT') return new Response('Not found', { status: 404 });
       return json({ detail: error.message, error: error.message }, 500);
     }

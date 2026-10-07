@@ -33,9 +33,10 @@ async function requestBody(request) {
 
 async function refreshCatalog(request, response) {
   try {
-    const { sport = "all" } = await requestBody(request);
+    const { sport = "all", enabledSports } = await requestBody(request);
     if (sport !== "all" && !SUPPORTED_SPORTS.includes(sport)) return json(response, 400, { error: `Unsupported sport: ${sport}` });
-    return json(response, 200, { results: await updateCatalogs(sport) });
+    return json(response, 200, { results: await updateCatalogs(sport, root, undefined,
+      key => !Array.isArray(enabledSports) || enabledSports.includes(key)) });
   } catch (error) {
     return json(response, 500, { error: error.message });
   }

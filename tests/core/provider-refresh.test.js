@@ -6,6 +6,64 @@ require("../../core/provider-refresh.js");
 const api = globalThis.SportsOverlay;
 const provider = { toCandidate: game => game, normalizeEvent: payload => payload };
 
+test("every disabled sport blocks cached, new, and manual retry requests without losing preferences", async () => {
+  const config = api.config.normalizeConfig();
+  let calls = 0;
+  const cache = api.providerRefresh.create({ config: () => config, now: () => 0,
+    fetchImpl: async () => { calls++; return Response.json({ state: 'live' }); } });
+  for (const group of config.sports) {
+    const fetch = cache.fetchFor(group.sport, provider);
+    await fetch(`${group.sport}/cached`);
+    const saved = structuredClone(group);
+    group.enabled = false;
+    fetch.retryFailed(); fetch.invalidate(`${group.sport}/cached`);
+    for (const url of [`${group.sport}/cached`, `${group.sport}/new`]) {
+      await assert.rejects(fetch(url), { name: 'AbortError', code: 'SPORT_DISABLED' });
+    }
+    group.enabled = true;
+    assert.deepEqual(group, saved);
+    await fetch(`${group.sport}/new`);
+  }
+  assert.equal(calls, config.sports.length * 2);
+});
+
+test("disabling during sport pacing cancels queued work without adding failure backoff on re-enable", async () => {
+  const config = api.config.normalizeConfig(), group = config.sports.find(group => group.sport === 'chess');
+  let clock = 0, release;
+  const calls = [];
+  const cache = api.providerRefresh.create({ config: () => config, now: () => clock,
+    sleep: ms => new Promise(resolve => { release = () => { clock += ms; resolve(); }; }),
+    fetchImpl: async url => { calls.push(url); return Response.json({ state: 'live' }); } });
+  const fetch = cache.fetchFor('chess', { ...provider, requestIntervalMs: 1500, failureBackoff: true });
+  await fetch('first');
+  const queued = fetch('second');
+  const rejected = assert.rejects(queued, { code: 'SPORT_DISABLED' });
+  await new Promise(resolve => setImmediate(resolve));
+  group.enabled = false; release(); await rejected;
+  assert.deepEqual(calls, ['first']);
+  group.enabled = true;
+  clock += 1500;
+  await fetch('second');
+  assert.deepEqual(calls, ['first', 'second']);
+});
+
+test("disabling and re-enabling cannot bypass an existing provider cooldown", async () => {
+  const config = api.config.normalizeConfig(), group = config.sports.find(group => group.sport === 'chess');
+  let clock = 0, calls = 0;
+  const cache = api.providerRefresh.create({ config: () => config, now: () => clock, wallNow: () => clock,
+    sleep: async ms => { clock += ms; }, fetchImpl: async () => {
+      calls++;
+      return new Response('', { status: 429, headers: { 'Retry-After': '120' } });
+    } });
+  const fetch = cache.fetchFor('chess', { ...provider, requestIntervalMs: 1500 });
+  await assert.rejects(fetch('first'), { status: 429 });
+  group.enabled = false;
+  await assert.rejects(fetch('second'), { code: 'SPORT_DISABLED' });
+  group.enabled = true; fetch.retryFailed();
+  await assert.rejects(fetch('second'), { status: 429 });
+  assert.equal(calls, 1);
+});
+
 test("cached scores survive the original request signal expiring without extra requests", async () => {
   const http = require('node:http');
   const payload = { state: 'live', score: 7 };

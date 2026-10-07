@@ -1,11 +1,48 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { create, serviceFor } = require('../../core/provider-network.js');
+const { create, serviceFor, sportFor } = require('../../core/provider-network.js');
 const nba = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
 const nhl = 'https://sports.core.api.espn.com/v2/sports/hockey/leagues/nhl/events/1/competitions/1/situation';
 const mlb = 'https://statsapi.mlb.com/api/v1/schedule';
 const pdga = 'https://www.pdga.com/apps/tournament/live-api/live_results_fetch_round?TournID=1';
 const epoch = Date.parse('2026-10-03T00:00:00Z');
+
+test('provider endpoints identify every supported sport, including catalogs and secondary ESPN hosts', () => {
+  const endpoints = {
+    baseball: [mlb, 'https://statsapi.mlb.com/api/v1/teams?sportId=1'],
+    football: ['https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'],
+    'college-football': ['https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams'],
+    hockey: [nhl, 'https://site.web.api.espn.com/apis/site/v2/sports/hockey/nhl/summary?event=1'],
+    soccer: ['https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/teams/9726/schedule'],
+    basketball: [nba],
+    'college-basketball': ['https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams'],
+    'disc-golf': [pdga, 'https://www.pdga.com/api/v1/feat/current-events/tournaments'],
+    chess: ['https://lichess.org/api/broadcast/top', 'https://lichess.org/broadcast/Tour1234/players'],
+  };
+  for (const [sport, urls] of Object.entries(endpoints)) for (const url of urls) assert.equal(sportFor(url), sport);
+  assert.equal(sportFor('https://example.com/scoreboard'), null);
+});
+
+test('disabling a sport while queued blocks its calls and lets enabled sports on the same provider proceed', async () => {
+  let time = epoch, release, started, enabled = true;
+  const active = new Promise(resolve => { started = resolve; }), calls = [];
+  const fetch = create({ now: () => time, sleep: async ms => { time += ms; },
+    isAllowed: url => sportFor(url) !== 'basketball' || enabled,
+    fetchImpl: async url => {
+      calls.push(url);
+      return url === nba ? new Promise(resolve => { release = resolve; started(); }) : Response.json({});
+    } });
+  const first = fetch(nba); await active;
+  const queued = fetch(nba + '?queued');
+  const rejected = assert.rejects(queued, { code: 'SPORT_DISABLED' });
+  const otherSport = fetch(nhl);
+  enabled = false; release(Response.json({}));
+  await Promise.all([first, rejected, otherSport]);
+  await assert.rejects(fetch(nba + '?manual'), { code: 'SPORT_DISABLED' });
+  assert.deepEqual(calls, [nba, nhl]);
+  enabled = true; await fetch(nba + '?resumed');
+  assert.deepEqual(calls, [nba, nhl, nba + '?resumed']);
+});
 function fixture() {
   let time = epoch, respond = () => Response.json({ state: 'live' });
   const calls = [];

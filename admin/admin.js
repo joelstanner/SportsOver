@@ -9,7 +9,13 @@
   const gameOddsTracker = oddsApi.createTracker();
   let workingConfig = configApi.loadConfig();
   const shared = global.SportsOverlay.shared;
-  const providerRefresh = global.SportsOverlay.providerRefresh.create({ config: () => configApi.loadConfig() });
+  const providerRefresh = global.SportsOverlay.providerRefresh.create({ config: () => workingConfig });
+  const disclosureKey = "sportsover.settings.collapsedSports";
+  let collapsedSports;
+  try {
+    const stored = JSON.parse(global.localStorage.getItem(disclosureKey));
+    collapsedSports = new Set(Array.isArray(stored) ? stored.filter(value => typeof value === "string") : []);
+  } catch (_) { collapsedSports = new Set(); }
   const chessSession = global.SportsOverlay.lichess.createSession();
   const pdgaSession = global.SportsOverlay.pdga.createSession();
   let baseline = structuredClone(workingConfig);
@@ -69,6 +75,7 @@
   const catalogRefreshSport = document.querySelector("#catalog-refresh-sport");
   const catalogRefreshDialog = document.querySelector("#refresh-team-catalog-dialog");
   let pendingCatalogSport = null;
+  let refreshingCatalog = false;
   const undoLiveButton = document.querySelector("#undo-live-change");
   const resetDialog = document.querySelector("#reset-settings-dialog");
   const liveConfigKeys = ["rotationMode", "bannerSportFilter", "includedGames", "excludedGames", "rotationOrder", "gameDurations", "defaultGameDurations", "lockedGameKeys"];
@@ -109,7 +116,9 @@
   refreshCatalogButton.addEventListener("click", () => {
     if (refreshCatalogButton.disabled || catalogRefreshDialog.open) return;
     pendingCatalogSport = catalogRefreshSport.value;
-    const scope = pendingCatalogSport === "all" ? "all seven team sports (MLB, NFL, NCAAF, NHL, MLS, NBA, and NCAAM)"
+    const scope = pendingCatalogSport === "all" ? workingConfig.sports
+      .filter(group => group.enabled !== false && configApi.findSport(group.sport)?.competitionType !== "individual")
+      .map(group => configApi.findSport(group.sport).league).join(", ")
       : catalogRefreshSport.selectedOptions[0].textContent;
     document.querySelector("#catalog-refresh-dialog-description").textContent =
       `Download current team names, IDs, logos, and colors from MLB/ESPN for ${scope}, replacing the saved directory for that selection.`;
@@ -445,6 +454,24 @@
       section.querySelector(".sport-icon").textContent = { baseball: "⚾", football: "🏈", "college-football": "🏈", hockey: "🏒", soccer: "⚽", basketball: "🏀", "college-basketball": "🏀", "disc-golf": "🥏", chess: "♟" }[sport.key] || "";
       section.querySelector(".sport-name").textContent = sport.name;
       section.querySelector(".sport-league").textContent = sport.league;
+      const details = section.querySelector(".sport-details");
+      details.id = `sport-details-${sport.key}`;
+      const disclosure = section.querySelector(".sport-disclosure");
+      disclosure.setAttribute("aria-controls", details.id);
+      const updateDisclosure = () => {
+        const expanded = !collapsedSports.has(sport.key);
+        details.hidden = !expanded;
+        disclosure.setAttribute("aria-expanded", String(expanded));
+        disclosure.setAttribute("aria-label", `${expanded ? "Collapse" : "Expand"} ${sport.name}`);
+        disclosure.querySelector("span").textContent = expanded ? "▾" : "▸";
+      };
+      disclosure.addEventListener("click", () => {
+        if (collapsedSports.has(sport.key)) collapsedSports.delete(sport.key);
+        else collapsedSports.add(sport.key);
+        try { global.localStorage.setItem(disclosureKey, JSON.stringify([...collapsedSports])); } catch (_) { /* Session-only fallback. */ }
+        updateDisclosure();
+      });
+      updateDisclosure();
       const enabled = section.querySelector(".sport-enabled");
       enabled.checked = group.enabled !== false;
       enabled.setAttribute("aria-label", `Show ${sport.name}`);
@@ -461,6 +488,7 @@
 
       const favoriteList = section.querySelector(".sport-favorites");
       favoriteList.hidden = !enabled.checked;
+      if (!enabled.checked) { sportsList.append(section); return; }
       if (sport.competitionType === "individual") {
         const renderAutomaticWatches = () => renderAutomaticWatchList(favoriteList, group);
         global.SportsOverlay[sport.key === "chess" ? "chessSettings" : "pdgaSettings"].render(favoriteList, group, removedWatch => {
@@ -485,6 +513,12 @@
       }
       sportsList.append(section);
     });
+    catalogRefreshSport.querySelectorAll("option").forEach(option => {
+      option.disabled = option.value !== "all" && workingConfig.sports.find(group => group.sport === option.value)?.enabled === false;
+    });
+    if (catalogRefreshSport.selectedOptions[0]?.disabled) catalogRefreshSport.value = "all";
+    refreshCatalogButton.disabled = refreshingCatalog || !workingConfig.sports.some(group => group.enabled !== false
+      && configApi.findSport(group.sport)?.competitionType !== "individual");
     renderTeamPicker();
     timeZonePicker.value = workingConfig.timeZone;
     document.querySelector("#display-mode").value = workingConfig.displayMode;
@@ -496,6 +530,8 @@
     if (recentlyAddedTeamKey) {
       const newCard = [...document.querySelectorAll(".favorite-card")]
         .find(card => card.dataset.teamKey === recentlyAddedTeamKey);
+      const sportCard = newCard?.closest(".sport-card");
+      if (sportCard?.querySelector(".sport-details").hidden) sportCard.querySelector(".sport-disclosure").click();
       newCard?.classList.add("is-new");
       newCard?.scrollIntoView({ behavior: "smooth", block: "center" });
       recentlyAddedTeamKey = null;
@@ -533,15 +569,18 @@
   }
 
   async function refreshTeamCatalog(sport) {
+    const enabledSports = workingConfig.sports.filter(group => group.enabled !== false).map(group => group.sport);
+    if (sport !== "all" && !enabledSports.includes(sport)) return;
+    refreshingCatalog = true;
     refreshCatalogButton.disabled = true;
     catalogRefreshSport.disabled = true;
-    catalogRefreshStatus.textContent = sport === "all" ? "Refreshing all team directories…" : "Refreshing team directory…";
+    catalogRefreshStatus.textContent = sport === "all" ? "Refreshing enabled team directories…" : "Refreshing team directory…";
     catalogRefreshStatus.className = "catalog-refresh-status";
     try {
       const response = await fetch("../api/team-catalog/refresh", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sport }),
+        body: JSON.stringify({ sport, enabledSports }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || `Refresh returned HTTP ${response.status}`);
@@ -557,7 +596,9 @@
       catalogRefreshStatus.textContent = `${error.message}.${serverHint}`;
       catalogRefreshStatus.className = "catalog-refresh-status is-error";
     } finally {
-      refreshCatalogButton.disabled = false;
+      refreshingCatalog = false;
+      refreshCatalogButton.disabled = !workingConfig.sports.some(group => group.enabled !== false
+        && configApi.findSport(group.sport)?.competitionType !== "individual");
       catalogRefreshSport.disabled = false;
     }
   }
@@ -771,7 +812,7 @@
       workingConfig.automaticWatchLists = synchronized.automaticWatchLists;
       baseline.automaticWatchLists = structuredClone(synchronized.automaticWatchLists);
       // Discovery updates its own list without replacing an active player picker.
-      workingConfig.sports.filter(group => ["chess", "disc-golf"].includes(group.sport)).forEach(group => {
+      workingConfig.sports.filter(group => group.enabled !== false && ["chess", "disc-golf"].includes(group.sport)).forEach(group => {
         const container = sportsList.querySelector(`.sport-card[data-sport="${group.sport}"] .sport-favorites`);
         if (container) renderAutomaticWatchList(container, group);
       });

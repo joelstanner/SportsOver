@@ -59,6 +59,8 @@ h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.7rem); line-height: 0.95; letter-s
 .sport-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 18px; background: var(--panel-raised); }
 .sport-heading > div:first-child { display: flex; align-items: baseline; gap: 10px; }
 .sport-heading h3 { margin: 0; font-size: 1.05rem; }
+.sport-disclosure { align-self: center; flex: 0 0 auto; font-size: 1.05rem; }
+.sport-details[hidden] { display: none; }
 .sport-rank { color: var(--teal); font-size: 0.72rem; font-weight: 900; }
 .sport-icon { align-self: center; flex: 0 0 auto; font-size: 1.25rem; line-height: 1; }
 .sport-league { color: var(--muted); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; }

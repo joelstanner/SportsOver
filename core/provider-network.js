@@ -22,10 +22,32 @@
     const delay = /^\d+(\.\d+)?$/.test(value) ? Number(value) * 1000 : Date.parse(value) - now;
     return Number.isFinite(delay) ? Math.max(0, delay) : 0;
   }
+  function sportFor(value) {
+    const service = serviceFor(value);
+    if (service === 'mlb') return 'baseball';
+    if (service === 'pdga') return 'disc-golf';
+    if (service === 'lichess') return 'chess';
+    if (service !== 'espn') return null;
+    const match = new URL(value).pathname.match(/\/sports\/([^/]+)\/(?:leagues\/)?([^/]+)/);
+    return { 'baseball/mlb': 'baseball', 'football/nfl': 'football', 'football/college-football': 'college-football',
+      'hockey/nhl': 'hockey', 'soccer/usa.1': 'soccer', 'basketball/nba': 'basketball',
+      'basketball/mens-college-basketball': 'college-basketball' }[match?.slice(1).join('/')] || null;
+  }
+  function disabledError() {
+    const error = new Error('Sport is disabled');
+    error.name = 'AbortError';
+    error.code = 'SPORT_DISABLED';
+    return error;
+  }
   function create({ fetchImpl = (...args) => global.fetch(...args), now = Date.now,
-    sleep = ms => new Promise(resolve => setTimeout(resolve, ms)) } = {}) {
+    sleep = ms => new Promise(resolve => setTimeout(resolve, ms)), isAllowed = () => true } = {}) {
     const services = new Map();
+    function checkAllowed(url, options) {
+      if (!isAllowed(url) || options.isAllowed?.() === false) throw disabledError();
+    }
     async function run(service, gate, url, options) {
+      // Check again after pacing: a sport may have been disabled while queued.
+      checkAllowed(url, options);
       const limitedResponse = () => Response.json({ error: `${service} requests are paused; try again after the cooldown.` }, {
         status: gate.status,
         headers: { 'Retry-After': String(Math.ceil((gate.until - now()) / 1000)), 'Cache-Control': 'no-store' },
@@ -75,6 +97,7 @@
     async function fetchProvider(url, options = {}) {
       const service = serviceFor(url);
       if (!service) throw new Error('Unsupported score provider URL');
+      checkAllowed(url, options);
       if (!services.has(service)) services.set(service, { queue: [], pending: new Map(), running: false, displayStreak: 0, next: 0, until: 0, failures: 0 });
       const gate = services.get(service);
       if (service === 'lichess' && gate.pending.has(url)) {
@@ -101,7 +124,7 @@
     };
     return fetchProvider;
   }
-  const api = { create, serviceFor, retryAfterMs };
+  const api = { create, serviceFor, sportFor, disabledError, retryAfterMs };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else (global.SportsOverlay ||= {}).providerNetwork = api;
 })(typeof window === 'undefined' ? globalThis : window);
