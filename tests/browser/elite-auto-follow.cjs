@@ -1,5 +1,5 @@
 // Shared recurring discovery and saved automatic watch list, using fixture feeds.
-const { chromium }=require('playwright');
+const { chromium }=require('../../scripts/test-browser.cjs');
 const { electron } = require('../../scripts/test-mode.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=require('node:path'),os=require('node:os');
 require('../../core/config.js');

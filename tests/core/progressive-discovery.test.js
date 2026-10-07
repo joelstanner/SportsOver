@@ -1,4 +1,5 @@
 'use strict';
+require('../../scripts/offline-network.cjs');
 const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
 require('../../core/config.js');
 const configApi=global.SportsOverlay.config;

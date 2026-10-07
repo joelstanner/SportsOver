@@ -1,3 +1,4 @@
+require('../../scripts/offline-network.cjs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { installTestNetwork, testNetworkState } = require('../../desktop/test-network.cjs');
@@ -42,4 +43,27 @@ test('startup cancellation and fixtures compose with diagnostics while preservin
   assert.deepEqual(request('http://127.0.0.1:1234/sports/display.html', 101), {});
   installHttpLogging(session, { ...guard, log() { throw Error('terminal unavailable'); } });
   assert.deepEqual(request('http://live-feed.test/'), { cancel: true }, 'a broken log sink cannot bypass protection');
+});
+
+test('startup fixtures precede traffic; replacement, unknown URLs and bypass attempts keep their assertions', async () => {
+  let dispatcher, nativeFetches = 0;
+  const session = { protocol: {
+    handle(scheme, handler) { assert.equal(scheme, 'https'); dispatcher = handler; },
+    isProtocolHandled: scheme => scheme === 'https', unhandle() {},
+  } };
+  const net = { fetch: async () => { nativeFetches++; return Response.json({ native: true }); } };
+  installTestNetwork({ session, net, env: { SPORTSOVER_TEST_DATA: '/test' } });
+  const request = url => dispatcher({ url });
+  assert.equal((await request('https://api.github.com/repos/joelstanner/SportsOver/releases/latest')).status, 404);
+  assert.deepEqual(await (await request('https://lichess.org/api/broadcast/top')).json(), { active: [], upcoming: [], past: [], rounds: [], games: [] });
+  assert.equal(testNetworkState().blocked, 0);
+  assert.equal((await request('https://unexpected.test/startup')).status, 599);
+  session.protocol.handle('https', () => Response.json({ fixture: true }));
+  assert.deepEqual(await (await request('https://fixture.test/feed')).json(), { fixture: true });
+  await assert.rejects(net.fetch('https://fixture.test/feed', { bypassCustomProtocol: true }), /bypass/);
+  assert.equal(nativeFetches, 0);
+  assert.throws(() => session.protocol.unhandle('https'), /cannot remove/);
+  session.protocol.handle('https', () => { throw Error('Broken fixture'); });
+  await assert.rejects(request('https://fixture.test/broken'), /Broken fixture/);
+  assert.deepEqual(testNetworkState().urls, ['https://unexpected.test/startup', 'https://fixture.test/feed', 'https://fixture.test/broken']);
 });

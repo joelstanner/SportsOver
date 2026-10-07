@@ -1,3 +1,4 @@
+require('../../scripts/offline-network.cjs');
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { topAnchoredResizeBounds, BANNER_SCALES } = require('../../desktop/bounds.cjs');

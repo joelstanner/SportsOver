@@ -1,4 +1,5 @@
 'use strict';
+require('../../scripts/offline-network.cjs');
 const test = require('node:test'), assert = require('node:assert/strict');
 require('../../core/config.js');
 require('../../core/automatic-watches.js');

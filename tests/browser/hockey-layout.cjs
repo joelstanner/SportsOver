@@ -1,5 +1,5 @@
 // NHL's optional rows must fit the same 472x100 frame as desktop and OBS output.
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const { chromium } = require('../../scripts/test-browser.cjs');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const assert = require('node:assert/strict');

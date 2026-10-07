@@ -1,3 +1,4 @@
+require('../../scripts/offline-network.cjs');
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { createUpdateChecker, compareVersions, RELEASES_URL, RELEASE_API } = require('../../desktop/updates.cjs');

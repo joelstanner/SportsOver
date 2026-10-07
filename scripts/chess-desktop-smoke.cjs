@@ -64,7 +64,11 @@ require('../core/config.js');
   await admin.evaluate(()=>window.sportsDesktop.action('unlock'));
   await banner.locator('.chess-match-status').first().click();
   await new Promise(resolve=>setTimeout(resolve,600));
-  assert.deepEqual(await application.evaluate(()=>globalThis.chessTest.navigation),['next']);
+  assert.deepEqual(await application.evaluate(()=>globalThis.chessTest.navigation),[], 'single-game rotation does not dispatch a navigation command');
+  // Assert the host's one-game gate without depending on native panel activation.
+  await admin.evaluate(()=>window.sportsDesktop.action('browse-banner','next'));
+  await banner.waitForFunction(()=>document.querySelector('.desktop-browse-notice')?.textContent.includes('Only one game in rotation'));
+  assert.match(await banner.locator('.desktop-browse-notice').innerText(), /Only one game in rotation/, 'single-game navigation explains why browsing is unavailable');
   let frame=await(await fetch(status.obsUrl.replace('/output','/api/output'))).json();
   assert.equal(frame.gameKey,'chess:Tour1234:auto');assert.match(frame.html,/Gukesh D/);
   const response=await fetch(status.obsUrl);assert.equal(response.status,200);assert.match(await response.text(),/sports\/chess\/style.css/);

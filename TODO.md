@@ -23,6 +23,8 @@
 
 ## Completed
 
+- [x] Standardize offline tests and add explicit provider contract checks. Unit, browser, desktop and packaged launch paths deny external traffic; unexpected requests fail, startup fixtures precede discovery/update checks, and local OBS/control traffic remains available. Separate aggregate/per-provider live commands cover representative PDGA, ESPN, MLB and Lichess feeds with request caps, timeouts, serial execution, persisted cooldowns and no retries after failure. The existing native live PDGA command uses a bounded real snapshot. Documented deliberate fixture recording; live availability remains unverified until an explicit live run. See [testing details](desktop/TESTING.md) and [commands and limits](README.md).
+
 - [x] Make each category under Sports and watched events expandable and collapsible using a twirldown. Remember its state on the device without changing watched selections or polling.
 - [x] Stop API requests when Show sport is unchecked, including score feeds, schedules, tournament discovery, metadata, player lists, and directory refreshes. Check queued work before dispatch, preserve saved selections and provider cooldowns, and cover disabling/re-enabling with regression tests. Already-sent requests may finish.
 - [x] Give upcoming games a compact desktop layout below 50%, similar to live games: team logos on either side with the game date/time in the middle.

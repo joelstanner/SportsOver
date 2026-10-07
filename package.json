@@ -1,6 +1,6 @@
 {
   "name": "sportsover",
-  "version": "0.36.0",
+  "version": "0.36.1",
   "private": true,
   "description": "Standalone desktop sports banner",
   "main": "desktop/main.cjs",
@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node scripts/start.cjs",
-    "test": "node --test tests/core/*.test.js tests/sports/*/*.test.js tests/desktop/*.test.cjs",
+    "test": "node --require ./scripts/offline-network.cjs --test tests/core/*.test.js tests/sports/*/*.test.js tests/desktop/*.test.cjs",
     "test:desktop": "node scripts/desktop-smoke.cjs",
     "test:mode": "node scripts/test-mode.cjs",
     "test:network": "node scripts/test-network-smoke.cjs",
@@ -24,7 +24,14 @@
     "build:win": "node scripts/build-win.cjs",
     "dist:win": "node scripts/dist-win.cjs",
     "verify:package": "node scripts/verify-package.cjs",
-    "test:obs": "node tests/browser/obs-layouts.cjs"
+    "test:obs": "node tests/browser/obs-layouts.cjs",
+    "test:providers": "node scripts/provider-contracts.cjs --live",
+    "test:providers:pdga": "node scripts/provider-contracts.cjs --live pdga",
+    "test:providers:espn": "node scripts/provider-contracts.cjs --live espn",
+    "test:providers:mlb": "node scripts/provider-contracts.cjs --live mlb",
+    "test:providers:lichess": "node scripts/provider-contracts.cjs --live lichess",
+    "test:offline-boundaries": "node scripts/offline-boundaries-smoke.cjs",
+    "test:browser:network": "node scripts/browser-network-smoke.cjs"
   },
   "devDependencies": {
     "electron": "44.5.0",

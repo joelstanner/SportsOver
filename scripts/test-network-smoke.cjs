@@ -21,14 +21,14 @@ const http = require('node:http');
     await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
     const localUrl = `http://127.0.0.1:${server.address().port}`;
     // Deliberately inherit "live": the routine launcher must override it.
-    application = await electron.launch({ args: [path.resolve(__dirname, '..')],
+    application = await electron.launch({ expectBlockedRequests: true, args: [path.resolve(__dirname, '..')],
       env: { ...process.env, SPORTSOVER_TEST_DATA: directory, SPORTSOVER_TEST_NETWORK: 'live' } });
     const first = await application.firstWindow();
     await first.waitForFunction(() => !!window.sportsDesktop);
     // The first window exists while the remaining startup loads are still
     // pending. Wait for the launch check before replacing its HTTPS handler.
     for (let attempt = 0; attempt < 100; attempt++) {
-      const checked = await application.evaluate(() => globalThis.sportsTestNetworkState().urls.some(url => url.includes('api.github.com/repos/joelstanner/SportsOver/releases/latest')));
+      const checked = await application.evaluate(() => globalThis.sportsTestNetworkState().fixtures.some(url => url.includes('api.github.com/repos/joelstanner/SportsOver/releases/latest')));
       if (checked) break;
       await new Promise(resolve => setTimeout(resolve, 100));
     }
@@ -37,7 +37,7 @@ const http = require('node:http');
     assert.ok(startup, 'fixture protection is installed before first window');
     const results = await application.evaluate(async ({ net }, localUrl) => {
       let secureBlocked = false;
-      try { await net.fetch('https://live-feed.test/unmocked'); }
+      try { secureBlocked = (await net.fetch('https://live-feed.test/unmocked')).status === 599; }
       catch (error) { secureBlocked = /ERR_BLOCKED_BY_CLIENT/.test(error.message); }
       let insecureBlocked = false;
       try { await net.fetch('http://live-feed.test/unmocked'); }
@@ -80,7 +80,8 @@ const http = require('node:http');
       catch (error) { return /ERR_BLOCKED_BY_CLIENT/.test(error.message); }
     }, `${localUrl}/redirect`), true, 'native redirects stay blocked even after fixtures exist');
     const blocked = await application.evaluate(() => globalThis.sportsTestNetworkState());
-    assert.ok(blocked.urls.some(url => url.includes('api.github.com/repos/joelstanner/SportsOver/releases/latest')), 'launch update check uses the same protection');
+    assert.ok(blocked.fixtures.some(url => url.includes('api.github.com/repos/joelstanner/SportsOver/releases/latest')), 'launch update check is mocked before startup');
+    assert.equal(startup.blocked, 0, 'startup uses fixtures without unexpected traffic');
     console.log(`Test network smoke passed: ${blocked.blocked} unmocked requests blocked, fixtures work, local POST/OBS/redirects work, external redirects blocked. Isolated data: ${directory}`);
   } finally {
     if (application) await application.close();

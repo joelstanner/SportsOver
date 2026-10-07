@@ -1,5 +1,5 @@
 // The import button opens one picker and reports validation/save results in place.
-const { chromium } = require('playwright');
+const { chromium } = require('../../scripts/test-browser.cjs');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const assert = require('node:assert/strict');

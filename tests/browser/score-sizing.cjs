@@ -1,6 +1,6 @@
 const fs = require('node:fs/promises'), path = require('node:path'), assert = require('node:assert/strict');
 const root = process.env.SPORTSOVER_SOURCE || path.resolve(__dirname, '../..');
-const { chromium } = require(path.join(root, 'node_modules/playwright'));
+const { chromium } = require('../../scripts/test-browser.cjs');
 (async () => {
  const browser = await chromium.launch({headless:true,channel:'chrome'});
  try {

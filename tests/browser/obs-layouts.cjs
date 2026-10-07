@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs/promises');
 const path=require('node:path');
-const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+const {chromium}=require('../../scripts/test-browser.cjs');
 const root=process.env.SPORTSOVER_ROOT||path.resolve(__dirname,'../..');
 const sizes={small:[360,76],normal:[647,137],large:[2304,280]};
 const sports=['baseball','football','college-football','basketball','hockey','soccer','chess','disc-golf'];

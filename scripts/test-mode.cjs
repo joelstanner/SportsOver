@@ -1,3 +1,4 @@
+require('./offline-network.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -39,10 +40,30 @@ const electron = {
     const launch = launchOptions(options, quiet);
     if (launch.executablePath && options.network !== 'live') assertFixtureSupport(launch.executablePath);
     console.log(`Desktop test network: ${launch.env.SPORTSOVER_TEST_NETWORK}.`);
-    return require('playwright')._electron.launch(launch);
+    const application = await require('playwright')._electron.launch(launch);
+    if (options.network !== 'live') {
+      // Playwright can connect before main's app.whenReady callback runs. Do not
+      // let harness fixture registration race the startup dispatcher.
+      try {
+        await application.evaluate(async ({ app }) => {
+          await app.whenReady();
+          if (!globalThis.sportsTestNetworkState?.()) throw Error('Startup network protection is unavailable');
+        });
+      } catch (error) { await application.close(); throw error; }
+      const close = application.close.bind(application);
+      let closing;
+      application.close = () => closing ||= (async () => {
+        let state;
+        try { state = await application.evaluate(() => globalThis.sportsTestNetworkState()); }
+        finally { await close(); }
+        if (!state) throw Error('Missing desktop network assertions');
+        if (!options.expectBlockedRequests && (state.blocked || state.nodeViolations.length)) throw Error(`Unexpected desktop network requests: ${[...state.urls, ...state.nodeViolations].join(', ')}`);
+      })();
+    }
+    return application;
   },
 };
-function launchOptions({ network = 'fixtures', ...options }, quiet) {
+function launchOptions({ network = 'fixtures', expectBlockedRequests, ...options }, quiet) {
   if (!['fixtures', 'live'].includes(network)) throw Error('Test network must be "fixtures" or "live".');
   if (!options.env?.SPORTSOVER_TEST_DATA) throw Error('Desktop tests require isolated SPORTSOVER_TEST_DATA.');
   // Older packaged apps do not understand the hidden-test flag. Never risk
@@ -61,8 +82,10 @@ function assertFixtureSupport(executablePath) {
       ? require('@electron/asar').extractFile(archive, file).toString()
       : fs.readFileSync(path.join(resources, 'app', file), 'utf8');
     const main = read('desktop/main.cjs');
-    if (!read('desktop/test-network.cjs').includes('installTestNetwork')
-      || !main.includes('installTestNetwork({ session: session.defaultSession });')
+    if (!read('desktop/test-network.cjs').includes('startupFixture')
+      || !read('desktop/test-fixtures.cjs').includes('startupFixture')
+      || !read('desktop/test-node-network.cjs').includes('TEST_EXTERNAL_NETWORK')
+      || !main.includes('installTestNetwork({ session: session.defaultSession, net });')
       || !main.includes('installHttpLogging(session.defaultSession, testNetwork);')) throw Error('Missing startup guard');
   } catch (error) {
     throw Error(`Packaged app lacks verified fixture-network protection: ${error.message}. Use the current source or a CI build containing the test network guard.`);

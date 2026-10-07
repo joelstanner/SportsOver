@@ -4,9 +4,15 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 require('../core/config.js');
 (async () => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(),'sportsover-pdga-'));
+  execFileSync(process.execPath, [path.join(__dirname, 'provider-contracts.cjs'), '--live', 'pdga', '--record', directory], { stdio: 'inherit', timeout: 30000, env: { ...process.env, SPORTSOVER_PDGA_TOURNAMENT: '86076', SPORTSOVER_PDGA_DIVISION: 'MPO' } });
+  const captured = {
+    metadata: JSON.parse(await fs.readFile(path.join(directory, 'pdga-metadata.json'), 'utf8')),
+    round: JSON.parse(await fs.readFile(path.join(directory, 'pdga-round.json'), 'utf8')),
+  };
   const config = global.SportsOverlay.config.normalizeConfig();
   config.sports.forEach(group=>{ group.enabled = group.sport === 'disc-golf'; });
   config.sports.find(group=>group.sport === 'disc-golf').autoFollow = false;
@@ -15,10 +21,13 @@ require('../core/config.js');
   await fs.writeFile(path.join(directory,'settings.json'),JSON.stringify({version:1,config,desktop:{visible:false}}));
   let application;
   try {
-    application = await electron.launch({network:'live', ...(process.env.SPORTSOVER_TEST_EXECUTABLE
+    application = await electron.launch({ ...(process.env.SPORTSOVER_TEST_EXECUTABLE
       ? {executablePath:process.env.SPORTSOVER_TEST_EXECUTABLE,args:[]}
       : {args:[path.resolve(__dirname,'..')]}),env:{...process.env,SPORTSOVER_TEST_DATA:directory}});
     await application.firstWindow();
+    await application.evaluate(({ session }, captured) => {
+      session.defaultSession.protocol.handle('https', request => Response.json(request.url.includes('fetch_event') ? captured.metadata : captured.round));
+    }, captured);
     let pages;
     for (let i=0;i<60;i++) {
       pages = application.windows();
@@ -29,6 +38,7 @@ require('../core/config.js');
     const banner = pages.find(page=>page.url().includes('display.html?desktop'));
     const engine = pages.find(page=>page.url().includes('engine=1'));
     assert.ok(admin && banner && engine);
+    await engine.reload();
     await banner.locator('.pdga-entry').first().waitFor({timeout:30000});
     assert.match(await banner.locator('.pdga-board').innerText(),/Jeremy Koling/);
     const status = await admin.evaluate(()=>window.sportsDesktop.action('size',2));
@@ -63,6 +73,6 @@ require('../core/config.js');
     await admin.waitForFunction(async()=>(await window.sportsDesktop.engine()).queue.length===0);
     await banner.waitForFunction(()=>!document.querySelector('.pdga-entry,.pdga-focus'));
     assert.equal(await banner.locator('.pdga-entry,.pdga-focus').count(),0,'removed division no longer displays during Live mode');
-    console.log(`PDGA real API, native 200% banner, shared player selection, rotation and OBS passed. Screenshots: ${directory}`);
+    console.log(`PDGA bounded real API snapshot, native 200% banner, shared player selection, rotation and OBS passed. Screenshots: ${directory}`);
   } finally { if (application) await application.close(); }
 })().catch(error=>{console.error(error);process.exitCode=1;});

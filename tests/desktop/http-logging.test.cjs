@@ -1,3 +1,4 @@
+require('../../scripts/offline-network.cjs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { installHttpLogging } = require('../../desktop/http-logging.cjs');
@@ -7,7 +8,7 @@ function fixture(log) {
   let time = 100;
   const session = { webRequest: Object.fromEntries(['onBeforeRequest', 'onBeforeRedirect', 'onCompleted', 'onErrorOccurred']
     .map(name => [name, (filter, handler) => {
-      assert.deepEqual(filter.urls, ['http://*/*', 'https://*/*']);
+      assert.deepEqual(filter.urls, ['http://*/*', 'https://*/*', 'ws://*/*', 'wss://*/*']);
       handlers[name] = handler;
     }])) };
   installHttpLogging(session, { log: log || (message => messages.push(message)), now: () => time });

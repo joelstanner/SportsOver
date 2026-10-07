@@ -1,3 +1,4 @@
+require('../../scripts/offline-network.cjs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -57,7 +58,7 @@ test('old packaged apps are refused before launch, while protected unpacked and 
     fs.mkdirSync(path.join(appRoot, 'desktop'), { recursive: true });
     fs.writeFileSync(path.join(appRoot, 'desktop/main.cjs'), '// old app');
     assert.throws(() => assertFixtureSupport(executable), /lacks verified fixture-network protection/);
-    for (const file of ['main.cjs', 'test-network.cjs']) fs.copyFileSync(path.join(__dirname, '../../desktop', file), path.join(appRoot, 'desktop', file));
+    for (const file of ['main.cjs', 'test-network.cjs', 'test-fixtures.cjs', 'test-node-network.cjs']) fs.copyFileSync(path.join(__dirname, '../../desktop', file), path.join(appRoot, 'desktop', file));
     assert.doesNotThrow(() => assertFixtureSupport(executable));
     fs.writeFileSync(path.join(appRoot, 'desktop/main.cjs'), '// guard exists but is not installed');
     assert.throws(() => assertFixtureSupport(executable), /Missing startup guard/);

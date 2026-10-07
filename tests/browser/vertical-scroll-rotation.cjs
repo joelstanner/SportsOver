@@ -1,6 +1,6 @@
 'use strict';
 // Different cards can share identical rows and CSS while needing fresh animations.
-const { chromium } = require('playwright');
+const { chromium } = require('../../scripts/test-browser.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');

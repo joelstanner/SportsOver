@@ -1,5 +1,5 @@
 // Engine snapshots must never expose the uninitialized, left-aligned marquee.
-const { chromium } = require('playwright');
+const { chromium } = require('../../scripts/test-browser.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');

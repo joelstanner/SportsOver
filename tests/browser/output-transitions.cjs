@@ -1,5 +1,5 @@
 // Pushed desktop frames stay responsive even while polling or animating an older frame.
-const { chromium } = require('playwright');
+const { chromium } = require('../../scripts/test-browser.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');

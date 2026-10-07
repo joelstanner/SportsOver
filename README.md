@@ -225,20 +225,58 @@ npm run test:desktop -- --visible     # Include native window interactions
 npm run test:network                  # Verify startup network isolation
 ```
 
-Routine desktop tests use isolated preferences and block external HTTP/HTTPS
-before startup, including provider discovery, logos, and update checks. HTTPS
-requests are allowed once a fixture handler is installed; local OBS and control
-API connections still work, with external redirect destinations blocked.
-Quiet and visible tests use the same network protection. Older packaged apps
-without this protection are refused before launch; use the current source or a
-CI build containing the guard.
+Routine unit, integration, browser, and desktop tests deny outbound network
+access by default. Unit files and `npm test` install the Node transport guard;
+browser tests use the shared guarded launcher. Explicit mocks still work.
+Unexpected external attempts fail the run even if application code catches the
+request error. Local OBS/control traffic remains available. Redirects cannot
+escape to remote hosts; browser service workers are disabled during tests.
 
-`npm run test:pdga:live` explicitly enables real provider requests for its watched
-PDGA division. A custom desktop test must pass `network: 'live'` to the shared
-launcher to opt in; inherited environment settings cannot enable live traffic
-in routine tests. For a manual isolated source launch, `SPORTSOVER_TEST_DATA`
-defaults to fixtures only; set `SPORTSOVER_TEST_NETWORK=live` explicitly for a
-live check. Normal app launches continue to use live providers.
+Desktop tests install startup fixtures before windows, discovery, and update
+checks. The baseline supplies empty supported-provider feeds, placeholder team
+artwork, and a mocked unavailable GitHub release. Test-specific fixtures replace
+that dispatcher without reopening native HTTPS. Quiet and visible tests share
+the same checks; old packaged apps lacking these guards are refused. Manual
+isolated source launches with `SPORTSOVER_TEST_DATA` default to fixtures, while
+normal app launches continue to use live providers.
+
+```sh
+npm run test:offline-boundaries       # Node transport and redirect protection
+npm run test:browser:network          # Browser fixture/bypass/redirect protection
+npm run test:providers                # Explicit live checks, serial; stop on failure
+npm run test:providers:pdga           # Two live requests: metadata and one round
+npm run test:providers:espn           # Two: representative NFL scoreboard/summary
+npm run test:providers:mlb            # Two: historical schedule and one game feed
+npm run test:providers:lichess        # Three: directory, metadata and one round
+npm run test:pdga:live                # Same PDGA cap, then native/OBS snapshot test
+```
+
+Live checks run only through explicit commands, outside `npm test` and packaging
+CI. These are representative provider contracts, not exhaustive checks of every
+sport, endpoint, logo, or current live game. Empty ESPN/Lichess directories report
+that score contracts could not be verified. Requests are GET-only, reject
+redirects, have an eight-second timeout including response bodies and a four-MiB
+body cap, and use 250-ms spacing (1.5 seconds for Lichess). Each provider has a
+hard request cap shown above. A 429 or any other failure ends the aggregate run
+without retries or extra discovery.
+
+The live checker saves a minimum 60-second cooldown, including successful or
+interrupted runs, and serializes simultaneous invocations using a lock in the
+OS temporary directory `sportsover-provider-contracts-<user>`. HTTP failures
+increase backoff to at most five minutes; a longer `Retry-After` wins. Reruns
+respect saved cooldowns. If a killed process leaves the `running` lock directory,
+verify no check is running before removing that lock; retain the cooldown JSON.
+These pacing choices are SportsOver safeguards, not published provider quotas.
+
+To deliberately record checked responses for fixture review, run e.g.
+`npm run test:providers:pdga -- --record /tmp/sportsover-fixture-review`.
+`SPORTSOVER_PDGA_TOURNAMENT` and `SPORTSOVER_PDGA_DIVISION` select a different
+PDGA sample for the provider-only command. Review captured identities, states,
+nullable values, and privacy before copying responses into fixtures; keep Seattle
+teams and Nebraska strictly ahead in any synthetic score variants. Record the
+capture date/source and run the offline regressions after refreshing fixtures.
+The native PDGA check preserves its historical sample and rendering checks using
+the captured real response, then fixtures; it does not run live polling loops.
 
 See [desktop testing](desktop/TESTING.md) for coverage and platform limitations,
 and [packaging](desktop/PACKAGING.md) for GitHub Actions installer builds and

@@ -12,7 +12,7 @@ function displayUrl(value) {
 function installHttpLogging(session, { log = message => console.log(message), now = Date.now,
   allowRequest = () => true, onRedirect = () => {}, onFinished = () => {} } = {}) {
   const requests = new Map();
-  const filter = { urls: ['http://*/*', 'https://*/*'] };
+  const filter = { urls: ['http://*/*', 'https://*/*', 'ws://*/*', 'wss://*/*'] };
   const write = message => {
     try { log(`[SportsOver HTTP] ${message}`); } catch (_) { /* Logging must not interrupt requests. */ }
   };

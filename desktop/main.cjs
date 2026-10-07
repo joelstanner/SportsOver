@@ -335,7 +335,7 @@ else {
     if (!argv.includes('--background') && banner) recover();
   });
   app.whenReady().then(async () => {
-    const testNetwork = installTestNetwork({ session: session.defaultSession });
+    const testNetwork = installTestNetwork({ session: session.defaultSession, net });
     installHttpLogging(session.defaultSession, testNetwork);
     store = new Store(app.getPath('userData'));
     // Source launches have no bundle icon. Load custom artwork when supplied.

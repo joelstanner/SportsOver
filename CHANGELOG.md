@@ -3,6 +3,25 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.36.1 — 2026-10-07
+
+### Fixed
+
+- Prevent routine tests from contacting live providers during startup, discovery,
+  polling, redirects, and update checks; unexpected external requests fail tests
+  while local OBS and control connections remain available.
+- Require current network guards for packaged-app tests and prevent fixture setup
+  from racing desktop startup.
+
+### Added
+
+- Separate, bounded live provider contract checks for PDGA, ESPN, MLB and Lichess,
+  with request caps, timeouts, saved cooldowns and stopping on rate limits.
+- Deliberate fixture recording and shared offline test checks in packaging CI.
+  The existing live PDGA desktop check now uses a capped real response snapshot.
+
+Existing settings are preserved. No manual migration is required.
+
 ## 0.36.0 — 2026-10-07
 
 ### Added

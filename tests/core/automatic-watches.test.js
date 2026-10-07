@@ -1,4 +1,5 @@
 'use strict';
+require('../../scripts/offline-network.cjs');
 const test=require('node:test'),assert=require('node:assert/strict');
 require('../../core/config.js');require('../../core/automatic-watches.js');
 const api=global.SportsOverlay,watch={tournamentId:'Tour1234',roundId:'',name:'Elite Open',enabled:true,view:'overview',playerId:'',leaderboardSize:10};

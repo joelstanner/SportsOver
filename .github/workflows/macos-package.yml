@@ -41,6 +41,7 @@ jobs:
           node -e 'require("node:assert/strict").equal(process.arch, process.env.ARCH)'
           echo "version=$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
       - run: npm test
+      - run: npm run test:offline-boundaries
       - run: npm run test:network
       - run: npm run dist:mac -- "--$ARCH"
       - name: Verify disk image, checksum, and app metadata

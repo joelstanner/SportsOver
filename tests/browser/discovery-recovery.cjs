@@ -1,5 +1,5 @@
 'use strict';
-const { chromium } = require('playwright');
+const { chromium } = require('../../scripts/test-browser.cjs');
 const assert = require('node:assert/strict'), fs = require('node:fs/promises'), path = require('node:path');
 require('../../core/config.js');
 const root = path.resolve(__dirname, '../..');
