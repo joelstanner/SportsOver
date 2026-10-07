@@ -73,6 +73,9 @@ test("defaults rank sports first and favorites within each sport", () => {
   assert.deepEqual(sportKeys(config), ["baseball", "football", "college-football", "hockey", "soccer", "basketball", "college-basketball", "disc-golf", "chess"]);
   assert.deepEqual(favoriteKeys(config, "college-football"), ["ncaaf:158", "ncaaf:264"]);
   assert.equal(config.rotationSeconds, 10);
+  assert.deepEqual(config.providerRefreshSeconds.chess, { live: 30, pregame: 60, idle: 300, final: 900 });
+  assert.equal(configApi.normalizeConfig({ providerRefreshSeconds: { chess: { final: 300 } } }).providerRefreshSeconds.chess.final, 300,
+    'saved chess timings remain explicit preferences');
   configApi.TEAM_CATALOG.forEach(team => assert.match(team.logoUrl, /^https:\/\//));
   assert.ok(configApi.TEAM_CATALOG.filter(team => team.sport === "college-basketball").length > 350);
   assert.deepEqual(favoriteKeys(config, "college-basketball"), ["ncaam:158", "ncaam:264", "ncaam:2547"]);

@@ -240,3 +240,52 @@ test('display joins promote queued discovery cache misses without duplicate netw
   await Promise.all([first, background, queued, displayed]);
   assert.deepEqual(calls, [base + '1', base + '3', base + '2']);
 });
+
+test('desktop chess standings use the shared provider bridge with display priority and retain parent state', async () => {
+  const previousLocation = global.location;
+  global.location = { protocol: 'sportsover:' };
+  try {
+    let time = 0;
+    const calls = [], config = api.config.normalizeConfig();
+    const p = { refreshState: () => 'live', refreshIntervalMs: (_url, state) => state === 'final' ? 900000 : 120000 };
+    const cache = api.providerRefresh.create({ config: () => config, now: () => time, fetchImpl: async (url, options) => {
+      calls.push({ url, options }); return Response.json([{ score: 1 }]);
+    } });
+    const fetch = cache.fetchFor('chess', p), url = '/api/chess/broadcast/Tour1234/players';
+    await fetch(url, { priority: 'display', cacheState: 'final' });
+    const bridge = new URL(calls[0].url, 'https://local.test');
+    assert.equal(bridge.pathname, '/api/provider');
+    assert.equal(bridge.searchParams.get('url'), 'https://lichess.org/broadcast/Tour1234/players');
+    assert.equal(bridge.searchParams.get('priority'), 'display');
+    time = 300000; await fetch(url, { cacheState: 'final' });
+    assert.equal(calls.length, 1);
+    time = 900000; await fetch(url, { cacheState: 'final' });
+    assert.equal(calls.length, 2);
+  } finally { global.location = previousLocation; }
+});
+
+test('a result change during an in-flight request expires that response for the next refresh', async () => {
+  let calls = 0, release;
+  const cache = api.providerRefresh.create({ config: () => api.config.normalizeConfig(), now: () => 0, fetchImpl: async () => {
+    if (++calls === 1) await new Promise(resolve => { release = resolve; });
+    return Response.json({ state: 'live', result: calls });
+  } });
+  const fetch = cache.fetchFor('baseball', provider);
+  const first = fetch('game');
+  await new Promise(resolve => setImmediate(resolve));
+  fetch.invalidate('game'); release(); await first;
+  assert.equal((await (await fetch('game')).json()).result, 2);
+  assert.equal(calls, 2);
+});
+
+test('invalidation during a failed request preserves failure pacing', async () => {
+  let calls = 0, release;
+  const cache = api.providerRefresh.create({ config: () => api.config.normalizeConfig(), now: () => 0, fetchImpl: async () => {
+    calls++; await new Promise(resolve => { release = resolve; }); throw Error('offline');
+  } });
+  const fetch = cache.fetchFor('baseball', provider), first = assert.rejects(fetch('game'), /offline/);
+  await new Promise(resolve => setImmediate(resolve));
+  fetch.invalidate('game'); release(); await first;
+  await assert.rejects(fetch('game'), /offline/);
+  assert.equal(calls, 1);
+});

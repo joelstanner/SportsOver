@@ -80,11 +80,49 @@ test('unsupported hosts, protocols, credentials and PDGA paths are rejected befo
   const f = fixture();
   for (const url of ['http://127.0.0.1/api/v1/test', nba.replace('https:', 'http:'), nba.replace('espn.com', 'espn.com.evil.example'),
     nba.replace('https://', 'https://user:password@'), nba.replace('.com/', '.com:8443/'),
-    'https://www.pdga.com/user/login', 'https://lichess.org/api/broadcast/top']) {
+    'https://www.pdga.com/user/login', 'https://lichess.org/account/preferences',
+    'https://lichess.org/api/broadcast/invalid', 'https://lichess.org/broadcast/Tour1234/teams']) {
     assert.equal(serviceFor(url), null);
     await assert.rejects(f.fetch(url), /Unsupported/);
   }
   assert.equal(f.calls.length, 0);
+});
+
+test('chess API and standings share pacing, join duplicate requests, and let other providers progress', async () => {
+  const f = fixture();
+  const metadata = 'https://lichess.org/api/broadcast/Tour1234';
+  const round = 'https://lichess.org/api/broadcast/-/-/Round001';
+  const players = 'https://lichess.org/broadcast/Tour1234/players';
+  let release, started;
+  const active = new Promise(resolve => { started = resolve; });
+  f.respond(url => url === metadata ? new Promise(resolve => { release = resolve; started(); }) : Response.json({}));
+  const first = f.fetch(metadata); await active;
+  const duplicate = f.fetch(metadata);
+  const background = f.fetch(round);
+  const display = f.fetch(players, { priority: 'display' });
+  await f.fetch(mlb);
+  assert.deepEqual(f.calls.map(call => call.url), [metadata, mlb]);
+  release(Response.json({ tour: 'shared' }));
+  const results = await Promise.all([first, duplicate, background, display]);
+  assert.deepEqual(await results[0].json(), { tour: 'shared' });
+  assert.deepEqual(await results[1].json(), { tour: 'shared' });
+  const chessCalls = f.calls.filter(call => serviceFor(call.url) === 'lichess');
+  assert.deepEqual(chessCalls.map(call => call.url), [metadata, players, round]);
+  for (let index = 1; index < chessCalls.length; index++) assert.ok(chessCalls[index].time - chessCalls[index - 1].time >= 1500);
+  assert.equal(serviceFor('https://lichess.org/api/broadcast/top'), 'lichess');
+});
+
+test('a chess API rate limit pauses standings and other chess windows through the shared deadline', async () => {
+  const f = fixture();
+  const metadata = 'https://lichess.org/api/broadcast/Tour1234';
+  const standings = 'https://lichess.org/broadcast/Tour1234/players';
+  f.respond(() => new Response('', { status: 429, headers: { 'Retry-After': '120' } }));
+  await f.fetch(metadata);
+  assert.equal((await f.fetch(standings, { priority: 'display' })).status, 429);
+  assert.equal(f.calls.length, 1);
+  f.time(120000); f.respond(() => Response.json([]));
+  assert.equal((await f.fetch(standings)).status, 200);
+  assert.equal(f.calls.length, 2);
 });
 
 test('display requests pass queued discovery without interrupting the running request or starving discovery', async () => {

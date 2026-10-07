@@ -5,6 +5,10 @@
   const validId = value => /^[a-zA-Z0-9]{8}$/.test(String(value || ""));
   const numeric = value => typeof value === "number" && Number.isFinite(value) ? value : null;
   const completed = round => Boolean(round.finishedAt || round.finished);
+  function tournamentState(metadata) {
+    return metadata?.rounds?.length && metadata.rounds.every(completed) ? "final"
+      : metadata?.rounds?.some(round => round.ongoing && !completed(round)) ? "live" : "pregame";
+  }
   const isWatchEnabled = watch => global.SportsOverlay.config.isWatchEnabled(watch);
   const watchId = watch => global.SportsOverlay.config.watchId(watch);
   const iso = value => numeric(value) !== null && !Number.isNaN(new Date(value).getTime()) ? new Date(value).toISOString() : null;
@@ -97,7 +101,7 @@
         view: event.details.view,
         discoveryTier: event.details.discoveryTier, discoveryReason: event.details.discoveryReason } };
   }
-  function createSession() { return { tail: Promise.resolve(), requests: new Map(), lastGood: new Map(), cooldownUntil: 0, directory: [], directoryAt: -Infinity, directoryPending: null, watches: new Map(), finishedAt: new Map(), activeWatches: new Set(), secondTier: new Map(), secondTierAt: -Infinity }; }
+  function createSession() { return { tail: Promise.resolve(), requests: new Map(), lastGood: new Map(), roundResults: new Map(), cooldownUntil: 0, directory: [], directoryAt: -Infinity, directoryPending: null, watches: new Map(), finishedAt: new Map(), activeWatches: new Set(), secondTier: new Map(), secondTierAt: -Infinity }; }
   function secondTierStrength(event) {
     const players = [...new Map(event.competitors.map(player => [player.id, player])).values()];
     const grandmasters = players.filter(player => ["GM", "WGM"].includes(player.title)).length;
@@ -120,15 +124,21 @@
   const defaultSession = createSession();
   function createClient({ watches = [], autoFollow = false, discoverSecondTier = false, session = defaultSession, fetchImpl = global.fetch.bind(global), now = Date.now, requestTimeoutMs = 8000 } = {}) {
     // Lichess asks clients to serialize requests and pause for a minute on 429.
-    async function get(path) {
-      const url = path.startsWith("/broadcast/")
+    function requestUrl(path) {
+      return path.startsWith("/broadcast/")
         ? global.location?.protocol === "sportsover:" ? `/api/chess${path}` : `https://lichess.org${path}`
         : BASE + path;
-      if (session.requests.has(url)) return session.requests.get(url);
+    }
+    async function get(path, options = {}) {
+      const url = requestUrl(path);
+      if (session.requests.has(url)) {
+        if (options.priority === 'display') fetchImpl.prioritize?.(url);
+        return session.requests.get(url);
+      }
       const pending = session.tail.catch(() => {}).then(async () => {
         if (now() < session.cooldownUntil) throw Error("Lichess rate limit · waiting before retrying");
         try {
-          const response = await fetchImpl(url, { signal: AbortSignal.timeout(requestTimeoutMs), requestTimeoutMs });
+          const response = await fetchImpl(url, { ...options, signal: AbortSignal.timeout(requestTimeoutMs), requestTimeoutMs });
           if (!response.ok) {
             const error = Error(`Lichess returned HTTP ${response.status}`); error.status = response.status;
             const retry = response.headers?.get("Retry-After");
@@ -147,21 +157,21 @@
       session.tail = pending; session.requests.set(url, pending);
       try { return await pending; } finally { session.requests.delete(url); }
     }
-    async function getMetadata(id) {
+    async function getMetadata(id, options) {
       if (!validId(id)) throw Error("Enter a valid Lichess broadcast ID");
-      const value = await get(id);
+      const value = await get(id, options);
       if (!validId(value.tour?.id) || !Array.isArray(value.rounds)) throw Error("Public Lichess tournament not found");
       return value;
     }
-    async function getRound(id) {
+    async function getRound(id, options) {
       if (!validId(id)) throw Error("Invalid Lichess round ID");
-      const value = await get(`-/-/${id}`);
+      const value = await get(`-/-/${id}`, options);
       if (!validId(value.round?.id) || !validId(value.tour?.id) || !Array.isArray(value.games)) throw Error("Lichess round unavailable");
       return value;
     }
-    async function getStandings(id) {
+    async function getStandings(id, options) {
       if (!validId(id)) throw Error("Invalid Lichess tournament ID");
-      return normalizeStandings(await get(`/broadcast/${id}/players`));
+      return normalizeStandings(await get(`/broadcast/${id}/players`, options));
     }
     async function resolve(value) {
       const ref = reference(value);
@@ -191,19 +201,35 @@
       if (session.directoryError) throw session.directoryError;
       return session.directory;
     }
-    async function loadEvent(watch, inspectedEvent) {
+    async function loadEvent(watch, inspectedEvent, options = {}) {
       const id = watchId(watch);
       try {
-        let event = inspectedEvent && structuredClone(inspectedEvent);
+        let event = inspectedEvent && structuredClone(inspectedEvent), metadata;
         if (!event) {
-          const metadata = await getMetadata(watch.tournamentId);
+          metadata = await getMetadata(watch.tournamentId, options);
           const round = selectRound(metadata, watch.roundId, now());
           if (!round) { const error = Error("Selected chess round is unavailable"); error.missingRound = true; throw error; }
-          event = normalizeEvent(metadata, await getRound(round.id), watch, now());
+          event = normalizeEvent(metadata, await getRound(round.id, options), watch, now());
+        }
+        const roundFinished = event.state === "final" || event.detailedState === "Round complete"
+          || (event.details.games.length > 0 && event.details.games.every(game => game.state === "final"));
+        const results = JSON.stringify([roundFinished, event.details.games.filter(game => game.state === "final")
+          .map(game => [game.id, game.result]).sort((a, b) => a[0].localeCompare(b[0]))]);
+        const previous = session.roundResults.get(event.details.roundId);
+        if (previous !== results) {
+          fetchImpl.invalidate?.(requestUrl(`/broadcast/${watch.tournamentId}/players`));
+          // A completed current round must advance without waiting for metadata TTL.
+          if (!watch.roundId && roundFinished && metadata?.rounds.some(round => !completed(round))) {
+            fetchImpl.invalidate?.(requestUrl(watch.tournamentId));
+          }
+          session.roundResults.set(event.details.roundId, results);
+          if (session.roundResults.size > 128) session.roundResults.delete(session.roundResults.keys().next().value);
         }
         Object.assign(event.details, { discoveryReason: watch.discoveryReason });
         if (watch.view !== "player" || !event.competitors.some(person => person.id === watch.playerId)) {
-          try { event.details.standings = await getStandings(watch.tournamentId); }
+          // Tournament standings can still change after a watched older round ends.
+          const cacheState = event.state === "live" ? "live" : metadata ? tournamentState(metadata) : event.state;
+          try { event.details.standings = await getStandings(watch.tournamentId, { ...options, cacheState }); }
           catch (_) {
             event.details.standings = session.lastGood.get(id)?.details.standings || [];
             event.details.standingsUnavailable = true;
@@ -218,11 +244,11 @@
         return { ...cached, details: { ...cached.details, stale: true, automatic: watch.automatic === true, discoveryTier: watch.discoveryTier, discoveryReason: watch.discoveryReason, view: watch.view, playerId: watch.playerId, leaderboardSize: watch.leaderboardSize === 3 ? 3 : 10 } };
       }
     }
-    async function getEvent(id) {
+    async function getEvent(id, _featuredTeamId, options) {
       const manual = watches.find(item => watchId(item) === id);
       const watch = manual || (autoFollow && session.watches.get(id)) || (discoverSecondTier && session.secondTier.get(id));
       if (!isWatchEnabled(watch)) throw Error("Chess tournament is not watched");
-      return loadEvent(watch);
+      return loadEvent(watch, undefined, options);
     }
     async function secondTierEvents() {
       if (!discoverSecondTier) return { events: [], failures: 0 };
@@ -285,11 +311,13 @@
           }
         }
       }
-      session.watches.clear();
-      for (const tour of candidates) {
+      // Publish all identities before awaiting feeds: banner updates run during discovery.
+      session.watches = new Map(candidates.map(tour => {
         const watch = { tournamentId: tour.id, roundId: "", name: tour.name, enabled: true, view: "overview", playerId: "", automatic: true };
-        const id = watchId(watch), saved = watches.find(item => watchId(item) === id);
-        session.watches.set(id, watch);
+        return [watchId(watch), watch];
+      }));
+      for (const [id, watch] of session.watches) {
+        const saved = watches.find(item => watchId(item) === id);
         if (saved && !isWatchEnabled(saved)) continue;
         try {
           const event = manualById.get(id) || await loadEvent(watch);
@@ -338,11 +366,15 @@
   }
   const provider = { createClient, createSession, eliteEvents, reference, watchId, selectRound, gameState, roundState, normalizeEvent, normalizePlayer, normalizeStandings, toCandidate,
     failureBackoff: true, requestIntervalMs: 1000, rateLimitCooldownMs: 60_000,
-    refreshIntervalMs: url => String(url).endsWith("/top") ? DIRECTORY_INTERVAL : undefined,
+    refreshIntervalMs(url, state, configuredDelay = 0) {
+      if (String(url).endsWith("/top")) return DIRECTORY_INTERVAL;
+      if (String(url).includes("/-/-/")) return undefined;
+      return Math.max(configuredDelay, state === "final" ? DIRECTORY_INTERVAL : state === "live" ? 120_000 : 300_000);
+    },
     refreshState(payload, url) {
       if (String(url).endsWith("/players")) return "live";
       if (String(url).includes("/-/-/")) return payload ? roundState(payload) : "pregame";
-      if (payload?.rounds) return payload.rounds.length && payload.rounds.every(completed) ? "final" : "live";
+      if (payload?.rounds) return tournamentState(payload);
       return "pregame";
     } };
   global.SportsOverlay.lichess = provider;

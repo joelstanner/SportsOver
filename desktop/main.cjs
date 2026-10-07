@@ -14,6 +14,7 @@ const { gameRemoveMenuItem } = require('./banner-game-remove.cjs');
 const { browseFeedback } = require('./banner-navigation.cjs');
 const { createHandler, ORIGIN } = require('./protocol.cjs');
 const { createUpdateChecker } = require('./updates.cjs');
+const { installHttpLogging } = require('./http-logging.cjs');
 const updateChecker = createUpdateChecker({ app, dialog, shell, onStateChange: menus,
   readLastCheck: () => store?.value.desktop.lastUpdateCheck,
   saveLastCheck: timestamp => store.desktop({ lastUpdateCheck: timestamp }),
@@ -331,6 +332,7 @@ else {
     if (!argv.includes('--background') && banner) recover();
   });
   app.whenReady().then(async () => {
+    installHttpLogging(session.defaultSession);
     store = new Store(app.getPath('userData'));
     // Source launches have no bundle icon. Load custom artwork when supplied.
     const appIconPath = path.join(__dirname, 'assets', 'SportsOver.png');

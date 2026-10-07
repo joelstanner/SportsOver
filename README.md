@@ -161,6 +161,33 @@ npm ci
 npm start
 ```
 
+Terminal launches print Electron/Chromium runtime diagnostics and renderer console
+messages, along with the app's existing output. `[SportsOver HTTP]` entries show
+outgoing feed and renderer HTTP requests, response status, elapsed time, redirects,
+and network errors. Restart the app after updating to enable these logs.
+
+To save a timestamped diagnostic log while keeping terminal output visible, run:
+
+```sh
+npm start -- --debug
+```
+
+The source launcher prints the file path and creates a separate
+`logs/sportsover-debug-<timestamp>-<pid>.log` for each run. Each line includes a UTC
+timestamp and its output stream. The file captures HTTP entries, renderer console
+messages, and native diagnostics; it also flushes partial lines when the app exits.
+Logs are ignored by Git. The flag can be combined with `--background`.
+
+Chess round feeds follow your configured refresh intervals: the defaults are 30
+seconds live, 60 seconds pregame, five minutes idle, and fifteen minutes finished.
+Saved timing preferences are preserved. Tournament metadata
+and standings use a minimum two-minute cache during play, five minutes before play
+or during breaks, and fifteen minutes after completion. Longer configured
+intervals are respected. New board results expire standings early, and a completed
+round expires metadata so the next round can be selected promptly. Desktop chess
+requests share one paced queue and rate-limit cooldown across windows, with
+displayed-game requests taking priority over background discovery.
+
 For startup with only the engine, OBS server, and tray, use
 `npm start -- --background` (or pass `--background` to the packaged executable).
 Open Settings or show the banner from the tray when needed.

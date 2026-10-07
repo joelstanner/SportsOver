@@ -38,7 +38,7 @@
       Object.freeze({ sport: "chess", enabled: true, favorites: Object.freeze([]), events: Object.freeze([]), autoFollow: true, discoverSecondTier: true }),
     ]),
     providerRefreshSeconds: Object.freeze(Object.fromEntries(SPORT_CATALOG.map(({ key: sport }) =>
-      [sport, Object.freeze({ live: ["disc-golf", "chess"].includes(sport) ? 30 : 12, pregame: 60, idle: 300, final: 300 })]))),
+      [sport, Object.freeze({ live: ["disc-golf", "chess"].includes(sport) ? 30 : 12, pregame: 60, idle: 300, final: sport === "chess" ? 900 : 300 })]))),
     automaticWatchLists: Object.freeze({ "disc-golf": Object.freeze([]), chess: Object.freeze([]) }),
     rotationSeconds: 10,
     timeZone: "local",

@@ -8,15 +8,18 @@
     const network = global.SportsOverlay.providerNetwork
       || (typeof require === 'function' ? require('./provider-network.js') : null);
     const fetchProvider = network?.create({ fetchImpl, now: wallNow, sleep });
+    const upstreamUrl = url => global.location?.protocol === 'sportsover:' && /^\/api\/chess\/broadcast\/[a-zA-Z0-9]{8}\/players$/.test(url)
+      ? `https://lichess.org${url.slice('/api/chess'.length)}` : url;
     function dispatch(url, options) {
-      if (network?.serviceFor(url)) {
+      const target = upstreamUrl(url);
+      if (network?.serviceFor(target)) {
         // The desktop process owns one queue across engine, Settings and catalogs.
         if (global.location?.protocol === 'sportsover:') {
-          const query = new URLSearchParams({ url, timeout: String(options?.requestTimeoutMs || 8000),
+          const query = new URLSearchParams({ url: target, timeout: String(options?.requestTimeoutMs || 8000),
             priority: options?.priority === 'display' ? 'display' : 'background' });
           return fetchImpl(`/api/provider?${query}`);
         }
-        return fetchProvider(url, options);
+        return fetchProvider(target, options);
       }
       return fetchImpl(url, options?.requestTimeoutMs
         ? { ...options, signal: AbortSignal.timeout(options.requestTimeoutMs) } : options);
@@ -65,15 +68,20 @@
           record = { sport, state: provider.refreshState?.(null, url) || "idle", completed: -Infinity, response: null, error: null, pending: null, failures: 0 };
           records.set(key, record);
         }
+        // Array feeds such as standings need the state of their parent event.
+        const cacheState = ["live", "interrupted", "pregame", "final"].includes(options?.cacheState) ? options.cacheState : undefined;
+        if (cacheState) record.state = cacheState;
         if (record.pending && options?.priority === 'display') fetchCached.prioritize(url);
         const failureBackoff = typeof provider.failureBackoff === "function"
           ? provider.failureBackoff(record.state) : provider.failureBackoff;
-        const baseDelay = provider.refreshIntervalMs?.(url) ?? interval(sport, record.state);
+        const configuredDelay = interval(sport, record.state);
+        const baseDelay = provider.refreshIntervalMs?.(url, record.state, configuredDelay) ?? configuredDelay;
         const delay = record.error?.status === 429 ? Math.max(record.error.retryAfterMs || 60000, Math.min(300000, 30000 * 2 ** (record.failures - 1))) : failureBackoff && record.failures
           ? Math.max(baseDelay, Math.min(300000, 30000 * 2 ** (record.failures - 1)))
           : baseDelay;
         const due = record.error?.retryAt ? wallNow() >= record.error.retryAt : now() >= record.completed + delay;
         if (!record.pending && due) {
+          const invalidated = record.invalidated || 0;
           record.priority = options?.priority;
           record.pending = networkRequest(sport, provider, async () => {
             const response = await dispatch(url, { ...options, priority: record.priority });
@@ -92,7 +100,8 @@
             const cached = new Response(await response.arrayBuffer(), {
               status: response.status, statusText: response.statusText, headers: response.headers,
             });
-            const state = classify(await cached.clone().json(), provider, url);
+            const payload = await cached.clone().json();
+            const state = cacheState || classify(payload, provider, url);
             record.state = ["live", "interrupted", "pregame", "final"].includes(state) ? state : "idle";
             record.response = cached;
             record.error = null;
@@ -101,7 +110,7 @@
             record.error = error;
             record.failures++;
           }).finally(() => {
-            record.completed = now();
+            record.completed = record.error || (record.invalidated || 0) === invalidated ? now() : -Infinity;
             record.pending = null;
             // Retire old schedules/games, never in-flight or still throttled records.
             for (const [oldKey, old] of records) {
@@ -113,14 +122,23 @@
         if (record.error) throw record.error;
         return record.response.clone();
       };
+      // A known result or round transition can expire healthy data immediately.
+      // Errors and provider cooldowns retain their existing retry deadlines.
+      fetchCached.invalidate = url => {
+        const record = records.get(`${sport}:${url}`);
+        if (!record || record.error) return;
+        record.invalidated = (record.invalidated || 0) + 1;
+        record.completed = -Infinity;
+      };
       fetchCached.prioritize = url => {
         const record = records.get(`${sport}:${url}`);
-        if (!record?.pending || record.priority === 'display' || !network?.serviceFor(url)) return;
+        const target = upstreamUrl(url);
+        if (!record?.pending || record.priority === 'display' || !network?.serviceFor(target)) return;
         record.priority = 'display';
         if (global.location?.protocol === 'sportsover:') {
           // A local queue operation only; it never initiates an upstream request.
-          fetchImpl(`/api/provider/priority?${new URLSearchParams({ url })}`, { method: 'POST' }).catch(() => {});
-        } else fetchProvider.prioritize(url);
+          fetchImpl(`/api/provider/priority?${new URLSearchParams({ url: target })}`, { method: 'POST' }).catch(() => {});
+        } else fetchProvider.prioritize(target);
       };
       // An explicit retry may retry failed feeds immediately. Successful feeds
       // keep their cached interval; provider-level rate-limit cooldowns remain.

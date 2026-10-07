@@ -1,6 +1,7 @@
 const { spawn } = require('node:child_process');
 const { StringDecoder } = require('node:string_decoder');
 const path = require('node:path');
+const { createDebugLog } = require('./debug-log.cjs');
 
 const certificateNote = '[SportsOver] Chromium skipped this unreadable macOS Keychain certificate and is continuing. No action is needed if scores load normally.\n';
 
@@ -24,10 +25,20 @@ function createStderrReporter(write) {
 }
 
 if (require.main === module) {
-  const child = spawn(require('electron'), ['.', ...process.argv.slice(2)], {
-    cwd: path.resolve(__dirname, '..'), stdio: ['inherit', 'inherit', 'pipe'],
+  const args = process.argv.slice(2);
+  let debugLog;
+  if (args.includes('--debug')) {
+    try {
+      debugLog = createDebugLog();
+      console.log(`[SportsOver debug] Log file: ${debugLog.file}`);
+      debugLog.write('startup', `SportsOver ${require('../package.json').version} · PID ${process.pid}\n`);
+    } catch (error) { console.error(`[SportsOver debug] Could not create log file: ${error.message}. Terminal logging remains enabled.`); }
+  }
+  const child = spawn(require('electron'), ['--enable-logging', '.', ...args.filter(arg => arg !== '--debug')], {
+    cwd: path.resolve(__dirname, '..'), stdio: ['inherit', debugLog ? 'pipe' : 'inherit', 'pipe'],
   });
-  child.stderr.on('data', createStderrReporter(chunk => process.stderr.write(chunk)));
+  child.stdout?.on('data', chunk => { process.stdout.write(chunk); debugLog?.write('stdout', chunk); });
+  child.stderr.on('data', createStderrReporter(chunk => { process.stderr.write(chunk); debugLog?.write('stderr', chunk); }));
   const interrupt = () => child.kill('SIGINT');
   const terminate = () => child.kill('SIGTERM');
   process.on('SIGINT', interrupt);
@@ -36,8 +47,10 @@ if (require.main === module) {
   child.on('close', (code, signal) => {
     process.removeListener('SIGINT', interrupt);
     process.removeListener('SIGTERM', terminate);
+    debugLog?.close();
     process.exitCode = code ?? (signal === 'SIGINT' ? 130 : signal === 'SIGTERM' ? 143 : 1);
   });
+  process.on('exit', () => debugLog?.close());
 }
 
 module.exports = { createStderrReporter, certificateNote };

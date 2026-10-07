@@ -37,6 +37,26 @@ test('all live elite watches are discovered, saved-list descriptors are provided
  assert.ok(result.availableEntries.every(entry=>entry.candidate.raw.automatic));
  assert.ok(!f.calls.some(url=>url.pathname.includes('Norm0001')));assert.equal(f.maximum(),1);
 });
+
+test('a displayed automatic watch remains readable while discovery awaits an earlier tournament', async () => {
+ const f = fixture(); f.add('Best0001'); f.add('High0001', 4);
+ let pause = false, release, started;
+ const entered = new Promise(resolve => { started = resolve; });
+ const client = lichess.createClient({ ...f.options, fetchImpl: async url => {
+  if (pause && url.endsWith('/Best0001')) {
+   pause = false; started(); await new Promise(resolve => { release = resolve; });
+  }
+  return f.options.fetchImpl(url);
+ } });
+ await client.discover(); pause = true;
+ const discovery = client.discover(); await entered;
+ const displayed = client.getEvent('High0001:auto').catch(error => error);
+ release();
+ const [result, event] = await Promise.all([discovery, displayed]);
+ assert.ok(!(event instanceof Error), event.message);
+ assert.equal(event.state, 'live');
+ assert.deepEqual(ids(result), ['Best0001:auto', 'High0001:auto']);
+});
 test('repeating discovery finds newly posted elite tournaments every fifteen minutes, including across client recreation',async()=>{
  const f=fixture();f.add('Best0001');await f.client.discover();
  f.add('Best0002');

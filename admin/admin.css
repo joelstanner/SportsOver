@@ -149,7 +149,7 @@ select, input { border: 1px solid var(--line); border-radius: 8px; padding: 10px
 .live-mode-button:disabled { border-color: #70582f; color: #b6a383; background: #211d16; box-shadow: none; }
 .live-mode-button:focus-visible { outline: 2px solid #ffd47a; outline-offset: 3px; }
 .live-mode-indicator { width: 7px; height: 7px; flex: 0 0 7px; border: 1px solid currentColor; border-radius: 50%; }
-.live-mode-button[aria-pressed="true"] .live-mode-indicator { background: currentColor; }
+.live-mode-button[aria-pressed="true"] .live-mode-indicator { border-color: #e53935; background: #e53935; }
 .live-mode-state { border: 1px solid currentColor; border-radius: 4px; padding: 2px 4px; font-size: 0.56rem; letter-spacing: 0.06em; line-height: 1; }
 .live-mode-state::after { content: "OFF"; }
 .live-mode-button[aria-pressed="true"] .live-mode-state::after { content: "ON"; }

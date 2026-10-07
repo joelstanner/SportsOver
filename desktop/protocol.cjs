@@ -32,8 +32,8 @@ function createHandler({ root, dataRoot, store, refresh, engine, fetchImpl = glo
         if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
         // Lichess's website standings route does not allow our custom renderer
         // origin. Fetch only this fixed public endpoint in the desktop process.
-        const response = await fetchImpl(`https://lichess.org/broadcast/${chessPlayers[1]}/players`, {
-          signal: AbortSignal.timeout(8000), redirect: 'error', credentials: 'omit',
+        const response = await fetchProvider(`https://lichess.org/broadcast/${chessPlayers[1]}/players`, {
+          requestTimeoutMs: 8000, priority: url.searchParams.get('priority') === 'display' ? 'display' : 'background',
         });
         if (!response.ok) {
           const failure = json({ error: `Lichess returned HTTP ${response.status}` }, response.status);

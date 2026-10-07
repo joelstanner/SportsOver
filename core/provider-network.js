@@ -13,6 +13,8 @@
     if (url.hostname === 'statsapi.mlb.com' && /^\/api\/v1(?:\.1)?\//.test(url.pathname)) return 'mlb';
     if (url.hostname === 'www.pdga.com' && (url.pathname === '/api/v1/feat/current-events/tournaments'
       || /^\/apps\/tournament\/live-api\/live_results_fetch_(?:event|round)$/.test(url.pathname))) return 'pdga';
+    if (url.hostname === 'lichess.org' && (/^\/api\/broadcast\/(?:top|[a-zA-Z0-9]{8}|-\/-\/[a-zA-Z0-9]{8})$/.test(url.pathname)
+      || /^\/broadcast\/[a-zA-Z0-9]{8}\/players$/.test(url.pathname))) return 'lichess';
     return null;
   }
   function retryAfterMs(value, now) {
@@ -31,7 +33,7 @@
       if (now() < gate.until) return limitedResponse();
       const timeout = Number.isFinite(options.requestTimeoutMs) && options.requestTimeoutMs > 0
         ? Math.min(30000, Math.round(options.requestTimeoutMs)) : 8000;
-      gate.next = now() + REQUEST_INTERVAL_MS;
+      gate.next = now() + (service === 'lichess' ? 1500 : REQUEST_INTERVAL_MS);
       // Start the timeout at dispatch, after waiting for other requests.
       // Do not forward cookies, caller headers, methods or redirects.
       const response = await fetchImpl(url, {
@@ -73,15 +75,23 @@
     async function fetchProvider(url, options = {}) {
       const service = serviceFor(url);
       if (!service) throw new Error('Unsupported score provider URL');
-      if (!services.has(service)) services.set(service, { queue: [], running: false, displayStreak: 0, next: 0, until: 0, failures: 0 });
+      if (!services.has(service)) services.set(service, { queue: [], pending: new Map(), running: false, displayStreak: 0, next: 0, until: 0, failures: 0 });
       const gate = services.get(service);
-      return new Promise((resolve, reject) => {
+      if (service === 'lichess' && gate.pending.has(url)) {
+        if (options.priority === 'display') fetchProvider.prioritize(url);
+        return (await gate.pending.get(url)).clone();
+      }
+      const pending = new Promise((resolve, reject) => {
         gate.queue.push({ url, options, priority: options.priority, resolve, reject });
         if (!gate.running) {
           gate.running = true;
           Promise.resolve().then(() => drain(service, gate));
         }
       });
+      if (service !== 'lichess') return pending;
+      gate.pending.set(url, pending);
+      try { return (await pending).clone(); }
+      finally { gate.pending.delete(url); }
     }
     // Promote an already queued cache miss without adding another request.
     fetchProvider.prioritize = url => {

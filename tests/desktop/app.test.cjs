@@ -11,6 +11,7 @@ test('clean desktop startup seeds Nebraska and Seattle watched teams, then prese
   const directory = temp(t), store = new Store(directory);
   const initial = store.snapshot();
   assert.equal(initial.initialized, true);
+  assert.equal(initial.config.providerRefreshSeconds.chess.final, 900, 'fresh installations refresh finished chess rounds every fifteen minutes');
   assert.deepEqual(initial.config.sports.flatMap(group => group.favorites.map(team => team.teamKey)),
     ['mlb:136', 'nfl:sea', 'ncaaf:158', 'ncaaf:264', 'nhl:sea', 'mls:9726', 'nba:det', 'ncaam:158', 'ncaam:264', 'ncaam:2547']);
   assert.ok(initial.config.sports.every(group => group.enabled && group.favorites.every(team => team.enabled)));
@@ -98,12 +99,13 @@ test('catalog refresh writes only app data and retains a previous catalog on emp
 
 test('desktop standings bridge permits only public tournament players and preserves upstream errors', async () => {
   const calls = [];
-  let status = 200;
+  let status = 200, time = 0;
   const players = [{ name: 'Leader', score: 1, rank: 1, played: 1 }];
-  const handler = createHandler({ root: path.resolve(__dirname, '../..'), fetchImpl: async (url, options) => {
+  const fetchProvider = require('../../core/provider-network.js').create({ now: () => time, sleep: async ms => { time += ms; }, fetchImpl: async (url, options) => {
     calls.push({ url, options });
     return Response.json(status === 200 ? players : { error: 'Try later' }, { status, headers: status === 429 ? { 'Retry-After': '120' } : {} });
-  }});
+  } });
+  const handler = createHandler({ root: path.resolve(__dirname, '../..'), fetchProvider });
   const url = 'sportsover://app/api/chess/broadcast/Tour1234/players';
   const response = await handler(new Request(url));
   assert.deepEqual(await response.json(), players);
@@ -118,6 +120,7 @@ test('desktop standings bridge permits only public tournament players and preser
   assert.equal((await handler(new Request(url.replace('/players', '/teams')))).status, 404);
   assert.equal(calls.length, 1);
   for (status of [429, 503]) {
+    time += 120000;
     const failure = await handler(new Request(url));
     assert.equal(failure.status, status);
     assert.equal(failure.headers.get('Retry-After'), status === 429 ? '120' : null);
@@ -147,6 +150,20 @@ test('desktop provider bridge shares throttles across windows and catalogs and r
   assert.equal((await handler(request('https://127.0.0.1/private'))).status, 400);
   assert.equal((await handler(new Request(request(nba).url, { method: 'POST' }))).status, 405);
   assert.equal((await handler({ url: request(nba).url, method: 'GET', initiatorOrigin: 'https://evil.example' })).status, 403);
+  assert.equal(calls, 1);
+});
+
+test('desktop chess standings and broadcast API share one rate-limit cooldown', async () => {
+  let time = 0, calls = 0;
+  const fetchProvider = require('../../core/provider-network.js').create({ now: () => time, sleep: async ms => { time += ms; }, fetchImpl: async () => {
+    calls++; return new Response('', { status: 429, headers: { 'Retry-After': '120' } });
+  } });
+  const handler = createHandler({ fetchProvider });
+  const query = new URLSearchParams({ url: 'https://lichess.org/api/broadcast/Tour1234' });
+  assert.equal((await handler(new Request(`sportsover://app/api/provider?${query}`))).status, 429);
+  const response = await handler(new Request('sportsover://app/api/chess/broadcast/Tour1234/players'));
+  assert.equal(response.status, 429);
+  assert.equal(response.headers.get('Retry-After'), '120');
   assert.equal(calls, 1);
 });
 
