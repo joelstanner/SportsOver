@@ -87,6 +87,7 @@
   let gameDiscoveryTimer = null;
   let refreshingGames = false;
   const localLiveMode = global.SportsOverlay.liveMode.create();
+  const pendingLiveAdditions = new Map();
   let engineRotationState = null;
   let engineLoading = Boolean(global.sportsDesktop);
   let bannerGameKey = null;
@@ -769,8 +770,10 @@
     if (refreshingGames && !manual) return;
     if (global.sportsDesktop) {
       clearTimeout(gameDiscoveryTimer);
+      const revision = ++gameDiscoveryRevision;
       try {
         const state = manual ? (await global.sportsDesktop.action('refresh')).engine : await global.sportsDesktop.engine();
+        if (revision !== gameDiscoveryRevision) return;
         if (manual && !state?.ready) throw Error('Sports engine is not ready. Try again.');
         engineLoading = !state.ready || state.discoveryComplete === false;
         if (!engineLoading) {
@@ -792,7 +795,9 @@
       } catch (error) {
         document.querySelector('#rotation-status').textContent = error.message;
         if (manual) throw error;
-      } finally { gameDiscoveryTimer = setTimeout(discoverRotationGames, 2000); }
+      } finally {
+        if (revision === gameDiscoveryRevision) gameDiscoveryTimer = setTimeout(discoverRotationGames, 2000);
+      }
       return;
     }
     clearTimeout(gameDiscoveryTimer);
@@ -987,8 +992,26 @@
   }
 
   function currentRotationQueue() {
-    if (global.sportsDesktop && liveModeActive()) return (engineRotationState?.liveQueue || engineRotationState?.queue || [])
-      .filter(isSportEnabled).filter(entry => !workingConfig.excludedGames.includes(rotationEntryKey(entry)));
+    if (global.sportsDesktop && liveModeActive()) {
+      // Settings saves and engine publications arrive independently. Keep a new
+      // live card visible until the engine has applied the same selection.
+      const acknowledged = engineRotationState?.rotationSelection
+        && Object.entries(engineRotationState.rotationSelection)
+          .every(([key, value]) => JSON.stringify(value) === JSON.stringify(workingConfig[key]));
+      for (const key of pendingLiveAdditions.keys()) {
+        if (acknowledged || !workingConfig.includedGames.includes(key)
+          || workingConfig.excludedGames.includes(key)) pendingLiveAdditions.delete(key);
+      }
+      const entries = new Map((engineRotationState?.liveQueue || engineRotationState?.queue || [])
+        .map(entry => [rotationEntryKey(entry), entry]));
+      for (const [key, entry] of pendingLiveAdditions) if (!entries.has(key)) entries.set(key, entry);
+      const order = new Map(workingConfig.rotationOrder.map((key, index) => [key, index]));
+      return [...entries.values()].filter(isSportEnabled)
+        .filter(entry => !workingConfig.excludedGames.includes(rotationEntryKey(entry)))
+        .sort((a, b) => (order.get(rotationEntryKey(a)) ?? Number.MAX_SAFE_INTEGER)
+          - (order.get(rotationEntryKey(b)) ?? Number.MAX_SAFE_INTEGER));
+    }
+    pendingLiveAdditions.clear();
     return localLiveMode.update({
       rotation: normalRotationQueue(), available: availableRotationEntries,
       excludedKeys: workingConfig.excludedGames,
@@ -1262,6 +1285,10 @@
     workingConfig.excludedGames = workingConfig.excludedGames.filter(item => item !== key);
     workingConfig.rotationOrder = [...currentKeys.filter(item => item !== key), key];
     if (workingConfig.rotationMode === "automatic") workingConfig.rotationMode = "hybrid";
+    if (global.sportsDesktop && liveModeActive() && global.SportsOverlay.liveMode.isLive(entry)) {
+      pendingLiveAdditions.set(key, entry);
+    }
+    renderRotationControls();
     autoApplyLiveChange(previousLiveConfig, `${gameName(entry.candidate)} added to live banner`);
   }
 

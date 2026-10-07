@@ -84,6 +84,8 @@ window.SportsOverlay.engine = {
     queue: rotationQueue.map(publicEntry),
     normalQueue: normalRotationQueue.map(publicEntry),
     liveQueue: liveRotationQueue.map(publicEntry),
+    rotationSelection: Object.fromEntries(["rotationMode", "includedGames", "excludedGames", "rotationOrder"]
+      .map(key => [key, savedConfig[key]])),
     liveMode: { active: liveMode.isActive(), canActivate: normalRotationQueue.some(window.SportsOverlay.liveMode.isLive) },
     currentGameKey: entryKey(overrideEntry || rotationQueue[currentIndex]) || null,
     renderedGameKey,
@@ -356,15 +358,7 @@ async function applyDiscoveries(discoveries, generation, partial = false) {
   );
   const previousKey = entryKey(rotationQueue[currentIndex]);
   const previousState = rotationQueue[currentIndex]?.candidate.state;
-  normalRotationQueue = window.SportsOverlay.selection.applyRotationControls({
-    automaticEntries: automaticRotationEntries,
-    availableEntries,
-    mode: savedConfig.rotationMode,
-    includedGameKeys: savedConfig.includedGames,
-    excludedGameKeys: savedConfig.excludedGames,
-    rotationOrder: savedConfig.rotationOrder,
-    keyOf: entryKey,
-  });
+  rebuildNormalRotationQueue(availableEntries);
   rotationQueue = selectedRotationQueue(availableEntries);
   currentIndex = Math.max(0, rotationQueue.findIndex(entry => entryKey(entry) === previousKey));
   const changedGame = Boolean(previousKey && entryKey(rotationQueue[currentIndex]) !== previousKey);
@@ -388,6 +382,18 @@ async function applyDiscoveries(discoveries, generation, partial = false) {
   if (!rotationTimer || changedGame || tournamentStateChanged || rotationQueue.length < 2) {
     scheduleRotation({ preserveElapsed: !changedGame && !tournamentStateChanged });
   }
+}
+
+function rebuildNormalRotationQueue(availableEntries) {
+  normalRotationQueue = window.SportsOverlay.selection.applyRotationControls({
+    automaticEntries: automaticRotationEntries,
+    availableEntries,
+    mode: savedConfig.rotationMode,
+    includedGameKeys: savedConfig.includedGames,
+    excludedGameKeys: savedConfig.excludedGames,
+    rotationOrder: savedConfig.rotationOrder,
+    keyOf: entryKey,
+  });
 }
 
 function selectedRotationQueue(availableEntries) {
@@ -710,6 +716,8 @@ if (!staticPreview) {
     const bannerFilterChanged = savedConfig.bannerSportFilter !== snapshot.config.bannerSportFilter;
     const teamsChanged = JSON.stringify(savedConfig.sports) !== JSON.stringify(snapshot.config.sports)
       || JSON.stringify(savedConfig.includedGames) !== JSON.stringify(snapshot.config.includedGames);
+    const rotationControlsChanged = ["rotationMode", "includedGames", "excludedGames", "rotationOrder"]
+      .some(key => JSON.stringify(savedConfig[key]) !== JSON.stringify(snapshot.config[key]));
     const pdgaSelectionChanged = savedConfig.liveModeFinalMinutes !== snapshot.config.liveModeFinalMinutes
       || JSON.stringify(savedConfig.excludedGames) !== JSON.stringify(snapshot.config.excludedGames);
     const selectionChanged = pdgaSelectionChanged || savedConfig.fallbackMode !== snapshot.config.fallbackMode || savedConfig.displayMode !== snapshot.config.displayMode;
@@ -756,11 +764,13 @@ if (!staticPreview) {
       }
     }
     requestRevision += 1;
-    if (locksChanged || bannerFilterChanged) {
+    if (rotationControlsChanged || locksChanged || bannerFilterChanged) {
       // A slow discovery must not leave the old queue or hover-delayed advance
-      // active after locks or the sport filter change. Use games already received.
+      // active after rotation controls change. Use games already received.
       const previousKey = entryKey(rotationQueue[currentIndex]);
-      rotationQueue = selectedRotationQueue((cachedDiscoveries || []).flatMap(result => result.availableEntries));
+      const availableEntries = (cachedDiscoveries || []).flatMap(result => result.availableEntries);
+      if (rotationControlsChanged) rebuildNormalRotationQueue(availableEntries);
+      rotationQueue = selectedRotationQueue(availableEntries);
       currentIndex = Math.max(0, rotationQueue.findIndex(entry => entryKey(entry) === previousKey));
       clearTimeout(pollTimer); pollGeneration++;
       scheduleRotation();

@@ -469,6 +469,28 @@ test('Live mode ignores locks on upcoming games, then restores the full rotation
   assert.deepEqual(app.config, saved);
 });
 
+test('adding an available live game updates Live mode while discovery is pending', async () => {
+  const app = await fixture([], 3);
+  await app.save({ rotationMode: 'curated', includedGames: ['baseball:1'] });
+  await app.engine.setLiveMode(true); await app.flush();
+  app.time(12000); app.hold();
+  const refresh = app.engine.refresh(); await app.flush();
+  assert.equal(app.engine.describe().discoveryPending, true);
+  await app.save({ includedGames: ['baseball:1', 'baseball:2'], rotationOrder: ['baseball:1', 'baseball:2'] });
+  const ids = key => Array.from(app.engine.describe()[key], entry => entry.candidate.id);
+  assert.deepEqual(ids('normalQueue'), ['1', '2']);
+  assert.deepEqual(ids('liveQueue'), ['1', '2']);
+  assert.deepEqual(ids('queue'), ['1', '2']);
+  assert.deepEqual(Array.from(app.engine.describe().rotationSelection.includedGames), ['baseball:1', 'baseball:2']);
+  assert.equal(app.engine.describe().liveMode.active, true);
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:1');
+  assert.equal(app.mount.dataset.rotationActive, 'true');
+  await app.release(); await refresh; await app.flush();
+  assert.deepEqual(ids('queue'), ['1', '2']);
+  await app.engine.next();
+  assert.equal(app.engine.describe().currentGameKey, 'baseball:2');
+});
+
 test('Live mode honors single and multiple locks while keeping all eligible games available to controls', async () => {
   const app = await fixture([], 3);
   await app.engine.setLiveMode(true); await app.flush();
