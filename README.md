@@ -117,6 +117,24 @@ The server is local to your computer. If port 17843 is occupied, free it and
 restart SportsOver. For temporary game-selection commands, copy the integration
 token from Settings and follow the [local API guide](desktop/API.md).
 
+## OBS size presets
+
+The passive output supports Small (360 × 76), Normal (647 × 137), and Large
+(2304 × 280) through `core/obs-layouts.css`. Large presents one game across a
+wide strip; Small prioritizes scores and phase and omits play/odds footers.
+Normal retains the current card. Game selection and rotation remain shared.
+Desktop banner sizing is unchanged.
+
+For an older installed build, paste the contents of `core/obs-layouts.css`
+into the source Custom CSS field and use those browser viewport dimensions.
+Recreate/reload the source after changing its viewport; some OBS embedded-browser
+versions retain the previous viewport during a resize. The coordinated AntlerJones
+OBS controller uses a size-specific `?obs-layout=small|normal|large` URL to reload
+the browser at its new dimensions. This query does not change the selected game.
+
+Mocked browser checks: `npm run test:obs`. Set `BROWSER_EXE` to an installed
+Chrome/Edge executable when the default Chrome channel is unavailable.
+
 ## Settings and recovery
 
 Saved settings and refreshed team catalogs live in:

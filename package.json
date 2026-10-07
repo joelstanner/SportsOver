@@ -1,6 +1,6 @@
 {
   "name": "sportsover",
-  "version": "0.34.2",
+  "version": "0.35.0",
   "private": true,
   "description": "Standalone desktop sports banner",
   "main": "desktop/main.cjs",
@@ -22,7 +22,8 @@
     "test:pdga:live": "node scripts/pdga-desktop-smoke.cjs",
     "build:win": "node scripts/build-win.cjs",
     "dist:win": "node scripts/dist-win.cjs",
-    "verify:package": "node scripts/verify-package.cjs"
+    "verify:package": "node scripts/verify-package.cjs",
+    "test:obs": "node tests/browser/obs-layouts.cjs"
   },
   "devDependencies": {
     "electron": "44.5.0",

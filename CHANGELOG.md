@@ -3,6 +3,19 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.35.0 — 2026-10-06
+
+### Added
+
+- Three responsive OBS browser layouts: Small (360 × 76), Normal (647 × 137),
+  and Large (2304 × 280). Small emphasizes scores; Large uses a wide top strip
+  with room for sport-specific details.
+- A mocked browser check covering seven sports, three game states, and all
+  three OBS sizes.
+
+Set the OBS browser source viewport to the chosen dimensions. The shared game
+selection and rotation remain unchanged; desktop banner layouts are preserved.
+
 ## 0.34.2 — 2026-10-06
 
 ### Changed
