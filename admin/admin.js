@@ -924,7 +924,7 @@
       .filter(entry => !queuedKeys.has(rotationEntryKey(entry)))
       .filter(entry => isCurrentGame(entry.candidate))
       .filter(entry => !sportFilter || entry.candidate.sport === sportFilter)
-      .filter(entry => !search || gameName(entry.candidate).toLowerCase().includes(search))
+      .filter(entry => !search || `${gameName(entry.candidate)} ${gameTournament(entry.candidate)}`.toLowerCase().includes(search))
       .sort((a, b) => gameStateRank(a.candidate.state) - gameStateRank(b.candidate.state)
         || new Date(a.candidate.startTime || 0) - new Date(b.candidate.startTime || 0));
     if (!available.length) appendRotationEmpty(availableList, engineLoading && !availableRotationEntries.length ? "Loading games…" : sportFilter === "disc-golf" && !search
@@ -1044,17 +1044,17 @@
     }
     renderGameLogos(card.querySelector(".game-logos"), entry.candidate);
     const name = card.querySelector(".game-name");
-    card.classList.toggle("is-player-card", entry.candidate.sport === "disc-golf" && entry.candidate.raw?.view === "player");
+    card.classList.toggle("is-player-card", ["chess", "disc-golf"].includes(entry.candidate.sport) && entry.candidate.raw?.view === "player");
     name.textContent = gameName(entry.candidate);
     if (card.classList.contains("is-player-card")) {
       const tournament = document.createElement("span");
       tournament.className = "game-tournament";
-      tournament.textContent = [entry.candidate.raw.name, entry.candidate.raw.division].filter(Boolean).join(" · ");
+      tournament.textContent = gameTournament(entry.candidate);
       name.after(tournament);
     }
     name.addEventListener("pointerenter", () => {
-      if (name.scrollWidth > name.clientWidth) name.title = entry.candidate.sport === "disc-golf" && entry.candidate.raw?.view === "player"
-        ? [name.textContent, entry.candidate.raw.fullName || entry.candidate.raw.name, entry.candidate.raw.division].filter(Boolean).join(" · ")
+      if (name.scrollWidth > name.clientWidth) name.title = card.classList.contains("is-player-card")
+        ? [name.textContent, entry.candidate.raw.fullName || entry.candidate.raw.name, entry.candidate.raw.division || entry.candidate.raw.roundName].filter(Boolean).join(" · ")
         : entry.candidate.raw?.fullName || name.textContent;
       else name.removeAttribute("title");
     });
@@ -1137,11 +1137,11 @@
   }
 
   function gameName(candidate) {
+    if (["chess", "disc-golf"].includes(candidate.sport) && candidate.raw?.view === "player") return candidate.raw.bannerLabel;
     if (candidate.sport === "chess") return `${candidate.raw?.name || "Chess tournament"} · ${candidate.raw?.roundName || "Round"}${candidate.raw?.bannerLabel ? ` · ${candidate.raw.bannerLabel}` : ""}`;
     if (candidate.sport === "disc-golf") {
       const tournament = `${candidate.raw?.name || "PDGA tournament"} · ${candidate.raw?.division || ""}`;
-      return candidate.raw?.view === "player" ? candidate.raw.bannerLabel
-        : `${tournament}${candidate.raw?.bannerLabel ? ` · ${candidate.raw.bannerLabel}` : ""}`;
+      return `${tournament}${candidate.raw?.bannerLabel ? ` · ${candidate.raw.bannerLabel}` : ""}`;
     }
     if (candidate.sport === "baseball") {
       const teams = candidate.raw?.teams;
@@ -1153,6 +1153,12 @@
     const ordered = away && home ? [away, home] : competitors;
     const names = ordered.map(competitor => competitor.team?.shortDisplayName || competitor.team?.displayName || competitor.team?.name).filter(Boolean);
     return names.join(" at ") || candidate.raw?.shortName || candidate.raw?.name || `Game ${candidate.id}`;
+  }
+
+  function gameTournament(candidate) {
+    if (candidate.sport === "chess") return [candidate.raw?.name, candidate.raw?.roundName].filter(Boolean).join(" · ");
+    if (candidate.sport === "disc-golf") return [candidate.raw?.name, candidate.raw?.division].filter(Boolean).join(" · ");
+    return "";
   }
 
   function gameMeta(candidate) {

@@ -15,6 +15,18 @@ test('tournament candidates describe live matchups and switch back to standings 
   assert.equal(api.toCandidate(event).raw.bannerLabel, 'Live round matchups');
   assert.equal(api.toCandidate({...event,state:'interrupted'}).raw.bannerLabel, 'Top 10 players');
 });
+test('player candidates identify their view and resolve names from pairings or standings', () => {
+  const event = api.normalizeEvent(metadata, payload, { ...watch, view: 'player', playerId: 'fide:123' });
+  assert.equal(api.toCandidate(event).raw.view, 'player');
+  assert.equal(api.toCandidate(event).raw.bannerLabel, 'Player · White');
+  event.competitors = [];
+  event.details.standings = [{ id: 'fide:123', name: 'White' }];
+  assert.equal(api.toCandidate(event).raw.bannerLabel, 'Player · White', 'a player sitting out the current round retains their name');
+  event.details.standings = [];
+  assert.equal(api.toCandidate(event).raw.bannerLabel, 'Player · Player unavailable');
+  event.details.playerId = '';
+  assert.equal(api.toCandidate(event).raw.bannerLabel, 'Player · Choose a player');
+});
 test("chess reference parsing distinguishes tournaments, rounds, and game links", () => {
   assert.deepEqual(api.reference("Tour1234"), { id: "Tour1234", round: false });
   assert.deepEqual(api.reference("https://lichess.org/broadcast/masters/Tour1234"), { id: "Tour1234", round: false });

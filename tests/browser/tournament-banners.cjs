@@ -5,9 +5,10 @@ require('../../core/config.js');
 const config = global.SportsOverlay.config.normalizeConfig();
 config.sports.forEach(g=>{g.enabled=['chess','disc-golf'].includes(g.sport);if(g.autoFollow!==undefined)g.autoFollow=false;});
 const metadata = require('../sports/disc-golf/event.json'), scores = require('../sports/disc-golf/round.json');
-const chessMeta={tour:{id:'Tour1234',name:'Masters Invitational'},rounds:[{id:'Round001',name:'Round 1',ongoing:true}]};
-const chessRound={tour:chessMeta.tour,round:chessMeta.rounds[0],games:[{id:'Game0001',players:[{name:'Leader',fideId:123,clock:6000},{name:'Opponent',fideId:456,clock:12000}],lastMove:''}]};
-const standings=Array.from({length:12},(_,i)=>({name:i?'Player '+(i+1):'Leader',fideId:123+i,rank:i+1,score:7-i/2,played:8}));
+const chessMeta={tour:{id:'Tour1234',name:'Masters Invitational with a long tournament name and presenting sponsor'},rounds:[{id:'Round001',name:'Round 1',ongoing:true}]};
+const chessPlayerName='Leader with a long individual player name';
+const chessRound={tour:chessMeta.tour,round:chessMeta.rounds[0],games:[{id:'Game0001',players:[{name:chessPlayerName,fideId:123,clock:6000},{name:'Opponent',fideId:456,clock:12000}],lastMove:''}]};
+const standings=Array.from({length:12},(_,i)=>({name:i?'Player '+(i+1):chessPlayerName,fideId:123+i,rank:i+1,score:7-i/2,played:8}));
 (async()=>{
  const browser=await chromium.launch({headless:true,channel:process.env.PLAYWRIGHT_CHANNEL||'chrome'});
  try {
@@ -66,6 +67,40 @@ const standings=Array.from({length:12},(_,i)=>({name:i?'Player '+(i+1):'Leader',
     await page.locator(`#rotation-queue [data-game-key="${key}"]`).waitFor();
    }
   }
+  // Player names remain visible in both lists, including narrow windows.
+  for(const sport of ['chess','disc-golf']){
+   const watch=saved.sports.find(g=>g.sport===sport).events.find(w=>w.view==='player');
+   const key=`${sport}:${global.SportsOverlay.config.watchId(watch)}`;
+   const expectedName=sport==='chess'?chessPlayerName:'Kevin Jones';
+   const expectedTournament=sport==='chess'?`${chessMeta.tour.name} · Round 1`:`${metadata.SimpleName} · MPO`;
+   for(const list of ['rotation-queue','available-games']){
+    const card=page.locator(`#${list} [data-game-key="${key}"]`);
+    await card.waitFor();
+    assert.equal(await card.locator('.game-name').innerText(),`Player · ${expectedName}`);
+    assert.equal(await card.locator('.game-tournament').innerText(),expectedTournament);
+    for(const width of [1120,480,320]){
+     await page.setViewportSize({width,height:900});
+     assert.equal(await card.locator('.game-name').evaluate(el=>getComputedStyle(el).whiteSpace),'normal');
+     assert.equal(await card.locator('.game-name').evaluate(el=>el.scrollWidth<=el.clientWidth+1 && el.scrollHeight<=el.clientHeight+1),true,`${sport} player name must not be clipped in ${list} at ${width}px`);
+    }
+    await page.setViewportSize({width:1120,height:900});
+    if(list==='rotation-queue') await card.locator('.remove-game').click();
+    else {
+     await page.locator('#game-search').fill(expectedName);
+     await card.waitFor();
+     await page.locator('#game-search').fill(sport==='chess'?'Masters Invitational':metadata.SimpleName);
+     await card.waitFor();
+     await page.locator('#game-search').fill('');
+     await card.locator('.add-game').click();
+     await page.locator(`#rotation-queue [data-game-key="${key}"]`).waitFor();
+    }
+   }
+  }
+  // Restore the original automatic selections before testing sport filters.
+  await page.evaluate(c=>window.SportsOverlay.config.saveConfig(c),saved);
+  await page.reload();
+  await page.getByRole('button',{name:'Live control',exact:true}).click();
+  await page.waitForFunction(()=>document.querySelectorAll('#rotation-queue .game-card').length===4);
   // List filters stay independent and never change the saved banner rotation.
   const beforeFilters=await page.evaluate(()=>localStorage.getItem('sports-overlay.config.v1'));
   await page.locator('#available-sport-filter').selectOption('disc-golf');
@@ -142,7 +177,7 @@ const standings=Array.from({length:12},(_,i)=>({name:i?'Player '+(i+1):'Leader',
     await banner.locator(`.${prefix}-entry`).nth(9).waitFor({state:'attached'});
     assert.equal(await banner.locator(`.${prefix}-entry`).count(),10);
     const box=await banner.locator('#sports-overlay').boundingBox();assert.equal(box.height,88);assert.equal(box.width,460);
-    if(sport==='chess'){assert.equal(await banner.locator('.chess-entry').first().innerText(),'1\nLeader\n8\n7');}
+    if(sport==='chess'){assert.equal(await banner.locator('.chess-entry').first().innerText(),`1\n${chessPlayerName}\n8\n7`);}
     const track=banner.locator('.scorebug-vertical-track');
     await track.evaluate(el=>{el.getAnimations()[0].currentTime=parseFloat(el.style.getPropertyValue('--vertical-duration'))*900;});
     const transform=await track.evaluate(el=>getComputedStyle(el).transform);assert.notEqual(transform,'none');

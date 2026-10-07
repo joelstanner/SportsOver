@@ -87,11 +87,14 @@
         roundUrl: `https://lichess.org/broadcast/-/-/${round.id}`, lastPlay: "" } });
   }
   function toCandidate(event) {
+    const player = event.details.view === "player"
+      ? [...event.competitors, ...(event.details.standings || [])].find(player => player.id === event.details.playerId) : null;
     return { id: event.id, sport: "chess", competitionType: "individual", state: event.state, startTime: event.startTime,
       teamKeys: [], competitorKeys: event.competitors.map(player => player.id),
       raw: { name: event.details.name, bannerLabel: event.details.view === "player"
-        ? `Player · ${event.competitors.find(player => (player.pdgaNumber || player.id) === event.details.playerId)?.name || "Choose a player"}`
+        ? `Player · ${player?.name || (event.details.playerId ? "Player unavailable" : "Choose a player")}`
         : event.state === "live" && event.details.games.length ? "Live round matchups" : `Top ${event.details.leaderboardSize} players`, roundName: event.details.roundName, stale: event.details.stale, automatic: event.details.automatic, detailedState: event.detailedState,
+        view: event.details.view,
         discoveryTier: event.details.discoveryTier, discoveryReason: event.details.discoveryReason } };
   }
   function createSession() { return { tail: Promise.resolve(), requests: new Map(), lastGood: new Map(), cooldownUntil: 0, directory: [], directoryAt: -Infinity, directoryPending: null, watches: new Map(), finishedAt: new Map(), activeWatches: new Set(), secondTier: new Map(), secondTierAt: -Infinity }; }
