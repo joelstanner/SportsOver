@@ -88,7 +88,7 @@
         const failureBackoff = typeof provider.failureBackoff === "function"
           ? provider.failureBackoff(record.state) : provider.failureBackoff;
         const configuredDelay = interval(sport, record.state);
-        const feedDelay = provider.refreshIntervalMs?.(url, record.state, configuredDelay) ?? configuredDelay;
+        const feedDelay = provider.refreshIntervalMs?.(url, record.state, configuredDelay, record.error) ?? configuredDelay;
         // Cache healthy schedules longer without delaying recovery from errors.
         const baseDelay = Math.max(feedDelay, record.error ? 0 : scheduleInterval(url));
         const delay = record.error?.status === 429 ? Math.max(record.error.retryAfterMs || 60000, Math.min(300000, 30000 * 2 ** (record.failures - 1))) : failureBackoff && record.failures

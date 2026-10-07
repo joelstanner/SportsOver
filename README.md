@@ -196,6 +196,14 @@ same game. Schedule changes outside the current league scoreboard can take up to
 15 minutes to appear at default settings; failed requests retain normal retry and
 rate-limit recovery timing.
 
+PDGA tournament metadata uses a minimum two-minute cache during play, five minutes
+before play or between rounds, and fifteen minutes once every listed division is
+confirmed finished. Longer configured intervals are respected. Round score feeds
+keep their configured cadence. A newly completed intermediate round expires
+metadata early to check for the next round; if that round is not posted yet,
+subsequent checks follow the metadata interval. Failed metadata requests keep
+normal retry and rate-limit recovery timing.
+
 For startup with only the engine, OBS server, and tray, use
 `npm start -- --background` (or pass `--background` to the packaged executable).
 Open Settings or show the banner from the tray when needed.

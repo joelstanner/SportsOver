@@ -29,6 +29,35 @@ losses, and avoid matching these favorites against each other. When renaming a
 fixture team, update its ID, abbreviation, and logo as well so it cannot retain
 another team's identity. This rule applies to synthetic data, not real feeds.
 
+## API caching and request optimization
+
+- Cache team schedules and tournament metadata separately from live score feeds.
+  A longer metadata or schedule cache must not slow current scores or game-state
+  transitions. Classify feeds by their purpose: MLB's daily league `/schedule`
+  endpoint carries live scores and must retain scoreboard refresh behavior.
+- Prefer fresh league scoreboard data over cached team schedule data for the same
+  game in discovery, available-game cards, and automatic rotation.
+- When a round completes, expire metadata early where needed to discover the next
+  round. Remember that completion so rereading the same finished round does not
+  repeatedly invalidate the cache. Preserve configured round-score refresh timing.
+- Preserve longer user-configured refresh intervals, failure retry/backoff timing,
+  and provider rate-limit cooldowns. Healthy-data cache minimums must not delay
+  failure recovery; manual retries and invalidation must not bypass cooldowns.
+- Share cached and in-flight requests across clients using the existing refresh
+  and provider queue mechanisms. Keep displayed-game requests prioritized over
+  background discovery, and retain coordination across desktop windows.
+- Do not infer tournament completion from a single finished division or round.
+  Use confirmed completion evidence for the relevant tournament scope; unknown or
+  unavailable feeds are not evidence of completion.
+- Verify cache changes with focused tests for score freshness, state and round
+  transitions, shared requests, and failure/rate-limit recovery. Measure request
+  reductions using comparable debug-log windows, separating endpoint families,
+  startup bursts, browser-cache hits, and changes in watched resources or states.
+  Repeated URLs alone do not prove identical response bodies.
+
+Keep exact cache durations and user-facing behavior in README.md. Keep measured
+request counts and reductions in analysis reports rather than these instructions.
+
 ## Version bumps
 
 After completing a change that warrants a version bump, ask the user whether to

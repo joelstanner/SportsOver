@@ -234,17 +234,18 @@ test('upcoming PDGA failures keep routine checks and recover automatically into 
     assert.equal(discovery.availableEntries[0].candidate.raw.stale,false);
     assert.equal(discovery.failures,0);
     assert.equal((await client.getEvent('90002:MPO')).competitors[0].teeTime,'09:00');
-    assert.equal(calls.metadata,1+now/60000);
+    assert.equal(calls.metadata,now < 300000 ? 1 : 2);
+    if (now < 300000) assert.equal(calls.round,1+now/60000);
   }
-  // A metadata failure prevents another round request; cached callers don't
-  // bypass the routine cadence. Successful refresh then detects live play.
-  assert.equal(calls.round,1);
+  // Healthy cached metadata lets round checks continue through their own
+  // failures. Once metadata expires, its failure blocks the next round check.
+  assert.equal(calls.round,5);
   fail=false; started=true;
   const live = await client.getEvent('90002:MPO');
   assert.equal(live.state,'live'); assert.equal(live.details.stale,false);
   now+=30000;
   await client.getEvent('90002:MPO');
-  assert.equal(calls.round,3);
+  assert.equal(calls.round,7);
 });
 
 test('a missing first score feed uses upcoming checks rather than live retries', async () => {

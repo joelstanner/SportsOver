@@ -93,9 +93,23 @@
         discoveryTier: event.details.discoveryTier, discoveryReason: event.details.discoveryReason } };
   }
   const DIRECTORY_INTERVAL = 15 * 60_000;
+  const metadataUrl = tournamentId => `${BASE}live_results_fetch_event?TournID=${tournamentId}`;
+  function metadataState(tournament) {
+    if (!tournament) return "pregame";
+    const states = tournament.metadata.Divisions.map(division => {
+      const observed = tournament.divisions.get(division.Division);
+      const latest = Math.max(1, number(division.LatestRound) || number(tournament.metadata.LatestRound) || 1);
+      return observed?.round === latest ? observed.state : "pregame";
+    });
+    if (states.includes("live")) return "live";
+    if (states.includes("interrupted")) return "interrupted";
+    // One completed division cannot prove that the whole tournament is final.
+    return states.length && states.every(state => state === "final") ? "final" : "pregame";
+  }
   function createSession() {
     return { directory: [], directoryAt: -Infinity, directoryPending: null,
-      selected: null, watches: new Map(), requests: new Map(), active: 0, waiting: [], secondTier: new Map(), secondTierAt: -Infinity };
+      selected: null, watches: new Map(), requests: new Map(), tournaments: new Map(), roundResults: new Map(),
+      active: 0, waiting: [], secondTier: new Map(), secondTierAt: -Infinity };
   }
   function proTourEvents(directory, now) {
     const day = 86400_000;
@@ -122,7 +136,8 @@
         if (!coordinated && session.active >= 3) await new Promise(resolve => session.waiting.push(resolve));
         else if (!coordinated) session.active++;
         try {
-          const response = await fetchImpl(url, { signal: AbortSignal.timeout(requestTimeoutMs), requestTimeoutMs, priority: requestOptions.priority });
+          const response = await fetchImpl(url, { signal: AbortSignal.timeout(requestTimeoutMs), requestTimeoutMs,
+            priority: requestOptions.priority, cacheState: requestOptions.cacheState });
           if (!response.ok) { const error = Error(`PDGA returned HTTP ${response.status}`); error.status = response.status; throw error; }
           return await response.json();
         } finally {
@@ -137,11 +152,15 @@
     }
     async function getMetadata(tournamentId, requestOptions = {}) {
       if (!/^[1-9]\d{0,8}$/.test(String(tournamentId))) throw Error("Enter a valid PDGA tournament ID");
-      const response = await get(`${BASE}live_results_fetch_event?TournID=${tournamentId}`, requestOptions);
+      const response = await get(metadataUrl(tournamentId), { ...requestOptions,
+        cacheState: metadataState(session.tournaments.get(String(tournamentId))) });
       if (!Array.isArray(response.data?.Divisions)) throw Error("PDGA tournament not found");
       if (response.data.ScoringFormat && response.data.ScoringFormat !== "S") {
         const error = Error("Only individual stroke-play PDGA events are supported"); error.unsupported = true; throw error;
       }
+      const previous = session.tournaments.get(String(tournamentId));
+      session.tournaments.set(String(tournamentId), { metadata: response.data, divisions: previous?.divisions || new Map() });
+      if (session.tournaments.size > 120) session.tournaments.delete(session.tournaments.keys().next().value);
       return response.data;
     }
     async function getRound(tournamentId, division, round, requestOptions = {}) {
@@ -172,6 +191,20 @@
           round = { scores: [], layouts: [] };
         }
         const event = normalizeEvent(metadata, { ...round, roundNumber }, watch);
+        const tournament = session.tournaments.get(String(watch.tournamentId));
+        tournament?.divisions.set(watch.division, { round: roundNumber, state: event.state });
+        const resultKey = `${watch.tournamentId}:${watch.division}:${roundNumber}`;
+        const completed = roundState(round.scores) === "final";
+        const previousResult = session.roundResults.get(resultKey);
+        // A finished intermediate round may already have a new round posted.
+        // Remember completion per round so a cached result does not repeatedly
+        // expire metadata when the next round has not been published yet.
+        const finalRound = number(metadata.FinalRound) || number(metadata.Rounds);
+        if (completed && previousResult !== true && (!finalRound || roundNumber < finalRound)) {
+          fetchImpl.invalidate?.(metadataUrl(watch.tournamentId));
+        }
+        session.roundResults.set(resultKey, completed);
+        if (session.roundResults.size > 128) session.roundResults.delete(session.roundResults.keys().next().value);
         lastGood.set(id, structuredClone(event));
         if (lastGood.size > 120) lastGood.delete(lastGood.keys().next().value);
         return event;
@@ -359,7 +392,11 @@
   }
 
   const provider = { createClient, createSession, proTourEvents, watchId,
-    refreshIntervalMs: url => String(url) === CURRENT ? DIRECTORY_INTERVAL : undefined, normalizeEvent, normalizePlayer, toCandidate, roundState,
+    refreshIntervalMs(url, state, configuredDelay = 0, error) {
+      if (String(url) === CURRENT) return DIRECTORY_INTERVAL;
+      if (!String(url).startsWith(`${BASE}live_results_fetch_event?`) || error) return undefined;
+      return Math.max(configuredDelay, state === "final" ? DIRECTORY_INTERVAL : state === "live" ? 120_000 : 300_000);
+    }, normalizeEvent, normalizePlayer, toCandidate, roundState,
     failureBackoff: state => state === "live",
     refreshState(payload, url) {
       if (String(url).includes("live_results_fetch_round")) return payload ? roundState(payload.data?.scores) : "pregame";
