@@ -3,6 +3,13 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.34.2 — 2026-10-06
+
+### Changed
+
+- Enlarge NFL and college football scores by 50% in the desktop banner.
+- Center hockey scores in the open space between team names and the clock.
+
 ## 0.34.1 — 2026-10-06
 
 ### Changed

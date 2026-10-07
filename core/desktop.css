@@ -3,9 +3,9 @@
 .desktop-banner img { -webkit-user-drag: none; }
 /* Scores gain 20% relative size at 75% and 40% at 50%; details stay visible. */
 .desktop-banner #sports-overlay .team__score { font-size: calc(1.3em * var(--desktop-score-emphasis, 1)); }
-.desktop-banner #sports-overlay .football-score { font-size: calc(1.2em * var(--desktop-score-emphasis, 1)); }
+.desktop-banner #sports-overlay .football-score { font-size: calc(1.8em * var(--desktop-score-emphasis, 1)); flex-shrink: 0; }
 .desktop-banner #sports-overlay .basketball-score { font-size: calc(1.22em * var(--desktop-score-emphasis, 1)) !important; }
-.desktop-banner #sports-overlay .hockey-score { font-size: calc(1.32em * var(--desktop-score-emphasis, 1)) !important; }
+.desktop-banner #sports-overlay .hockey-score { font-size: calc(1.32em * var(--desktop-score-emphasis, 1)) !important; margin-inline: auto; flex-shrink: 0; }
 .desktop-banner #sports-overlay .soccer-score { font-size: calc(1.32em * var(--desktop-score-emphasis, 1)) !important; }
 /* Keep all details visible while logos retain more size in smaller banners. */
 .desktop-banner #sports-overlay .team__logo { width: calc(28px * var(--desktop-logo-emphasis, 1)); height: calc(28px * var(--desktop-logo-emphasis, 1)); flex-basis: calc(28px * var(--desktop-logo-emphasis, 1)); }
