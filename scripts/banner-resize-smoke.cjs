@@ -35,7 +35,7 @@ module.exports = async ({ application, admin, banner }) => {
       assert.equal(afterMenu.y, beforeMenu.y);
     }
     await admin.evaluate(() => window.sportsDesktop.action('size', 1));
-    for (const [page, key, scale] of [[admin, 'ArrowUp', 0.9], [banner, 'ArrowDown', 1]]) {
+    for (const [page, key, scale] of [[admin, 'ArrowDown', 0.9], [banner, 'ArrowUp', 1]]) {
       const before = await bounds();
       await application.evaluate(({ BrowserWindow }) => {
         const win = BrowserWindow.getAllWindows().find(win => win.webContents.getURL().includes('display.html?desktop'));

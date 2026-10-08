@@ -49,11 +49,11 @@ module.exports = async ({ admin, banner, engine, application }) => {
   const waitForSize = scale => banner.waitForFunction(scale => innerWidth === Math.round(472 * scale) && Math.abs(innerHeight - Math.round(100 * scale)) <= 1, scale);
   await admin.evaluate(() => window.sportsDesktop.action('size', 1));
   assert.equal(await resizeKey(admin, 'ArrowUp'), true);
-  await waitForSize(0.9);
+  await waitForSize(1.1);
   assert.equal(await resizeKey(admin, 'ArrowDown'), true);
   await waitForSize(1);
   assert.equal(await resizeKey(banner, 'ArrowUp'), true);
-  await waitForSize(0.9);
+  await waitForSize(1.1);
   assert.equal(await resizeKey(banner, 'ArrowDown'), true);
   await waitForSize(1);
   assert.equal(await resizeKey(admin, 'ArrowUp', { ctrlKey: true }), false);
@@ -69,10 +69,10 @@ module.exports = async ({ admin, banner, engine, application }) => {
   await waitForSize(1);
   await admin.evaluate(() => window.sportsDesktop.action('unlock'));
   await admin.evaluate(() => window.sportsDesktop.action('size', 0.1));
-  await resizeKey(admin, 'ArrowUp');
+  await resizeKey(admin, 'ArrowDown');
   await waitForSize(0.1);
   await admin.evaluate(() => window.sportsDesktop.action('size', 3));
-  await resizeKey(admin, 'ArrowDown');
+  await resizeKey(admin, 'ArrowUp');
   await waitForSize(3);
   await admin.evaluate(() => window.sportsDesktop.action('size', 1));
   await waitForSize(1);
