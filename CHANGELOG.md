@@ -3,6 +3,13 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.38.1 — 2026-10-08
+
+### Fixed
+
+- Keep tied and multi-digit placings clear of player names on PDGA player
+  banners, including cards showing tee times.
+
 ## 0.38.0 — 2026-10-08
 
 ### Added
