@@ -360,6 +360,20 @@ test('changing locks while disabling a sport cannot restore its cached queue', a
   assert.equal(app.engine.describe().queue.length, 0);
 });
 
+test('betting visibility rerenders received scores immediately without changing selection or rotation timing', async () => {
+  const app = await fixture();
+  await app.advance(1000);
+  const calls = app.calls.length, renders = app.renders.length;
+  const queue = app.engine.describe().queue.map(entry => entry.candidate.id);
+  await app.save({showBettingInfo:false});
+  assert.ok(app.renders.length > renders);
+  assert.equal(app.renders.at(-1),'game/1');
+  assert.equal(app.calls.length,calls);
+  assert.deepEqual(app.engine.describe().queue.map(entry => entry.candidate.id),queue);
+  await app.advance(4000);
+  assert.equal(app.renders.at(-1),'game/2');
+});
+
 test("default timing changes immediately reschedule banner rotation", async () => {
   const app = await fixture();
   await app.advance(1000);

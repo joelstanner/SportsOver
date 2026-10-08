@@ -42,6 +42,7 @@
     automaticWatchLists: Object.freeze({ "disc-golf": Object.freeze([]), chess: Object.freeze([]) }),
     rotationSeconds: 10,
     timeZone: "local",
+    showBettingInfo: true,
     rotationMode: "automatic",
     bannerSportFilter: "",
     liveModeFinalMinutes: 20,
@@ -134,6 +135,7 @@
     return {
       version: 8,
       timeZone: normalizeTimeZone(source.timeZone),
+      showBettingInfo: source.showBettingInfo !== false,
       providerRefreshSeconds: normalizeProviderRefresh(source.providerRefreshSeconds),
       sports,
       automaticWatchLists: {

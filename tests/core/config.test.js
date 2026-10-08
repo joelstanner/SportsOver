@@ -26,6 +26,18 @@ function favoriteKeys(config, sport) {
   return config.sports.find(group => group.sport === sport).favorites.map(favorite => favorite.teamKey);
 }
 
+test('betting visibility defaults on for existing settings and persists explicit off', () => {
+  for (const value of [undefined, null, 'false', 0, true]) {
+    assert.equal(configApi.normalizeConfig({showBettingInfo:value}).showBettingInfo,true);
+  }
+  const storage = memoryStorage();
+  configApi.saveConfig({showBettingInfo:false},storage);
+  assert.equal(configApi.loadConfig(storage).showBettingInfo,false);
+  configApi.saveConfig({...configApi.loadConfig(storage),showBettingInfo:true},storage);
+  assert.equal(configApi.loadConfig(storage).showBettingInfo,true);
+  assert.equal(configApi.resetConfig(storage).showBettingInfo,true);
+});
+
 test('banner sport filters persist only supported, enabled sports and default off', () => {
   assert.equal(configApi.normalizeConfig().bannerSportFilter, '');
   assert.equal(configApi.normalizeConfig({ bannerSportFilter: 'chess' }).bannerSportFilter, 'chess');

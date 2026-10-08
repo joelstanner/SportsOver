@@ -154,6 +154,12 @@
     timeZonePicker.append(option);
   }
   timeZonePicker.addEventListener("change", readBehaviorFields);
+  document.querySelector("#show-betting-info").addEventListener("change", event => {
+    workingConfig.showBettingInfo = event.target.checked;
+    document.querySelector("#betting-info-state").textContent = workingConfig.showBettingInfo ? "On" : "Off";
+    renderRotationControls();
+    scheduleSettingsSave("showBettingInfo");
+  });
   document.querySelector("#display-mode").addEventListener("change", readBehaviorFields);
   document.querySelector("#fallback-mode").addEventListener("change", readBehaviorFields);
   document.querySelector("#rotation-mode").addEventListener("change", updateRotationControls);
@@ -522,6 +528,8 @@
       && configApi.findSport(group.sport)?.competitionType !== "individual");
     renderTeamPicker();
     timeZonePicker.value = workingConfig.timeZone;
+    document.querySelector("#show-betting-info").checked = workingConfig.showBettingInfo;
+    document.querySelector("#betting-info-state").textContent = workingConfig.showBettingInfo ? "On" : "Off";
     document.querySelector("#display-mode").value = workingConfig.displayMode;
     document.querySelector("#rotation-mode").value = workingConfig.rotationMode;
     document.querySelector("#fallback-mode").value = workingConfig.fallbackMode;
@@ -1136,7 +1144,7 @@
         teams: { away: { ...teams[0], abbreviation: teams[0].abbreviation || catalogTeam(candidate.sport, teams[0])?.abbreviation || teams[0].name },
           home: { ...teams[1], abbreviation: teams[1].abbreviation || catalogTeam(candidate.sport, teams[1])?.abbreviation || teams[1].name } },
         details: { odds, inPlay: (candidate.raw?.competitions?.[0]?.status ?? candidate.raw?.status)?.type?.state === "in" },
-      }, gameOddsTracker);
+      }, gameOddsTracker, () => workingConfig.showBettingInfo);
     }
     card.classList.toggle("is-final", entry.candidate.state === "final");
     if (entry.candidate.state === "final") {

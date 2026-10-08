@@ -5,8 +5,24 @@
   const query = new URLSearchParams(global.location.search);
   const hosted = global.location.pathname.startsWith("/sports/");
   const demo = query.has("demo") || query.has("scenario");
-  if (!hosted || demo) return;
+  if (!hosted) return;
   const cacheKey = "sports-overlay.shared-cache.v1";
+  if (demo) {
+    // Demo data stays local. Read the shared display preference from the same
+    // cache updated by Settings and the live engine, without starting requests.
+    global.SportsOverlay.config = Object.freeze({
+      ...local,
+      loadConfig: () => {
+        const config = local.loadConfig();
+        try {
+          const cached = JSON.parse(global.localStorage.getItem(cacheKey));
+          if (cached?.initialized && typeof cached.config?.showBettingInfo === "boolean") config.showBettingInfo = cached.config.showBettingInfo;
+        } catch (_) { /* Local preferences remain available. */ }
+        return config;
+      },
+    });
+    return;
+  }
   let state = null;
   let connected = false;
   let writing = false;

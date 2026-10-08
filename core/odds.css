@@ -15,6 +15,7 @@
 .sports-odds .sports-odds-label { color: #aebbc6; font-size: 8px; font-weight: 800; letter-spacing: .05em; }
 .sports-odds strong { color: #f7fbff; font-weight: 600; white-space: nowrap; }
 .sports-odds .is-near-even { color: #71efb3; font-weight: 800; }
+.sports-odds-hidden strong { color: #aebbc6; }
 
 /* Live play descriptions take the remaining footer space in compact banners.
    Show odds when the play row is absent; hockey has room for both. */

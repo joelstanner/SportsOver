@@ -50,6 +50,21 @@ test('independent browser storage receives committed state on next poll', async 
   assert.equal(obs.timers[0].delay, 1000);
 });
 
+test('hosted demos inherit betting visibility without shared requests or live selection changes', async () => {
+  const api = server();
+  api.fetch = async () => { throw Error('A demo must not start shared requests'); };
+  for (const search of ['?demo=pregame','?scenario=inspection']) {
+    const demo = client(api,{search,cache:{initialized:true,config:{showBettingInfo:false,timing:99,teams:['b']}}});
+    await demo.config.ready;
+    assert.equal(demo.shared,undefined);
+    assert.equal(demo.timers.length,0);
+    assert.equal(demo.config.loadConfig().showBettingInfo,false);
+    assert.equal(demo.config.loadConfig().timing,10);
+    demo.storage.set('sports-overlay.shared-cache.v1',JSON.stringify({initialized:true,config:{showBettingInfo:true}}));
+    assert.equal(demo.config.loadConfig().showBettingInfo,true);
+  }
+});
+
 test('conflicting write fails and does not destroy the supplied draft', async () => {
   const api = server(); const one = client(api); const two = client(api);
   await Promise.all([one.config.ready, two.config.ready]);

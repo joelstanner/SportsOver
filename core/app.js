@@ -714,6 +714,7 @@ if (!staticPreview) {
       || JSON.stringify(savedConfig.defaultGameDurations) !== JSON.stringify(snapshot.config.defaultGameDurations);
     const locksChanged = JSON.stringify(savedConfig.lockedGameKeys) !== JSON.stringify(snapshot.config.lockedGameKeys);
     const bannerFilterChanged = savedConfig.bannerSportFilter !== snapshot.config.bannerSportFilter;
+    const bettingDisplayChanged = savedConfig.showBettingInfo !== snapshot.config.showBettingInfo;
     const teamsChanged = JSON.stringify(savedConfig.sports) !== JSON.stringify(snapshot.config.sports)
       || JSON.stringify(savedConfig.includedGames) !== JSON.stringify(snapshot.config.includedGames);
     const rotationControlsChanged = ["rotationMode", "includedGames", "excludedGames", "rotationOrder"]
@@ -779,7 +780,10 @@ if (!staticPreview) {
       void renderCurrentGame({ fast: true }).then(() => {
         if (generation === rotationGeneration) schedulePoll();
       });
-    } else if (timingChanged) scheduleRotation();
+    } else {
+      if (timingChanged) scheduleRotation();
+      if (bettingDisplayChanged) void renderCurrentGame({ fast: true });
+    }
     discoverGames(teamsChanged || catalogChanged || selectionChanged);
   });
   window.addEventListener("storage", event => {

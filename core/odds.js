@@ -57,20 +57,28 @@
     };
   }
   const rows = createTracker();
+  const displayEnabled = () => global.SportsOverlay.config?.loadConfig()?.showBettingInfo !== false;
   const timers = new WeakMap();
   function clear(mount) {
     clearTimeout(timers.get(mount));
     timers.delete(mount);
     mount.querySelector('.sports-odds')?.remove();
   }
-  function render(mount, event, tracker = rows) {
+  function render(mount, event, tracker = rows, isEnabled = displayEnabled) {
     clear(mount);
     const values = tracker(event);
     if (values.length) {
       const section = mount.ownerDocument.createElement('section');
       section.className = 'sports-odds';
-      section.setAttribute('aria-label', 'Game odds');
-      for (const value of values) {
+      const enabled = isEnabled();
+      section.setAttribute('aria-label', enabled ? 'Game odds' : 'Betting information hidden');
+      if (!enabled) {
+        section.classList.add('sports-odds-hidden');
+        const text = mount.ownerDocument.createElement('strong');
+        text.textContent = 'Betting Info: Hidden';
+        section.append(text);
+      }
+      for (const value of enabled ? values : []) {
         const item = mount.ownerDocument.createElement('div');
         const label = mount.ownerDocument.createElement('span');
         const text = mount.ownerDocument.createElement('strong');
@@ -101,7 +109,7 @@
       }
       mount.append(section);
       // Retire pregame lines even between provider polls or during a fetch failure.
-      timers.set(mount, setTimeout(() => { if (mount.isConnected) render(mount, event, tracker); }, 1000));
+      timers.set(mount, setTimeout(() => { if (mount.isConnected) render(mount, event, tracker, isEnabled); }, 1000));
     }
   }
   global.SportsOverlay.odds = Object.freeze({ createTracker, render, clear, isNearEven, isCloseSpread, GRACE_MS, NEAR_EVEN_LIMIT, CLOSE_SPREAD_LIMITS });

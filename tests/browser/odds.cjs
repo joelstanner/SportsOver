@@ -8,12 +8,13 @@ const root = path.resolve(__dirname, '../..');
   const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
   try {
     const context = await browser.newContext();
+    context.setDefaultTimeout(15000);
     await context.route('**/*', async route => {
       const url = new URL(route.request().url());
       if (url.hostname === 'lichess.org') return route.fulfill({ json: { active: [] } });
       if (url.hostname === 'www.pdga.com') return route.fulfill({ json: [] });
       if (url.hostname !== 'overlay.test') return route.fulfill({ json: {} });
-      let relative = url.pathname.replace(/^\/sports\/(?=admin\/|core\/|sports\/|$|index\.html)/, '/').slice(1);
+      let relative = url.pathname.replace(/^\/sports\/(?=admin\/|core\/|sports\/|$|index\.html|display\.html)/, '/').slice(1);
       if (!relative || relative.endsWith('/')) relative += 'index.html';
       const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
       try { await route.fulfill({ body: await fs.readFile(path.join(root, relative)), contentType: types[path.extname(relative)] }); }
@@ -40,6 +41,24 @@ const root = path.resolve(__dirname, '../..');
       if (sport === 'soccer') assert.match(await page.locator('.sports-odds').innerText(), /DRAW \+320/);
       if (sport === 'hockey') assert.match(await page.locator('.sports-odds').innerText(), /PUCK LINE/);
       assert.ok(await page.locator('#sports-overlay').evaluate(el => el.scrollWidth <= el.clientWidth));
+      const originalOdds = await page.evaluate(() => testEvent.details.odds);
+      await page.evaluate(() => {
+        const api = window.SportsOverlay;
+        api.config.saveConfig({...api.config.loadConfig(),showBettingInfo:false});
+        testLayout.render(testEvent);
+      });
+      assert.equal(await page.locator('.sports-odds').innerText(),'Betting Info: Hidden');
+      assert.equal(await page.locator('.sports-odds [title], .sports-odds-price, .sports-odds-line, .sports-odds-label').count(),0);
+      await page.clock.runFor(1001);
+      assert.equal(await page.locator('.sports-odds').innerText(),'Betting Info: Hidden',`${sport}: timer cannot restore hidden odds`);
+      assert.deepEqual(await page.evaluate(() => testEvent.details.odds),originalOdds);
+      if (sport === 'football') await page.locator('#sports-overlay').screenshot({path:'/tmp/sportsover-betting-hidden.png'});
+      await page.evaluate(() => {
+        const api = window.SportsOverlay;
+        api.config.saveConfig({...api.config.loadConfig(),showBettingInfo:true});
+        testLayout.render(testEvent);
+      });
+      assert.match(await page.locator('.sports-odds').innerText(), /\+154/);
       await page.evaluate(() => {
         testEvent.details.odds.spread.prices = { pregame: { away: -120, home: -121 }, live: {} };
         testEvent.details.odds.moneyline.pregame.away = -100;
@@ -62,7 +81,7 @@ const root = path.resolve(__dirname, '../..');
       await page.screenshot({ path: `/tmp/sportsover-odds-${sport}.png` });
       await page.evaluate(() => { testEvent.state = 'live'; testLayout.render(testEvent); });
       assert.match(await page.locator('.sports-odds').innerText(), /PRE /);
-      await page.clock.runFor(300001);
+      await page.clock.fastForward(300001);
       assert.equal(await page.locator('.sports-odds').count(), 0, `${sport}: automatic expiry without refetch`);
       await page.evaluate(() => {
         testEvent.details.odds.moneyline.live.away = -220;
@@ -70,7 +89,7 @@ const root = path.resolve(__dirname, '../..');
       });
       assert.match(await page.locator('.sports-odds').innerText(), /LIVE ML/);
       assert.doesNotMatch(await page.locator('.sports-odds').innerText(), /PRE /);
-      await page.clock.runFor(300001);
+      await page.clock.fastForward(300001);
       assert.match(await page.locator('.sports-odds').innerText(), /-220/);
       await page.evaluate(() => { testEvent.state = 'final'; testLayout.render(testEvent); });
       assert.equal(await page.locator('.sports-odds').count(), 0);
@@ -141,6 +160,73 @@ const root = path.resolve(__dirname, '../..');
     await admin.locator('#rotation-queue [data-game-key="soccer:900005"]').waitFor();
     assert.equal(await admin.locator('#rotation-queue [data-game-key="soccer:900005"] .sports-odds').count(), 0);
     assert.ok(await admin.locator('#available-games .game-card').count() > 0, 'empty odds in a queued game do not blank Available Games');
+    const selectionBefore = await admin.evaluate(() => {
+      const api = window.SportsOverlay;
+      const games = [1,14].map((spread,index) => ({...structuredClone(cardGames[1]),id:`spotlight-${index}`,
+        competitions:[{...structuredClone(cardGames[1].competitions[0]),odds:[{spread}]}]}));
+      window.visibilityCandidates = games.map(game => api.selection.espnCandidate(game,'football'));
+      return {chosen:api.selection.chooseSpotlight(visibilityCandidates).id, scores:visibilityCandidates.map(api.selection.interestScore)};
+    });
+    assert.equal(selectionBefore.chosen,'spotlight-0');
+    await admin.getByRole('button',{name:'Settings',exact:true}).click();
+    const bettingToggle = admin.getByRole('switch',{name:'Show betting info'});
+    assert.equal(await bettingToggle.isChecked(),true);
+    await bettingToggle.uncheck();
+    await admin.waitForFunction(() => window.SportsOverlay.config.loadConfig().showBettingInfo === false);
+    assert.equal(await admin.locator('#betting-info-state').innerText(),'Off');
+    const cardOdds = await admin.locator('#rotation-queue .sports-odds, #available-games .sports-odds').allTextContents();
+    assert.ok(cardOdds.length > 0);
+    assert.ok(cardOdds.every(text => text === 'Betting Info: Hidden'));
+    assert.equal(await admin.locator('.sports-odds-price, .sports-odds-line, .sports-odds [title]').count(),0);
+    const hostedDemo = await context.newPage();
+    await hostedDemo.clock.resume();
+    hostedDemo.on('pageerror',error => errors.push(error.message));
+    await hostedDemo.goto('http://overlay.test/sports/index.html?sport=football&demo=pregame');
+    await hostedDemo.waitForFunction(() => window.SportsOverlay.engine && document.querySelector('.football-scorebug'));
+    await hostedDemo.evaluate(() => {
+      const api = window.SportsOverlay;
+      window.demoEvent = api.registry.getDemo('football','pregame');
+      demoEvent.details.odds = api.model.espnOdds({odds:[{details:'SEA -3.5',spread:3.5,awayTeamOdds:{moneyLine:-185},homeTeamOdds:{moneyLine:154}}]});
+      window.demoLayout = api.registry.getLayout('football').createLayout();
+      demoLayout.render(demoEvent);
+    });
+    assert.equal(await hostedDemo.locator('.sports-odds').innerText(),'Betting Info: Hidden','hosted demo follows shared display preference');
+    let outputSequence = 0;
+    let outputHtml = await hostedDemo.locator('#sports-overlay').evaluate(el => el.outerHTML);
+    await context.route('**/api/output**',async route => {
+      outputSequence++;
+      await route.fulfill({json:{html:outputHtml,sequence:outputSequence,heartbeatSequence:outputSequence,heartbeatAgeMs:0,
+        instance:'betting-visibility',ready:true,gameKey:'football:demo',updatedAt:Date.now()}});
+    });
+    const obs = await context.newPage();
+    await obs.clock.resume();
+    obs.on('pageerror',error => errors.push(error.message));
+    await obs.goto('http://overlay.test/sports/display.html');
+    await obs.waitForFunction(() => document.querySelector('.sports-odds')?.textContent === 'Betting Info: Hidden');
+    assert.equal(await obs.locator('.sports-odds-price, .sports-odds-line, .sports-odds [title]').count(),0);
+    await bettingToggle.check();
+    await admin.waitForFunction(() => window.SportsOverlay.config.loadConfig().showBettingInfo === true);
+    await hostedDemo.waitForFunction(() => document.querySelector('.sports-odds-price') !== null);
+    outputHtml = await hostedDemo.locator('#sports-overlay').evaluate(el => el.outerHTML);
+    await obs.waitForFunction(() => document.querySelector('.sports-odds-price') !== null);
+    assert.deepEqual(await admin.evaluate(() => ({chosen:SportsOverlay.selection.chooseSpotlight(visibilityCandidates).id,
+      scores:visibilityCandidates.map(SportsOverlay.selection.interestScore)})),selectionBefore);
+    await bettingToggle.uncheck();
+    await admin.waitForFunction(() => window.SportsOverlay.config.loadConfig().showBettingInfo === false);
+    const restartedAdmin = await context.newPage();
+    await restartedAdmin.clock.resume();
+    await restartedAdmin.goto('http://overlay.test/sports/admin/');
+    await restartedAdmin.waitForFunction(() => window.SportsOverlay.shared?.connected());
+    await restartedAdmin.getByRole('button',{name:'Settings',exact:true}).click();
+    assert.equal(await restartedAdmin.getByRole('switch',{name:'Show betting info'}).isChecked(),false,'off persists in reopened Settings');
+    await restartedAdmin.locator('#settings-panel .settings-grid').screenshot({path:'/tmp/sportsover-betting-toggle.png'});
+    await restartedAdmin.getByRole('switch',{name:'Show betting info'}).check();
+    await admin.waitForFunction(() => window.SportsOverlay.config.loadConfig().showBettingInfo === true);
+    await restartedAdmin.close();
+    await admin.getByRole('button',{name:'Live control',exact:true}).click();
+    await obs.close();
+    await hostedDemo.close();
+    await context.unroute('**/api/output**');
     await admin.setViewportSize({ width: 390, height: 844 });
     assert.ok(await admin.locator('#available-games').evaluate(el => el.scrollWidth <= el.clientWidth), 'odds cards fit a narrow settings window');
     await admin.locator('#available-games [data-game-key="hockey:900001"]').screenshot({ path: '/tmp/sportsover-available-odds-narrow.png' });
@@ -152,10 +238,10 @@ const root = path.resolve(__dirname, '../..');
     await admin.locator('#refresh-games').click();
     await admin.getByText('Games refreshed', { exact: true }).waitFor();
     assert.match(await admin.locator('#available-games [data-game-key="hockey:900001"] .sports-odds').innerText(), /PRE PUCK LINE/);
-    await admin.clock.runFor(300001);
+    await admin.clock.fastForward(300001);
     assert.match(await admin.locator('#available-games [data-game-key="hockey:900001"] .sports-odds').innerText(), /^LIVE ML\s+AWY \+120$/);
     await admin.close();
     assert.deepEqual(errors, []);
-    console.log('Odds browser checks passed: all six ESPN sports, balanced moneylines, close point spreads, neutral spread payouts, game cards, narrow layouts, live markets, and expiry.');
+    console.log('Odds browser checks passed: all six ESPN sports, balanced moneylines, close point spreads, neutral spread payouts, game cards, visibility toggle and persistence, unchanged selection, demo/OBS output, narrow layouts, live markets, and expiry.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SportsOver Settings</title>
-  <link rel="stylesheet" href="../core/odds.css?v=3">
+  <link rel="stylesheet" href="../core/odds.css?v=5">
   <link rel="stylesheet" href="admin.css?v=31">
   <link rel="stylesheet" href="../core/desktop.css?v=15">
 </head>
@@ -74,6 +74,11 @@
       <div id="sports-list" class="sports-list" aria-live="polite"></div>
 
       <div class="settings-grid">
+        <div class="field">
+          <span>Betting information</span>
+          <label class="toggle"><input id="show-betting-info" type="checkbox" role="switch" aria-describedby="betting-info-description"><span>Show betting info</span><strong id="betting-info-state">On</strong></label>
+          <small id="betting-info-description">Off shows “Betting Info: Hidden” in place of betting info. Game selection can still use odds.</small>
+        </div>
         <label class="field">Time zone
           <select id="time-zone"></select>
           <small>Choose a region to use a consistent time zone across the banner and previews.</small>
@@ -365,15 +370,15 @@
     </article>
   </template>
 
-  <script src="../core/config.js?v=24"></script>
-  <script src="../core/shared-state.js?v=1"></script>
+  <script src="../core/config.js?v=25"></script>
+  <script src="../core/shared-state.js?v=2"></script>
   <script src="../core/automatic-watches.js?v=1"></script>
   <script src="../core/provider-network.js?v=2"></script>
   <script src="../core/provider-refresh.js?v=6"></script>
   <script src="../core/provider-discovery.js?v=1"></script>
   <script src="../core/event-model.js?v=9"></script>
   <script src="../core/countdown.js?v=2"></script>
-  <script src="../core/odds.js?v=3"></script>
+  <script src="../core/odds.js?v=5"></script>
   <script src="../core/registry.js?v=2"></script>
   <script src="../core/game-selection.js?v=9"></script>
   <script src="../core/live-mode.js?v=2"></script>
@@ -389,7 +394,7 @@
   <script src="../sports/chess/providers/lichess.js?v=4"></script>
   <script src="chess-settings.js?v=2"></script>
   <script src="automatic-watches.js?v=2"></script>
-  <script src="admin.js?v=43"></script>
+  <script src="admin.js?v=44"></script>
   <script src="../core/desktop.js?v=28"></script>
 </body>
 </html>

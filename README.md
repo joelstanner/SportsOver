@@ -36,6 +36,11 @@ the same destination. Settings are retained.
 The banner and Settings open together. Closing Settings keeps SportsOver running;
 use the tray/menu-bar icon to reopen it or choose **Quit SportsOver**.
 
+**Show betting info** in Settings defaults to on. Turn it off to show **Betting Info: Hidden**
+where odds would normally appear in banners, desktop/OBS output, previews, and
+game cards. Odds remain available to automatic game selection. The setting saves
+automatically and is retained across restarts.
+
 - **Settings:** choose and rank teams and sports, set the time zone, and adjust
   score refresh intervals and fallback behavior. Changes save automatically.
   Use **Export settings** / **Import settings…** here or in the File menu for backups.
