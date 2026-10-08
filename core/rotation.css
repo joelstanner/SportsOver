@@ -39,6 +39,35 @@
   will-change: opacity, transform;
 }
 
+/* Offline output retains its footprint but never presents the last score as live. */
+.sports-output-offline #sports-overlay {
+  display: block !important;
+  position: relative;
+  width: 460px;
+  min-height: 88px;
+  border-radius: 9px;
+  background: #26373b;
+  color: #d2dade;
+  filter: grayscale(0.7) saturate(0.2) !important;
+  opacity: 0.78 !important;
+  animation: none !important;
+  transform: none !important;
+}
+.output-offline {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  font: 800 17px/1.4 ui-sans-serif, system-ui, sans-serif;
+  text-align: center;
+}
+.output-offline > span { font-size: 26px; }
+.output-offline strong, .output-offline small { display: block; }
+.output-offline small { font-size: 9px; letter-spacing: 0.06em; }
+.sports-output-offline #sports-overlay::before,
+.sports-output-offline #sports-overlay::after { display: none !important; }
+
 #sports-overlay.is-rotating-out {
   animation: sports-rotate-out 180ms cubic-bezier(0.4, 0, 1, 1) both;
   pointer-events: none;

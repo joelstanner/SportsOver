@@ -22,6 +22,22 @@
   body:not(.desktop-banner) :is(.football-main,.basketball-main,.hockey-main,.soccer-main,.game-view) { flex:1; min-height:36px; }
   body:not(.desktop-banner) :is(.football-last-play,.basketball-last-play,.hockey-last-play,.soccer-last-event,.last-play) { min-height:0; flex-shrink:1; }
   body:not(.desktop-banner) .sports-odds { font-size:8px; line-height:10px; padding:1px 8px; }
+  /* Use native score emphasis for both NFL and NCAAF. */
+  body:not(.desktop-banner) #sports-overlay .football-score { font-size:1.8em; flex-shrink:0; }
+  body:not(.desktop-banner) #sports-overlay.football-scorebug > .football-main { min-height:42px; }
+  body:not(.desktop-banner) #sports-overlay.football-scorebug[data-sport="football"][data-state="live"]:has(.football-live-detail:not([hidden]),.football-last-play:not([hidden]),.sports-odds) > .football-main { flex:0 1 auto; }
+  body:not(.desktop-banner) #sports-overlay.football-scorebug[data-sport="football"][data-state="live"] > .football-live-detail { flex:1; line-height:16px; }
+  body:not(.desktop-banner) #sports-overlay.football-scorebug[data-sport="football"][data-state="live"]:not(:has(.football-live-detail:not([hidden]))) > .football-last-play:not([hidden]) { flex:1; display:flex; align-items:center; }
+  body:not(.desktop-banner) #sports-overlay.football-scorebug[data-sport="football"][data-state="live"]:not(:has(.football-live-detail:not([hidden]),.football-last-play:not([hidden]))) > .sports-odds { flex:1; }
+  /* NBA uses a compact native score row and shares the remaining space with stats. */
+  body:not(.desktop-banner) #sports-overlay.basketball-scorebug[data-sport="basketball"][data-state="live"] > .basketball-main { flex:0 0 auto; min-height:42px; }
+  body:not(.desktop-banner) #sports-overlay.basketball-scorebug[data-sport="basketball"][data-state="live"] > .basketball-live-detail { flex:1; align-items:center; }
+  /* Match native hockey spacing and reserve room for the lower detail rows. */
+  body:not(.desktop-banner) #sports-overlay.hockey-scorebug .hockey-score { font-size:1.5em !important; margin-inline:auto; flex-shrink:0; }
+  body:not(.desktop-banner) #sports-overlay.hockey-scorebug > .hockey-main { flex:0 0 auto; min-height:42px; }
+  body:not(.desktop-banner) #sports-overlay.hockey-scorebug > :is(.hockey-live-detail,.hockey-status) { flex:1; }
+  body:not(.desktop-banner) #sports-overlay.hockey-scorebug:has(.sports-odds) > .hockey-main { min-height:30px; }
+  body:not(.desktop-banner) #sports-overlay.hockey-scorebug[data-preseason="true"][data-state="live"] .hockey-center { padding-top:6px; }
 }
 @media (min-width:1500px) {
   body:not(.desktop-banner) { zoom:3; width:768px; }

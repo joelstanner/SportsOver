@@ -5,6 +5,33 @@ const { EngineState } = require('../../desktop/engine-state.cjs');
 const { startServer } = require('../../desktop/server.cjs');
 const path = require('node:path');
 const availableEntries = [{ candidate: { sport: 'baseball', id: '1' } }, { candidate: { sport: 'baseball', id: '2' } }];
+
+test('heartbeats advance independently of score changes and expire after ten seconds', () => {
+  let time = 100;
+  const engine = new EngineState({ now: () => time });
+  assert.equal(engine.output().ready, false);
+  const frame = { html: '<main id="sports-overlay">same score</main>', metadata: { renderedGameKey: 'baseball:1' } };
+  engine.publish(frame);
+  const first = engine.output();
+  time += 1000;
+  engine.publish(frame);
+  const second = engine.output();
+  assert.equal(second.sequence, first.sequence);
+  assert.equal(second.updatedAt, first.updatedAt);
+  assert.equal(second.heartbeatSequence, first.heartbeatSequence + 1);
+  assert.equal(second.heartbeatAgeMs, 0);
+  assert.equal(second.instance, first.instance);
+  time += 9999;
+  assert.equal(engine.output().ready, true);
+  time++;
+  assert.equal(engine.output().ready, false);
+  assert.equal(engine.output().heartbeatAgeMs, 10000);
+  engine.publish(frame);
+  assert.equal(engine.output().ready, true);
+  engine.stop();
+  assert.equal(engine.output().ready, false);
+  assert.notEqual(new EngineState().instance, first.instance);
+});
 test('output game identity follows rendered content, including changes with identical HTML', () => {
   const engine = new EngineState();
   const html = '<main id="sports-overlay">same score</main>';
@@ -83,10 +110,13 @@ test('public output and command server restrict hosts, origins, credentials, pat
   t.after(() => { engine.stop(); server.closeAllConnections(); server.close(); });
   const base = new URL(url).origin;
   assert.match(await (await fetch(url)).text(), /core\/output.js/);
+  const display = await fetch(`${base}/sports/display.html?obs-host=1`);
+  assert.match(display.headers.get('Content-Security-Policy'), /frame-ancestors 'self' file:/);
   for (const script of ['event-model', 'countdown']) {
     const response = await fetch(`${base}/sports/core/${script}.js`);
     assert.equal(response.status, 200, `OBS can load ${script}`);
     assert.match(response.headers.get('Content-Type'), /javascript/);
+    assert.match(response.headers.get('Content-Security-Policy'), /frame-ancestors 'none'/);
   }
   assert.equal((await (await fetch(`${base}/api/output`)).json()).html, engine.frame.html);
   assert.equal((await fetch(`${base}/api/v1/state`)).status, 401);

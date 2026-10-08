@@ -47,7 +47,7 @@ async function startServer({ root, engine, token, port = 17843 }) {
       const content = await fs.promises.readFile(path.join(root, relative));
       response.writeHead(200, {
         'Content-Type': relative.endsWith('.html') ? 'text/html' : relative.endsWith('.css') ? 'text/css' : 'text/javascript',
-        'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src https: data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'",
+        'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src https: data:; connect-src 'self'; base-uri 'none'; frame-ancestors " + (relative === 'display.html' ? "'self' file:" : "'none'"),
         'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
       }); response.end(content);
     } catch (error) { json(response, error.status || (error instanceof SyntaxError ? 400 : 500), { error: error.message }); }

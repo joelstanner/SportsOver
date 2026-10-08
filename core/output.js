@@ -1,12 +1,64 @@
 'use strict';
 (async () => {
-  if (window.top !== window) { document.documentElement.style.background = '#26373b'; document.body.style.background = '#26373b'; }
+  const obsHost = new URLSearchParams(location.search).get('obs-host') === '1';
+  if (window.top !== window && !obsHost) { document.documentElement.style.background = '#26373b'; document.body.style.background = '#26373b'; }
   let displayedSequence = 0;
   let failures = 0;
   let displayedGameKey = null;
   let engineInstance = null;
   let pendingFrame = null, rendering = null;
   let interruptedTransition = false;
+  const checkFreshness = !window.sportsDesktop;
+  const staleAfterMs = 10000;
+  let heartbeatInstance = null, heartbeatSequence = -1, lastHeartbeatAt = -Infinity;
+  let offline = checkFreshness;
+  const retiredInstances = new Set();
+  const isFresh = () => performance.now() - lastHeartbeatAt < staleAfterMs;
+  function reportHealth(ready) {
+    if (obsHost && window.parent !== window) window.parent.postMessage({
+      type: 'sportsover-output-health', ready, instance: heartbeatInstance,
+      heartbeatSequence, heartbeatAgeMs: performance.now() - lastHeartbeatAt,
+    }, '*');
+  }
+  function showOffline() {
+    if (!checkFreshness) return;
+    offline = true;
+    pendingFrame = null;
+    document.body.classList.add('sports-output-offline');
+    reportHealth(false);
+    const mount = document.querySelector('#sports-overlay');
+    for (const animation of mount.getAnimations({ subtree: true })) animation.cancel();
+    if (!mount.querySelector('.output-offline')) {
+      const panel = document.createElement('div');
+      panel.className = 'output-offline';
+      panel.setAttribute('role', 'status');
+      panel.innerHTML = '<span>—</span><div><strong>DATA OFFLINE</strong><small>SPORTSOVER DISCONNECTED</small></div><span>—</span>';
+      mount.replaceChildren(panel);
+    }
+  }
+  function acceptHeartbeat(frame) {
+    if (!checkFreshness) return true;
+    if (retiredInstances.has(frame.instance)) return false;
+    if (frame.ready !== true || typeof frame.instance !== 'string' || !frame.instance
+      || !Number.isSafeInteger(frame.heartbeatSequence) || frame.heartbeatSequence < 1
+      || !Number.isFinite(frame.heartbeatAgeMs) || frame.heartbeatAgeMs < 0 || frame.heartbeatAgeMs >= staleAfterMs) {
+      showOffline(); return false;
+    }
+    if (heartbeatInstance !== frame.instance) {
+      if (heartbeatInstance) retiredInstances.add(heartbeatInstance);
+      heartbeatInstance = frame.instance;
+      heartbeatSequence = -1;
+    }
+    if (frame.heartbeatSequence < heartbeatSequence) return false;
+    const advanced = frame.heartbeatSequence > heartbeatSequence;
+    if (advanced) {
+      heartbeatSequence = frame.heartbeatSequence;
+      lastHeartbeatAt = performance.now() - frame.heartbeatAgeMs;
+    }
+    if (offline && !advanced) return false;
+    if (!isFresh()) { showOffline(); return false; }
+    return true;
+  }
   async function animate(element, className) {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     element.classList.remove(className);
@@ -76,13 +128,15 @@
   document.body.append(motionBlur);
   const motionBlurAnimation = motionBlur.querySelector('animate');
   async function applyFrame(frame) {
-    if (engineInstance === frame.instance && frame.sequence <= displayedSequence) return;
+    if (checkFreshness && !isFresh()) return;
+    if (!offline && engineInstance === frame.instance && frame.sequence <= displayedSequence) return;
     const mount = document.querySelector('#sports-overlay');
-    let gameChanged = engineInstance === frame.instance && displayedGameKey
+    let gameChanged = !offline && engineInstance === frame.instance && displayedGameKey
       && frame.gameKey && displayedGameKey !== frame.gameKey;
     let quick = frame.transition === 'quick';
     const outgoing = gameChanged && !quick;
     if (outgoing) await animate(mount, 'is-rotating-out');
+    if (checkFreshness && (!isFresh() || offline && outgoing)) return;
     // Finish the exit once, then use the newest snapshot. Restarting the exit
     // for each update flashes the old banner back to full opacity.
     if (pendingFrame?.instance === frame.instance && pendingFrame.sequence > frame.sequence) {
@@ -98,13 +152,17 @@
     interruptedTransition = false;
     const scrolling = window.SportsOverlay?.scrolling;
     const scrollSnapshot = scrolling?.capture(mount);
-    const sameGame = engineInstance === frame.instance && displayedGameKey === frame.gameKey;
+    const sameGame = !offline && engineInstance === frame.instance && displayedGameKey === frame.gameKey;
     // Identical rows on different cards still need a fresh animation. Reusing
     // the track can carry its elapsed time (including the bottom hold) across
     // rotation. Preserve running subtrees only for updates to the current card.
     // Keep the mount for transition events that may still be queued by a
     // hidden output window; only the incoming card's contents need replacing.
     updateNode(mount, template.content.firstElementChild, !sameGame);
+    if (checkFreshness) {
+      offline = false;
+      document.body.classList.remove('sports-output-offline');
+    }
     scrolling?.restore(document.querySelector('#sports-overlay'),
       sameGame ? scrollSnapshot : null);
     window.SportsOverlay.countdown?.refresh();
@@ -115,8 +173,9 @@
     document.body.dataset.sequence = String(frame.sequence);
   }
   function receiveFrame(frame) {
+    if (!acceptHeartbeat(frame)) return rendering;
     // A polling response may be older than an immediately delivered desktop frame.
-    if (engineInstance === frame.instance && frame.sequence <= displayedSequence) return rendering;
+    if (!offline && engineInstance === frame.instance && frame.sequence <= displayedSequence) return rendering;
     if (pendingFrame?.instance === frame.instance && pendingFrame.sequence >= frame.sequence) return rendering;
     pendingFrame = frame;
     if (rendering) {
@@ -147,15 +206,20 @@
       if (!response.ok) throw Error('Output unavailable');
       const frame = await response.json();
       await receiveFrame(frame);
+      if (checkFreshness && !offline && isFresh()) reportHealth(true);
       failures = 0;
       note.textContent = 'Sports engine reconnecting…';
-      note.style.display = frame.ready ? 'none' : 'block';
+      note.style.display = checkFreshness || frame.ready ? 'none' : 'block';
     } catch (_) {
       failures++;
-      note.textContent = 'SportsOver disconnected · last received score';
-      note.style.display = 'block';
+      note.textContent = 'SportsOver disconnected';
+      note.style.display = checkFreshness ? 'none' : 'block';
     }
     setTimeout(poll, failures ? 1000 : 200);
+  }
+  if (checkFreshness) {
+    showOffline();
+    setInterval(() => { if (!isFresh()) showOffline(); }, 250);
   }
   poll();
 })();

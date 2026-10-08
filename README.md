@@ -133,8 +133,26 @@ The passive output supports Small (360 × 76), Normal (647 × 137), and Large
 (2304 × 280) through `core/obs-layouts.css`. Large presents one game across a
 wide strip; Small uses the desktop below-50% treatment: large logos and scores,
 centered upcoming date/time, and a vertical halftime marker.
-Normal retains the current card. Game selection and rotation remain shared.
+Normal retains the current card. NFL and NCAAF use native-size score numbers;
+NFL and NBA preserve their compact native score rows and give stats the remaining
+space. Hockey centers scores in the available team
+space, uses moderately larger numbers, and preserves the native score-row and
+lower-detail proportions. Game selection and rotation remain shared.
 Desktop banner sizing is unchanged.
+
+OBS checks the SportsOver engine heartbeat independently of score changes. After
+10 seconds without an advancing heartbeat, or when the engine reports it is not
+ready, the banner turns grey and replaces its values with `DATA OFFLINE` /
+`SPORTSOVER DISCONNECTED`. It stops countdowns and scrolling, then restores the
+current frame automatically when a fresh engine heartbeat arrives. This checks
+the local engine, not the age of upstream sports-provider data. Older builds
+without heartbeat metadata also show the offline state until SportsOver is updated.
+
+The AntlerJones local OBS host in `aj-obs-assets/sportsover-banner` can keep a
+grey placeholder visible even when this server is stopped at page load. It embeds
+the output page with `?obs-host=1` and requires a fresh rendered-heartbeat signal
+before revealing it. Output pages allow embedding by local files and the same
+origin; API host/origin checks remain unchanged.
 
 The compact OBS rules are generated from `core/compact-banner.css`; run
 `node scripts/sync-obs-compact.cjs` after changing the shared desktop treatment.

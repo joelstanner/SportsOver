@@ -3,13 +3,13 @@ const { randomUUID } = require('node:crypto');
 class EngineState extends EventEmitter {
   constructor({ now = Date.now, setTimer = setTimeout, clearTimer = clearTimeout } = {}) {
     super(); this.now = now; this.setTimer = setTimer; this.clearTimer = clearTimer;
-    this.instance = randomUUID(); this.lastSeen = 0;
+    this.instance = randomUUID(); this.lastSeen = 0; this.heartbeatSequence = 0;
     this.frame = { sequence: 0, html: '<main id="sports-overlay">Starting SportsOver…</main>', updatedAt: 0 };
     this.metadata = { availableEntries: [], automaticEntries: [], queue: [], currentGameKey: null };
     this.override = null; this.requests = new Map(); this.ready = false;
   }
   publish(frame) {
-    this.ready = true; this.lastSeen = this.now();
+    this.ready = true; this.lastSeen = this.now(); this.heartbeatSequence++;
     const gameKey = frame.metadata.renderedGameKey || null;
     if (frame.html !== this.frame.html || gameKey !== this.frame.gameKey) {
       this.frame = { sequence: this.frame.sequence + 1, html: frame.html, gameKey,
@@ -20,7 +20,9 @@ class EngineState extends EventEmitter {
       && !this.override.gameKey.startsWith(`${this.metadata.bannerSportFilter}:`)) this.clearOverride();
     this.emit('frame', this.output());
   }
-  output() { return { ...this.frame, instance: this.instance, ready: this.ready && this.now() - this.lastSeen < 10000, override: this.override }; }
+  output() { return { ...this.frame, instance: this.instance, heartbeatSequence: this.heartbeatSequence,
+    heartbeatAgeMs: Math.max(0, this.now() - this.lastSeen),
+    ready: this.ready && this.now() - this.lastSeen < 10000, override: this.override }; }
   state() { return { ...this.metadata, ready: this.output().ready, override: this.override }; }
   refresh(send) {
     if (this.pendingRefresh) return this.pendingRefresh;
