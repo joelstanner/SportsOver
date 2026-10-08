@@ -3,6 +3,16 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.37.1 — 2026-10-07
+
+### Changed
+
+- Use a bundled Gary Payton image for Oklahoma City in NBA banners, home or away,
+  across all game states and desktop/OBS output.
+
+Existing OBS sources may need **Refresh cache of current page** in source
+properties to load the updated image policy. Existing settings are preserved.
+
 ## 0.37.0 — 2026-10-07
 
 ### Added

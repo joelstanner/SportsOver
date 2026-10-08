@@ -43,11 +43,11 @@ async function startServer({ root, engine, token, port = 17843 }) {
       if (url.pathname === '/api/output') return json(response, 200, engine.output());
       if (url.pathname === '/' || url.pathname === '/output') { response.writeHead(302, { Location: '/sports/display.html' }); return response.end(); }
       const relative = decodeURIComponent(url.pathname).replace(/^\/sports\//, '');
-      if (!(relative === 'display.html' || relative === 'core/scrolling.js' || relative === 'core/event-model.js' || relative === 'core/countdown.js' || relative === 'core/output.js' || relative === 'core/desktop.js' || /^(core|sports)\/[\w/.-]+\.css$/.test(relative)) || relative.split('/').includes('..')) return json(response, 404, { error: 'Not found' });
+      if (!(relative === 'display.html' || relative === 'sports/basketball/gary-payton-circle.png' || relative === 'core/scrolling.js' || relative === 'core/event-model.js' || relative === 'core/countdown.js' || relative === 'core/output.js' || relative === 'core/desktop.js' || /^(core|sports)\/[\w/.-]+\.css$/.test(relative)) || relative.split('/').includes('..')) return json(response, 404, { error: 'Not found' });
       const content = await fs.promises.readFile(path.join(root, relative));
       response.writeHead(200, {
-        'Content-Type': relative.endsWith('.html') ? 'text/html' : relative.endsWith('.css') ? 'text/css' : 'text/javascript',
-        'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src https: data:; connect-src 'self'; base-uri 'none'; frame-ancestors " + (relative === 'display.html' ? "'self' file:" : "'none'"),
+        'Content-Type': relative.endsWith('.png') ? 'image/png' : relative.endsWith('.html') ? 'text/html' : relative.endsWith('.css') ? 'text/css' : 'text/javascript',
+        'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self'; base-uri 'none'; frame-ancestors " + (relative === 'display.html' ? "'self' file:" : "'none'"),
         'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
       }); response.end(content);
     } catch (error) { json(response, error.status || (error instanceof SyntaxError ? 400 : 500), { error: error.message }); }

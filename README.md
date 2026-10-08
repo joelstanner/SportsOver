@@ -140,6 +140,9 @@ space, uses moderately larger numbers, and preserves the native score-row and
 lower-detail proportions. Game selection and rotation remain shared.
 Desktop banner sizing is unchanged.
 
+NBA banners use the bundled Gary Payton image in place of Oklahoma City's team
+logo, for either home or away games in every game state, including OBS output.
+
 OBS checks the SportsOver engine heartbeat independently of score changes. After
 10 seconds without an advancing heartbeat, or when the engine reports it is not
 ready, the banner turns grey and replaces its values with `DATA OFFLINE` /

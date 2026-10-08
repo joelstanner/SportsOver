@@ -3,7 +3,7 @@ const path = require('node:path');
 const providerNetwork = require('../core/provider-network.js');
 const ORIGIN = 'sportsover://app';
 const CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://statsapi.mlb.com https://site.api.espn.com https://site.web.api.espn.com https://sports.core.api.espn.com https://www.pdga.com https://lichess.org; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'";
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml' };
+const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png' };
 function createHandler({ root, dataRoot, store, refresh, engine, fetchImpl = globalThis.fetch,
   fetchProvider = providerNetwork.create({ fetchImpl }) }) {
   let refreshing = false;
@@ -74,7 +74,7 @@ function createHandler({ root, dataRoot, store, refresh, engine, fetchImpl = glo
       if (relative.endsWith('/')) relative += 'index.html';
       if (relative === 'index.html' && !url.searchParams.has('engine') && !url.searchParams.has('demo') && !url.searchParams.has('scenario')) relative = 'display.html';
       // Only ship renderer assets, never desktop code, settings, repository metadata or arbitrary files.
-      if (!/^((?:index|display)\.html|(?:core|admin|sports)\/[\w/.-]+\.(?:html|js|css|json|svg))$/.test(relative) || relative.split('/').includes('..')) return new Response('Not found', { status: 404 });
+      if (!/^((?:index|display)\.html|(?:core|admin|sports)\/[\w/.-]+\.(?:html|js|css|json|svg|png))$/.test(relative) || relative.split('/').includes('..')) return new Response('Not found', { status: 404 });
       let file = path.join(root, relative);
       if (/^sports\/[\w-]+\/teams\.json$/.test(relative)) {
         const updated = path.join(dataRoot, relative);

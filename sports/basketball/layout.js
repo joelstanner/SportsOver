@@ -52,8 +52,8 @@
       els.bug.dataset.preseason = String(event.details.preseason === true);
       global.SportsOverlay.teamTheme.apply(els.bug, event);
       els.bug.setAttribute("aria-label", `${away.name} at ${home.name} ${event.league}${event.details.preseason ? " preseason" : ""} game`);
-      setTeam(els.awayMark, els.awayAbbr, els.awayRecord, away);
-      setTeam(els.homeMark, els.homeAbbr, els.homeRecord, home);
+      setTeam(els.awayMark, els.awayAbbr, els.awayRecord, away, event.sport);
+      setTeam(els.homeMark, els.homeAbbr, els.homeRecord, home, event.sport);
       const showTimeouts = event.state === EVENT_STATES.LIVE || event.state === EVENT_STATES.INTERRUPTED;
       if (event.sport === "college-basketball") {
         // Size the NCAA row from the reported count, without assuming an allocation.
@@ -119,15 +119,21 @@
     return Object.freeze({ render, renderNoEvent, handleError });
   }
 
-  function setTeam(mark, abbreviation, record, team) {
+  function setTeam(mark, abbreviation, record, team, sport) {
     mark.title = team.name?.trim() || team.abbreviation;
     const logo = mark.querySelector("img");
     const fallback = mark.querySelector("span");
+    const isOklahomaCity = sport === "basketball" && (
+      /^(OKC|OKA)$/i.test(team.abbreviation || "") ||
+      /^(25|OKC|OKA)$/i.test(String(team.id || "")) ||
+      /^Oklahoma City(?: Thunder)?$/i.test(team.name?.trim() || "")
+    );
+    const logoUrl = isOklahomaCity ? "sports/basketball/gary-payton-circle.png" : team.logoUrl;
     fallback.textContent = team.abbreviation;
-    fallback.hidden = Boolean(team.logoUrl);
-    logo.hidden = !team.logoUrl;
-    logo.alt = team.logoUrl ? `${team.name} logo` : "";
-    if (team.logoUrl) logo.src = team.logoUrl;
+    fallback.hidden = Boolean(logoUrl);
+    logo.hidden = !logoUrl;
+    logo.alt = logoUrl ? (isOklahomaCity ? "Gary Payton" : `${team.name} logo`) : "";
+    if (logoUrl) logo.src = logoUrl;
     else logo.removeAttribute("src");
     logo.onerror = () => { logo.hidden = true; fallback.hidden = false; };
     abbreviation.textContent = team.abbreviation;
