@@ -15,7 +15,17 @@
 .sports-odds .sports-odds-label { color: #aebbc6; font-size: 8px; font-weight: 800; letter-spacing: .05em; }
 .sports-odds strong { color: #f7fbff; font-weight: 600; white-space: nowrap; }
 .sports-odds .is-near-even { color: #71efb3; font-weight: 800; }
-.sports-odds-hidden strong { color: #aebbc6; }
+.sports-odds-hidden strong { color: #aebbc6; white-space: normal; overflow-wrap: anywhere; text-align: center; min-width: 0; max-width: 100%; }
+.sports-odds-scrolling { display: block; overflow: hidden; }
+.sports-odds .sports-odds-ticker { display: flex; gap: 0; width: max-content; animation: sports-odds-loop var(--odds-scroll-duration, 20s) linear infinite; }
+.sports-odds-ticker strong { flex: 0 0 auto; max-width: none; white-space: nowrap; padding-right: 40px; }
+.sports-odds-scrolling:hover .sports-odds-ticker, .sports-odds-scrolling:focus-within .sports-odds-ticker { animation-play-state: paused; }
+@keyframes sports-odds-loop { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .sports-odds-scrolling { overflow-x: auto; }
+  .sports-odds .sports-odds-ticker { animation: none; }
+  .sports-odds-ticker [aria-hidden="true"] { display: none; }
+}
 
 /* Live play descriptions take the remaining footer space in compact banners.
    Show odds when the play row is absent; hockey has room for both. */

@@ -43,6 +43,10 @@
     rotationSeconds: 10,
     timeZone: "local",
     showBettingInfo: true,
+    showAlternateContent: false,
+    bettingReplacement: "hidden",
+    bettingReplacementText: "",
+    bettingMixSources: Object.freeze(["betting", "player-stats", "custom", "game-details"]),
     rotationMode: "automatic",
     bannerSportFilter: "",
     liveModeFinalMinutes: 20,
@@ -136,6 +140,12 @@
       version: 8,
       timeZone: normalizeTimeZone(source.timeZone),
       showBettingInfo: source.showBettingInfo !== false,
+      showAlternateContent: source.showAlternateContent === true,
+      bettingReplacement: ["hidden", "custom", "player-stats", "game-details", "blank", "scrolling"].includes(source.bettingReplacement) ? source.bettingReplacement : "hidden",
+      bettingReplacementText: typeof source.bettingReplacementText === "string" ? source.bettingReplacementText.replace(/\s+/g, " ").slice(0, 160) : "",
+      bettingMixSources: Array.isArray(source.bettingMixSources)
+        ? [...new Set(source.bettingMixSources.filter(value => ["betting", "player-stats", "custom", "game-details"].includes(value)))]
+        : [...DEFAULT_CONFIG.bettingMixSources],
       providerRefreshSeconds: normalizeProviderRefresh(source.providerRefreshSeconds),
       sports,
       automaticWatchLists: {

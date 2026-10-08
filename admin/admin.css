@@ -76,6 +76,10 @@ h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.7rem); line-height: 0.95; letter-s
 .team-meta { color: var(--muted); font-size: 0.76rem; text-transform: capitalize; }
 .toggle { display: flex; gap: 7px; align-items: center; color: var(--muted); font-size: 0.8rem; }
 .toggle input { accent-color: var(--teal); }
+.betting-visibility-toggle { color: var(--ink); font-size: 0.95rem; font-weight: 750; }
+.field[hidden] { display: none; }
+#betting-mix-fields { margin: 0; border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+#betting-mix-fields .toggle { margin-top: 8px; }
 .order-buttons { display: flex; gap: 4px; }
 .icon-button, .remove-team { border: 1px solid var(--line); border-radius: 7px; padding: 6px 9px; color: var(--ink); background: #0b1518; }
 .icon-button:disabled { opacity: 0.28; cursor: default; }
@@ -201,6 +205,9 @@ select, input { border: 1px solid var(--line); border-radius: 8px; padding: 10px
 .game-copy { display: grid; gap: 3px; min-width: 0; }
 .game-copy .sports-odds { justify-content: flex-start; padding: 4px 0 0; background: transparent; column-gap: 12px; }
 .game-copy .sports-odds strong { white-space: normal; overflow-wrap: anywhere; }
+.game-copy .sports-odds-hidden { display: block; height: 18px; min-width: 0; overflow: hidden; }
+.game-copy .sports-odds-hidden > strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; }
+.game-copy .sports-odds-ticker strong { white-space: nowrap; }
 .game-name { overflow: hidden; font-size: 0.82rem; text-overflow: ellipsis; white-space: nowrap; }
 .game-card.is-player-card .game-name { white-space: normal; overflow-wrap: anywhere; }
 .game-tournament { color: #fff; font-size: 0.68rem; overflow-wrap: anywhere; }
@@ -214,6 +221,7 @@ select, input { border: 1px solid var(--line); border-radius: 8px; padding: 10px
   box-shadow: inset 0 0 18px rgba(49, 198, 179, 0.1), 0 0 9px rgba(49, 198, 179, 0.24);
 }
 @media (prefers-reduced-motion: reduce) {
+  .game-copy .sports-odds-scrolling { overflow-x: auto; scrollbar-width: none; }
   #rotation-queue .game-card { transition: none; }
 }
 .game-final-label { color: var(--amber); }

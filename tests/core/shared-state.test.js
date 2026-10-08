@@ -54,11 +54,15 @@ test('hosted demos inherit betting visibility without shared requests or live se
   const api = server();
   api.fetch = async () => { throw Error('A demo must not start shared requests'); };
   for (const search of ['?demo=pregame','?scenario=inspection']) {
-    const demo = client(api,{search,cache:{initialized:true,config:{showBettingInfo:false,timing:99,teams:['b']}}});
+    const demo = client(api,{search,cache:{initialized:true,config:{showBettingInfo:false,showAlternateContent:true,bettingReplacement:'custom',bettingReplacementText:'Hello',bettingMixSources:['custom'],timing:99,teams:['b']}}});
     await demo.config.ready;
     assert.equal(demo.shared,undefined);
     assert.equal(demo.timers.length,0);
     assert.equal(demo.config.loadConfig().showBettingInfo,false);
+    assert.equal(demo.config.loadConfig().showAlternateContent,true);
+    assert.equal(demo.config.loadConfig().bettingReplacement,'custom');
+    assert.equal(demo.config.loadConfig().bettingReplacementText,'Hello');
+    assert.deepEqual(demo.config.loadConfig().bettingMixSources,['custom']);
     assert.equal(demo.config.loadConfig().timing,10);
     demo.storage.set('sports-overlay.shared-cache.v1',JSON.stringify({initialized:true,config:{showBettingInfo:true}}));
     assert.equal(demo.config.loadConfig().showBettingInfo,true);

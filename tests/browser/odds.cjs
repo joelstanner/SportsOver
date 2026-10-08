@@ -53,6 +53,91 @@ const root = path.resolve(__dirname, '../..');
       assert.equal(await page.locator('.sports-odds').innerText(),'Betting Info: Hidden',`${sport}: timer cannot restore hidden odds`);
       assert.deepEqual(await page.evaluate(() => testEvent.details.odds),originalOdds);
       if (sport === 'football') await page.locator('#sports-overlay').screenshot({path:'/tmp/sportsover-betting-hidden.png'});
+      if (sport === 'football') {
+        const setContent = async (mode, extra = {}) => page.evaluate(({mode,extra}) => {
+          const api=window.SportsOverlay;
+          api.config.saveConfig({...api.config.loadConfig(),showBettingInfo:false,showAlternateContent:true,bettingReplacement:mode,...extra});
+          testLayout.render(testEvent);
+        },{mode,extra});
+        for (const mode of ['hidden','custom','player-stats','game-details','blank','scrolling']) {
+          await setContent(mode, {showAlternateContent:false,showBettingInfo:true,bettingReplacementText:'Saved message'});
+          assert.match(await page.locator('.sports-odds').innerText(), /\+154/, `alternate Off ignores saved ${mode} choice`);
+          await setContent(mode, {showAlternateContent:false,showBettingInfo:false});
+          assert.equal(await page.locator('.sports-odds').innerText(), 'Betting Info: Hidden');
+          await page.clock.runFor(1001);
+          assert.equal(await page.locator('.sports-odds').innerText(), 'Betting Info: Hidden', 'timer cannot restore a saved mix or odds');
+        }
+        await setContent('hidden', {showBettingInfo:true});
+        assert.equal(await page.locator('.sports-odds').innerText(), 'Betting Info: Hidden', 'alternate On honors the selected hidden message even with betting On');
+        const custom = '<img src=x onerror=alert(1)> Cheer for your team!';
+        await setContent('custom',{bettingReplacementText:custom});
+        assert.equal(await page.locator('.sports-odds').innerText(),custom);
+        assert.equal(await page.locator('.sports-odds img').count(),0,'custom content remains plain text');
+        await setContent('custom',{bettingReplacementText:'x'.repeat(160)});
+        assert.ok(await page.locator('#sports-overlay').evaluate(el=>el.scrollWidth<=el.clientWidth),'long custom text wraps inside banner');
+        await setContent('blank');
+        assert.equal(await page.locator('.sports-odds').count(),0);
+        await page.clock.runFor(1001);
+        assert.equal(await page.locator('.sports-odds').count(),0,'blank stays blank between provider polls');
+        await page.evaluate(() => {
+          testEvent.details.playerStats=[{key:'one:points',text:'Alex Example · PTS: 12'},{key:'two:rebounds',text:'Casey Example · REB: 7'}];
+          testEvent.details.gameDetails=['Venue: Example Arena','Broadcast: ESPN'];
+        });
+        await setContent('player-stats');
+        const first=await page.locator('.sports-odds').innerText();
+        await page.clock.runFor(9000);
+        assert.equal(await page.locator('.sports-odds').innerText(),first,'player stat stays readable for ten seconds');
+        await page.clock.runFor(1001);
+        assert.notEqual(await page.locator('.sports-odds').innerText(),first,'next stat avoids immediate repetition');
+        await page.evaluate(() => {testEvent.details.odds=null;testLayout.render(testEvent);});
+        assert.match(await page.locator('.sports-odds').innerText(),/Example/,'stats work even when odds are absent');
+        await page.evaluate(() => {testEvent.details.playerStats=[];testLayout.render(testEvent);});
+        assert.equal(await page.locator('.sports-odds').innerText(),'Betting Info: Hidden','missing player stats use the prominent default');
+        await setContent('game-details');
+        assert.equal(await page.locator('.sports-odds').innerText(),'Venue: Example Arena');
+        await page.clock.runFor(10001);
+        assert.equal(await page.locator('.sports-odds').innerText(),'Broadcast: ESPN');
+        await page.evaluate(odds => {
+          testEvent.details.odds=odds;
+          testEvent.details.playerStats=[{key:'one:points',text:'Alex Example · PTS: 12'},{key:'two:rebounds',text:'Casey Example · REB: 7'}];
+        },originalOdds);
+        // A selected alternate wins over available odds even with betting On.
+        for (const hasOdds of [true, false]) {
+          await page.evaluate(odds => { testEvent.details.odds = odds; }, hasOdds ? originalOdds : null);
+          await setContent('custom', {showBettingInfo:true, bettingReplacementText:custom});
+          assert.equal(await page.locator('.sports-odds').innerText(), custom, `custom text with betting On, odds: ${hasOdds}`);
+          await page.clock.runFor(1001);
+          assert.equal(await page.locator('.sports-odds').innerText(), custom, 'timer preserves the selected alternate');
+          await setContent('player-stats', {showBettingInfo:true});
+          assert.match(await page.locator('.sports-odds').innerText(), /Example/);
+          assert.equal(await page.locator('.sports-odds-price, .sports-odds-label').count(), 0);
+          await setContent('game-details', {showBettingInfo:true});
+          assert.equal(await page.locator('.sports-odds').innerText(), 'Venue: Example Arena');
+          await setContent('blank', {showBettingInfo:true});
+          assert.equal(await page.locator('.sports-odds').count(), 0, 'blank overrides odds while betting is On');
+          await setContent('custom', {showBettingInfo:true, bettingReplacementText:''});
+          assert.equal(await page.locator('.sports-odds').count(), 0, 'empty custom text stays empty while betting is On');
+        }
+        await page.evaluate(odds => { testEvent.details.odds = odds; }, originalOdds);
+        await setContent('hidden', {showBettingInfo:true,showAlternateContent:false});
+        assert.match(await page.locator('.sports-odds').innerText(), /\+154/, 'default selection restores available odds');
+        await setContent('scrolling',{showBettingInfo:true,bettingReplacementText:'Cheer for your team!'});
+        assert.match(await page.locator('.sports-odds-ticker strong').first().innerText(),/-185.*Example.*PTS/s);
+        assert.match(await page.locator('.sports-odds').innerText(),/Example Arena/);
+        await page.evaluate(() => {window.originalTicker=document.querySelector('.sports-odds-ticker');window.originalTickerAnimation=originalTicker.getAnimations()[0];});
+        await page.clock.runFor(1001);
+        assert.ok(await page.evaluate(() => document.querySelector('.sports-odds-ticker')===originalTicker && originalTicker.getAnimations()[0]===originalTickerAnimation),'timer keeps the looping animation intact');
+        await setContent('scrolling',{showBettingInfo:false});
+        assert.doesNotMatch(await page.locator('.sports-odds').innerText(),/-185|\+154|SPREAD| ML/,'off excludes all betting content from the mix');
+        assert.equal(await page.locator('.sports-odds-price, .sports-odds-line, .sports-odds [title]').count(),0);
+        assert.ok(await page.locator('#sports-overlay').evaluate(el=>el.scrollWidth<=el.clientWidth),'scrolling mix stays within the banner');
+        await page.locator('#sports-overlay').screenshot({path:'/tmp/sportsover-betting-scrolling.png'});
+        await page.emulateMedia({reducedMotion:'reduce'});
+        assert.equal(await page.locator('.sports-odds-ticker').evaluate(el=>getComputedStyle(el).animationName),'none');
+        await page.emulateMedia({reducedMotion:'no-preference'});
+        await setContent('hidden', {showAlternateContent:false});
+      }
+
       await page.evaluate(() => {
         const api = window.SportsOverlay;
         api.config.saveConfig({...api.config.loadConfig(),showBettingInfo:true});
@@ -122,8 +207,8 @@ const root = path.resolve(__dirname, '../..');
     await admin.evaluate(() => {
       window.cardGames = ['pre', 'in', 'post', 'pre', 'pre', 'pre'].map((state, index) => ({
         id: String(900001 + index), date: new Date(Date.now() - (state === 'in' ? 600000 : 0)).toISOString(),
-        competitions: [{ status: { type: { state } }, competitors: [
-          { homeAway: 'away', score: '0', team: { id: '99991', displayName: 'Away', abbreviation: 'AWY' } },
+        competitions: [{ venue: {fullName:'Example Arena'}, status: { type: { state } }, competitors: [
+          { homeAway: 'away', score: '0', team: { id: '99991', displayName: 'Away', abbreviation: 'AWY' }, leaders:[{name:'goals',displayName:'Goals',leaders:[{athlete:{id:'99',displayName:'Example Player'},displayValue:'7'}]}] },
           { homeAway: 'home', score: '0', team: { id: '99992', displayName: 'Home', abbreviation: 'HME' } },
         ], ...(index === 3 ? {} : index === 4 ? { odds: [null] } : { odds: [{
           pointSpread: { away: { close: { line: index === 5 ? '-2.5' : '-3.5', odds: '-120' } }, home: { close: { line: index === 5 ? '+2.5' : '+3.5', odds: '-121' } } },
@@ -174,6 +259,46 @@ const root = path.resolve(__dirname, '../..');
     await bettingToggle.uncheck();
     await admin.waitForFunction(() => window.SportsOverlay.config.loadConfig().showBettingInfo === false);
     assert.equal(await admin.locator('#betting-info-state').innerText(),'Off');
+    const alternateToggle = admin.getByRole('switch',{name:'Show alternate content'});
+    assert.equal(await alternateToggle.isChecked(), false, 'alternate content defaults Off');
+    assert.equal(await admin.locator('#alternate-content-options').isVisible(), false);
+    await alternateToggle.check();
+    await admin.waitForFunction(() => SportsOverlay.config.loadConfig().showAlternateContent === true);
+    const contentSelector=admin.locator('#betting-replacement');
+    assert.equal(await contentSelector.inputValue(),'hidden');
+    assert.equal(await contentSelector.locator('option').first().innerText(),'Betting Info: Hidden (default)','hidden remains the first and default choice');
+    await contentSelector.selectOption('custom');
+    await admin.locator('#betting-replacement-text').fill('Support your team!');
+    await admin.waitForFunction(() => SportsOverlay.config.loadConfig().bettingReplacementText === 'Support your team!');
+    await admin.waitForFunction(() => document.querySelector('#rotation-queue .sports-odds')?.textContent === 'Support your team!');
+    const cardWithoutOdds = admin.locator('#rotation-queue [data-game-key="soccer:900005"] .sports-odds');
+    assert.equal(await cardWithoutOdds.innerText(), 'Support your team!', 'custom text appears on cards without odds');
+    await contentSelector.selectOption('blank');
+    await admin.waitForFunction(() => !document.querySelector('#rotation-queue .sports-odds'));
+    await contentSelector.selectOption('player-stats');
+    await admin.waitForFunction(() => document.querySelector('#rotation-queue .sports-odds')?.textContent === 'Betting Info: Hidden');
+    assert.equal(await cardWithoutOdds.count(), 0, 'player stats do not add content to game-list cards without odds');
+    assert.doesNotMatch(await admin.locator('#rotation-queue, #available-games').allTextContents().then(text => text.join(' ')), /Example Player/);
+    await bettingToggle.check();
+    await admin.waitForFunction(() => SportsOverlay.config.loadConfig().showBettingInfo === true);
+    await admin.waitForFunction(() => document.querySelector('#rotation-queue .sports-odds-price'));
+    assert.doesNotMatch(await admin.locator('#rotation-queue, #available-games').allTextContents().then(text => text.join(' ')), /Example Player/);
+    await bettingToggle.uncheck();
+    await admin.waitForFunction(() => SportsOverlay.config.loadConfig().showBettingInfo === false);
+    await contentSelector.selectOption('game-details');
+    await admin.waitForFunction(() => document.querySelector('#rotation-queue [data-game-key="soccer:900005"] .sports-odds')?.textContent === 'Venue: Example Arena');
+    await contentSelector.selectOption('scrolling');
+    await admin.waitForFunction(() => document.querySelector('#rotation-queue .sports-odds-ticker'));
+    assert.equal(await admin.locator('[data-betting-source="betting"]').isDisabled(),true,'off forbids betting content in mix');
+    assert.doesNotMatch(await admin.locator('#rotation-queue .sports-odds').first().innerText(),/SPREAD| ML/);
+    assert.doesNotMatch(await admin.locator('#rotation-queue, #available-games').allTextContents().then(text => text.join(' ')), /Example Player/, 'game-list scrolling mix excludes player stats');
+    await admin.locator('[data-betting-source="game-details"]').uncheck();
+    await admin.waitForFunction(() => !SportsOverlay.config.loadConfig().bettingMixSources.includes('game-details'));
+    await admin.locator('.settings-grid > .field').first().evaluate(el => window.scrollTo(0, window.scrollY + el.getBoundingClientRect().top - 64));
+    await admin.locator('.settings-grid > .field').first().screenshot({path:'/tmp/sportsover-betting-content-settings.png'});
+    await contentSelector.selectOption('hidden');
+    await admin.waitForFunction(() => SportsOverlay.config.loadConfig().bettingReplacement === 'hidden');
+
     const cardOdds = await admin.locator('#rotation-queue .sports-odds, #available-games .sports-odds').allTextContents();
     assert.ok(cardOdds.length > 0);
     assert.ok(cardOdds.every(text => text === 'Betting Info: Hidden'));
@@ -204,22 +329,64 @@ const root = path.resolve(__dirname, '../..');
     await obs.goto('http://overlay.test/sports/display.html');
     await obs.waitForFunction(() => document.querySelector('.sports-odds')?.textContent === 'Betting Info: Hidden');
     assert.equal(await obs.locator('.sports-odds-price, .sports-odds-line, .sports-odds [title]').count(),0);
+    await alternateToggle.uncheck();
+    await admin.waitForFunction(() => SportsOverlay.config.loadConfig().showAlternateContent === false);
     await bettingToggle.check();
     await admin.waitForFunction(() => window.SportsOverlay.config.loadConfig().showBettingInfo === true);
     await hostedDemo.waitForFunction(() => document.querySelector('.sports-odds-price') !== null);
     outputHtml = await hostedDemo.locator('#sports-overlay').evaluate(el => el.outerHTML);
     await obs.waitForFunction(() => document.querySelector('.sports-odds-price') !== null);
+    await alternateToggle.check();
+    await admin.waitForFunction(() => SportsOverlay.config.loadConfig().showAlternateContent === true);
+    await contentSelector.selectOption('custom');
+    await admin.waitForFunction(() => SportsOverlay.config.loadConfig().bettingReplacement === 'custom');
+    assert.equal(await bettingToggle.isChecked(), true, 'choosing alternate content keeps betting On');
+    await admin.waitForFunction(() => document.querySelector('#rotation-queue .sports-odds')?.textContent === 'Support your team!');
+    await hostedDemo.waitForFunction(() => document.querySelector('.sports-odds')?.textContent === 'Support your team!');
+    outputHtml = await hostedDemo.locator('#sports-overlay').evaluate(el => el.outerHTML);
+    await obs.waitForFunction(() => document.querySelector('.sports-odds')?.textContent === 'Support your team!');
+    assert.equal(await obs.locator('.sports-odds-price').count(), 0, 'OBS shows the selected alternate while betting is On');
     assert.deepEqual(await admin.evaluate(() => ({chosen:SportsOverlay.selection.chooseSpotlight(visibilityCandidates).id,
       scores:visibilityCandidates.map(SportsOverlay.selection.interestScore)})),selectionBefore);
     await bettingToggle.uncheck();
     await admin.waitForFunction(() => window.SportsOverlay.config.loadConfig().showBettingInfo === false);
+    await contentSelector.selectOption('scrolling');
+    await admin.waitForFunction(() => SportsOverlay.config.loadConfig().bettingReplacement === 'scrolling');
+    await hostedDemo.waitForFunction(() => document.querySelector('.sports-odds-ticker'));
+    outputHtml = await hostedDemo.locator('#sports-overlay').evaluate(el => el.outerHTML);
+    await obs.waitForFunction(() => document.querySelector('.sports-odds-ticker'));
+    assert.doesNotMatch(await obs.locator('.sports-odds').innerText(), /SPREAD| ML/, 'OBS mix excludes hidden odds');
+    await obs.evaluate(() => {
+      window.savedTicker = document.querySelector('.sports-odds-ticker');
+      window.savedAnimation = savedTicker.getAnimations()[0];
+    });
+    const displayedSequence = Number(await obs.locator('body').getAttribute('data-sequence'));
+    await obs.waitForFunction(sequence => Number(document.body.dataset.sequence) > sequence, displayedSequence);
+    assert.ok(await obs.evaluate(() => document.querySelector('.sports-odds-ticker') === savedTicker
+      && savedTicker.getAnimations()[0] === savedAnimation), 'OBS refresh preserves the scrolling loop');
+    await alternateToggle.uncheck();
+    await admin.waitForFunction(() => SportsOverlay.config.loadConfig().showAlternateContent === false);
+    await hostedDemo.waitForFunction(() => document.querySelector('.sports-odds')?.textContent === 'Betting Info: Hidden');
+    assert.equal(await contentSelector.inputValue(), 'scrolling', 'turning alternate content Off preserves its choice');
+    await alternateToggle.check();
+    await admin.waitForFunction(() => SportsOverlay.config.loadConfig().showAlternateContent === true);
+    await hostedDemo.waitForFunction(() => document.querySelector('.sports-odds-ticker'));
     const restartedAdmin = await context.newPage();
     await restartedAdmin.clock.resume();
     await restartedAdmin.goto('http://overlay.test/sports/admin/');
     await restartedAdmin.waitForFunction(() => window.SportsOverlay.shared?.connected());
     await restartedAdmin.getByRole('button',{name:'Settings',exact:true}).click();
     assert.equal(await restartedAdmin.getByRole('switch',{name:'Show betting info'}).isChecked(),false,'off persists in reopened Settings');
+    assert.equal(await restartedAdmin.getByRole('switch',{name:'Show alternate content'}).isChecked(),true,'alternate toggle persists in reopened Settings');
+    assert.equal(await restartedAdmin.locator('#betting-replacement').inputValue(),'scrolling','content selection persists in reopened Settings');
+    assert.equal(await restartedAdmin.locator('#betting-replacement-text').inputValue(),'Support your team!','custom text persists');
+    assert.equal(await restartedAdmin.locator('[data-betting-source="game-details"]').isChecked(),false,'loop sources persist');
+    await restartedAdmin.locator('#betting-replacement').selectOption('hidden');
+    await restartedAdmin.waitForFunction(() => SportsOverlay.config.loadConfig().bettingReplacement === 'hidden');
+
     await restartedAdmin.locator('#settings-panel .settings-grid').screenshot({path:'/tmp/sportsover-betting-toggle.png'});
+    await restartedAdmin.getByRole('switch',{name:'Show alternate content'}).uncheck();
+    await restartedAdmin.waitForFunction(() => SportsOverlay.config.loadConfig().showAlternateContent === false);
     await restartedAdmin.getByRole('switch',{name:'Show betting info'}).check();
     await admin.waitForFunction(() => window.SportsOverlay.config.loadConfig().showBettingInfo === true);
     await restartedAdmin.close();
@@ -240,8 +407,48 @@ const root = path.resolve(__dirname, '../..');
     assert.match(await admin.locator('#available-games [data-game-key="hockey:900001"] .sports-odds').innerText(), /PRE PUCK LINE/);
     await admin.clock.fastForward(300001);
     assert.match(await admin.locator('#available-games [data-game-key="hockey:900001"] .sports-odds').innerText(), /^LIVE ML\s+AWY \+120$/);
+    // Exercise the real card layouts with short and long rotating content.
+    for (const width of [1280, 390]) {
+      await admin.setViewportSize({width, height:844});
+      await admin.evaluate(() => {
+        const api = SportsOverlay;
+        window.listDetailLong = `Venue: ${'A long venue name with additional location information '.repeat(5)}`;
+        window.listDetailEvents = [...document.querySelectorAll('.game-copy')].map((mount, index) => {
+          const event = {id:`layout-${index}`,sport:'football',state:'pregame',teams:{away:{},home:{}},
+            details:{gameDetails:['Broadcast: ABC',listDetailLong]}};
+          api.odds.render(mount,event,()=>[],()=>({showBettingInfo:false,showAlternateContent:true,bettingReplacement:'game-details'}));
+          return {mount,event};
+        });
+        for (const list of document.querySelectorAll('.game-list')) list.scrollTop = 100;
+      });
+      const geometry = () => admin.locator('#rotation-queue, #available-games').evaluateAll(lists => lists.map(list => ({
+        scrollTop:list.scrollTop, scrollHeight:list.scrollHeight, width:list.clientWidth,
+        cards:[...list.querySelectorAll('.game-card')].map(card => ({
+          height:card.getBoundingClientRect().height,
+          top:card.getBoundingClientRect().top-list.getBoundingClientRect().top,
+        })),
+      })));
+      const before = await geometry();
+      await admin.clock.runFor(10001);
+      assert.ok(await admin.locator('.game-copy .sports-odds > strong').evaluateAll(rows => rows.every(row => row.textContent.startsWith('Venue:'))), 'details actually rotate to long text');
+      assert.deepEqual(await geometry(), before, `both game lists remain stationary at ${width}px`);
+      assert.equal(await admin.locator('.game-copy .sports-odds > strong').first().getAttribute('title'), await admin.evaluate(() => listDetailLong));
+      await admin.evaluate(() => {
+        for (const {mount,event} of listDetailEvents) SportsOverlay.odds.render(mount,event,()=>[],()=>({
+          showBettingInfo:false,showAlternateContent:true,bettingReplacement:'scrolling',bettingMixSources:['game-details']}));
+      });
+      assert.deepEqual(await geometry(), before, `long scrolling mix also stays in the same row at ${width}px`);
+      assert.ok(await admin.locator('#rotation-queue, #available-games').evaluateAll(lists => lists.every(list => list.scrollWidth <= list.clientWidth)), 'mix cannot widen game lists');
+      await admin.emulateMedia({reducedMotion:'reduce'});
+      assert.deepEqual(await geometry(), before, 'reduced-motion mix preserves card geometry');
+      assert.ok(await admin.locator('.game-copy .sports-odds-scrolling').first().evaluate(el => {
+        el.scrollLeft = 100;
+        return getComputedStyle(el).overflowX === 'auto' && el.scrollLeft > 0;
+      }), 'reduced-motion text remains manually scrollable');
+      await admin.emulateMedia({reducedMotion:'no-preference'});
+    }
     await admin.close();
     assert.deepEqual(errors, []);
-    console.log('Odds browser checks passed: all six ESPN sports, balanced moneylines, close point spreads, neutral spread payouts, game cards, visibility toggle and persistence, unchanged selection, demo/OBS output, narrow layouts, live markets, and expiry.');
+    console.log('Odds browser checks passed: all six ESPN sports, balanced moneylines, close point spreads, neutral spread payouts, game cards, replacement choices, safe custom text, rotating stats, mixed scrolling, saved preferences, unchanged selection, demo/OBS output, narrow layouts, live markets, and expiry.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

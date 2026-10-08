@@ -57,26 +57,101 @@
     };
   }
   const rows = createTracker();
-  const displayEnabled = () => global.SportsOverlay.config?.loadConfig()?.showBettingInfo !== false;
+  const displayConfig = () => global.SportsOverlay.config?.loadConfig() || {};
+  const HIDDEN_TEXT = 'Betting Info: Hidden';
+  function replacementItems(event, config, values) {
+    const mode = config.bettingReplacement || 'hidden';
+    const stats = (Array.isArray(event.details.playerStats) ? event.details.playerStats : []).filter(stat => stat?.key && typeof stat.text === 'string');
+    const details = (Array.isArray(event.details.gameDetails) ? event.details.gameDetails : []).filter(text => typeof text === 'string' && text);
+    const custom = typeof config.bettingReplacementText === 'string' ? config.bettingReplacementText.trim() : '';
+    if (mode === 'blank') return [];
+    if (mode === 'custom') return custom ? [{ key: 'custom', text: custom }] : [];
+    if (mode === 'player-stats') return stats.length ? stats : [{ key: 'hidden', text: HIDDEN_TEXT }];
+    if (mode === 'game-details') return details.length ? details.map(text => ({ key: text, text })) : [{ key: 'hidden', text: HIDDEN_TEXT }];
+    if (mode === 'scrolling') {
+      const sources = config.bettingMixSources || ['betting', 'player-stats', 'custom', 'game-details'];
+      const items = [];
+      if (config.showBettingInfo !== false && sources.includes('betting')) items.push(...values.map(value => ({ key: value.label, text: `${value.label} ${value.text}` })));
+      if (sources.includes('player-stats')) items.push(...stats);
+      if (sources.includes('custom') && custom) items.push({ key: 'custom', text: custom });
+      if (sources.includes('game-details')) items.push(...details.map(text => ({ key: text, text })));
+      return items.length || !sources.length || config.showBettingInfo !== false ? items : [{ key: 'hidden', text: HIDDEN_TEXT }];
+    }
+    return [{ key: 'hidden', text: HIDDEN_TEXT }];
+  }
+  const choices = new WeakMap();
+  function replacementText(mount, event, config, values) {
+    const mode = config.bettingReplacement || 'hidden';
+    const items = replacementItems(event, config, values);
+    if (!items.length) return '';
+    const identity = `${event.sport}:${event.id}:${mode}`;
+    let state = choices.get(mount);
+    if (state?.identity !== identity) { state = { identity, started: Date.now(), changed: -Infinity, key: null }; choices.set(mount, state); }
+    if (mode === 'scrolling') {
+      // Keep a random sample stable throughout the loop and provider refreshes.
+      // Changing values updates those stats without constantly restarting it.
+      const pool = items.filter(item => event.details.playerStats?.some(stat => stat.key === item.key));
+      const signature = pool.map(item => item.key).join('|');
+      if (state.pool !== signature) {
+        const remaining = [...pool]; state.sample = [];
+        while (remaining.length && state.sample.length < 5) state.sample.push(remaining.splice(Math.floor(Math.random() * remaining.length), 1)[0].key);
+        state.pool = signature;
+      }
+      const other = items.filter(item => !pool.includes(item));
+      return other.concat((state.sample || []).map(key => pool.find(item => item.key === key)).filter(Boolean)).map(item => item.text).join('   •   ');
+    }
+    if (mode === 'player-stats') {
+      if (Date.now() - state.changed >= 10000 || !items.some(item => item.key === state.key)) {
+        const candidates = items.length > 1 ? items.filter(item => item.key !== state.key) : items;
+        state.key = candidates[Math.floor(Math.random() * candidates.length)].key;
+        state.changed = Date.now();
+      }
+      return items.find(item => item.key === state.key).text;
+    }
+    if (mode === 'game-details') return items[Math.floor((Date.now() - state.started) / 10000) % items.length].text;
+    return items[0].text;
+  }
   const timers = new WeakMap();
   function clear(mount) {
     clearTimeout(timers.get(mount));
     timers.delete(mount);
     mount.querySelector('.sports-odds')?.remove();
+    choices.delete(mount);
   }
-  function render(mount, event, tracker = rows, isEnabled = displayEnabled) {
-    clear(mount);
+  function render(mount, event, tracker = rows, getConfig = displayConfig) {
+    clearTimeout(timers.get(mount));
+    timers.delete(mount);
     const values = tracker(event);
-    if (values.length) {
+    const config = { ...getConfig() };
+    const alternate = config.showAlternateContent === true;
+    if (!alternate) config.bettingReplacement = 'hidden';
+    const mode = config.bettingReplacement || 'hidden';
+    const scrolling = mode === 'scrolling';
+    const enabled = config.showBettingInfo !== false && !alternate;
+    if (values.length || alternate) {
       const section = mount.ownerDocument.createElement('section');
       section.className = 'sports-odds';
-      const enabled = isEnabled();
-      section.setAttribute('aria-label', enabled ? 'Game odds' : 'Betting information hidden');
+      section.setAttribute('aria-label', enabled ? 'Game odds' : 'Game information');
       if (!enabled) {
         section.classList.add('sports-odds-hidden');
         const text = mount.ownerDocument.createElement('strong');
-        text.textContent = 'Betting Info: Hidden';
-        section.append(text);
+        text.textContent = replacementText(mount, event, config, values);
+        if (text.textContent) {
+          if (scrolling) {
+            section.classList.add('sports-odds-scrolling');
+            section.tabIndex = 0;
+            const track = mount.ownerDocument.createElement('div');
+            track.className = 'sports-odds-ticker';
+            track.style.setProperty('--odds-scroll-duration', `${Math.max(20, text.textContent.length / 5)}s`);
+            const duplicate = text.cloneNode(true);
+            duplicate.setAttribute('aria-hidden', 'true');
+            track.append(text, duplicate);
+            section.append(track);
+          } else {
+            if (text.textContent !== HIDDEN_TEXT) text.title = text.textContent;
+            section.append(text);
+          }
+        }
       }
       for (const value of enabled ? values : []) {
         const item = mount.ownerDocument.createElement('div');
@@ -107,10 +182,19 @@
         item.append(label, text);
         section.append(item);
       }
-      mount.append(section);
+      const previous = mount.querySelector('.sports-odds');
+      if (!section.childNodes.length) previous?.remove();
+      else if (scrolling && previous?.className === section.className) {
+        // Updating the existing ticker preserves its running CSS animation.
+        const track = previous.firstElementChild;
+        for (let i = 0; i < 2; i++) track.children[i].textContent = section.firstElementChild.children[i].textContent;
+        track.style.cssText = section.firstElementChild.style.cssText;
+      } else if (!previous?.isEqualNode(section)) {
+        if (previous) previous.replaceWith(section); else mount.append(section);
+      }
       // Retire pregame lines even between provider polls or during a fetch failure.
-      timers.set(mount, setTimeout(() => { if (mount.isConnected) render(mount, event, tracker, isEnabled); }, 1000));
-    }
+      timers.set(mount, setTimeout(() => { if (mount.isConnected) render(mount, event, tracker, getConfig); }, 1000));
+    } else mount.querySelector('.sports-odds')?.remove();
   }
-  global.SportsOverlay.odds = Object.freeze({ createTracker, render, clear, isNearEven, isCloseSpread, GRACE_MS, NEAR_EVEN_LIMIT, CLOSE_SPREAD_LIMITS });
+  global.SportsOverlay.odds = Object.freeze({ createTracker, render, clear, replacementItems, isNearEven, isCloseSpread, GRACE_MS, NEAR_EVEN_LIMIT, CLOSE_SPREAD_LIMITS });
 })(typeof window === 'undefined' ? globalThis : window);

@@ -78,6 +78,7 @@
       details: {
         gameUrl: global.SportsOverlay.model.espnGameUrl(payload),
         odds: global.SportsOverlay.model.espnOdds(payload),
+        ...global.SportsOverlay.model.espnDisplayInfo(payload),
         inPlay: statusType.state === "in",
         preseason: global.SportsOverlay.model.espnPreseason(payload),
         period: periodLabel(status.period),

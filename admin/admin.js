@@ -157,9 +157,31 @@
   document.querySelector("#show-betting-info").addEventListener("change", event => {
     workingConfig.showBettingInfo = event.target.checked;
     document.querySelector("#betting-info-state").textContent = workingConfig.showBettingInfo ? "On" : "Off";
+    renderBettingFields();
     renderRotationControls();
     scheduleSettingsSave("showBettingInfo");
   });
+  document.querySelector("#show-alternate-content").addEventListener("change", event => {
+    workingConfig.showAlternateContent = event.target.checked;
+    renderBettingFields();
+    renderRotationControls();
+    scheduleSettingsSave("showAlternateContent");
+  });
+  document.querySelector("#betting-replacement").addEventListener("change", event => {
+    workingConfig.bettingReplacement = event.target.value;
+    renderBettingFields();
+    renderRotationControls();
+    scheduleSettingsSave("bettingReplacement");
+  });
+  document.querySelector("#betting-replacement-text").addEventListener("input", event => {
+    workingConfig.bettingReplacementText = event.target.value;
+    scheduleSettingsSave("bettingReplacementText");
+  });
+  document.querySelectorAll("[data-betting-source]").forEach(input => input.addEventListener("change", () => {
+    workingConfig.bettingMixSources = [...document.querySelectorAll("[data-betting-source]:checked")].map(input => input.dataset.bettingSource);
+    renderRotationControls();
+    scheduleSettingsSave("bettingMixSources");
+  }));
   document.querySelector("#display-mode").addEventListener("change", readBehaviorFields);
   document.querySelector("#fallback-mode").addEventListener("change", readBehaviorFields);
   document.querySelector("#rotation-mode").addEventListener("change", updateRotationControls);
@@ -530,6 +552,7 @@
     timeZonePicker.value = workingConfig.timeZone;
     document.querySelector("#show-betting-info").checked = workingConfig.showBettingInfo;
     document.querySelector("#betting-info-state").textContent = workingConfig.showBettingInfo ? "On" : "Off";
+    renderBettingFields();
     document.querySelector("#display-mode").value = workingConfig.displayMode;
     document.querySelector("#rotation-mode").value = workingConfig.rotationMode;
     document.querySelector("#fallback-mode").value = workingConfig.fallbackMode;
@@ -545,6 +568,31 @@
       newCard?.scrollIntoView({ behavior: "smooth", block: "center" });
       recentlyAddedTeamKey = null;
     }
+  }
+
+  function renderBettingFields() {
+    const mode = workingConfig.bettingReplacement;
+    document.querySelector("#show-alternate-content").checked = workingConfig.showAlternateContent;
+    document.querySelector("#alternate-content-state").textContent = workingConfig.showAlternateContent ? "On" : "Off";
+    document.querySelector("#alternate-content-options").hidden = !workingConfig.showAlternateContent;
+    document.querySelector("#betting-replacement").value = mode;
+    document.querySelector("#betting-custom-field").hidden = !["custom", "scrolling"].includes(mode);
+    const text = document.querySelector("#betting-replacement-text");
+    if (document.activeElement !== text) text.value = workingConfig.bettingReplacementText;
+    document.querySelector("#betting-mix-fields").hidden = mode !== "scrolling";
+    document.querySelectorAll("[data-betting-source]").forEach(input => {
+      input.checked = workingConfig.bettingMixSources.includes(input.dataset.bettingSource);
+      input.disabled = input.dataset.bettingSource === "betting" && !workingConfig.showBettingInfo;
+    });
+    const descriptions = {
+      hidden: "Show “Betting Info: Hidden” in place of odds.",
+      custom: "Show your message instead of odds, even while betting info is On. Use Scrolling mix to combine them.",
+      "player-stats": "Show a random available player stat every 10 seconds instead of odds, even while betting info is On. Missing stats show “Betting Info: Hidden”. Use Scrolling mix to combine stats with odds.",
+      "game-details": "Alternate available venue and broadcast details every 10 seconds instead of odds, even while betting info is On. Missing details show “Betting Info: Hidden”. Use Scrolling mix to combine details with odds.",
+      blank: "Leave this area empty, even while betting info is On.",
+      scrolling: "Loop your selected information. Betting info appears only while Show betting info is On. Unavailable information is skipped.",
+    };
+    document.querySelector("#betting-replacement-description").textContent = descriptions[mode];
   }
 
   function renderTeamPicker() {
@@ -1138,13 +1186,19 @@
     const candidate = entry.candidate;
     const odds = global.SportsOverlay.model.espnOdds(candidate.raw || {});
     const teams = gameTeams(candidate);
-    if (odds && teams.length === 2) {
+    if (teams.length === 2) {
       oddsApi.render(card.querySelector(".game-copy"), {
         id: candidate.id, sport: candidate.sport, state: candidate.state, startTime: candidate.startTime,
         teams: { away: { ...teams[0], abbreviation: teams[0].abbreviation || catalogTeam(candidate.sport, teams[0])?.abbreviation || teams[0].name },
           home: { ...teams[1], abbreviation: teams[1].abbreviation || catalogTeam(candidate.sport, teams[1])?.abbreviation || teams[1].name } },
-        details: { odds, inPlay: (candidate.raw?.competitions?.[0]?.status ?? candidate.raw?.status)?.type?.state === "in" },
-      }, gameOddsTracker, () => workingConfig.showBettingInfo);
+        details: { odds, gameDetails: global.SportsOverlay.model.espnDisplayInfo(candidate.raw || {}).gameDetails,
+          inPlay: (candidate.raw?.competitions?.[0]?.status ?? candidate.raw?.status)?.type?.state === "in" },
+      }, gameOddsTracker, () => ({
+        ...workingConfig,
+        // Player stats belong on the banner; keep both game lists easy to scan.
+        showAlternateContent: workingConfig.showAlternateContent && workingConfig.bettingReplacement !== "player-stats",
+        bettingMixSources: workingConfig.bettingMixSources.filter(source => source !== "player-stats"),
+      }));
     }
     card.classList.toggle("is-final", entry.candidate.state === "final");
     if (entry.candidate.state === "final") {

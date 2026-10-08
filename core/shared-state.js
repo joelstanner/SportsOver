@@ -16,7 +16,12 @@
         const config = local.loadConfig();
         try {
           const cached = JSON.parse(global.localStorage.getItem(cacheKey));
-          if (cached?.initialized && typeof cached.config?.showBettingInfo === "boolean") config.showBettingInfo = cached.config.showBettingInfo;
+          if (cached?.initialized) {
+            const display = local.normalizeConfig(cached.config);
+            for (const key of ["showBettingInfo", "showAlternateContent", "bettingReplacement", "bettingReplacementText", "bettingMixSources"]) {
+              if (display[key] !== undefined) config[key] = display[key];
+            }
+          }
         } catch (_) { /* Local preferences remain available. */ }
         return config;
       },

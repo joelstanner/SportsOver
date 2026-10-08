@@ -374,6 +374,33 @@ test('betting visibility rerenders received scores immediately without changing 
   assert.equal(app.renders.at(-1),'game/2');
 });
 
+test('replacement text and loop choices rerender received scores without fetching or restarting dwell', async () => {
+  const app = await fixture();
+  await app.advance(1000);
+  const calls = app.calls.length, renders = app.renders.length;
+  await app.save({bettingReplacement:'scrolling',bettingReplacementText:'Hello',bettingMixSources:['custom','player-stats']});
+  assert.ok(app.renders.length > renders);
+  assert.equal(app.renders.at(-1),'game/1');
+  assert.equal(app.calls.length,calls);
+  await app.advance(4000);
+  assert.equal(app.renders.at(-1),'game/2');
+});
+
+test('alternate toggle alone rerenders cached scores without fetching or restarting dwell', async () => {
+  const app = await fixture();
+  await app.advance(1000);
+  const calls = app.calls.length;
+  for (const showAlternateContent of [true, false]) {
+    const renders = app.renders.length;
+    await app.save({showAlternateContent});
+    assert.ok(app.renders.length > renders);
+    assert.equal(app.renders.at(-1), 'game/1');
+    assert.equal(app.calls.length, calls);
+  }
+  await app.advance(4000);
+  assert.equal(app.renders.at(-1), 'game/2');
+});
+
 test("default timing changes immediately reschedule banner rotation", async () => {
   const app = await fixture();
   await app.advance(1000);

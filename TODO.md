@@ -7,6 +7,10 @@
 - Complete PDGA developer/license review and confirm whether it covers the current unauthenticated Live endpoints or requires a supported replacement. Ask for rate limits, caching rules and attribution expectations for both Settings and banner views.
 - These questions remain open; no outreach or agreement acceptance has been performed. See the dated [provider-access findings](desktop/PROVIDERS.md).
 
+## Next priority
+
+- [ ] Add a player-name text search field when adding a player to banner view for every individual sport, including disc golf and chess. Filter the available players as the user types so they can quickly find and select the player to add. Apply the same behavior to future individual sports.
+
 ## Ideas
 
 - [ ] Audit outbound API request volume by sport, provider, and endpoint during startup, idle polling, live games, and Settings/OBS use. Identify duplicate calls, measure calls per minute, and recommend changes to polling or caching where needed. Disabled-sport request gating is complete; comparable live request-volume measurements remain.

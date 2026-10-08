@@ -135,3 +135,43 @@ test('all six ESPN providers retain embedded odds and in-play status', () => {
     assert.equal(game.details.inPlay, true, name);
   }
 });
+
+test('embedded player boxscores, game leaders, venue and broadcast info normalize without team totals or DNP entries', () => {
+  const info = global.SportsOverlay.model.espnDisplayInfo({
+    header:{competitions:[{venue:{fullName:'Example Arena',address:{city:'Example City',state:'CA'}},broadcasts:[{media:{shortName:'ABC'}},{names:['ABC','ESPN']}]}]},
+    boxscore:{players:[{team:{abbreviation:'AWY'},statistics:[{keys:['points','rebounds'],labels:['PTS','REB'],
+      totals:['99','44'],athletes:[{athlete:{id:'1',displayName:'Alex Example'},stats:['12','0']},
+        {athlete:{id:'2',displayName:'DNP Player'},didNotPlay:true,stats:['0','0']}]}]}]},
+    leaders:[{team:{abbreviation:'AWY'},leaders:[{name:'points',displayName:'Points',leaders:[{athlete:{id:'1',displayName:'Alex Example'},displayValue:'12'}]},
+      {name:'assists',displayName:'Assists',leaders:[{athlete:{id:'3',displayName:'Casey Example'},mainStat:{label:'AST',value:'4'}}]}]}],
+  });
+  assert.deepEqual(info.playerStats.map(stat=>stat.text),['Alex Example (AWY) · PTS: 12','Alex Example (AWY) · REB: 0','Casey Example (AWY) · AST: 4']);
+  assert.deepEqual(info.gameDetails,['Venue: Example Arena · Example City, CA','Broadcast: ABC, ESPN']);
+  assert.deepEqual(global.SportsOverlay.model.espnDisplayInfo({leaders:[null,{}],boxscore:{players:[null]}}),{playerStats:[],gameDetails:[]});
+});
+
+test('all ESPN providers preserve display info and scoreboard player leaders', () => {
+  const payload = {id:'display-info',header:{competitions:[{...competition,status:{type:{state:'pre'}},venue:{fullName:'Example Arena'},
+    competitors:[{homeAway:'away',team:{id:'1',abbreviation:'AWY'},leaders:[{name:'goals',displayName:'Goals',leaders:[{athlete:{id:'1',displayName:'Example Player'},displayValue:'7'}]}]},
+      {homeAway:'home',team:{id:'2',abbreviation:'HME'}}]}]}};
+  for (const name of ['espn-nfl','espn-ncaaf','espn-nba','espn-ncaam','espn-nhl','espn-mls']) {
+    const info = global.SportsOverlay.registry.getProvider(name).normalizeEvent(payload).details;
+    assert.deepEqual(info.gameDetails,['Venue: Example Arena']);
+    assert.equal(info.playerStats[0].text,'Example Player (AWY) · Goals: 7');
+  }
+});
+
+test('scrolling replacements never include odds when betting is off and skip unavailable sources', () => {
+  const game = event();
+  game.details.playerStats=[{key:'1:points',text:'Example Player · PTS: 12'}];
+  game.details.gameDetails=['Venue: Example Arena'];
+  const values=createTracker()(game,1000);
+  const config={bettingReplacement:'scrolling',bettingReplacementText:'Hello',showBettingInfo:false};
+  const items=global.SportsOverlay.odds.replacementItems;
+  assert.deepEqual(items(game,config,values).map(item=>item.text),['Example Player · PTS: 12','Hello','Venue: Example Arena']);
+  assert.ok(items(game,{...config,showBettingInfo:true},values).some(item=>item.text.includes('-185')));
+  assert.deepEqual(items(game,{...config,bettingMixSources:[]},values),[]);
+  assert.deepEqual(items(event(),{bettingReplacement:'player-stats'},values),[{key:'hidden',text:'Betting Info: Hidden'}]);
+  assert.deepEqual(items(game,{bettingReplacement:'blank'},values),[]);
+  assert.deepEqual(items(game,{bettingReplacement:'custom',bettingReplacementText:''},values),[]);
+});

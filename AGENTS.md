@@ -14,6 +14,8 @@ cannot be completed safely, report the blocker before beginning implementation.
 
 ## User shorthand
 
+- “Game lists” collectively means **On banner** and **Available games**; use
+  these terms interchangeably when discussing their cards.
 - `gst` means `git status`. When requested, show the current Git status.
 - `ship it` authorizes a version bump, commit, push, and published GitHub release.
   Follow the CI installer and checksum requirements below; do not ask again for

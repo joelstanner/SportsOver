@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SportsOver Settings</title>
-  <link rel="stylesheet" href="../core/odds.css?v=5">
-  <link rel="stylesheet" href="admin.css?v=31">
+  <link rel="stylesheet" href="../core/odds.css?v=6">
+  <link rel="stylesheet" href="admin.css?v=34">
   <link rel="stylesheet" href="../core/desktop.css?v=15">
 </head>
 <body>
@@ -76,8 +76,34 @@
       <div class="settings-grid">
         <div class="field">
           <span>Betting information</span>
-          <label class="toggle"><input id="show-betting-info" type="checkbox" role="switch" aria-describedby="betting-info-description"><span>Show betting info</span><strong id="betting-info-state">On</strong></label>
-          <small id="betting-info-description">Off shows “Betting Info: Hidden” in place of betting info. Game selection can still use odds.</small>
+          <label class="toggle betting-visibility-toggle"><input id="show-betting-info" type="checkbox" role="switch" aria-describedby="betting-info-description"><span>Show betting info</span><strong id="betting-info-state">On</strong></label>
+          <small id="betting-info-description">Off hides all betting info, including in Scrolling mix. Game selection can still use odds.</small>
+          <label class="toggle"><input id="show-alternate-content" type="checkbox" role="switch" aria-describedby="alternate-content-description"><span>Show alternate content</span><strong id="alternate-content-state">Off</strong></label>
+          <small id="alternate-content-description">Optional. Off shows odds when betting info is On, or “Betting Info: Hidden” when it is Off. On uses your selected content.</small>
+          <div id="alternate-content-options" class="field" hidden>
+            <label class="field">Alternate content
+              <select id="betting-replacement">
+                <option value="hidden">Betting Info: Hidden (default)</option>
+                <option value="custom">Custom text</option>
+                <option value="player-stats">Random player stats</option>
+                <option value="game-details">Game details</option>
+                <option value="blank">Blank</option>
+                <option value="scrolling">Scrolling mix</option>
+              </select>
+            </label>
+            <small id="betting-replacement-description"></small>
+            <label id="betting-custom-field" class="field" hidden>Custom text
+              <input id="betting-replacement-text" type="text" maxlength="160" placeholder="Enter your message">
+              <small>Up to 160 characters. Leave empty for no message.</small>
+            </label>
+            <fieldset id="betting-mix-fields" hidden>
+              <legend>Loop contents</legend>
+              <label class="toggle"><input type="checkbox" data-betting-source="betting">Betting info (requires On)</label>
+              <label class="toggle"><input type="checkbox" data-betting-source="player-stats">Available player stats</label>
+              <label class="toggle"><input type="checkbox" data-betting-source="custom">Custom text</label>
+              <label class="toggle"><input type="checkbox" data-betting-source="game-details">Game details</label>
+            </fieldset>
+          </div>
         </div>
         <label class="field">Time zone
           <select id="time-zone"></select>
@@ -370,31 +396,31 @@
     </article>
   </template>
 
-  <script src="../core/config.js?v=25"></script>
-  <script src="../core/shared-state.js?v=2"></script>
+  <script src="../core/config.js?v=27"></script>
+  <script src="../core/shared-state.js?v=4"></script>
   <script src="../core/automatic-watches.js?v=1"></script>
   <script src="../core/provider-network.js?v=2"></script>
   <script src="../core/provider-refresh.js?v=6"></script>
   <script src="../core/provider-discovery.js?v=1"></script>
-  <script src="../core/event-model.js?v=9"></script>
+  <script src="../core/event-model.js?v=10"></script>
   <script src="../core/countdown.js?v=2"></script>
-  <script src="../core/odds.js?v=5"></script>
+  <script src="../core/odds.js?v=9"></script>
   <script src="../core/registry.js?v=2"></script>
   <script src="../core/game-selection.js?v=9"></script>
   <script src="../core/live-mode.js?v=2"></script>
   <script src="../sports/baseball/providers/mlb.js?v=5"></script>
-  <script src="../sports/football/providers/espn.js?v=6"></script>
-  <script src="../sports/college-football/providers/espn.js?v=7"></script>
-  <script src="../sports/hockey/providers/espn.js?v=4"></script>
-  <script src="../sports/soccer/providers/espn.js?v=4"></script>
-  <script src="../sports/basketball/providers/espn.js?v=5"></script>
-  <script src="../sports/college-basketball/providers/espn.js?v=2"></script>
+  <script src="../sports/football/providers/espn.js?v=8"></script>
+  <script src="../sports/college-football/providers/espn.js?v=9"></script>
+  <script src="../sports/hockey/providers/espn.js?v=6"></script>
+  <script src="../sports/soccer/providers/espn.js?v=6"></script>
+  <script src="../sports/basketball/providers/espn.js?v=7"></script>
+  <script src="../sports/college-basketball/providers/espn.js?v=4"></script>
   <script src="../sports/disc-golf/providers/pdga.js?v=5"></script>
   <script src="pdga-settings.js?v=2"></script>
   <script src="../sports/chess/providers/lichess.js?v=4"></script>
   <script src="chess-settings.js?v=2"></script>
   <script src="automatic-watches.js?v=2"></script>
-  <script src="admin.js?v=44"></script>
+  <script src="admin.js?v=48"></script>
   <script src="../core/desktop.js?v=28"></script>
 </body>
 </html>

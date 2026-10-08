@@ -714,7 +714,8 @@ if (!staticPreview) {
       || JSON.stringify(savedConfig.defaultGameDurations) !== JSON.stringify(snapshot.config.defaultGameDurations);
     const locksChanged = JSON.stringify(savedConfig.lockedGameKeys) !== JSON.stringify(snapshot.config.lockedGameKeys);
     const bannerFilterChanged = savedConfig.bannerSportFilter !== snapshot.config.bannerSportFilter;
-    const bettingDisplayChanged = savedConfig.showBettingInfo !== snapshot.config.showBettingInfo;
+    const bettingDisplayChanged = ["showBettingInfo", "showAlternateContent", "bettingReplacement", "bettingReplacementText", "bettingMixSources"]
+      .some(key => JSON.stringify(savedConfig[key]) !== JSON.stringify(snapshot.config[key]));
     const teamsChanged = JSON.stringify(savedConfig.sports) !== JSON.stringify(snapshot.config.sports)
       || JSON.stringify(savedConfig.includedGames) !== JSON.stringify(snapshot.config.includedGames);
     const rotationControlsChanged = ["rotationMode", "includedGames", "excludedGames", "rotationOrder"]

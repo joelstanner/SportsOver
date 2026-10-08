@@ -38,6 +38,39 @@ test('betting visibility defaults on for existing settings and persists explicit
   assert.equal(configApi.resetConfig(storage).showBettingInfo,true);
 });
 
+test('alternate content defaults off and preserves choices independently of betting visibility', () => {
+  for (const value of [undefined, null, false, 'true', 1]) {
+    assert.equal(configApi.normalizeConfig({showAlternateContent:value}).showAlternateContent, false);
+  }
+  const storage = memoryStorage();
+  configApi.saveConfig({showBettingInfo:false,showAlternateContent:true,bettingReplacement:'scrolling',bettingReplacementText:'Hello'}, storage);
+  assert.equal(configApi.loadConfig(storage).showAlternateContent, true);
+  configApi.saveConfig({...configApi.loadConfig(storage),showAlternateContent:false}, storage);
+  const saved = configApi.loadConfig(storage);
+  assert.equal(saved.showAlternateContent, false);
+  assert.equal(saved.showBettingInfo, false);
+  assert.equal(saved.bettingReplacement, 'scrolling');
+  assert.equal(saved.bettingReplacementText, 'Hello');
+  assert.equal(configApi.resetConfig(storage).showAlternateContent, false);
+});
+
+test('betting replacements preserve the hidden default and normalize optional text and loop sources', () => {
+  assert.equal(configApi.normalizeConfig({bettingReplacement:'invalid'}).bettingReplacement,'hidden');
+  assert.equal(configApi.normalizeConfig().bettingReplacement,'hidden');
+  for (const mode of ['hidden','custom','player-stats','game-details','blank','scrolling']) {
+    const storage = memoryStorage();
+    configApi.saveConfig({showBettingInfo:false,bettingReplacement:mode,bettingReplacementText:'Go team!',bettingMixSources:['player-stats','custom']},storage);
+    assert.equal(configApi.loadConfig(storage).bettingReplacement,mode);
+    assert.equal(configApi.loadConfig(storage).bettingReplacementText,'Go team!');
+    assert.deepEqual(configApi.loadConfig(storage).bettingMixSources,['player-stats','custom']);
+  }
+  const config = configApi.normalizeConfig({bettingReplacementText:'a\n b'+ 'x'.repeat(200),bettingMixSources:['betting','bad','betting']});
+  assert.equal(config.bettingReplacementText.length,160);
+  assert.ok(config.bettingReplacementText.startsWith('a b'));
+  assert.deepEqual(config.bettingMixSources,['betting']);
+  assert.deepEqual(configApi.normalizeConfig({bettingMixSources:[]}).bettingMixSources,[]);
+});
+
 test('banner sport filters persist only supported, enabled sports and default off', () => {
   assert.equal(configApi.normalizeConfig().bannerSportFilter, '');
   assert.equal(configApi.normalizeConfig({ bannerSportFilter: 'chess' }).bannerSportFilter, 'chess');

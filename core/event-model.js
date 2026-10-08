@@ -119,6 +119,57 @@
       ? { spread, moneyline } : null;
   }
 
+  // Use information already embedded in summaries and scoreboards. Never fetch
+  // a player page or follow API references for display-only footer content.
+  function espnDisplayInfo(payload = {}) {
+    const array = value => Array.isArray(value) ? value : [];
+    const text = value => typeof value === "string" || typeof value === "number" ? String(value).replace(/\s+/g, " ").trim() : "";
+    const competition = payload.header?.competitions?.[0] ?? payload.competitions?.[0] ?? payload;
+    const playerStats = [], seen = new Set();
+    function add(athlete, stat, label, value, team) {
+      const name = text(athlete?.displayName || athlete?.fullName || athlete?.shortName);
+      label = text(label); value = text(value);
+      const key = `${text(athlete?.id) || name}:${text(stat) || label}`;
+      if (!name || !label || !/\d/.test(value) || /odds|moneyline|spread|overunder/i.test(stat || label) || seen.has(key) || playerStats.length >= 200) return;
+      seen.add(key);
+      playerStats.push({ key, text: `${name.slice(0, 60)}${team ? ` (${text(team).slice(0, 12)})` : ""} · ${label.slice(0, 40)}: ${value.slice(0, 80)}` });
+    }
+    for (const team of array(payload.boxscore?.players)) {
+      for (const group of array(team?.statistics)) {
+        const labels = array(group?.labels).length ? group.labels : array(group?.names);
+        for (const player of array(group?.athletes)) {
+          if (player?.didNotPlay) continue;
+          array(player?.stats).forEach((value, index) => add(player?.athlete, group?.keys?.[index] || labels[index], labels[index], value, team?.team?.abbreviation));
+        }
+      }
+    }
+    function leaders(groups, team, depth = 0) {
+      if (depth > 2) return;
+      for (const group of array(groups)) {
+        if (!group || typeof group !== "object") continue;
+        const abbreviation = group.team?.abbreviation || team;
+        if (!group.name && !group.displayName) { leaders(group.leaders, abbreviation, depth + 1); continue; }
+        for (const leader of array(group.leaders)) {
+          add(leader?.athlete, group.name, leader?.mainStat?.label || group.displayName || group.shortDisplayName || group.name,
+            leader?.mainStat?.value ?? leader?.displayValue, abbreviation);
+        }
+      }
+    }
+    leaders(payload.leaders);
+    leaders(competition.leaders);
+    for (const competitor of array(competition.competitors)) leaders(competitor?.leaders, competitor?.team?.abbreviation);
+    const gameDetails = [];
+    const venue = payload.gameInfo?.venue || competition.venue;
+    if (text(venue?.fullName)) {
+      const location = [text(venue.address?.city), text(venue.address?.state)].filter(Boolean).join(", ");
+      gameDetails.push(`Venue: ${text(venue.fullName)}${location ? ` · ${location}` : ""}`);
+    }
+    const channels = array(competition.broadcasts).flatMap(broadcast => array(broadcast?.names).concat(broadcast?.media?.shortName || []))
+      .concat(array(competition.geoBroadcasts).map(broadcast => broadcast?.media?.shortName)).map(text).filter(Boolean);
+    if (channels.length) gameDetails.push(`Broadcast: ${[...new Set(channels)].join(", ")}`);
+    return { playerStats, gameDetails };
+  }
+
   function selectedTimeZone() {
     const configured = global.SportsOverlay?.config?.loadConfig()?.timeZone;
     return !configured || configured === "local"
@@ -182,5 +233,5 @@
   }
 
   global.SportsOverlay = global.SportsOverlay || {};
-  global.SportsOverlay.model = Object.freeze({ EVENT_STATES, createEvent, validateEvent, gameUrl, espnGameUrl, espnPreseason, espnOdds, formatPregameCountdown, formatPregameStart, formatGameTime, formatFinalStatus });
+  global.SportsOverlay.model = Object.freeze({ EVENT_STATES, createEvent, validateEvent, gameUrl, espnGameUrl, espnPreseason, espnOdds, espnDisplayInfo, formatPregameCountdown, formatPregameStart, formatGameTime, formatFinalStatus });
 })(typeof window === "undefined" ? globalThis : window);

@@ -82,6 +82,7 @@
         gameUrl: global.SportsOverlay.model.espnGameUrl(payload),
         timeoutMaximum: timeouts.maximum,
         odds: global.SportsOverlay.model.espnOdds(payload),
+        ...global.SportsOverlay.model.espnDisplayInfo(payload),
         inPlay: statusType.state === "in",
         preseason: global.SportsOverlay.model.espnPreseason(payload),
         quarter: periodLabel(status.period),
