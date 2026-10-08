@@ -3,6 +3,14 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.38.2 — 2026-10-08
+
+### Changed
+
+- Simplify banner control instructions with shorter action descriptions and shared
+  keyboard, locking, and fullscreen notes.
+- Clarify when to refresh team data and shorten its confirmation dialog.
+
 ## 0.38.1 — 2026-10-08
 
 ### Fixed
