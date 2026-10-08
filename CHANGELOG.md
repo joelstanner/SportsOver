@@ -3,6 +3,25 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.37.0 — 2026-10-07
+
+### Added
+
+- Verify OBS output with an advancing engine heartbeat. After ten seconds without
+  fresh output, show a grey offline card, clear stale values, and recover automatically.
+- Support the separate AntlerJones local OBS host, which shows an unreachable
+  placeholder even when SportsOver is stopped at OBS startup and retries automatically.
+
+### Fixed
+
+- Match native NFL/NCAAF score sizing and NFL/NBA row proportions in OBS Normal;
+  center hockey scores with moderately larger numbers and preserve detail-row space.
+- Add watched games immediately while Live mode is active and prevent stale queue flicker.
+
+Existing app settings are preserved. For the AntlerJones cold-start placeholder,
+update `aj-obs-assets` and deploy `tools/setup_sportsover_fallback.py --install` on
+the streaming PC. Existing manual and automated OBS visibility controls are preserved.
+
 ## 0.36.1 — 2026-10-07
 
 ### Fixed
