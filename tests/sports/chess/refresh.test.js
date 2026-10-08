@@ -110,3 +110,57 @@ test('known result changes and manual invalidation cannot bypass chess rate-limi
   f.advance(120000);
   assert.equal((await f.client.getEvent('Tour1234:auto')).details.stale, false);
 });
+
+test('directory errors recover before the healthy cache expires and honor provider cooldowns', async () => {
+  for (const status of [503, 429]) {
+    let time = 0, failed = true, calls = 0;
+    const cache = api.providerRefresh.create({ config: () => api.config.normalizeConfig(), now: () => time,
+      wallNow: () => time, sleep: async ms => { time += ms; }, fetchImpl: async () => {
+        calls++;
+        return failed ? new Response('', { status, headers: status === 429 ? { 'Retry-After': '120' } : {} })
+          : Response.json({ active: [] });
+      } });
+    const fetch = cache.fetchFor('chess', api.lichess);
+    const options = { session: api.lichess.createSession(), fetchImpl: fetch, now: () => time, discoverSecondTier: true };
+    await assert.rejects(api.lichess.createClient(options).listCurrentEvents());
+    failed = false;
+    const retry = status === 429 ? 120000 : 60000;
+    time = retry - 1; fetch.retryFailed(); fetch.invalidate('https://lichess.org/api/broadcast/top');
+    await assert.rejects(api.lichess.createClient(options).listCurrentEvents());
+    assert.equal(calls, 1);
+    time = retry;
+    assert.deepEqual(await api.lichess.createClient(options).listCurrentEvents(), []);
+    assert.equal(calls, 2);
+    time += 899999;
+    await api.lichess.createClient(options).listCurrentEvents();
+    assert.equal(calls, 2, 'healthy directory still lasts fifteen minutes');
+  }
+});
+
+test('metadata failures recover on configured timing while longer healthy refresh preferences remain intact', async () => {
+  for (const seconds of [60, 600]) {
+    let time = 0, failed = true, calls = 0;
+    const config = api.config.normalizeConfig();
+    config.providerRefreshSeconds.chess.pregame = seconds;
+    const cache = api.providerRefresh.create({ config: () => config, now: () => time, wallNow: () => time,
+      sleep: async ms => { time += ms; }, fetchImpl: async () => {
+        calls++;
+        return failed ? new Response('', { status: 503 }) : Response.json({ tour: { id: 'Tour1234' }, rounds: [] });
+      } });
+    const client = api.lichess.createClient({ session: api.lichess.createSession(), now: () => time,
+      fetchImpl: cache.fetchFor('chess', api.lichess) });
+    await assert.rejects(client.getMetadata('Tour1234'));
+    failed = false; time = seconds * 1000 - 1;
+    await assert.rejects(client.getMetadata('Tour1234'));
+    assert.equal(calls, 1);
+    time++;
+    assert.equal((await client.getMetadata('Tour1234')).tour.id, 'Tour1234');
+    assert.equal(calls, 2);
+    time += Math.max(300, seconds) * 1000 - 1;
+    await client.getMetadata('Tour1234');
+    assert.equal(calls, 2);
+    time++;
+    await client.getMetadata('Tour1234');
+    assert.equal(calls, 3);
+  }
+});

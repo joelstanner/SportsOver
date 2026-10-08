@@ -112,7 +112,7 @@
     }
     const automatic = document.createElement("div"); automatic.className = "pdga-watch-card";
     automatic.innerHTML = `<label class="toggle"><input class="chess-auto-follow" type="checkbox">Automatically follow elite tournaments</label><p>Find Lichess best-tier and high-tier events every 15 minutes while SportsOver is running. Follow live rounds and breaks, with your fallback setting when nothing is live. Discovered events appear in the automatic watch list below.</p>`;
-    automatic.insertAdjacentHTML("beforeend", `<label class="toggle"><input type="checkbox" class="chess-second-tier">Find select second-tier live tournaments</label><p>Official live broadcasts with at least 2 GM/WGM or 4 GM/WGM/IM/WIM players. Up to 3 tournaments in Available games. Checked every 15 minutes. Add a suggestion to rotation or watch it to keep following. Prestige and field strength are used; prize pools are not verified.</p>`);
+    automatic.insertAdjacentHTML("beforeend", `<label class="toggle"><input type="checkbox" class="chess-second-tier">Find live Lichess broadcasts</label><p>Official broadcasts with verified games in progress, including open and computer tournaments. Up to 8 suggestions in Available games, prioritizing titled fields. Checked every 15 minutes, inspecting at most 12 broadcasts per scan. Add a suggestion to rotation or watch it to keep following.</p>`);
     const secondTier = automatic.querySelector(".chess-second-tier"); secondTier.checked = group.discoverSecondTier !== false;
     secondTier.onchange = () => { group.discoverSecondTier = secondTier.checked; changed(); };
     const toggle = automatic.querySelector(".chess-auto-follow"); toggle.checked = group.autoFollow;

@@ -378,7 +378,7 @@
     if (candidate.sport === "chess") {
       const watch = eventWatches(config, "chess").find(event => watchId(event) === candidate.id);
       return watch ? isWatchEnabled(watch) : candidate.raw?.automatic === true
-        && (candidate.raw.discoveryTier === "second" ? group.discoverSecondTier !== false : group.autoFollow === true);
+        && (["second", "live"].includes(candidate.raw.discoveryTier) ? group.discoverSecondTier !== false : group.autoFollow === true);
     }
     if (candidate.sport !== "disc-golf") return true;
     const watch = eventWatches(config, "disc-golf").find(event => watchId(event) === candidate.id);

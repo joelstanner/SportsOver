@@ -156,7 +156,14 @@ a wheel, trackpad, touch, or keyboard.
 runs. Elite chess discovery starts on; PDGA pro-tour discovery starts off, with
 MPO/FPO selected when enabled. Exclude automatic entries or use **Keep watch** to
 save a manual watch. Select second-tier live suggestions appear in **Available
-games** by default; add them to rotation manually.
+games** by default; add them to rotation manually. Chess's **Find live Lichess
+broadcasts** also offers official open and computer tournaments without requiring
+master titles. It reuses Lichess's public broadcast directory, checks at startup
+and every 15 minutes, inspects at most 12 ongoing broadcasts, and offers up to
+eight verified live suggestions. Titled fields rank first; other suggestions are
+labeled **Live broadcast**. An unfinished game with a recorded move is required;
+unplayed pairings and finished rounds are excluded. The existing discovery
+on/off preference is preserved, independently of elite auto-follow.
 
 Live feeds require internet access and may be delayed or unavailable. **STALE**
 marks retained scores during outages; chess clocks are broadcast snapshots.
@@ -268,6 +275,12 @@ intervals are respected. New board results expire standings early, and a complet
 round expires metadata so the next round can be selected promptly. Desktop chess
 requests share one paced queue and rate-limit cooldown across windows, with
 displayed-game requests taking priority over background discovery.
+Lichess network requests are serialized and spaced at least 1.5 seconds apart;
+directory data is shared for 15 minutes and concurrent live-discovery scans are
+shared. Failed directory scans retry after one minute, subject to backoff and
+provider cooldowns. HTTP 429 pauses requests for at least one minute, honoring
+longer Retry-After values. Metadata failure recovery follows configured timing
+and backoff without applying healthy-data cache minimums.
 
 ESPN season schedules and MLB watched-team date-range schedules use a minimum
 15-minute cache, respecting longer configured intervals. Daily league scoreboards,

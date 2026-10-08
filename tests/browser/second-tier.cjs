@@ -10,6 +10,10 @@ const round = { id: 'Round001', name: 'Round 1', ongoing: true, startsAt: now - 
 const metadata = { tour, rounds: [round], defaultRoundId: round.id };
 const players = [{ name: 'Master One', fideId: 1, title: 'GM' }, { name: 'Master Two', fideId: 2, title: 'WGM' }];
 const payload = { tour, round, games: [{ id: 'Game0001', players, lastMove: 'e2e4', status: '*', fen: '8/8/8/8/8/8/8/8 b - - 0 1' }] };
+const computerTour = { ...tour, id: 'Engine01', name: 'Computer Championship' };
+const computerRound = { ...round, id: 'EngineR1' };
+const computerPlayers = [{ name: 'Engine A', title: 'BOT' }, { name: 'Engine B', title: 'BOT' }];
+const computerPayload = { tour: computerTour, round: computerRound, games: [{ ...payload.games[0], players: computerPlayers }] };
 const directory = [{ tournId: 12345, tier: 'A', officialName: 'Regional Pro Championship', startDate: day, endDate: day }];
 const pdga = { Name: directory[0].officialName, TierPro: 'A', ScoringFormat: 'S', FinalRound: 3, Divisions: [{ Division: 'MPO', LatestRound: 1 }] };
 const scores = { scores: [{ Name: 'Pro Player', PDGANum: 123, Rating: 1020, Round: 1, RoundStarted: 1, Played: 5, Completed: 0, RunningPlace: 1, ToPar: -3 }] };
@@ -19,8 +23,13 @@ const scores = { scores: [{ Name: 'Pro Player', PDGANum: 123, Rating: 1020, Roun
   const context = await browser.newContext({ viewport: { width: 1200, height: 1000 } }), errors = [];
   await context.route('**/*', async route => {
    const url = new URL(route.request().url());
-   if (url.hostname === 'lichess.org') return route.fulfill({ json: url.pathname.endsWith('/top') ? { active: [{ tour, round }] }
-    : url.pathname.endsWith('/players') ? players.map((player, i) => ({ ...player, score: 1 - i, rank: i + 1 })) : url.pathname.includes('/-/-/') ? payload : metadata });
+   if (url.hostname === 'lichess.org') {
+    const computer = /Engine01|EngineR1/.test(url.pathname);
+    return route.fulfill({ json: url.pathname.endsWith('/top') ? { active: [{ tour, round }, { tour: computerTour, round: computerRound }] }
+     : url.pathname.endsWith('/players') ? (computer ? computerPlayers : players).map((player, i) => ({ ...player, score: 1 - i, rank: i + 1 }))
+     : url.pathname.includes('/-/-/') ? computer ? computerPayload : payload
+     : computer ? { tour: computerTour, rounds: [computerRound] } : metadata });
+   }
    if (url.hostname === 'www.pdga.com') return route.fulfill({ json: url.pathname.includes('current-events') ? directory : { data: url.pathname.endsWith('fetch_event') ? pdga : scores } });
    if (url.hostname !== 'overlay.test') return route.fulfill({ json: { events: [], dates: [] } });
    const file = url.pathname === '/admin/' ? 'admin/index.html' : url.pathname.slice(1);
@@ -31,15 +40,19 @@ const scores = { scores: [{ Name: 'Pro Player', PDGANum: 123, Rating: 1020, Roun
   await page.goto('http://overlay.test/admin/');
   await page.evaluate(value => localStorage.setItem('sports-overlay.config.v1', JSON.stringify(value)), config); await page.reload();
   await page.getByRole('button', { name: 'Live control', exact: true }).click();
-  const chessKey = 'chess:Select01:auto', pdgaKey = 'disc-golf:12345:MPO';
+  const chessKey = 'chess:Select01:auto', computerKey = 'chess:Engine01:auto', pdgaKey = 'disc-golf:12345:MPO';
   const available = key => page.locator(`#available-games [data-game-key="${key}"]`);
   await available(chessKey).waitFor(); await available(pdgaKey).waitFor();
   assert.equal(await page.locator('#rotation-queue [data-game-key]').count(), 0);
   assert.match(await available(chessKey).innerText(), /Second tier.*2 GM\/WGM/s);
+  await available(computerKey).waitFor();
+  assert.match(await available(computerKey).innerText(), /Live broadcast.*Official Lichess broadcast/s);
   assert.match(await available(pdgaKey).innerText(), /Pro A-tier.*1020/s);
   await page.screenshot({ path: '/tmp/sportsover-second-tier-available.png', fullPage: true });
   await available(chessKey).getByRole('button', { name: 'Add', exact: true }).click();
   await page.locator(`#rotation-queue [data-game-key="${chessKey}"]`).waitFor();
+  await available(computerKey).getByRole('button', { name: 'Add', exact: true }).click();
+  await page.locator(`#rotation-queue [data-game-key="${computerKey}"]`).waitFor();
   await available(pdgaKey).getByRole('button', { name: 'Watch division', exact: true }).click();
   await page.waitForFunction(() => window.SportsOverlay.config.loadConfig().sports.find(group => group.sport === 'disc-golf').events.length === 1);
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
@@ -50,6 +63,7 @@ const scores = { scores: [{ Name: 'Pro Player', PDGANum: 123, Rating: 1020, Roun
   await page.getByRole('button', { name: 'Live control', exact: true }).click();
   await page.locator(`#rotation-queue [data-game-key="${pdgaKey}"]`).waitFor();
   await page.locator(`#rotation-queue [data-game-key="${chessKey}"]`).waitFor();
+  await page.locator(`#rotation-queue [data-game-key="${computerKey}"]`).waitFor();
   await page.locator(`#rotation-queue [data-game-key="${chessKey}"] .remove-game`).click();
   await page.waitForFunction(() => !window.SportsOverlay.config.loadConfig().includedGames.includes('chess:Select01:auto'));
   await page.reload();

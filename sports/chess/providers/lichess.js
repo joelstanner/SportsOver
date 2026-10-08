@@ -1,6 +1,7 @@
 "use strict";
 (function initializeLichess(global) {
   const DIRECTORY_INTERVAL = 15 * 60_000;
+  const LIVE_SCAN_LIMIT = 12, LIVE_SUGGESTION_LIMIT = 8;
   const BASE = "https://lichess.org/api/broadcast/";
   const validId = value => /^[a-zA-Z0-9]{8}$/.test(String(value || ""));
   const numeric = value => typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -101,7 +102,7 @@
         view: event.details.view,
         discoveryTier: event.details.discoveryTier, discoveryReason: event.details.discoveryReason } };
   }
-  function createSession() { return { tail: Promise.resolve(), requests: new Map(), lastGood: new Map(), roundResults: new Map(), cooldownUntil: 0, directory: [], directoryAt: -Infinity, directoryPending: null, watches: new Map(), finishedAt: new Map(), activeWatches: new Set(), secondTier: new Map(), secondTierAt: -Infinity }; }
+  function createSession() { return { tail: Promise.resolve(), requests: new Map(), lastGood: new Map(), roundResults: new Map(), cooldownUntil: 0, directory: [], directoryAt: -Infinity, directoryPending: null, watches: new Map(), finishedAt: new Map(), activeWatches: new Set(), secondTier: new Map(), secondTierAt: -Infinity, secondTierPending: null }; }
   function secondTierStrength(event) {
     const players = [...new Map(event.competitors.map(player => [player.id, player])).values()];
     const grandmasters = players.filter(player => ["GM", "WGM"].includes(player.title)).length;
@@ -225,7 +226,7 @@
           session.roundResults.set(event.details.roundId, results);
           if (session.roundResults.size > 128) session.roundResults.delete(session.roundResults.keys().next().value);
         }
-        Object.assign(event.details, { discoveryReason: watch.discoveryReason });
+        Object.assign(event.details, { discoveryTier: watch.discoveryTier, discoveryReason: watch.discoveryReason });
         if (watch.view !== "player" || !event.competitors.some(person => person.id === watch.playerId)) {
           // Tournament standings can still change after a watched older round ends.
           const cacheState = event.state === "live" ? "live" : metadata ? tournamentState(metadata) : event.state;
@@ -250,35 +251,50 @@
       if (!isWatchEnabled(watch)) throw Error("Chess tournament is not watched");
       return loadEvent(watch, undefined, options);
     }
-    async function secondTierEvents() {
-      if (!discoverSecondTier) return { events: [], failures: 0 };
+    async function inspectLiveBroadcasts() {
       const inspected = new Map();
       let failures = 0;
+      const found = [];
+      // The website's live broadcasts are already in /top. Titles rank the
+      // suggestions, but must not exclude live opens or computer tournaments.
+      const candidates = session.directory.filter(tour => [3, 4, 5].includes(tour.tier)
+        && tour.currentRound?.ongoing && !completed(tour.currentRound)
+        && !watches.some(watch => watchId(watch) === `${tour.id}:auto`)
+        && !(autoFollow && session.watches.has(`${tour.id}:auto`)))
+        .sort((a, b) => (b.currentRound.startsAt || 0) - (a.currentRound.startsAt || 0) || a.id.localeCompare(b.id))
+        .filter((tour, index, all) => all.findIndex(other => other.id === tour.id) === index).slice(0, LIVE_SCAN_LIMIT);
+      for (const tour of candidates) {
+        try {
+          const metadata = await getMetadata(tour.id), round = selectRound(metadata, "", now());
+          if (!round) continue;
+          const watch = { tournamentId: tour.id, roundId: "", name: tour.name, enabled: true, view: "overview", playerId: "", automatic: true, discoveryTier: "second" };
+          const event = normalizeEvent(metadata, await getRound(round.id), watch, now()), strength = secondTierStrength(event);
+          if (![3, 4, 5].includes(metadata.tour.tier) || event.state !== "live") continue;
+          found.push({ watch: { ...watch, discoveryTier: strength.qualifies ? "second" : "live",
+            discoveryReason: strength.qualifies ? strength.reason : "Official Lichess broadcast · Unfinished games with recorded moves" }, rank: strength.rank });
+          inspected.set(watchId(watch), event);
+        } catch (_) { failures++; }
+      }
+      const next = found.sort((a, b) => b.rank - a.rank || watchId(a.watch).localeCompare(watchId(b.watch))).slice(0, LIVE_SUGGESTION_LIMIT).map(item => item.watch);
+      if (failures) for (const watch of session.secondTier.values()) {
+        if (next.length < LIVE_SUGGESTION_LIMIT && !next.some(item => watchId(item) === watchId(watch))) next.push(watch);
+      }
+      session.secondTier = new Map(next.map(watch => [watchId(watch), watch]));
+      session.secondTierAt = now();
+      session.secondTierRetryAt = failures ? Math.max(now() + 60_000, session.cooldownUntil) : 0;
+      return { inspected, failures };
+    }
+    async function secondTierEvents() {
+      if (!discoverSecondTier) return { events: [], failures: 0 };
+      let inspected = new Map(), failures = 0;
       try { await listCurrentEvents(); } catch (_) { failures++; }
-      if (!session.directoryError && now() >= (session.secondTierRetryAt || session.secondTierAt + DIRECTORY_INTERVAL)) {
-        const found = [];
-        // Inspect only a bounded set of currently ongoing official broadcasts.
-        const candidates = session.directory.filter(tour => tour.tier === 3 && tour.currentRound?.ongoing)
-          .sort((a, b) => (b.currentRound.startsAt || 0) - (a.currentRound.startsAt || 0) || a.id.localeCompare(b.id))
-          .filter((tour, index, all) => all.findIndex(other => other.id === tour.id) === index).slice(0, 12);
-        for (const tour of candidates) {
-          try {
-            const metadata = await getMetadata(tour.id), round = selectRound(metadata, "", now());
-            if (!round) continue;
-            const watch = { tournamentId: tour.id, roundId: "", name: tour.name, enabled: true, view: "overview", playerId: "", automatic: true, discoveryTier: "second" };
-            const event = normalizeEvent(metadata, await getRound(round.id), watch, now()), strength = secondTierStrength(event);
-            if (metadata.tour.tier !== 3 || event.state !== "live" || !strength.qualifies) continue;
-            found.push({ watch: { ...watch, discoveryReason: strength.reason }, rank: strength.rank });
-            inspected.set(watchId(watch), event);
-          } catch (_) { failures++; }
-        }
-        const next = found.sort((a, b) => b.rank - a.rank || watchId(a.watch).localeCompare(watchId(b.watch))).slice(0, 3).map(item => item.watch);
-        if (failures) for (const watch of session.secondTier.values()) {
-          if (next.length < 3 && !next.some(item => watchId(item) === watchId(watch))) next.push(watch);
-        }
-        session.secondTier = new Map(next.map(watch => [watchId(watch), watch]));
-        session.secondTierAt = now();
-        session.secondTierRetryAt = failures ? Math.max(now() + 60_000, session.cooldownUntil) : 0;
+      if (!session.directoryError && !session.secondTierPending
+        && now() >= (session.secondTierRetryAt || session.secondTierAt + DIRECTORY_INTERVAL)) {
+        session.secondTierPending = inspectLiveBroadcasts().finally(() => { session.secondTierPending = null; });
+      }
+      if (session.secondTierPending) {
+        const result = await session.secondTierPending;
+        inspected = result.inspected; failures += result.failures;
       }
       const events = [];
       for (const watch of session.secondTier.values()) {
@@ -366,9 +382,10 @@
   }
   const provider = { createClient, createSession, eliteEvents, reference, watchId, selectRound, gameState, roundState, normalizeEvent, normalizePlayer, normalizeStandings, toCandidate,
     failureBackoff: true, requestIntervalMs: 1000, rateLimitCooldownMs: 60_000,
-    refreshIntervalMs(url, state, configuredDelay = 0) {
-      if (String(url).endsWith("/top")) return DIRECTORY_INTERVAL;
+    refreshIntervalMs(url, state, configuredDelay = 0, error) {
+      if (String(url).endsWith("/top")) return error ? 60_000 : DIRECTORY_INTERVAL;
       if (String(url).includes("/-/-/")) return undefined;
+      if (error) return configuredDelay;
       return Math.max(configuredDelay, state === "final" ? DIRECTORY_INTERVAL : state === "live" ? 120_000 : 300_000);
     },
     refreshState(payload, url) {

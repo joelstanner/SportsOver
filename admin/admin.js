@@ -1127,7 +1127,7 @@
     const sport = configApi.findSport(entry.candidate.sport);
     card.dataset.gameKey = rotationEntryKey(entry);
     card.classList.toggle("is-live", entry.candidate.state === "live");
-    card.querySelector(".game-sport").textContent = `${sport?.league || entry.candidate.sport.toUpperCase()}${entry.candidate.raw?.discoveryTier === "second" ? " · Second tier" : entry.candidate.raw?.automatic ? " · Automatic" : ""}`;
+    card.querySelector(".game-sport").textContent = `${sport?.league || entry.candidate.sport.toUpperCase()}${entry.candidate.raw?.discoveryTier === "second" ? " · Second tier" : entry.candidate.raw?.discoveryTier === "live" ? " · Live broadcast" : entry.candidate.raw?.automatic ? " · Automatic" : ""}`;
     if (entry.candidate.raw?.automatic) {
       const watch = document.createElement("button");
       watch.type = "button"; watch.className = `lock-game ${entry.candidate.sport === "chess" ? "chess-watch-automatic" : "pdga-watch-automatic"}`; watch.textContent = entry.candidate.sport === "chess" ? "Watch tournament" : "Watch division";
