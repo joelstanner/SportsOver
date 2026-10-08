@@ -68,7 +68,7 @@ const root = path.resolve(__dirname, '../..');
           assert.equal(await page.locator('.sports-odds').innerText(), 'Betting Info: Hidden', 'timer cannot restore a saved mix or odds');
         }
         await setContent('hidden', {showBettingInfo:true});
-        assert.equal(await page.locator('.sports-odds').innerText(), 'Betting Info: Hidden', 'alternate On honors the selected hidden message even with betting On');
+        assert.match(await page.locator('.sports-odds').innerText(), /\+154/, 'hidden-message choice cannot hide odds while betting is On');
         const custom = '<img src=x onerror=alert(1)> Cheer for your team!';
         await setContent('custom',{bettingReplacementText:custom});
         assert.equal(await page.locator('.sports-odds').innerText(),custom);
@@ -101,22 +101,27 @@ const root = path.resolve(__dirname, '../..');
           testEvent.details.odds=odds;
           testEvent.details.playerStats=[{key:'one:points',text:'Alex Example · PTS: 12'},{key:'two:rebounds',text:'Casey Example · REB: 7'}];
         },originalOdds);
-        // A selected alternate wins over available odds even with betting On.
+        // Both toggles On add the chosen alternate to available odds.
         for (const hasOdds of [true, false]) {
           await page.evaluate(odds => { testEvent.details.odds = odds; }, hasOdds ? originalOdds : null);
-          await setContent('custom', {showBettingInfo:true, bettingReplacementText:custom});
-          assert.equal(await page.locator('.sports-odds').innerText(), custom, `custom text with betting On, odds: ${hasOdds}`);
-          await page.clock.runFor(1001);
-          assert.equal(await page.locator('.sports-odds').innerText(), custom, 'timer preserves the selected alternate');
-          await setContent('player-stats', {showBettingInfo:true});
-          assert.match(await page.locator('.sports-odds').innerText(), /Example/);
-          assert.equal(await page.locator('.sports-odds-price, .sports-odds-label').count(), 0);
-          await setContent('game-details', {showBettingInfo:true});
-          assert.equal(await page.locator('.sports-odds').innerText(), 'Venue: Example Arena');
-          await setContent('blank', {showBettingInfo:true});
-          assert.equal(await page.locator('.sports-odds').count(), 0, 'blank overrides odds while betting is On');
-          await setContent('custom', {showBettingInfo:true, bettingReplacementText:''});
-          assert.equal(await page.locator('.sports-odds').count(), 0, 'empty custom text stays empty while betting is On');
+          for (const [mode, expected] of [['custom',custom],['player-stats','Example'],['game-details','Example Arena']]) {
+            await setContent(mode, {showBettingInfo:true, bettingReplacementText:custom});
+            const visible = await page.locator('.sports-odds').innerText();
+            assert.ok(visible.includes(expected), `${mode} remains visible with betting On`);
+            assert.equal(await page.locator('.sports-odds-ticker').count(), hasOdds ? 1 : 0);
+            if (hasOdds) assert.match(visible, /-185.*\+154/s, 'available odds join the chosen alternate');
+            else assert.doesNotMatch(visible, /-185|\+154/);
+            if (mode === 'custom') assert.doesNotMatch(visible, /Example|Venue:|Broadcast:/, 'only the chosen alternate is added');
+            if (mode === 'player-stats') assert.doesNotMatch(visible, /Venue:|Broadcast:/);
+            if (mode === 'game-details') assert.doesNotMatch(visible, /PTS:|REB:/);
+            await page.clock.runFor(1001);
+            assert.equal(await page.locator('.sports-odds').innerText(), visible, 'timer preserves the combination');
+          }
+          for (const mode of ['blank','custom','hidden']) {
+            await setContent(mode, {showBettingInfo:true, bettingReplacementText:''});
+            assert.equal(await page.locator('.sports-odds').count(), hasOdds ? 1 : 0, 'empty alternate does not suppress permitted odds');
+            if (hasOdds) assert.match(await page.locator('.sports-odds').innerText(), /\+154/);
+          }
         }
         await page.evaluate(odds => { testEvent.details.odds = odds; }, originalOdds);
         await setContent('hidden', {showBettingInfo:true,showAlternateContent:false});
@@ -289,7 +294,7 @@ const root = path.resolve(__dirname, '../..');
     await admin.waitForFunction(() => document.querySelector('#rotation-queue [data-game-key="soccer:900005"] .sports-odds')?.textContent === 'Venue: Example Arena');
     await contentSelector.selectOption('scrolling');
     await admin.waitForFunction(() => document.querySelector('#rotation-queue .sports-odds-ticker'));
-    assert.equal(await admin.locator('[data-betting-source="betting"]').isDisabled(),true,'off forbids betting content in mix');
+    assert.match(await admin.locator('#betting-mix-betting-description').innerText(), /added automatically/);
     assert.doesNotMatch(await admin.locator('#rotation-queue .sports-odds').first().innerText(),/SPREAD| ML/);
     assert.doesNotMatch(await admin.locator('#rotation-queue, #available-games').allTextContents().then(text => text.join(' ')), /Example Player/, 'game-list scrolling mix excludes player stats');
     await admin.locator('[data-betting-source="game-details"]').uncheck();
@@ -341,11 +346,11 @@ const root = path.resolve(__dirname, '../..');
     await contentSelector.selectOption('custom');
     await admin.waitForFunction(() => SportsOverlay.config.loadConfig().bettingReplacement === 'custom');
     assert.equal(await bettingToggle.isChecked(), true, 'choosing alternate content keeps betting On');
-    await admin.waitForFunction(() => document.querySelector('#rotation-queue .sports-odds')?.textContent === 'Support your team!');
-    await hostedDemo.waitForFunction(() => document.querySelector('.sports-odds')?.textContent === 'Support your team!');
+    await admin.waitForFunction(() => document.querySelector('#rotation-queue .sports-odds-ticker')?.textContent.includes('Support your team!'));
+    await hostedDemo.waitForFunction(() => document.querySelector('.sports-odds-ticker')?.textContent.includes('Support your team!'));
     outputHtml = await hostedDemo.locator('#sports-overlay').evaluate(el => el.outerHTML);
-    await obs.waitForFunction(() => document.querySelector('.sports-odds')?.textContent === 'Support your team!');
-    assert.equal(await obs.locator('.sports-odds-price').count(), 0, 'OBS shows the selected alternate while betting is On');
+    await obs.waitForFunction(() => document.querySelector('.sports-odds-ticker')?.textContent.includes('Support your team!'));
+    assert.match(await obs.locator('.sports-odds').innerText(), /ML.*-185.*\+154.*Support your team!/s, 'OBS combines odds and the chosen alternate');
     assert.deepEqual(await admin.evaluate(() => ({chosen:SportsOverlay.selection.chooseSpotlight(visibilityCandidates).id,
       scores:visibilityCandidates.map(SportsOverlay.selection.interestScore)})),selectionBefore);
     await bettingToggle.uncheck();

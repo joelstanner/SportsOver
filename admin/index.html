@@ -79,7 +79,7 @@
           <label class="toggle betting-visibility-toggle"><input id="show-betting-info" type="checkbox" role="switch" aria-describedby="betting-info-description"><span>Show betting info</span><strong id="betting-info-state">On</strong></label>
           <small id="betting-info-description">Off hides all betting info, including in Scrolling mix. Game selection can still use odds.</small>
           <label class="toggle"><input id="show-alternate-content" type="checkbox" role="switch" aria-describedby="alternate-content-description"><span>Show alternate content</span><strong id="alternate-content-state">Off</strong></label>
-          <small id="alternate-content-description">Optional. Off shows odds when betting info is On, or “Betting Info: Hidden” when it is Off. On uses your selected content.</small>
+          <small id="alternate-content-description">Optional. On adds your selected content. When both toggles are On, available odds and alternate content scroll together.</small>
           <div id="alternate-content-options" class="field" hidden>
             <label class="field">Alternate content
               <select id="betting-replacement">
@@ -98,7 +98,7 @@
             </label>
             <fieldset id="betting-mix-fields" hidden>
               <legend>Loop contents</legend>
-              <label class="toggle"><input type="checkbox" data-betting-source="betting">Betting info (requires On)</label>
+              <small id="betting-mix-betting-description">Available odds are added automatically while Show betting info is On, and excluded when it is Off.</small>
               <label class="toggle"><input type="checkbox" data-betting-source="player-stats">Available player stats</label>
               <label class="toggle"><input type="checkbox" data-betting-source="custom">Custom text</label>
               <label class="toggle"><input type="checkbox" data-betting-source="game-details">Game details</label>
@@ -404,7 +404,7 @@
   <script src="../core/provider-discovery.js?v=1"></script>
   <script src="../core/event-model.js?v=10"></script>
   <script src="../core/countdown.js?v=2"></script>
-  <script src="../core/odds.js?v=9"></script>
+  <script src="../core/odds.js?v=10"></script>
   <script src="../core/registry.js?v=2"></script>
   <script src="../core/game-selection.js?v=9"></script>
   <script src="../core/live-mode.js?v=2"></script>
@@ -420,7 +420,7 @@
   <script src="../sports/chess/providers/lichess.js?v=4"></script>
   <script src="chess-settings.js?v=2"></script>
   <script src="automatic-watches.js?v=2"></script>
-  <script src="admin.js?v=48"></script>
+  <script src="admin.js?v=49"></script>
   <script src="../core/desktop.js?v=28"></script>
 </body>
 </html>

@@ -71,7 +71,7 @@
     if (mode === 'scrolling') {
       const sources = config.bettingMixSources || ['betting', 'player-stats', 'custom', 'game-details'];
       const items = [];
-      if (config.showBettingInfo !== false && sources.includes('betting')) items.push(...values.map(value => ({ key: value.label, text: `${value.label} ${value.text}` })));
+      if (config.showBettingInfo !== false) items.push(...values.map(value => ({ key: value.label, text: `${value.label} ${value.text}` })));
       if (sources.includes('player-stats')) items.push(...stats);
       if (sources.includes('custom') && custom) items.push({ key: 'custom', text: custom });
       if (sources.includes('game-details')) items.push(...details.map(text => ({ key: text, text })));
@@ -126,8 +126,16 @@
     const alternate = config.showAlternateContent === true;
     if (!alternate) config.bettingReplacement = 'hidden';
     const mode = config.bettingReplacement || 'hidden';
-    const scrolling = mode === 'scrolling';
-    const enabled = config.showBettingInfo !== false && !alternate;
+    let enabled = config.showBettingInfo !== false && !alternate;
+    if (alternate && config.showBettingInfo !== false && mode !== 'scrolling') {
+      const items = replacementItems(event, config, values).filter(item => item.key !== 'hidden');
+      if (!items.length) enabled = true;
+      else if (values.length) {
+        config.bettingReplacement = 'scrolling';
+        config.bettingMixSources = [mode];
+      }
+    }
+    const scrolling = config.bettingReplacement === 'scrolling';
     if (values.length || alternate) {
       const section = mount.ownerDocument.createElement('section');
       section.className = 'sports-odds';

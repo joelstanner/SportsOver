@@ -582,15 +582,14 @@
     document.querySelector("#betting-mix-fields").hidden = mode !== "scrolling";
     document.querySelectorAll("[data-betting-source]").forEach(input => {
       input.checked = workingConfig.bettingMixSources.includes(input.dataset.bettingSource);
-      input.disabled = input.dataset.bettingSource === "betting" && !workingConfig.showBettingInfo;
     });
     const descriptions = {
-      hidden: "Show “Betting Info: Hidden” in place of odds.",
-      custom: "Show your message instead of odds, even while betting info is On. Use Scrolling mix to combine them.",
-      "player-stats": "Show a random available player stat every 10 seconds instead of odds, even while betting info is On. Missing stats show “Betting Info: Hidden”. Use Scrolling mix to combine stats with odds.",
-      "game-details": "Alternate available venue and broadcast details every 10 seconds instead of odds, even while betting info is On. Missing details show “Betting Info: Hidden”. Use Scrolling mix to combine details with odds.",
-      blank: "Leave this area empty, even while betting info is On.",
-      scrolling: "Loop your selected information. Betting info appears only while Show betting info is On. Unavailable information is skipped.",
+      hidden: "Show “Betting Info: Hidden” when betting info is Off. On shows available odds.",
+      custom: "Show your message. When betting info is On and odds are available, scroll both together.",
+      "player-stats": "Show available player stats on the banner. With available odds and betting info On, scroll both together; otherwise change stats every 10 seconds. Game lists omit player stats.",
+      "game-details": "Show available venue and broadcast details. With available odds and betting info On, scroll both together; otherwise change details every 10 seconds.",
+      blank: "Add no alternate content. Available odds still appear while betting info is On.",
+      scrolling: "Loop your selected alternate information. Available odds are added automatically while Show betting info is On. Unavailable information is skipped.",
     };
     document.querySelector("#betting-replacement-description").textContent = descriptions[mode];
   }

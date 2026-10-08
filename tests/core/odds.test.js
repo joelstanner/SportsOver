@@ -171,6 +171,10 @@ test('scrolling replacements never include odds when betting is off and skip una
   assert.deepEqual(items(game,config,values).map(item=>item.text),['Example Player · PTS: 12','Hello','Venue: Example Arena']);
   assert.ok(items(game,{...config,showBettingInfo:true},values).some(item=>item.text.includes('-185')));
   assert.deepEqual(items(game,{...config,bettingMixSources:[]},values),[]);
+  const bettingOnly = items(game,{...config,showBettingInfo:true,bettingMixSources:[]},values);
+  assert.equal(bettingOnly.length, values.length, 'betting On adds odds even if legacy mix preferences omitted them');
+  assert.ok(bettingOnly.some(item => item.text.includes('-185')));
+  assert.deepEqual(items(game,{...config,showBettingInfo:false,bettingMixSources:['betting']},values),[{key:'hidden',text:'Betting Info: Hidden'}]);
   assert.deepEqual(items(event(),{bettingReplacement:'player-stats'},values),[{key:'hidden',text:'Betting Info: Hidden'}]);
   assert.deepEqual(items(game,{bettingReplacement:'blank'},values),[]);
   assert.deepEqual(items(game,{bettingReplacement:'custom',bettingReplacementText:''},values),[]);

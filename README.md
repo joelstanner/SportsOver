@@ -48,24 +48,27 @@ alternate choices are retained when this toggle is off.
 
 With **Show alternate content** on, choose **Betting Info: Hidden** (first and
 selected by default), custom text (up to 160 characters), random available player
-stats, game details, a blank area, or Scrolling mix. The chosen alternate replaces
-odds even while **Show betting info** is on. Player stats change every 10 seconds
-without immediately repeating; game details alternate available venue and
-broadcast information every 10 seconds. Missing stats or details fall back to
-**Betting Info: Hidden**. Blank and empty custom text remove the row. Alternates
-also appear when no odds are available.
+stats, game details, a blank area, or Scrolling mix. When both toggles are on,
+available odds and the selected alternate content automatically scroll together.
+Only the selected alternate source is added; choosing custom text does not also
+add player stats or game details. Blank, empty custom text, the hidden-message
+choice, or missing alternate data leave available odds visible.
 
-**Scrolling mix** loops the selected betting info, available player stats, custom
-text, and game details. Choose which sources to include; unavailable sources are
-skipped. Betting info is always excluded while **Show betting info** is off.
+When betting info is off or odds are unavailable, custom text appears by itself,
+player stats change every 10 seconds without immediately repeating, and game
+details alternate available venue and broadcast information every 10 seconds.
+With betting info off, missing stats or details fall back to **Betting Info:
+Hidden**; blank and empty custom text remove the row.
+
+**Scrolling mix** lets you select multiple alternate sources: available player
+stats, custom text, and game details. Unavailable sources are skipped. Available
+odds are always added while **Show betting info** is on and always excluded while
+it is off, regardless of previously saved mix selections.
 The loop uses up to five randomly selected player stats from the current feed
 and preserves its animation through refreshes. Hover or focus pauses it; reduced
 motion disables the animation and allows manual scrolling. All stats and game
 details come from existing ESPN game responses, with no extra provider requests.
-Use Scrolling mix to combine alternate content with odds. Turning betting info on
-keeps your selected content; turn **Show alternate content** off to return to
-the regular odds display. Turning betting info off always excludes odds from
-every alternative, including Scrolling mix.
+Turn **Show alternate content** off to return to the regular odds display.
 
 The **game lists** (**On banner** and **Available games**) omit player stats,
 including from Scrolling mix. Selecting Random player stats leaves these lists
