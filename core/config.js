@@ -14,6 +14,7 @@
     Object.freeze({ key: "basketball", name: "Basketball", league: "NBA" }),
     Object.freeze({ key: "college-basketball", name: "NCAA men’s basketball", league: "NCAAM" }),
     Object.freeze({ key: "disc-golf", name: "Disc golf", league: "PDGA", competitionType: "individual", provider: "pdga" }),
+    Object.freeze({ key: "formula-1", name: "Formula 1", league: "F1", competitionType: "individual", provider: "espn-f1" }),
     Object.freeze({ key: "chess", name: "Chess", league: "Lichess", competitionType: "individual", provider: "lichess" }),
   ]);
   const CATALOG_SPORTS = Object.freeze(["baseball", "football", "college-football", "hockey", "soccer", "basketball", "college-basketball"]);
@@ -35,10 +36,11 @@
       frozenSport("basketball", ["nba:det"]),
       frozenSport("college-basketball", ["ncaam:158", "ncaam:264", "ncaam:2547"]),
       Object.freeze({ sport: "disc-golf", enabled: true, favorites: Object.freeze([]), events: Object.freeze([]), autoFollow: false, discoverSecondTier: true, autoDivisions: Object.freeze(["MPO", "FPO"]) }),
+      Object.freeze({ sport: "formula-1", enabled: true, favorites: Object.freeze([]), events: Object.freeze([]) }),
       Object.freeze({ sport: "chess", enabled: true, favorites: Object.freeze([]), events: Object.freeze([]), autoFollow: true, discoverSecondTier: true }),
     ]),
     providerRefreshSeconds: Object.freeze(Object.fromEntries(SPORT_CATALOG.map(({ key: sport }) =>
-      [sport, Object.freeze({ live: ["disc-golf", "chess"].includes(sport) ? 30 : 12, pregame: 60, idle: 300, final: sport === "chess" ? 900 : 300 })]))),
+      [sport, Object.freeze({ live: ["disc-golf", "chess", "formula-1"].includes(sport) ? 30 : 12, pregame: 60, idle: 300, final: sport === "chess" ? 900 : 300 })]))),
     automaticWatchLists: Object.freeze({ "disc-golf": Object.freeze([]), chess: Object.freeze([]) }),
     rotationSeconds: 10,
     timeZone: "local",
@@ -127,11 +129,13 @@
       sports.push({ sport, enabled: group.enabled !== false, favorites: normalizeFavorites(group.favorites, sport),
         ...(sport === "disc-golf" ? { events: normalizePdgaEvents(group.events), autoFollow: group.autoFollow === true, discoverSecondTier: group.discoverSecondTier !== false,
           autoDivisions: Array.isArray(group.autoDivisions) ? ["MPO", "FPO"].filter(division => group.autoDivisions.includes(division)) : ["MPO", "FPO"] } : {}),
+        ...(sport === "formula-1" ? { events: normalizeFormula1Events(group.events) } : {}),
         ...(sport === "chess" ? { events: normalizeChessEvents(group.events), autoFollow: group.autoFollow !== false, discoverSecondTier: group.discoverSecondTier !== false } : {}) });
     });
     SPORT_CATALOG.forEach(sport => {
       if (!seenSports.has(sport.key)) sports.push({ sport: sport.key, enabled: true, favorites: [],
         ...(sport.key === "disc-golf" ? { events: [], autoFollow: false, discoverSecondTier: true, autoDivisions: ["MPO", "FPO"] } : {}),
+        ...(sport.key === "formula-1" ? { events: [] } : {}),
         ...(sport.key === "chess" ? { events: [], autoFollow: true, discoverSecondTier: true } : {}) });
     });
 
@@ -220,6 +224,23 @@
       return [{ tournamentId, roundId, ...options, name: String(event.name || `Chess ${tournamentId}`).slice(0, 180),
         enabled: event.enabled !== false, view: event.view === "player" ? "player" : "overview",
         playerId: /^(fide:[1-9]\d{0,9}|name:.{1,180})$/.test(String(event.playerId || "")) ? String(event.playerId) : "" }];
+    }).slice(0, 30);
+  }
+
+  function normalizeFormula1Events(events) {
+    const seen = new Set();
+    return (Array.isArray(events) ? events : []).flatMap(event => {
+      if (!event || typeof event !== "object") return [];
+      const playerId = /^[1-9]\d{0,11}$/.test(String(event?.playerId || "")) ? String(event.playerId) : "";
+      const view = event?.view === "player" ? "player" : "leaderboard";
+      const bannerId = /^[a-zA-Z0-9-]{1,64}$/.test(String(event?.bannerId || "")) ? String(event.bannerId)
+        : view === "player" && playerId ? `driver-${playerId}` : "leaderboard";
+      if (seen.has(bannerId)) return [];
+      seen.add(bannerId);
+      return [{ tournamentId: "season", bannerId, view, playerId, enabled: event.enabled !== false,
+        name: String(event.name || (view === "player" ? "Driver" : "Formula 1 leaderboard")).slice(0, 180),
+        flag: /^https:\/\/a\.espncdn\.com\/i\/teamlogos\/countries\/500\/[a-z]{2,3}\.png$/.test(event.flag || "") ? event.flag : "",
+        leaderboardSize: event.leaderboardSize === "all" ? "all" : event.leaderboardSize === 3 ? 3 : 10 }];
     }).slice(0, 30);
   }
 
@@ -375,6 +396,7 @@
   function isCandidateEnabled(config, candidate) {
     const group = config.sports.find(group => group.sport === candidate?.sport);
     if (!group || group.enabled === false) return false;
+    if (candidate.sport === "formula-1") return group.events.some(watch => watchId(watch) === candidate.id && isWatchEnabled(watch));
     if (candidate.sport === "chess") {
       const watch = eventWatches(config, "chess").find(event => watchId(event) === candidate.id);
       return watch ? isWatchEnabled(watch) : candidate.raw?.automatic === true

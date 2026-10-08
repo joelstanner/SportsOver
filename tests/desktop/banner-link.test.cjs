@@ -3,6 +3,11 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { bannerUrl } = require('../../desktop/banner-link.cjs');
 
+test('opens F1 results and driver pages while rejecting unrelated racing pages', () => {
+  for (const url of ['https://www.espn.com/f1/results/_/id/600052101', 'https://www.espn.com/racing/driver/_/id/5579/lando-norris']) assert.equal(bannerUrl(url), url);
+  for (const url of ['https://www.espn.com/racing/login', 'https://evil.test/f1/results/_/id/600052101']) assert.throws(() => bannerUrl(url));
+});
+
 test('opens Lichess broadcast rounds and individual games', () => {
   for (const url of ['https://lichess.org/broadcast/-/-/Round001', 'https://lichess.org/broadcast/-/-/Round001#players/123', 'https://lichess.org/broadcast/-/-/Round001#players/Fabiano%20Caruana', 'https://lichess.org/broadcast/masters/round-1/Round001/Game0001#32']) {
     assert.equal(bannerUrl(url), url);

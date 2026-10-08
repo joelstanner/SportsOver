@@ -193,7 +193,8 @@
     const override = Number(overrides?.[keyOf(entry)]);
     if (Number.isFinite(override)) return Math.min(300, Math.max(5, Math.round(override / 5) * 5));
     const state = entry?.candidate?.state;
-    const tournamentBreak = state === "interrupted" && entry?.candidate?.competitionType === "individual";
+    const tournamentBreak = state === "interrupted" && entry?.candidate?.competitionType === "individual"
+      && !(entry.candidate.sport === "formula-1" && (entry.candidate.raw?.sessionActive || entry.candidate.details?.sessionActive));
     const timingState = state === "final" || tournamentBreak ? "final"
       : state === "live" || state === "interrupted" ? "live" : "pregame";
     const seconds = defaults?.[timingState];

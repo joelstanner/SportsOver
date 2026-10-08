@@ -6,8 +6,10 @@ function bannerUrl(value) {
     /^\/(?:tour\/event|player)\/[1-9]\d{0,8}\/?$/.test(url.pathname)
     || /^\/live\/event\/[1-9]\d{0,8}\/[A-Z0-9]{2,8}\/scores\/?$/.test(url.pathname));
   const espn = url.hostname === 'www.espn.com' && /^\/(?:nfl|college-football|nba|mens-college-basketball|nhl|soccer)\/(?:game|match|boxscore)\/_\/gameId\/[1-9]\d*(?:\/[a-zA-Z0-9-]+)?\/?$/.test(url.pathname);
+  const f1 = url.hostname === 'www.espn.com' && (/^\/f1\/(?:race|results)\/_\/id\/[1-9]\d{0,11}\/?$/.test(url.pathname)
+    || /^\/racing\/driver\/_\/id\/[1-9]\d{0,11}(?:\/[a-zA-Z0-9-]+)?\/?$/.test(url.pathname));
   const mlb = url.hostname === 'www.mlb.com' && /^\/gameday\/[1-9]\d*\/?$/.test(url.pathname);
-  if (url.protocol !== 'https:' || url.port || url.username || url.password || !(chess || pdga || espn || mlb)) throw Error('Invalid banner link');
+  if (url.protocol !== 'https:' || url.port || url.username || url.password || !(chess || pdga || espn || f1 || mlb)) throw Error('Invalid banner link');
   return url.href;
 }
 module.exports = { bannerUrl };

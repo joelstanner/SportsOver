@@ -25,7 +25,7 @@
     // Identity excludes row count and duration so a refresh can clamp the user's
     // position instead of resetting it. Round/view changes start a new list.
     if (viewport.dataset) viewport.dataset.scrollIdentity = JSON.stringify([
-      event.sport, event.id, event.details?.roundId ?? event.details?.round,
+      event.sport, event.id, event.details?.sessionId ?? event.details?.roundId ?? event.details?.round,
       event.details?.view, viewport.dataset.scrollKey || "",
     ]);
     if (count <= 3) return null;

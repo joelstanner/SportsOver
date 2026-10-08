@@ -17,6 +17,7 @@
     collapsedSports = new Set(Array.isArray(stored) ? stored.filter(value => typeof value === "string") : []);
   } catch (_) { collapsedSports = new Set(); }
   const chessSession = global.SportsOverlay.lichess.createSession();
+  const formula1Session = global.SportsOverlay.formula1.createSession();
   const pdgaSession = global.SportsOverlay.pdga.createSession();
   let baseline = structuredClone(workingConfig);
   let baseRevision = shared?.snapshot()?.revision;
@@ -480,7 +481,7 @@
       const section = document.querySelector("#sport-template").content.firstElementChild.cloneNode(true);
       section.dataset.sport = sport.key;
       section.querySelector(".sport-rank").textContent = `#${sportIndex + 1}`;
-      section.querySelector(".sport-icon").textContent = { baseball: "⚾", football: "🏈", "college-football": "🏈", hockey: "🏒", soccer: "⚽", basketball: "🏀", "college-basketball": "🏀", "disc-golf": "🥏", chess: "♟" }[sport.key] || "";
+      section.querySelector(".sport-icon").textContent = { baseball: "⚾", football: "🏈", "college-football": "🏈", hockey: "🏒", soccer: "⚽", basketball: "🏀", "college-basketball": "🏀", "disc-golf": "🥏", "formula-1": "🏁", chess: "♟" }[sport.key] || "";
       section.querySelector(".sport-name").textContent = sport.name;
       section.querySelector(".sport-league").textContent = sport.league;
       const details = section.querySelector(".sport-details");
@@ -518,6 +519,17 @@
       const favoriteList = section.querySelector(".sport-favorites");
       favoriteList.hidden = !enabled.checked;
       if (!enabled.checked) { sportsList.append(section); return; }
+      if (sport.key === "formula-1") {
+        global.SportsOverlay.formula1Settings.render(favoriteList, group, removedWatch => {
+          if (removedWatch) {
+            const key = `formula-1:${configApi.watchId(removedWatch)}`;
+            workingConfig.includedGames = workingConfig.includedGames.filter(item => item !== key);
+            scheduleSettingsSave("includedGames");
+          }
+          scheduleSettingsSave("sports");
+        }, providerRefresh.fetchFor(sport.key, global.SportsOverlay.formula1), formula1Session);
+        sportsList.append(section); return;
+      }
       if (sport.competitionType === "individual") {
         const renderAutomaticWatches = () => renderAutomaticWatchList(favoriteList, group);
         global.SportsOverlay[sport.key === "chess" ? "chessSettings" : "pdgaSettings"].render(favoriteList, group, removedWatch => {
@@ -706,7 +718,7 @@
         .find(Boolean);
       const option = document.createElement("option");
       option.value = group.sport;
-      option.textContent = `${sport.name} · ${sport.competitionType === "individual" ? `${group.events.filter(event => event.enabled).length} watched ${sport.key === "chess" ? "broadcasts" : "divisions"}` : topFavorite?.name || "no included team"}`;
+      option.textContent = `${sport.name} · ${sport.competitionType === "individual" ? `${group.events.filter(event => event.enabled).length} watched ${sport.key === "chess" ? "broadcasts" : sport.key === "formula-1" ? "banners" : "divisions"}` : topFavorite?.name || "no included team"}`;
       picker.append(option);
       filters.forEach(filter => filter.append(new Option(sport.key === "chess" ? sport.name : sport.league, group.sport)));
     });
@@ -901,6 +913,9 @@
 
   async function discoverSportGames(group) {
     if (group.enabled === false) return { automaticEntries: [], availableEntries: [] };
+    if (group.sport === "formula-1") return global.SportsOverlay.formula1.createClient({ watches: group.events,
+      session: formula1Session, fetchImpl: providerRefresh.fetchFor("formula-1", global.SportsOverlay.formula1),
+    }).discover({ topFavoriteOnly: workingConfig.displayMode === "top-favorite", excludedKeys: workingConfig.excludedGames });
     if (group.sport === "disc-golf") return global.SportsOverlay.pdga.createClient({ watches: configApi.eventWatches(workingConfig, group.sport), autoFollow: group.autoFollow, discoverSecondTier: group.discoverSecondTier, autoDivisions: group.autoDivisions, session: pdgaSession,
       fetchImpl: providerRefresh.fetchFor("disc-golf", global.SportsOverlay.pdga),
     }).discover({ topFavoriteOnly: workingConfig.displayMode === "top-favorite", fallbackMode: workingConfig.fallbackMode,
@@ -1163,7 +1178,7 @@
     }
     renderGameLogos(card.querySelector(".game-logos"), entry.candidate);
     const name = card.querySelector(".game-name");
-    card.classList.toggle("is-player-card", ["chess", "disc-golf"].includes(entry.candidate.sport) && entry.candidate.raw?.view === "player");
+    card.classList.toggle("is-player-card", ["chess", "disc-golf", "formula-1"].includes(entry.candidate.sport) && entry.candidate.raw?.view === "player");
     name.textContent = gameName(entry.candidate);
     if (card.classList.contains("is-player-card")) {
       const tournament = document.createElement("span");
@@ -1211,6 +1226,14 @@
   }
 
   function renderGameLogos(container, candidate) {
+    if (candidate.sport === "formula-1") {
+      const flag = global.SportsOverlay.formula1.flagUrl(candidate.raw?.player?.flag || candidate.raw?.playerFlag);
+      if (candidate.raw?.view === "player" && flag) {
+        const img = document.createElement("img"); img.className = "game-logo"; img.src = flag;
+        img.alt = candidate.raw?.player?.country || "Driver nationality"; container.append(img);
+      }
+      return;
+    }
     gameTeams(candidate).forEach(team => {
       const mark = document.createElement("span");
       mark.className = "game-logo";
@@ -1262,6 +1285,8 @@
   }
 
   function gameName(candidate) {
+    if (candidate.sport === "formula-1") return candidate.raw?.view === "player" ? candidate.raw.bannerLabel
+      : `${candidate.raw?.name || "Formula 1"} · ${candidate.raw?.bannerLabel || "Leaderboard"}`;
     if (["chess", "disc-golf"].includes(candidate.sport) && candidate.raw?.view === "player") return candidate.raw.bannerLabel;
     if (candidate.sport === "chess") return `${candidate.raw?.name || "Chess tournament"} · ${candidate.raw?.roundName || "Round"}${candidate.raw?.bannerLabel ? ` · ${candidate.raw.bannerLabel}` : ""}`;
     if (candidate.sport === "disc-golf") {
@@ -1281,12 +1306,19 @@
   }
 
   function gameTournament(candidate) {
+    if (candidate.sport === "formula-1") return [candidate.raw?.name, candidate.raw?.sessionName].filter(Boolean).join(" · ");
     if (candidate.sport === "chess") return [candidate.raw?.name, candidate.raw?.roundName].filter(Boolean).join(" · ");
     if (candidate.sport === "disc-golf") return [candidate.raw?.name, candidate.raw?.division].filter(Boolean).join(" · ");
     return "";
   }
 
   function gameMeta(candidate) {
+    if (candidate.sport === "formula-1") {
+      const player = candidate.raw?.view === "player" && candidate.raw.player;
+      return [candidate.raw?.stale ? "Last received" : "", candidate.raw?.sessionName, candidate.raw?.detailedState,
+        player?.position ? `P${player.position}` : "", player ? player.status || (candidate.raw.qualifying ? player.bestTime : player.gap || player.time) : "",
+        candidate.raw?.nextSession?.date ? `Next: ${candidate.raw.nextSession.name} · ${global.SportsOverlay.model.formatPregameStart(candidate.raw.nextSession.date)}` : ""].filter(Boolean).join(" · ");
+    }
     if (candidate.sport === "chess") return `${candidate.raw?.stale ? "Last received · " : ""}${candidate.state === "live" ? "Live" : candidate.state === "interrupted" ? candidate.raw?.detailedState || "Break" : candidate.state === "final" ? "Final" : "Upcoming"}${candidate.state === "pregame" && candidate.startTime ? ` · ${global.SportsOverlay.model.formatPregameStart(candidate.startTime, new Date(), workingConfig.timeZone === "local" ? undefined : workingConfig.timeZone)}` : ""}`;
     if (candidate.sport === "disc-golf") {
       const state = `${candidate.raw?.stale ? "Last received · " : ""}${candidate.state === "final" ? "Final" : candidate.state === "live" ? "Live" : candidate.state === "interrupted" ? candidate.raw?.detailedState || "Break" : "Upcoming"}`;
@@ -1513,7 +1545,7 @@
   }
 
   function isCurrentGame(candidate) {
-    if (["disc-golf", "chess"].includes(candidate.sport)) return true;
+    if (["disc-golf", "chess", "formula-1"].includes(candidate.sport)) return true;
     if (candidate.state === "live") return true;
     const start = new Date(candidate.startTime || 0).getTime();
     if (!Number.isFinite(start)) return false;
@@ -1596,8 +1628,8 @@
     const sport = sportPicker.value;
     const statePicker = document.querySelector("#demo-state");
     const playerOption = statePicker.querySelector('option[value="player"]');
-    playerOption.hidden = playerOption.disabled = sport !== "chess";
-    if (sport !== "chess" && statePicker.value === "player") statePicker.value = "live";
+    playerOption.hidden = playerOption.disabled = !["chess", "formula-1"].includes(sport);
+    if (!["chess", "formula-1"].includes(sport) && statePicker.value === "player") statePicker.value = "live";
     const state = statePicker.value;
     const isRotation = state === "rotation";
     sportPicker.disabled = isRotation;

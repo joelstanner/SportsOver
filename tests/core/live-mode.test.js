@@ -6,6 +6,20 @@ const { create } = globalThis.SportsOverlay.liveMode;
 const entry = (id, state = 'live', sport = 'baseball') => ({ candidate: { id, state, sport } });
 const ids = entries => entries.map(item => item.candidate.id);
 
+test('F1 red flags stay live, breaks do not, and season watches can enter the next session', () => {
+  const mode = create({ now: () => 100 });
+  const f1 = (state, sessionId, sessionActive) => ({ candidate: { id: 'season:auto:banner:driver-1000', sport: 'formula-1',
+    competitionType: 'individual', state, raw: { sessionId, sessionActive } } });
+  const live = f1('live', '101', true), red = f1('interrupted', '101', true), pause = f1('interrupted', '101', false);
+  assert.equal(mode.setActive(true, [pause]), false);
+  assert.equal(mode.setActive(true, [red]), true);
+  const update = entry => mode.update({ rotation: [entry], available: [entry], enabledSports: ['formula-1'], retentionMinutes: 0 });
+  assert.equal(update(live).length, 1); assert.equal(update(red).length, 1);
+  assert.equal(update(pause).length, 0);
+  assert.equal(update(f1('final', '101', false)).length, 0);
+  assert.equal(update(f1('live', '102', true)).length, 1);
+});
+
 test('Live mode starts only with a live game from the rotation, including games between periods', () => {
   const mode = create();
   assert.equal(mode.setActive(true, [entry('next', 'pregame'), entry('done', 'final')]), false);

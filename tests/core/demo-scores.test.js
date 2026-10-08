@@ -9,6 +9,7 @@ require('../../core/event-model.js');
 require('../../core/registry.js');
 require('../../sports/baseball/providers/mlb.js');
 require('../../sports/chess/providers/lichess.js');
+require('../../sports/formula-1/providers/espn.js');
 const { config, registry } = globalThis.SportsOverlay;
 
 // Exercise every registered demo and lifecycle state, including future sports.

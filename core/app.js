@@ -36,6 +36,7 @@ let pollGeneration = 0;
 let rotationGeneration = 0;
 
 const chessSession = window.SportsOverlay.lichess?.createSession();
+const formula1Session = window.SportsOverlay.formula1?.createSession();
 const pdgaSession = window.SportsOverlay.pdga?.createSession();
 let sportContexts = savedConfig.sports
   .filter(group => !requestedSport || group.sport === requestedSport)
@@ -133,7 +134,7 @@ window.SportsOverlay.engine = {
     rotationQueue = selectedRotationQueue((cachedDiscoveries || []).flatMap(result => result.availableEntries));
     currentIndex = Math.max(0, rotationQueue.findIndex(entry => entryKey(entry) === previousKey));
     if (!rotationQueue.length && !overrideEntry) renderEmptyBanner();
-    return discoverGames(sportContexts.some(context => ["disc-golf", "chess"].includes(context.sport)));
+    return discoverGames(sportContexts.some(context => ["disc-golf", "chess", "formula-1"].includes(context.sport)));
   },
   override(value) {
     suppressedOverrideEntry = null;
@@ -180,6 +181,12 @@ function publicEntry(entry) {
 
 function createSportContext(group) {
   if (group.enabled === false) return null;
+  if (group.sport === "formula-1") {
+    const providerModule = window.SportsOverlay.registry.getProvider("espn-f1");
+    return { sport: group.sport, league: "F1", providerModule,
+      provider: providerModule.createClient({ watches: group.events, session: formula1Session, requestTimeoutMs: CONFIG.requestTimeoutMs,
+        fetchImpl: refresh.fetchFor(group.sport, providerModule) }) };
+  }
   if (group.sport === "disc-golf") {
     const providerModule = window.SportsOverlay.registry.getProvider("pdga");
     return { sport: group.sport, league: "PDGA", providerModule,
@@ -462,7 +469,7 @@ async function discoverSport(context) {
 }
 
 async function discoverSportOnce(context) {
-  if (["disc-golf", "chess"].includes(context.sport)) {
+  if (["disc-golf", "chess", "formula-1"].includes(context.sport)) {
     const result = await context.provider.discover({ topFavoriteOnly: savedConfig.displayMode === "top-favorite",
       fallbackMode: savedConfig.fallbackMode, excludedKeys: savedConfig.excludedGames,
       retentionMs: liveMode.isActive() ? savedConfig.liveModeFinalMinutes * 60_000 : 60 * 60_000 });
@@ -550,7 +557,7 @@ async function renderGame(entry, revision, { animate = false, fast = false } = {
     const watchedGame = watchedTeams?.some(team => entry.candidate.teamKeys
       ?.some(id => String(id).toUpperCase() === String(team.teamId).toUpperCase()));
     if (!overrideEntry && (liveMode.isActive() || watchedGame || event.competitionType === "individual")) {
-      const observed = { ...entry, candidate: { ...entry.candidate, state: event.state, detailedState: event.detailedState,
+      const observed = { ...entry, candidate: { ...entry.candidate, ...(event.sport === "formula-1" ? entry.context.providerModule.toCandidate(event) : {}), state: event.state, detailedState: event.detailedState,
         competitionType: event.competitionType || entry.candidate.competitionType },
         ...(event.state === "final" ? { autoFinalDetectedAt: entry.autoFinalDetectedAt ?? Date.now() } : {}) };
       if (liveMode.isActive()) liveMode.observe(observed);
@@ -692,7 +699,7 @@ function scheduleDiscovery() {
   const directoryDelay = Math.min(...sportContexts.map(context => context.provider.discoveryIntervalMs ?? Infinity));
   const delay = Math.min(providerDelay, expiryDelay, directoryDelay);
   clearTimeout(discoveryTimer);
-  discoveryTimer = setTimeout(() => discoverGames(expiryDelay > providerDelay || sportContexts.some(context => ["disc-golf", "chess"].includes(context.sport))), delay);
+  discoveryTimer = setTimeout(() => discoverGames(expiryDelay > providerDelay || sportContexts.some(context => ["disc-golf", "chess", "formula-1"].includes(context.sport))), delay);
 }
 
 function entryKey(entry) {

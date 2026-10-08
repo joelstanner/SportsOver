@@ -20,7 +20,18 @@
     const records = new Map(), gates = new Map();
     const network = global.SportsOverlay.providerNetwork
       || (typeof require === 'function' ? require('./provider-network.js') : null);
-    const fetchProvider = network?.create({ fetchImpl, now: wallNow, sleep });
+    const networkFetch = (url, options) => {
+      // ESPN's website JSON does not allow browser cross-origin requests.
+      // The desktop uses its provider relay; local browser development uses a
+      // narrow results-only relay and still passes through the ESPN queue.
+      if (global.location?.protocol !== 'sportsover:' && global.location?.protocol?.startsWith('http')
+        && String(url).startsWith('https://www.espn.com/f1/results/_/id/')) {
+        const id = new URL(url).pathname.split('/').at(-1);
+        return fetchImpl(`/api/formula-1/results/${id}`, options);
+      }
+      return fetchImpl(url, options);
+    };
+    const fetchProvider = network?.create({ fetchImpl: networkFetch, now: wallNow, sleep });
     const upstreamUrl = url => global.location?.protocol === 'sportsover:' && /^\/api\/chess\/broadcast\/[a-zA-Z0-9]{8}\/players$/.test(url)
       ? `https://lichess.org${url.slice('/api/chess'.length)}` : url;
     function dispatch(url, options) {

@@ -7,6 +7,8 @@
     let url;
     try { url = new URL(value); } catch (_) { return null; }
     if (url.protocol !== 'https:' || url.port || url.username || url.password || url.hash) return null;
+    if (url.hostname === 'www.espn.com' && /^\/f1\/results\/_\/id\/[1-9]\d{0,11}$/.test(url.pathname)
+      && url.search === '?_xhr=pageContent') return 'espn';
     if (['site.api.espn.com', 'site.web.api.espn.com'].includes(url.hostname)
       && url.pathname.startsWith('/apis/site/')) return 'espn';
     if (url.hostname === 'sports.core.api.espn.com' && url.pathname.startsWith('/v2/sports/')) return 'espn';
@@ -28,8 +30,9 @@
     if (service === 'pdga') return 'disc-golf';
     if (service === 'lichess') return 'chess';
     if (service !== 'espn') return null;
+    if (new URL(value).hostname === 'www.espn.com') return 'formula-1';
     const match = new URL(value).pathname.match(/\/sports\/([^/]+)\/(?:leagues\/)?([^/]+)/);
-    return { 'baseball/mlb': 'baseball', 'football/nfl': 'football', 'football/college-football': 'college-football',
+    return { 'racing/f1': 'formula-1', 'baseball/mlb': 'baseball', 'football/nfl': 'football', 'football/college-football': 'college-football',
       'hockey/nhl': 'hockey', 'soccer/usa.1': 'soccer', 'basketball/nba': 'basketball',
       'basketball/mens-college-basketball': 'college-basketball' }[match?.slice(1).join('/')] || null;
   }

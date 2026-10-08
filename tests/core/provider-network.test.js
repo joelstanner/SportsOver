@@ -18,10 +18,19 @@ test('provider endpoints identify every supported sport, including catalogs and 
     basketball: [nba],
     'college-basketball': ['https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams'],
     'disc-golf': [pdga, 'https://www.pdga.com/api/v1/feat/current-events/tournaments'],
+    'formula-1': ['https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard', 'https://www.espn.com/f1/results/_/id/600052101?_xhr=pageContent'],
     chess: ['https://lichess.org/api/broadcast/top', 'https://lichess.org/broadcast/Tour1234/players'],
   };
   for (const [sport, urls] of Object.entries(endpoints)) for (const url of urls) assert.equal(sportFor(url), sport);
   assert.equal(sportFor('https://example.com/scoreboard'), null);
+});
+
+test('Formula 1 website access is restricted to the results JSON endpoint and shares the ESPN service', () => {
+  const url = 'https://www.espn.com/f1/results/_/id/600052101?_xhr=pageContent';
+  assert.equal(serviceFor(url), 'espn');
+  for (const value of [url.replace('https:', 'http:'), url.replace('www.espn.com', 'www.espn.com.evil.test'),
+    url.replace('www.espn.com', 'user:password@www.espn.com'), url + '&extra=1', url.replace('pageContent', 'anything'),
+    'https://www.espn.com/f1/results/_/id/600052101', 'https://www.espn.com/login?_xhr=pageContent']) assert.equal(serviceFor(value), null);
 });
 
 test('disabling a sport while queued blocks its calls and lets enabled sports on the same provider proceed', async () => {

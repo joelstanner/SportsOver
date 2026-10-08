@@ -7,6 +7,7 @@ require('../../core/event-model.js');
 require('../../core/registry.js');
 require('../../sports/baseball/providers/mlb.js');
 require('../../sports/chess/providers/lichess.js');
+require('../../sports/formula-1/providers/espn.js');
 const { config, registry } = globalThis.SportsOverlay;
 const { fixtures, modes } = require('../../core/demo-inspection.js');
 const sports = config.SPORT_CATALOG.map(s => s.key);

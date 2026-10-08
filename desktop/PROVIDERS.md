@@ -38,3 +38,13 @@ No provider permission or license approval is implied by these protections.
 
 
 For Lichess scope, discovery, and rate limits, see the [chess provider notes](../sports/chess/README.md).
+
+Formula 1 uses the ESPN scoreboard at `/apis/site/v2/sports/racing/f1/scoreboard`
+and the website JSON route `/f1/results/_/id/{weekendId}?_xhr=pageContent`.
+The latter is restricted to that exact HTTPS route/query and shares the same ESPN
+queue and cooldown as the API hosts. Driver profiles and results are linked from
+the banner. National flags use ESPN's country artwork URLs. ESPN's existing access
+and artwork restrictions still apply; no separate F1 quota or permission has been
+established. The website JSON response is not a documented public API contract,
+and its active-session freshness has not yet been verified. See the README for
+the exact refresh intervals and fallback behavior.

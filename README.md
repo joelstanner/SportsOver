@@ -5,7 +5,7 @@ Follow your teams and tournaments, rotate live scores, and optionally share the
 same banner with OBS. OBS is optional.
 
 Supports **MLB, NFL, college football, NHL, MLS, NBA, NCAA men's basketball,
-PDGA disc golf, and Lichess chess broadcasts**.
+Formula 1, PDGA disc golf, and Lichess chess broadcasts**.
 
 ## Install
 
@@ -122,7 +122,7 @@ When no games match, the banner shows a no-games message and resumes when eligib
 | --- | --- |
 | Browse games | Click the leftmost 20% for previous; click elsewhere for next. With the banner or Settings focused, use Left/Right arrows. In Settings, arrows retain their normal behavior in fields, selectors, and dialogs. |
 | Move | Drag anywhere on the unlocked banner, or use Shift + arrows with the banner or Settings focused to move 5 pixels per press. Hold the keys to keep moving. Fields, selectors, and dialogs retain their own shortcuts. Movement pauses in fullscreen. |
-| Resize | With the banner or Settings focused and the position unlocked, press Up to grow or Down to shrink smoothly by 10 percentage points (10–300%). Rapid presses continue from the requested size, so each press counts. Double-click the banner's left half to shrink or right half to enlarge. Size presets (50–300%) are also in Settings and menus. Below 50%, live and final team games use large logos and scores on the desktop banner; upcoming games show logos with the scheduled date and time between them. Halftime uses the compact scores with a prominent vertical HT marker. Other interruptions and OBS retain their layouts. “Skip individual sports below 50%” is on by default in Desktop banner settings: it temporarily removes chess and disc golf from the shared desktop/OBS rotation while the desktop banner is small. Turn it off to retain every sport; selected sports return at 50% or larger. Resizing keeps the top edge fixed and the width centered horizontally, shifting sideways only when needed to stay on its monitor. Growth stops when there is no room below. Fields, selectors, and focused tournament lists retain their own arrow behavior. |
+| Resize | With the banner or Settings focused and the position unlocked, press Up to grow or Down to shrink smoothly by 10 percentage points (10–300%). Rapid presses continue from the requested size, so each press counts. Double-click the banner's left half to shrink or right half to enlarge. Size presets (50–300%) are also in Settings and menus. Below 50%, live and final team games use large logos and scores on the desktop banner; upcoming games show logos with the scheduled date and time between them. Halftime uses the compact scores with a prominent vertical HT marker. Other interruptions and OBS retain their layouts. “Skip individual sports below 50%” is on by default in Desktop banner settings: it temporarily removes Formula 1, chess, and disc golf from the shared desktop/OBS rotation while the desktop banner is small. Turn it off to retain every sport; selected sports return at 50% or larger. Resizing keeps the top edge fixed and the width centered horizontally, shifting sideways only when needed to stay on its monitor. Growth stops when there is no room below. Fields, selectors, and focused tournament lists retain their own arrow behavior. |
 | Open Settings | Right-click the banner and choose **Settings…**, or use the tray/menu bar. |
 | Lock position / hide | Use Settings, the tray, or the banner's right-click menu. Position locking keeps game browsing available. |
 | Fullscreen | Use **Fullscreen** or **Ctrl/Cmd + Shift + F**; press **Escape** to restore the previous size and position. |
@@ -132,6 +132,48 @@ Hovering over the desktop banner holds it when the rotation timer runs out;
 scores keep updating, and rotation resumes when you leave. Team names and logos,
 tournament titles, and player names open the relevant provider page when available.
 Position, size, visibility, and lock state survive restarts.
+
+## Formula 1
+
+In **Settings → Formula 1**, load the latest available driver field and choose
+**Follow driver**, or **Add leaderboard**. Driver selections follow the season
+across practice, qualifying, Sprint qualifying, Sprint, and Grand Prix sessions.
+Driver cards and leaderboard rows use compact national flags. Constructor
+affiliation is retained; constructor standings and team logos are not shown.
+Leaderboards offer **Top 3** (static), **Top 10** (default, scrolling), and
+**Full field** (scrolling). Each saved banner appears in **On banner** and
+**Available games**, with the usual inclusion, ordering, and duration controls.
+
+Between sessions and weekends, confirmed last results remain visible with the
+next scheduled session's start time in your selected time zone. A followed driver
+missing from the session is labeled as absent instead of being replaced by the
+leader. The driver picker uses the latest available results field, so new entries
+appear after ESPN posts them. Retirement and missing timing are explicit; zero
+qualifying times are not treated as valid laps. Live mode includes an interrupted
+active session, such as a red flag, but excludes breaks between sessions. The
+existing option to skip individual sports below 50% also applies to Formula 1.
+
+Formula 1 uses ESPN's scoreboard plus the website's combined weekend-results
+JSON (`/f1/results/_/id/{weekendId}?_xhr=pageContent`), shared by all watched
+drivers and leaderboard sizes. The scoreboard remains a score/state feed rather
+than a long-cached schedule. Default cache/refresh intervals are **30 seconds
+live or interrupted, 60 seconds pregame, and 300 seconds final or idle**; longer
+configured intervals are respected. Previous-weekend results use the final
+interval independently of the current weekend. Flags reuse the existing CDN URL
+and browser HTTP cache; score polling does not fetch flag files, and there is no
+separate disk cache.
+Failures retain the last response with a “Last received” label and use retry
+backoff of at least the configured interval and 30 seconds, doubling to a
+five-minute backoff; ESPN-wide cooldowns and longer `Retry-After` values also
+apply. All ESPN sports share the existing desktop request queue.
+
+These are polling intervals, not a guarantee of upstream freshness. The combined
+results endpoint is undocumented; a sampled upcoming response advertised a
+10-minute upstream cache. Completed normal/Sprint weekends and upcoming-session
+responses have been checked, but timing freshness during an active session still
+needs verification. No paid provider or ESPN live-stream connection is used.
+Data access restrictions are documented in [provider notes](desktop/PROVIDERS.md).
+For offline validation, run `npm run test:f1`; Formula 1 samples are also in Demo lab.
 
 ## Disc golf and chess
 

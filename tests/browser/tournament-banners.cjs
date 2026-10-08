@@ -211,7 +211,7 @@ const standings=Array.from({length:12},(_,i)=>({name:i?'Player '+(i+1):chessPlay
   const mirror=await context.newPage();mirror.on('pageerror',e=>errors.push(e.message));
   let frame={instance:'test',sequence:1,gameKey:'chess:Tour1234:auto',ready:true,
    html:'<div id="sports-overlay"><div class="scorebug-vertical-viewport"><div class="scorebug-vertical-track is-scrolling-vertically" style="--vertical-distance:-105px;--vertical-duration:20s;--vertical-delay:-5s"><div>Leader</div></div></div></div>'};
-  await mirror.route('**/api/output',route=>route.fulfill({json:frame}));
+  await mirror.route('**/api/output',route=>route.fulfill({json:{...frame,heartbeatSequence:frame.sequence,heartbeatAgeMs:0}}));
   await mirror.route('**/mirror',route=>route.fulfill({contentType:'text/html',body:'<link rel="stylesheet" href="/core/scrolling.css"><div id="sports-overlay"></div><script src="/core/event-model.js"></script><script src="/core/countdown.js"></script><script src="/core/output.js"></script>'}));
   await mirror.goto('http://overlay.test/mirror');
   await mirror.waitForFunction(()=>document.body.dataset.sequence==='1');

@@ -2,7 +2,7 @@
 
 (function initializeLiveMode(global) {
   const isLive = entry => entry?.candidate?.state === "live"
-    || (entry?.candidate?.state === "interrupted" && entry.candidate.competitionType !== "individual");
+    || (entry?.candidate?.state === "interrupted" && (entry.candidate.competitionType !== "individual" || entry.candidate.sport === "formula-1" && entry.candidate.raw?.sessionActive));
   const keyOf = entry => `${entry.candidate.sport}:${entry.candidate.id}`;
 
   // Session-only state. Saved queue settings and locks remain untouched.
@@ -43,6 +43,10 @@
       for (const [key, previous] of admitted) {
         if (!enabled.has(previous.entry.candidate.sport) || !allows(previous.entry)) { admitted.delete(key); continue; }
         let entry = current.get(key) || previous.entry;
+        // A followed F1 driver/leaderboard keeps its banner key across weekends.
+        // Completion of the previous session cannot hide a new live session.
+        if (entry.candidate.sport === "formula-1" && entry.candidate.raw?.sessionId
+          && entry.candidate.raw.sessionId !== previous.entry.candidate.raw?.sessionId) previous.finishedAt = null;
         // A score summary can detect final before the league scoreboard does.
         if (previous.finishedAt !== null && entry.candidate.state !== "final") entry = previous.entry;
         const finishedAt = entry.candidate.state === "final" ? previous.finishedAt ?? timestamp : null;

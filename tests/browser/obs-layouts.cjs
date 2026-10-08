@@ -4,7 +4,7 @@ const path=require('node:path');
 const {chromium}=require('../../scripts/test-browser.cjs');
 const root=process.env.SPORTSOVER_ROOT||path.resolve(__dirname,'../..');
 const sizes={small:[360,76],normal:[647,137],large:[2304,280]};
-const sports=['baseball','football','college-football','basketball','college-basketball','hockey','soccer','chess','disc-golf'];
+const sports=['baseball','football','college-football','basketball','college-basketball','hockey','soccer','formula-1','chess','disc-golf'];
 (async()=>{
  const browser=await chromium.launch({headless:true,...(process.env.BROWSER_EXE?{executablePath:process.env.BROWSER_EXE}:{channel:'chrome'})});
  try {
@@ -45,7 +45,7 @@ const sports=['baseball','football','college-football','basketball','college-bas
     assert(await page.locator('.team-name-label').first().isVisible(),`${sport} final ${mode}: team names retained`);
     assert(await page.locator('#football-status-text').isVisible(),`${sport} final ${mode}: final status retained`);
    }
-   if(mode==='small' && !['chess','disc-golf'].includes(sport)){
+   if(mode==='small' && !['formula-1','chess','disc-golf'].includes(sport)){
     const compact=await page.evaluate(()=>{const r=document.querySelector('#sports-overlay');return {fonts:[...r.querySelectorAll('.team__score,.football-score,.basketball-score,.hockey-score,.soccer-score')].map(el=>parseFloat(getComputedStyle(el).fontSize)),date:!!r.querySelector('[data-compact-date]')};});
     assert.deepEqual(compact.fonts,[60,60],sport+' '+state+' compact scores');
     if(state==='pregame')assert(compact.date,sport+' compact upcoming date');

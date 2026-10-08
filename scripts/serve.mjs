@@ -5,6 +5,9 @@ import { dirname, extname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { SUPPORTED_SPORTS, updateCatalogs } from "./team-catalog.mjs";
 
+import providerNetwork from "../core/provider-network.js";
+const fetchProvider = providerNetwork.create();
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const port = Number(process.argv[2] || 8080);
 const contentTypes = new Map([
@@ -35,7 +38,7 @@ async function refreshCatalog(request, response) {
   try {
     const { sport = "all", enabledSports } = await requestBody(request);
     if (sport !== "all" && !SUPPORTED_SPORTS.includes(sport)) return json(response, 400, { error: `Unsupported sport: ${sport}` });
-    return json(response, 200, { results: await updateCatalogs(sport, root, undefined,
+    return json(response, 200, { results: await updateCatalogs(sport, root, fetchProvider,
       key => !Array.isArray(enabledSports) || enabledSports.includes(key)) });
   } catch (error) {
     return json(response, 500, { error: error.message });
@@ -73,6 +76,15 @@ async function staticFile(request, response, url) {
 
 const server = createServer(async (request, response) => {
   const url = new URL(request.url, "http://127.0.0.1");
+  const f1 = /^\/api\/formula-1\/results\/([1-9]\d{0,11})$/.exec(url.pathname);
+  if (request.method === "GET" && f1) {
+    try {
+      const upstream = await fetchProvider(`https://www.espn.com/f1/results/_/id/${f1[1]}?_xhr=pageContent`);
+      const retry = upstream.headers.get("Retry-After");
+      response.writeHead(upstream.status, { "Content-Type": "application/json", "Cache-Control": "no-store", ...(retry ? { "Retry-After": retry } : {}) });
+      return response.end(Buffer.from(await upstream.arrayBuffer()));
+    } catch (_) { return json(response, 502, { error: "Formula 1 timing unavailable" }); }
+  }
   if (request.method === "POST" && url.pathname === "/api/team-catalog/refresh") return refreshCatalog(request, response);
   if (request.method === "GET" || request.method === "HEAD") return staticFile(request, response, url);
   response.writeHead(405, { Allow: "GET, HEAD, POST" }).end("Method not allowed");

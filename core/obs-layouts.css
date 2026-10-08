@@ -12,8 +12,8 @@
   body:not(.desktop-banner) #sports-overlay { width:460px; height:97.111111px !important; min-height:0; }
   body:not(.desktop-banner) :is(.football-last-play,.basketball-last-play,.hockey-last-play,.soccer-last-event,.last-play,.series-details,.sports-odds) { display:none !important; }
   body:not(.desktop-banner) :is(.football-main,.basketball-main,.hockey-main,.soccer-main) { min-height:55px; }
-  body:not(.desktop-banner) :is(.chess-scorebug,.pdga-scorebug) { height:97.111111px; }
-  body:not(.desktop-banner) :is(.chess-footer,.pdga-footer) { font-size:8px; }
+  body:not(.desktop-banner) :is(.chess-scorebug,.pdga-scorebug,.f1-scorebug) { height:97.111111px; }
+  body:not(.desktop-banner) :is(.chess-footer,.pdga-footer,.f1-footer) { font-size:8px; }
   body:not(.desktop-banner) #sports-overlay[data-preseason="true"]::before { display:none; }
 }
 @media (min-width:500px) and (max-width:1499px) {
@@ -58,13 +58,13 @@
   body:not(.desktop-banner) .player-details[hidden] { display:none; }
   body:not(.desktop-banner) .player-line { flex:1; padding:0 18px; }
   body:not(.desktop-banner) .series-details { height:14px; min-height:14px; line-height:14px; font-size:9px; }
-  body:not(.desktop-banner) :is(.chess-bar,.pdga-bar) { font-size:10px; height:20px; flex-shrink:0; }
-  body:not(.desktop-banner) :is(.chess-event,.pdga-event,.chess-state,.pdga-state) { font-size:9px; }
-  body:not(.desktop-banner) :is(.chess-board,.pdga-board) { flex:1; height:auto; min-height:0; }
-  body:not(.desktop-banner) :is(.chess-labels,.pdga-labels) { font-size:8px; height:12px; }
-  body:not(.desktop-banner) :is(.chess-entry,.pdga-entry) { font-size:11px; height:16px; }
-  body:not(.desktop-banner) :is(.chess-focus,.pdga-focus) { flex:1; height:auto; min-height:0; }
-  body:not(.desktop-banner) :is(.chess-footer,.pdga-footer) { height:14px; font-size:8px; flex-shrink:0; }
+  body:not(.desktop-banner) :is(.chess-bar,.pdga-bar,.f1-bar) { font-size:10px; height:20px; flex-shrink:0; }
+  body:not(.desktop-banner) :is(.chess-event,.pdga-event,.chess-state,.pdga-state,.f1-event,.f1-state) { font-size:9px; }
+  body:not(.desktop-banner) :is(.chess-board,.pdga-board,.f1-board) { flex:1; height:auto; min-height:0; }
+  body:not(.desktop-banner) :is(.chess-labels,.pdga-labels,.f1-labels) { font-size:8px; height:12px; }
+  body:not(.desktop-banner) :is(.chess-entry,.pdga-entry,.f1-entry) { font-size:11px; height:16px; }
+  body:not(.desktop-banner) :is(.chess-focus,.pdga-focus,.f1-focus) { flex:1; height:auto; min-height:0; }
+  body:not(.desktop-banner) :is(.chess-footer,.pdga-footer,.f1-footer) { height:14px; font-size:8px; flex-shrink:0; }
   body:not(.desktop-banner) .pdga-chase { height:14px; min-height:14px; }
   body:not(.desktop-banner) .scorebug-vertical-viewport { height:46px; }
   body:not(.desktop-banner) .sports-odds { font-size:9px; line-height:12px; padding:1px 18px; }

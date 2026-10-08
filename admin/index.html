@@ -13,7 +13,7 @@
     <div class="masthead-copy">
       <p class="eyebrow">DESKTOP SPORTS BANNER</p>
       <div class="app-heading"><h1>SportsOver</h1><span id="app-version" class="app-version" hidden></span></div>
-      <p class="subtitle">Choose teams, PDGA tournaments, and chess broadcasts to watch, and inspect every banner state.</p>
+      <p class="subtitle">Choose teams, Formula 1 drivers, PDGA tournaments, and chess broadcasts to watch, and inspect every banner state.</p>
     </div>
   </header>
 
@@ -116,7 +116,7 @@
               <button class="info-button" type="button" aria-label="Explain automatic game selection" aria-describedby="display-mode-tooltip" aria-expanded="false">i</button>
               <div id="display-mode-tooltip" class="info-tooltip" role="tooltip" hidden>
                 <p><strong>All watched teams + live spotlight:</strong> Each included watched team contributes its live game or selected fallback game, in team rank order. Shared matchups appear once. When no watched game is live, add a live spotlight game when available.</p>
-                <p><strong>Top watched team per sport:</strong> Suggest only the highest-ranked included watched team’s live game or fallback game for each enabled sport, without spotlight games. For chess and disc golf, use the first included watch.</p>
+                <p><strong>Top watched team per sport:</strong> Suggest only the highest-ranked included watched team’s live game or fallback game for each enabled sport, without spotlight games. For Formula 1, chess, and disc golf, use the first included watch.</p>
                 <p>The fallback choice applies separately to each watched team that is not playing live. Rotation source in Live control decides whether to use these automatic selections, your chosen games, or both. Manual additions can include other teams. Order, durations, and pins are set in Live control. Changes save automatically.</p>
               </div>
             </div>
@@ -290,13 +290,13 @@
       <p>Try individual samples here without changing the banner or OBS.</p>
       <div class="demo-controls">
         <label class="field">Sport
-          <select id="demo-sport"><option value="baseball">Baseball · MLB</option><option value="football">Football · NFL</option><option value="college-football">College football · NCAAF</option><option value="hockey">Hockey · NHL</option><option value="soccer">Soccer · MLS</option><option value="basketball">Basketball · NBA</option><option value="college-basketball">NCAA men’s basketball · NCAAM</option><option value="disc-golf">Disc golf · PDGA</option><option value="chess">Chess</option></select>
+          <select id="demo-sport"><option value="baseball">Baseball · MLB</option><option value="football">Football · NFL</option><option value="college-football">College football · NCAAF</option><option value="hockey">Hockey · NHL</option><option value="soccer">Soccer · MLS</option><option value="basketball">Basketball · NBA</option><option value="college-basketball">NCAA men’s basketball · NCAAM</option><option value="disc-golf">Disc golf · PDGA</option><option value="chess">Chess</option><option value="formula-1">Formula 1</option></select>
         </label>
         <label class="field">State
           <select id="demo-state">
             <option value="pregame">Pregame</option>
             <option value="live" selected>Live</option>
-            <option value="player">Followed player · chess</option>
+            <option value="player">Followed player / driver</option>
             <option value="scrolling">Scrolling info</option>
             <option value="rotation">Rotation test · all sports</option>
             <option value="interrupted">Interrupted / postponed</option>
@@ -419,6 +419,8 @@
   <script src="pdga-settings.js?v=2"></script>
   <script src="../sports/chess/providers/lichess.js?v=4"></script>
   <script src="chess-settings.js?v=2"></script>
+  <script src="../sports/formula-1/providers/espn.js?v=1"></script>
+  <script src="formula-1-settings.js?v=1"></script>
   <script src="automatic-watches.js?v=2"></script>
   <script src="admin.js?v=49"></script>
   <script src="../core/desktop.js?v=28"></script>
