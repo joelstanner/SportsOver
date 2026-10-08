@@ -27,11 +27,14 @@ const http = require('node:http');
     await first.waitForFunction(() => !!window.sportsDesktop);
     // The first window exists while the remaining startup loads are still
     // pending. Wait for the launch check before replacing its HTTPS handler.
-    for (let attempt = 0; attempt < 100; attempt++) {
+    const launchCheckDeadline = Date.now() + 60000;
+    let launchCheckMocked = false;
+    while (Date.now() < launchCheckDeadline) {
       const checked = await application.evaluate(() => globalThis.sportsTestNetworkState().fixtures.some(url => url.includes('api.github.com/repos/joelstanner/SportsOver/releases/latest')));
-      if (checked) break;
+      if (checked) { launchCheckMocked = true; break; }
       await new Promise(resolve => setTimeout(resolve, 100));
     }
+    assert.ok(launchCheckMocked, 'launch update check is mocked before replacing the HTTPS fixture handler');
     const status = await first.evaluate(() => window.sportsDesktop.status());
     const startup = await application.evaluate(() => globalThis.sportsTestNetworkState());
     assert.ok(startup, 'fixture protection is installed before first window');
