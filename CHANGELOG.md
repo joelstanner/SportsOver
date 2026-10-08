@@ -3,6 +3,15 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.37.3 — 2026-10-08
+
+### Fixed
+
+- Convert PDGA tee times to the time zone selected in Settings, including
+  daylight saving time, across leaderboards, player banners, and rotation previews.
+- Show the banner's tee-time zone once in the header instead of repeating it
+  for every player. Keep course-local labels when PDGA timing metadata is unavailable.
+
 ## 0.37.2 — 2026-10-07
 
 ### Changed

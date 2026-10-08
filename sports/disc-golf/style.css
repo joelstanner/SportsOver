@@ -10,6 +10,7 @@
 .pdga-scorebug[data-state="live"] .pdga-state { color:#92e4d3; }
 .pdga-board { height:55px; padding:0 10px; }
 .pdga-labels,.pdga-entry { display:grid; grid-template-columns:22px minmax(0,1fr) 49px 47px 33px; align-items:center; column-gap:4px; }
+.pdga-scorebug.has-tee-times .pdga-labels,.pdga-scorebug.has-tee-times .pdga-entry { grid-template-columns:22px minmax(0,1fr) 49px 47px 85px; }
 .pdga-labels { height:10px; font-size:6px; letter-spacing:.085em; color:#9cbbc3; }
 .pdga-entry { height:15px; font-size:10px; }
 .pdga-entry + .pdga-entry { border-top:1px solid #ffffff0b; }
@@ -19,11 +20,13 @@
 .pdga-playoff { font-size:6px; margin-left:5px; padding:1px 3px; border-radius:2px; background:#7ddeca21; color:#90e6d3; vertical-align:1px; }
 .pdga-total { color:#92e4d3; font-weight:850; }
 .pdga-thru { font-size:9px; color:#c2d2de; }
+.pdga-scorebug.has-tee-times .pdga-thru { white-space:nowrap; }
 .pdga-footer { height:13px; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:0 10px; border-top:1px solid #ffffff24; background:#07131f66; font-size:6.5px; color:#9fb7c2; }
 .pdga-footer>.scorebug-scroll-viewport { flex:1; min-width:0; }
 .pdga-footer>a { flex-shrink:0; }
 .pdga-scorebug[data-stale="true"] .pdga-footer { color:#f0c888; }
 .pdga-focus { height:39px; padding:0 10px; display:grid; align-items:center; grid-template-columns:24px minmax(0,1fr) 49px 47px 33px; gap:4px; }
+.pdga-scorebug.has-tee-times .pdga-focus { grid-template-columns:24px minmax(0,1fr) 49px 47px 85px; }
 .pdga-focus .pdga-name { font-size:13px; }
 .pdga-focus .pdga-place { font-size:17px; font-weight:750; color:#90e6d3; }
 .pdga-person { min-width:0; }
@@ -32,6 +35,7 @@
 .pdga-metric small { display:block; color:#a4c1ca; font-size:6px; letter-spacing:.06em; margin-bottom:2px; }
 .pdga-metric strong { display:block; font-size:17px; line-height:1; }
 .pdga-metric:last-child strong { font-size:12px; }
+.pdga-scorebug.has-tee-times .pdga-metric:last-child strong { white-space:nowrap; }
 .pdga-chase { height:16px; display:flex; align-items:center; gap:9px; padding:0 10px; border-top:1px solid #ffffff14; background:#07131f55; font-size:7px; overflow:hidden; }
 .pdga-chase>span { white-space:nowrap; }
 .pdga-chase>span:first-child { font-size:6px; letter-spacing:.08em; color:#90b2bd; }

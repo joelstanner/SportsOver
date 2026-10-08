@@ -15,6 +15,55 @@ const round = require('./round.json');
 const watch = { tournamentId: '86076', division: 'MPO', enabled: true, view: 'leaderboard', playerId: '' };
 const normalize = (r = round, m = metadata) => api.pdga.normalizeEvent(m, r, watch);
 
+test('PDGA course-local tee times convert to the selected zone without changing event state', () => {
+  const event = normalize({roundNumber:1,scores:[{Name:'Gannon Buhr',PDGANum:75412,Round:1,TeeTime:'14:00:00'}]},
+    {...metadata,StartDate:'2026-10-08',TimeZone:'America/New_York'});
+  const player = event.competitors[0];
+  assert.equal(player.teeTime,'14:00:00');
+  assert.equal(player.teeTimeUtc,'2026-10-08T18:00:00.000Z');
+  assert.equal(api.pdga.formatTeeTime(player,'America/Los_Angeles'),'11:00 AM PDT');
+  assert.equal(api.pdga.formatTeeTime(player,'America/New_York'),'2:00 PM EDT');
+  assert.equal(api.pdga.formatTeeTime(player,'Asia/Kolkata'),'11:30 PM UTC+5:30');
+  assert.equal(event.state,'pregame');
+  assert.equal(event.startTime,null);
+  const candidate = api.pdga.toCandidate({...event,details:{...event.details,view:'player',playerId:'75412'}});
+  assert.equal(candidate.raw.player.teeTimeUtc,player.teeTimeUtc);
+});
+
+test('tee conversion uses each published round date for DST and crosses dates in the destination zone', () => {
+  const event = normalize({roundNumber:2,scores:[{Round:2,TeeTime:'03:30'}]},
+    {...metadata,StartDate:'2026-03-07',TimeZone:'America/New_York',RoundsList:{2:{Date:'2026-03-08'}}});
+  assert.equal(event.competitors[0].teeTimeUtc,'2026-03-08T07:30:00.000Z');
+  assert.equal(api.pdga.formatTeeTime(event.competitors[0],'America/Los_Angeles'),'11:30 PM PST');
+  const winter = normalize({scores:[{Round:1,TeeTime:'14:00'}]},
+    {...metadata,StartDate:'2026-12-01',TimeZone:'America/New_York'}).competitors[0];
+  assert.equal(winter.teeTimeUtc,'2026-12-01T19:00:00.000Z');
+  assert.equal(api.pdga.formatTeeTime(winter,'America/Los_Angeles'),'11:00 AM PST');
+  const fractional = normalize({scores:[{Round:1,TeeTime:'00:15'}]},
+    {...metadata,StartDate:'2026-10-08',TimeZone:'Asia/Kathmandu'}).competitors[0];
+  assert.equal(fractional.teeTimeUtc,'2026-10-07T18:30:00.000Z');
+});
+
+test('missing or invalid timing metadata and ambiguous DST times retain course-local tee labels', () => {
+  const base = {...metadata,StartDate:'2026-10-08',TimeZone:'America/New_York'};
+  const cases = [
+    [{...base,TimeZone:undefined},1,'14:00'], [{...base,TimeZone:'unknown'},1,'14:00'],
+    [{...base,StartDate:undefined},1,'14:00'], [{...base,StartDate:'2026-02-30'},1,'14:00'],
+    [base,2,'14:00'], [base,1,'24:00'], [base,1,'14:60'], [base,1,'14:00:60'],
+    [{...base,StartDate:'2026-03-08'},1,'02:30'],
+    [{...base,StartDate:'2026-11-01'},1,'01:30'],
+  ];
+  for (const [m,Round,TeeTime] of cases) {
+    const player = normalize({roundNumber:Round,scores:[{Round,TeeTime}]},m).competitors[0];
+    assert.equal(player.teeTimeUtc,null,JSON.stringify([m.StartDate,m.TimeZone,Round,TeeTime]));
+    assert.equal(api.pdga.formatTeeTime(player,'America/Los_Angeles'),`${TeeTime.slice(0,5)} (course local)`);
+  }
+  assert.equal(api.pdga.formatTeeTime({teeTime:''},'America/Los_Angeles'),'');
+  const singleDay = normalize({roundNumber:2,scores:[{Round:2,TeeTime:'14:00'}]},
+    {...base,EndDate:base.StartDate});
+  assert.equal(singleDay.competitors[0].teeTimeUtc,'2026-10-08T18:00:00.000Z');
+});
+
 test('displayed PDGA scores promote shared discovery metadata and prioritize the round fetch', async () => {
   let release;
   const calls = [], promotions = [];
@@ -275,7 +324,7 @@ test('leaderboard and player banners for one division survive discovery independ
   assert.equal(player.view, 'player');
   assert.equal(player.bannerLabel, 'Player · Kevin Jones');
   assert.deepEqual(player.player, {name:'Kevin Jones', place:4, tied:false, total:-12, roundToPar:-7,
-    played:18, completed:true, started:true, teeTime:'14:36:00', status:''});
+    played:18, completed:true, started:true, teeTime:'14:36:00', teeTimeUtc:null, status:''});
   assert.equal((await client.getEvent('86076:MPO:banner:kevin')).details.playerId,'41760');
   assert.equal((await client.getEvent('86076:MPO')).details.view,'leaderboard');
 });

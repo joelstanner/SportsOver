@@ -98,6 +98,13 @@ In the sport's Settings card, browse current events or paste a tournament URL/ID
 load it, then choose **Watch division** (PDGA) or **Watch tournament** (Lichess).
 Chess can follow the current round automatically or pin a round.
 
+PDGA tee times in the leaderboard, player banner, and rotation preview use the
+time zone selected in Settings (or the device's time zone for **Local**), with
+daylight saving time applied for the published round date. If PDGA omits a usable
+round date or tournament time zone, times stay labeled **course local**.
+The banner shows the time zone once in the tee-time header, with just the clock
+time in each row; hovering a leaderboard time shows its full time-zone label.
+
 Each event can have a tournament banner and a separate **player banner**, with
 independent rotation controls. Select a player to include a player banner.
 Leaderboards offer **Top 10 · scroll vertically** or **Top 3 · static**; live chess

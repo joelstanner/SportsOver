@@ -1234,7 +1234,7 @@
       const stats = !player ? [] : player.status ? [player.status] : [
         `Pos ${player.place == null ? "—" : `${player.tied ? "T" : ""}${player.place}`}`,
         `Total ${signed(player.total)}`, `Round ${signed(player.roundToPar)}`,
-        player.completed ? "Thru F" : player.started ? `Thru ${player.played ?? "—"}` : player.teeTime ? `Tee ${player.teeTime.slice(0, 5)} (course local)` : "Awaiting tee time",
+        player.completed ? "Thru F" : player.started ? `Thru ${player.played ?? "—"}` : player.teeTime ? `Tee ${global.SportsOverlay.pdga.formatTeeTime(player, workingConfig.timeZone === "local" ? undefined : workingConfig.timeZone)}` : "Awaiting tee time",
       ];
       return [state, `R${candidate.raw?.round || 1}`, ...stats, candidate.raw?.dateRange].filter(Boolean).join(" · ");
     }

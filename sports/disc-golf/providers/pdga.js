@@ -9,6 +9,38 @@
   const number = value => value === null || value === undefined || String(value).trim() === "" || !Number.isFinite(Number(value)) ? null : Number(value);
   const flag = value => value === true || value === 1 || value === "1" || value === "yes";
 
+  function teeTimeUtc(teeTime, metadata, roundNumber) {
+    const date = metadata.RoundsList?.[roundNumber]?.Date
+      || (roundNumber === 1 || metadata.StartDate === metadata.EndDate ? metadata.StartDate : "");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date || "")) return null;
+    const time = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(teeTime);
+    if (!time || +time[1] > 23 || +time[2] > 59 || +(time[3] || 0) > 59 || !metadata.TimeZone) return null;
+    const wall = Date.parse(`${date}T${time[1].padStart(2, "0")}:${time[2]}:${time[3] || "00"}Z`);
+    if (!Number.isFinite(wall) || new Date(wall).toISOString().slice(0, 10) !== date) return null;
+    try {
+      const formatter = new Intl.DateTimeFormat("en-CA", { timeZone: metadata.TimeZone,
+        year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
+      const localWall = instant => {
+        const parts = Object.fromEntries(formatter.formatToParts(instant).map(part => [part.type, part.value]));
+        return Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+      };
+      // Check offsets on both sides of a DST change. Reject nonexistent or
+      // ambiguous local times rather than assigning an invented tee instant.
+      const matches = new Set();
+      for (const shift of [-86400_000, 0, 86400_000]) {
+        const sample = wall + shift;
+        const instant = wall - (localWall(sample) - sample);
+        if (localWall(instant) === wall) matches.add(instant);
+      }
+      return matches.size === 1 ? new Date([...matches][0]).toISOString() : null;
+    } catch (_) { return null; }
+  }
+
+  function formatTeeTime(player, timeZone) {
+    return player.teeTimeUtc ? global.SportsOverlay.model.formatGameTime(player.teeTimeUtc, timeZone)
+      : player.teeTime ? `${player.teeTime.slice(0, 5)} (course local)` : "";
+  }
+
   function playerStatus(score) {
     const explicit = String(score.Status || score.RoundStatus || "").toUpperCase();
     if (["DQ", "DNF", "DNS", "WD"].includes(explicit)) return explicit;
@@ -56,6 +88,7 @@
     const competitors = round.scores.map(normalizePlayer).sort(current === "pregame" && roundNumber === 1
       ? (a, b) => (b.rating ?? 0) - (a.rating ?? 0) || a.name.localeCompare(b.name)
       : (a, b) => (a.place ?? Infinity) - (b.place ?? Infinity));
+    for (const player of competitors) player.teeTimeUtc = teeTimeUtc(player.teeTime, metadata, roundNumber);
     // A completed intermediate round is a break, not a finished tournament.
     const finalRound = number(metadata.FinalRound) || number(metadata.Rounds);
     const state = (current === "final" && (!finalRound || roundNumber < finalRound))
@@ -65,8 +98,8 @@
     return global.SportsOverlay.model.createEvent({
       id: watchId(watch), sport: "disc-golf", league: "PDGA", competitionType: "individual",
       state, detailedState: state === "interrupted" ? breakReason : state === "pregame" ? "Awaiting scores" : state === "final" ? "Final" : "Live",
-      // PDGA provides dates without a guaranteed zone. Keep the date as display
-      // metadata rather than inventing a UTC tee time for queue/preview labels.
+      // Individual tee instants are for display. Scores still govern tournament
+      // state, and no single player's tee time is the whole event's start time.
       startTime: null, competitors,
       details: {
         tournamentId: watch.tournamentId, division: watch.division, round: roundNumber,
@@ -87,7 +120,7 @@
         : `Top ${event.details.leaderboardSize} players`, division: event.details.division, round: event.details.round,
         view: event.details.view, player: player ? {
           name: player.name, place: player.place, tied: player.tied, total: player.total, roundToPar: player.roundToPar,
-          played: player.played, completed: player.completed, started: player.started, teeTime: player.teeTime, status: player.status,
+          played: player.played, completed: player.completed, started: player.started, teeTime: player.teeTime, teeTimeUtc: player.teeTimeUtc, status: player.status,
         } : null,
         dateRange: event.details.dateRange, stale: event.details.stale, automatic: event.details.automatic, detailedState: event.detailedState,
         discoveryTier: event.details.discoveryTier, discoveryReason: event.details.discoveryReason } };
@@ -396,7 +429,7 @@
       if (String(url) === CURRENT) return DIRECTORY_INTERVAL;
       if (!String(url).startsWith(`${BASE}live_results_fetch_event?`) || error) return undefined;
       return Math.max(configuredDelay, state === "final" ? DIRECTORY_INTERVAL : state === "live" ? 120_000 : 300_000);
-    }, normalizeEvent, normalizePlayer, toCandidate, roundState,
+    }, normalizeEvent, normalizePlayer, toCandidate, roundState, formatTeeTime,
     failureBackoff: state => state === "live",
     refreshState(payload, url) {
       if (String(url).includes("live_results_fetch_round")) return payload ? roundState(payload.data?.scores) : "pregame";
