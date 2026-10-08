@@ -3,6 +3,30 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.38.0 — 2026-10-08
+
+### Added
+
+- Follow Formula 1 drivers across all sessions, including practice, qualifying,
+  Sprints, and races. Show compact driver cards with national flags or top 3,
+  top 10, and full-field leaderboards using shared ESPN requests.
+- Keep the last F1 session results and next scheduled start between sessions,
+  with explicit missing timing, retirement, and stale-data labels.
+- Choose whether to show betting information and optionally combine odds with
+  custom text, available player stats, game details, or a scrolling mix.
+- Discover more live Lichess broadcasts, including open and computer events,
+  with bounded checks, shared requests, and provider cooldowns.
+
+### Changed
+
+- Use Up to grow the desktop banner and Down to shrink it.
+- Keep alternate content in game lists at a stable height and reserve rotating
+  player stats for the banner.
+
+Existing settings are preserved. Add Formula 1 drivers or leaderboards in Settings.
+ESPN's F1 results endpoint is undocumented; freshness during an active session
+still needs verification.
+
 ## 0.37.3 — 2026-10-08
 
 ### Fixed
