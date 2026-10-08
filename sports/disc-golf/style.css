@@ -25,10 +25,10 @@
 .pdga-footer>.scorebug-scroll-viewport { flex:1; min-width:0; }
 .pdga-footer>a { flex-shrink:0; }
 .pdga-scorebug[data-stale="true"] .pdga-footer { color:#f0c888; }
-.pdga-focus { height:39px; padding:0 10px; display:grid; align-items:center; grid-template-columns:24px minmax(0,1fr) 49px 47px 33px; gap:4px; }
-.pdga-scorebug.has-tee-times .pdga-focus { grid-template-columns:24px minmax(0,1fr) 49px 47px 85px; }
+.pdga-focus { height:39px; padding:0 10px; display:grid; align-items:center; grid-template-columns:minmax(24px,max-content) minmax(0,1fr) 49px 47px 33px; gap:4px; }
+.pdga-scorebug.has-tee-times .pdga-focus { grid-template-columns:minmax(24px,max-content) minmax(0,1fr) 49px 47px 85px; }
 .pdga-focus .pdga-name { font-size:13px; }
-.pdga-focus .pdga-place { font-size:17px; font-weight:750; color:#90e6d3; }
+.pdga-focus .pdga-place { font-size:17px; font-weight:750; color:#90e6d3; white-space:nowrap; margin-right:4px; }
 .pdga-person { min-width:0; }
 .pdga-sub { display:block; font-size:7px; color:#a4c1ca; margin-top:2px; }
 .pdga-metric { text-align:right; }
