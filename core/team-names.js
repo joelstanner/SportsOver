@@ -1,6 +1,12 @@
 "use strict";
 
 (function initializeTeamNames(global) {
+  function displayName(team, sport) {
+    const name = team.name?.trim() || team.abbreviation;
+    return sport === "basketball" && /^Oklahoma City Thunder$/i.test(name)
+      ? "Oklahoma City Plunder" : name;
+  }
+
   // Measure the actual name slot after the layout has set scores and visibility.
   // The chosen text is included in the engine's HTML snapshot for every output.
   function render(event, awayLabel, homeLabel, awayMark, homeMark) {
@@ -12,7 +18,7 @@
           element.setAttribute("href", href);
           element.setAttribute("target", "_blank");
           element.setAttribute("rel", "noopener noreferrer");
-          element.setAttribute("aria-label", `${team.name || team.abbreviation} · Open game on ${event.sport === "baseball" ? "MLB" : "ESPN"}`);
+          element.setAttribute("aria-label", `${displayName(team, event.sport)} · Open game on ${event.sport === "baseball" ? "MLB" : "ESPN"}`);
           element.classList.add("team-game-link");
         }
       }
@@ -26,7 +32,7 @@
     awayLabel.closest("#sports-overlay").dataset.teamNames = expand ? "full" : "short";
     for (const [side, label] of [["away", awayLabel], ["home", homeLabel]]) {
       const team = event.teams[side];
-      const name = team.name?.trim() || team.abbreviation;
+      const name = displayName(team, event.sport);
       // Clear the previous matchup's adjustments before measuring this name.
       label.style.removeProperty("font-size");
       label.style.removeProperty("letter-spacing");
@@ -58,5 +64,5 @@
   }
 
   global.SportsOverlay = global.SportsOverlay || {};
-  global.SportsOverlay.teamNames = Object.freeze({ render, clearLinks });
+  global.SportsOverlay.teamNames = Object.freeze({ render, clearLinks, displayName });
 })(typeof window === "undefined" ? globalThis : window);

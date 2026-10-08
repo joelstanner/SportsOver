@@ -3,6 +3,13 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.37.2 — 2026-10-07
+
+### Changed
+
+- Display "Oklahoma City Plunder" when NBA banners show Oklahoma City's full
+  team name, including tooltips and accessibility labels in desktop/OBS output.
+
 ## 0.37.1 — 2026-10-07
 
 ### Changed

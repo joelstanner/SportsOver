@@ -142,6 +142,8 @@ Desktop banner sizing is unchanged.
 
 NBA banners use the bundled Gary Payton image in place of Oklahoma City's team
 logo, for either home or away games in every game state, including OBS output.
+When full team names are shown, NBA banners display "Oklahoma City Plunder" in
+place of "Oklahoma City Thunder", including tooltips and accessibility labels.
 
 OBS checks the SportsOver engine heartbeat independently of score changes. After
 10 seconds without an advancing heartbeat, or when the engine reports it is not

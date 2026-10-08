@@ -51,7 +51,9 @@
       els.bug.dataset.state = event.state;
       els.bug.dataset.preseason = String(event.details.preseason === true);
       global.SportsOverlay.teamTheme.apply(els.bug, event);
-      els.bug.setAttribute("aria-label", `${away.name} at ${home.name} ${event.league}${event.details.preseason ? " preseason" : ""} game`);
+      const awayName = global.SportsOverlay.teamNames.displayName(away, event.sport);
+      const homeName = global.SportsOverlay.teamNames.displayName(home, event.sport);
+      els.bug.setAttribute("aria-label", `${awayName} at ${homeName} ${event.league}${event.details.preseason ? " preseason" : ""} game`);
       setTeam(els.awayMark, els.awayAbbr, els.awayRecord, away, event.sport);
       setTeam(els.homeMark, els.homeAbbr, els.homeRecord, home, event.sport);
       const showTimeouts = event.state === EVENT_STATES.LIVE || event.state === EVENT_STATES.INTERRUPTED;
@@ -61,8 +63,8 @@
         renderCollegeTimeouts(els.homeTimeouts, showTimeouts ? home.timeoutsRemaining : null, home.name);
       } else {
         const maximumTimeouts = Number(event.details.period?.replace(/\D/g, "")) > 4 || /^OT/.test(event.details.period || "") ? 2 : 7;
-        global.SportsOverlay.timeouts.renderMarkers(els.awayTimeouts, showTimeouts ? away.timeoutsRemaining : null, maximumTimeouts, away.name);
-        global.SportsOverlay.timeouts.renderMarkers(els.homeTimeouts, showTimeouts ? home.timeoutsRemaining : null, maximumTimeouts, home.name);
+        global.SportsOverlay.timeouts.renderMarkers(els.awayTimeouts, showTimeouts ? away.timeoutsRemaining : null, maximumTimeouts, awayName);
+        global.SportsOverlay.timeouts.renderMarkers(els.homeTimeouts, showTimeouts ? home.timeoutsRemaining : null, maximumTimeouts, homeName);
       }
       const showScore = event.state !== EVENT_STATES.PREGAME;
       els.awayScore.textContent = showScore ? away.score ?? 0 : "";
@@ -120,7 +122,7 @@
   }
 
   function setTeam(mark, abbreviation, record, team, sport) {
-    mark.title = team.name?.trim() || team.abbreviation;
+    mark.title = global.SportsOverlay.teamNames.displayName(team, sport);
     const logo = mark.querySelector("img");
     const fallback = mark.querySelector("span");
     const isOklahomaCity = sport === "basketball" && (

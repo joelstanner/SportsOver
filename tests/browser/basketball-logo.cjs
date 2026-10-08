@@ -43,6 +43,7 @@ const asset = 'sports/basketball/gary-payton-circle.png';
         await page.evaluate(({ side, state }) => {
           const event = window.SportsOverlay.registry.getDemo('basketball', state);
           event.teams[side] = { id: '25', name: 'Oklahoma City Thunder', abbreviation: 'OKC', logoUrl: 'https://fixture.test/okc.png', score: 80 };
+          event.details.gameUrl = 'https://www.espn.com/nba/game/_/gameId/401900008';
           window.logoLayout.render(event);
           window.logoEvent = event;
         }, { side, state });
@@ -54,6 +55,13 @@ const asset = 'sports/basketball/gary-payton-circle.png';
         assert.equal(await logo.getAttribute('src'), asset);
         assert.equal(await logo.getAttribute('alt'), 'Gary Payton');
         assert.equal(await logo.isVisible(), true);
+        const label = page.locator(`#basketball-${side}-abbr`);
+        assert.equal(await label.textContent(), state === 'live' ? 'OKC' : 'Oklahoma City Plunder');
+        assert.match(await label.getAttribute('title'), /^Oklahoma City Plunder/);
+        assert.match(await label.getAttribute('aria-label'), /^Oklahoma City Plunder/);
+        assert.equal(await page.locator(`#basketball-${side}-mark`).getAttribute('title'), 'Oklahoma City Plunder');
+        assert.match(await page.locator('#sports-overlay').getAttribute('aria-label'), /Oklahoma City Plunder/);
+        assert.equal(await page.evaluate(side => window.logoEvent.teams[side].name, side), 'Oklahoma City Thunder');
         assert.equal(await page.evaluate(side => window.logoEvent.teams[side].logoUrl, side), 'https://fixture.test/okc.png');
       }
     }
@@ -85,10 +93,11 @@ const asset = 'sports/basketball/gary-payton-circle.png';
     // The shared college renderer must preserve a college team's original logo.
     await page.evaluate(() => {
       window.logoEvent.sport = 'college-basketball';
-      window.logoEvent.teams.home = { id: '25', abbreviation: 'OKC', name: 'College fixture', logoUrl: 'https://fixture.test/college.png' };
+      window.logoEvent.teams.home = { id: '25', abbreviation: 'OKC', name: 'Oklahoma City Thunder', logoUrl: 'https://fixture.test/college.png' };
       window.logoLayout.render(window.logoEvent);
     });
     assert.equal(await page.locator('#basketball-home-mark img').getAttribute('src'), 'https://fixture.test/college.png');
+    assert.equal(await page.locator('#basketball-home-abbr').textContent(), 'Oklahoma City Thunder');
     await page.evaluate(() => {
       const event = window.SportsOverlay.registry.getDemo('basketball', 'pregame');
       window.logoLayout.render(event);
