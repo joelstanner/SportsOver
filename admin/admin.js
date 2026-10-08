@@ -123,7 +123,7 @@
       .map(group => configApi.findSport(group.sport).league).join(", ")
       : catalogRefreshSport.selectedOptions[0].textContent;
     document.querySelector("#catalog-refresh-dialog-description").textContent =
-      `Download current team names, IDs, logos, and colors from MLB/ESPN for ${scope}, replacing the saved directory for that selection.`;
+      `Update the saved team list, names, logos, and colors for ${scope}.`;
     catalogRefreshDialog.showModal();
   });
   document.querySelector("#cancel-refresh-team-catalog").addEventListener("click", () => catalogRefreshDialog.close());
