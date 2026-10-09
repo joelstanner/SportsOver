@@ -215,7 +215,9 @@
       note.textContent = 'SportsOver disconnected';
       note.style.display = checkFreshness ? 'none' : 'block';
     }
-    setTimeout(poll, failures ? 1000 : 200);
+    // Desktop changes arrive immediately through onFrame. Retain a slower poll
+    // for initial state, reconnects and missed pushes; OBS still needs fast polling.
+    setTimeout(poll, failures || window.sportsDesktop ? 1000 : 200);
   }
   if (checkFreshness) {
     showOffline();

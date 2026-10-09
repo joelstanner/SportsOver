@@ -4,6 +4,53 @@ Implementation tested on macOS (Darwin 24.6.0, Apple Silicon), Electron 44.5.0, 
 
 ## Automated checks
 
+### Before/after energy measurements (macOS)
+
+Run `npm run test:energy -- --energy` for native macOS Energy Impact, CPU and idle
+wakeup measurements. Approve the macOS administrator dialog; only Apple's
+`powermetrics` sampler runs with elevated privileges. Python 3 is needed to read
+its property-list output. Omit `--energy` for CPU/wakeups without administrator
+approval. These are real elapsed-time measurements, separate from operation-count
+tests. The report labels native `energy_impact_per_s` as an Energy Impact rate;
+it is not a transcription of Activity Monitor's smoothed score or a watts reading.
+
+The runner takes current-source snapshots and restores only `core/engine-host.js`
+and `core/output.js` from baseline commit `a850415` in the before copy. Both use
+the same installed Electron runtime. Override with `--baseline COMMIT` for another
+publishing baseline. It never changes checkout files, installed apps or personal
+settings, and never builds an installer. Fixtures block external network traffic.
+
+Defaults: static and scrolling football fixtures, 20-second warmup and 60-second
+measurement per run, two pairs per scenario, ordered before/after then
+after/before. The eight visible runs take roughly 11–13 minutes. Settings and OBS
+are closed in the test instances. Keep the pointer away from the benchmark banner
+at the top left and keep other workloads and power settings stable.
+
+For a shorter initial comparison:
+`npm run test:energy -- --energy --seconds 30 --warmup 10`.
+Use `--scenarios static` or `--scenarios scrolling` to test one workload.
+`--pairs 1` is a quick check, not a repeatability check. Short runs are labeled.
+The static control disables animations on both the engine and desktop output;
+the scrolling fixture uses normal animations. Live provider traffic is excluded.
+
+Results go to Git-ignored `reports/energy/<timestamp>/report.html`, with
+`samples.csv`, `results.json`, and screenshots of every run. JSON includes source
+hashes, individual measurements, app process IDs, power-source snapshots and
+per-run means. CPU and wakeups use Electron counters for all app processes.
+Energy sums the native sampler's reported app rows; it can omit dormant helpers.
+Per-sample PID coverage is retained, and missing energy fields are not zero.
+Startup/shutdown and samples missing the main process are excluded, with a
+one-second margin for rounded native timestamps. `native-process-samples.json`
+retains only the test app's native rows; temporary system-wide output is deleted.
+Results exclude WindowServer and the test driver. Both variants use the same
+automation/debugging flags. No automatic performance pass/fail threshold is imposed.
+
+`node tests/browser/engine-publishing.cjs` checks idle HTML reuse, one-second
+heartbeats, DOM and metadata updates, immediate commands, compact-layout changes,
+and replacement mounts. Set `ENGINE_HOST_BASELINE` to a previous `engine-host.js`
+file to compare operation counts over identical controlled 10-second idle windows
+after a 1-second warmup. This measures browser work, not CPU time or energy use.
+
 `SPORTSOVER_COMPACT_ROTATION_ONLY=1 npm run test:desktop -- --quiet` verifies small-banner filtering for both desktop and OBS, the saved on/off setting, the 50% threshold, individual-only empty queues, and restoration.
 
 `SPORTSOVER_COMPACT_SMOKE_ONLY=1 npm run test:desktop -- --quiet` checks compact desktop layouts across seven team sports, live/final/upcoming states and vertical halftime markers, the 50% boundary, and 10–40% sizes. It verifies other states and narrow OBS output retain their layouts, and saves screenshots in the isolated test directory.

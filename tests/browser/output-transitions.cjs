@@ -11,6 +11,7 @@ const frame = (sequence, transition = 'normal') => ({ instance: 'output-test', s
   try {
     const page = await browser.newPage({ reducedMotion: 'no-preference' });
     const errors = [];
+    let outputRequests = 0;
     page.on('pageerror', error => errors.push(error.message));
     await page.addInitScript(() => {
       window.SportsOverlay = { countdown: { refresh() {} } };
@@ -25,7 +26,7 @@ const frame = (sequence, transition = 'normal') => ({ instance: 'output-test', s
     await page.route('**/*', async route => {
       const url = new URL(route.request().url());
       // Keep returning an old frame to exercise push/poll ordering.
-      if (url.pathname === '/api/output') return route.fulfill({ json: frame(1) });
+      if (url.pathname === '/api/output') { outputRequests++; return route.fulfill({ json: frame(1) }); }
       if (url.pathname === '/') return route.fulfill({ contentType: 'text/html', body:
         '<link rel="stylesheet" href="/core/rotation.css"><main id="sports-overlay"></main><script src="/core/output.js"></script>' });
       return route.fulfill({ body: await fs.readFile(path.join(root, url.pathname)),
@@ -33,6 +34,8 @@ const frame = (sequence, transition = 'normal') => ({ instance: 'output-test', s
     });
     await page.goto('http://127.0.0.1:8000/');
     await page.waitForFunction(() => document.body.dataset.sequence === '1');
+    await page.waitForTimeout(450);
+    assert.equal(outputRequests, 1, 'desktop uses pushed frames between one-second recovery polls');
     await page.evaluate(value => window.deliverFrame(value), frame(2, 'quick'));
     await page.waitForFunction(() => document.body.dataset.sequence === '2');
     await page.waitForFunction(() => window.completedTransitions.length === 1);

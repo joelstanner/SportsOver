@@ -25,3 +25,6 @@ dist/
 
 # Developer-only desktop test visibility preference.
 .sportsover-tests.json
+
+# Local before/after energy reports and screenshots.
+reports/energy/

@@ -11,6 +11,7 @@
     "start": "node scripts/start.cjs",
     "test": "node --require ./scripts/offline-network.cjs --test tests/core/*.test.js tests/sports/*/*.test.js tests/desktop/*.test.cjs",
     "test:desktop": "node scripts/desktop-smoke.cjs",
+    "test:energy": "node scripts/energy-benchmark.cjs",
     "test:mode": "node scripts/test-mode.cjs",
     "test:network": "node scripts/test-network-smoke.cjs",
     "build:mac": "node scripts/build-mac.cjs",

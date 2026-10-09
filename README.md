@@ -220,6 +220,14 @@ With SportsOver running, copy the OBS URL from Settings (normally
 to **472 × 100**, then scale it in OBS. The background is transparent. Desktop and
 OBS share the same engine and rotation; hiding the desktop banner keeps OBS running.
 
+To avoid repeated work while scores are unchanged, the engine reuses its rendered
+HTML until the banner changes. Render changes are coalesced over 50 ms; engine
+heartbeats and metadata checks run every second. Desktop updates arrive directly,
+with a 1-second recovery poll; OBS polls every 200 ms. Failed output requests retry
+after 1 second. These local output timings do not change sports-provider refresh
+intervals, countdowns, or scrolling speed. Animated tickers and leaderboards still
+require ongoing rendering; static Top 3 leaderboards reduce that work.
+
 The server is local to your computer. If port 17843 is occupied, free it and
 restart SportsOver. For temporary game-selection commands, copy the integration
 token from Settings and follow the [local API guide](desktop/API.md).
