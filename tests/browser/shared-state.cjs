@@ -85,7 +85,7 @@ const root = path.resolve(__dirname, '../..');
     assert.equal(await obs.evaluate(() => window.SportsOverlay.model.formatGameTime('2026-07-01T19:00:00Z')), '12:00 PM PDT');
     assert.equal(await obs.evaluate(() => window.SportsOverlay.model.formatGameTime('2026-12-01T20:00:00Z')), '12:00 PM PST');
     assert.equal(await obs.evaluate(() => window.testMarker), marker);
-    const intervalInput = chrome.locator('#provider-refresh-fields input[data-sport="baseball"][data-state="live"]');
+    const intervalInput = chrome.locator('#provider-refresh-fields input[data-state="live"]');
     await intervalInput.fill('4');
     const beforeInvalid = state.revision;
     await intervalInput.press('Tab');

@@ -108,7 +108,7 @@ const root = path.resolve(__dirname, '../..');
     assert.equal(state.config.fallbackMode, 'hide');
     assert.equal(await page.locator('#display-mode').inputValue(), 'automatic');
     // Number fields are only committed when complete and valid.
-    const interval = page.locator('#provider-refresh-fields input[data-sport="baseball"][data-state="live"]');
+    const interval = page.locator('#provider-refresh-fields input[data-state="live"]');
     const previous = state.config.providerRefreshSeconds.baseball.live;
     await interval.fill('');
     await interval.pressSequentially('4');
@@ -130,6 +130,84 @@ const root = path.resolve(__dirname, '../..');
     await interval.press('Tab');
     await saved();
     assert.equal(state.config.providerRefreshSeconds.baseball.live, 25);
+    // Shared intervals update inheriting sports but preserve equal-valued exceptions.
+    assert.equal(state.config.providerRefreshSeconds.football.live, 25);
+    assert.equal(state.config.providerRefreshSeconds.chess.live, 30);
+    assert.equal(state.config.providerRefreshSeconds['disc-golf'].live, 30);
+    assert.equal(state.config.providerRefreshSeconds['formula-1'].live, 30);
+    assert.equal(await page.locator('#provider-refresh-fields input').count(), 4);
+    assert.equal(await page.locator('#refresh-exceptions').evaluate(node => node.open), false);
+    assert.match(await page.locator('#refresh-exceptions-summary').innerText(), /Disc golf, F1, Chess/);
+    await page.locator('#refresh-exceptions > summary').click();
+    assert.equal(await page.locator('#refresh-exception-fields input').count(), 4);
+    await page.locator('#refresh-sport').selectOption('baseball');
+    await page.locator('#refresh-state').selectOption('live');
+    await page.locator('#add-refresh-exception').click();
+    await saved();
+    const customLive = page.locator('#refresh-exception-fields input[data-sport="baseball"][data-state="live"]');
+    assert.equal(await customLive.evaluate(input => input === document.activeElement), true);
+    await customLive.fill('45');
+    await customLive.press('Enter');
+    await saved();
+    assert.equal(state.config.providerRefreshSeconds.baseball.live, 45);
+    await interval.fill('60');
+    await interval.press('Enter');
+    await saved();
+    assert.equal(state.config.providerRefreshSeconds.baseball.live, 45);
+    assert.equal(state.config.providerRefreshSeconds.football.live, 60);
+    // Reload preserves values, explicit exceptions, and the compact default view.
+    await page.reload();
+    await interval.waitFor();
+    assert.equal(await interval.inputValue(), '60');
+    assert.equal(await page.locator('#refresh-exceptions').evaluate(node => node.open), false);
+    await page.locator('#refresh-exceptions > summary').click();
+    assert.equal(await customLive.inputValue(), '45');
+    await page.getByRole('button', { name: 'Use shared interval for MLB live', exact: true }).click();
+    await saved();
+    assert.equal(await customLive.count(), 0);
+    assert.equal(state.config.providerRefreshSeconds.baseball.live, 60);
+    assert.equal(state.config.providerRefreshPolicy.overrides.baseball, undefined);
+    // A late save response cannot split the effective values from inheritance.
+    hold = true;
+    await interval.fill('30');
+    await interval.press('Enter');
+    await page.waitForFunction(() => document.querySelector('#save-status').textContent === 'Saving…');
+    while (!release) await new Promise(resolve => setTimeout(resolve, 10));
+    await interval.fill('20');
+    await interval.press('Enter');
+    release(); release = undefined;
+    await saved();
+    assert.equal(state.config.providerRefreshPolicy.shared.live, 20);
+    assert.equal(state.config.providerRefreshSeconds.baseball.live, 20);
+    assert.equal(state.config.providerRefreshSeconds.chess.live, 30);
+    await page.locator('#refresh-sport').selectOption('baseball');
+    for (const timing of ['live', 'pregame', 'final', 'idle']) {
+      await page.locator('#refresh-state').selectOption(timing);
+      await page.locator('#add-refresh-exception').click();
+      await saved();
+    }
+    assert.equal(await page.locator('#add-refresh-exception').isDisabled(), true);
+    await page.locator('#refresh-sport').selectOption('hockey');
+    assert.equal(await page.locator('#add-refresh-exception').isEnabled(), true);
+    const beforeRefreshReset = structuredClone(state.config);
+    await page.locator('#reset-refresh-intervals').click();
+    await saved();
+    const defaults = await page.evaluate(() => window.SportsOverlay.config.normalizeConfig());
+    assert.deepEqual(state.config.providerRefreshSeconds, defaults.providerRefreshSeconds);
+    assert.deepEqual(state.config.providerRefreshPolicy, defaults.providerRefreshPolicy);
+    for (const key of Object.keys(beforeRefreshReset)) {
+      if (!['providerRefreshSeconds', 'providerRefreshPolicy'].includes(key)) assert.deepEqual(state.config[key], beforeRefreshReset[key]);
+    }
+    if (process.env.REFRESH_SCREENSHOT_DIR) {
+      const section = page.locator('section[aria-labelledby="provider-refresh-heading"]');
+      await section.screenshot({ path: path.join(process.env.REFRESH_SCREENSHOT_DIR, 'refresh-expanded.png') });
+      await page.locator('#refresh-exceptions > summary').click();
+      await section.screenshot({ path: path.join(process.env.REFRESH_SCREENSHOT_DIR, 'refresh-shared.png') });
+      await page.setViewportSize({ width: 390, height: 844 });
+      await section.screenshot({ path: path.join(process.env.REFRESH_SCREENSHOT_DIR, 'refresh-mobile.png') });
+      assert.equal(await section.evaluate(node => node.scrollWidth <= node.clientWidth), true, 'refresh controls fit a narrow screen');
+      await page.setViewportSize({ width: 1280, height: 720 });
+    }
     // Failed saves retain edits and expose a manual retry only when necessary.
     failed = true;
     await page.locator('#fallback-mode').selectOption('recent-final');

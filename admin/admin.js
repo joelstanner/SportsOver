@@ -10,6 +10,11 @@
   let workingConfig = configApi.loadConfig();
   const shared = global.SportsOverlay.shared;
   const providerRefresh = global.SportsOverlay.providerRefresh.create({ config: () => workingConfig });
+  const refreshSettingKeys = ["providerRefreshSeconds", "providerRefreshPolicy"];
+  const refreshSettings = global.SportsOverlay.refreshSettings.create({
+    config: () => workingConfig,
+    onChange: () => refreshSettingKeys.forEach(scheduleSettingsSave),
+  });
   const disclosureKey = "sportsover.settings.collapsedSports";
   let collapsedSports;
   try {
@@ -363,6 +368,10 @@
       if (snapshot.revision === baseRevision && snapshot.instance === baseInstance) return;
       const incoming = configApi.loadConfig();
       const edited = Object.keys(workingConfig).filter(key => JSON.stringify(workingConfig[key]) !== JSON.stringify(baseline[key]));
+      // Effective intervals and inheritance are one edit across windows.
+      if (refreshSettingKeys.some(key => edited.includes(key))) {
+        for (const key of refreshSettingKeys) if (!edited.includes(key)) edited.push(key);
+      }
       const overlap = edited.some(key => pendingSettings.has(key) && JSON.stringify(incoming[key]) !== JSON.stringify(baseline[key]));
       for (const key of Object.keys(incoming)) {
         if (!edited.includes(key)) workingConfig[key] = structuredClone(incoming[key]);
@@ -440,40 +449,7 @@
   }
 
   function renderSettings() {
-    const refreshFields = document.querySelector("#provider-refresh-fields");
-    // Keep number inputs mounted so background saves never interrupt typing.
-    if (!refreshFields.children.length) for (const sport of configApi.SPORT_CATALOG) {
-      const row = document.createElement("fieldset");
-      row.className = "provider-refresh-row";
-      const legend = document.createElement("legend");
-      legend.textContent = sport.league;
-      row.append(legend);
-      for (const [state, seconds] of Object.entries(workingConfig.providerRefreshSeconds[sport.key])) {
-        const label = document.createElement("label");
-        label.className = "field";
-        label.textContent = state === "idle" ? "Idle / no game" : state[0].toUpperCase() + state.slice(1);
-        const input = document.createElement("input");
-        input.type = "number"; input.min = "5"; input.max = "3600"; input.step = "1";
-        input.required = true; input.value = seconds;
-        input.dataset.sport = sport.key; input.dataset.state = state;
-        input.addEventListener("keydown", event => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            if (input.reportValidity()) input.blur();
-          }
-        });
-        input.addEventListener("change", () => {
-          if (!input.reportValidity()) return;
-          workingConfig.providerRefreshSeconds[sport.key][state] = Number(input.value);
-          scheduleSettingsSave("providerRefreshSeconds");
-        });
-        label.append(input); row.append(label);
-      }
-      refreshFields.append(row);
-    }
-    refreshFields.querySelectorAll("input").forEach(input => {
-      if (document.activeElement !== input) input.value = workingConfig.providerRefreshSeconds[input.dataset.sport][input.dataset.state];
-    });
+    refreshSettings.render();
     sportsList.replaceChildren();
     workingConfig.sports.forEach((group, sportIndex) => {
       const sport = configApi.findSport(group.sport);
@@ -1575,7 +1551,9 @@
         try {
           const result = await persist(submitted, fields);
           let refreshed = false;
+          const refreshEdited = refreshSettingKeys.some(key => JSON.stringify(workingConfig[key]) !== JSON.stringify(submitted[key]));
           for (const key of Object.keys(result)) {
+            if (refreshEdited && refreshSettingKeys.includes(key)) continue;
             if (JSON.stringify(workingConfig[key]) === JSON.stringify(submitted[key])
               && JSON.stringify(workingConfig[key]) !== JSON.stringify(result[key])) {
               workingConfig[key] = structuredClone(result[key]);

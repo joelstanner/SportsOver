@@ -91,6 +91,28 @@ static text to read it in full. The banner retains the full alternate content.
   resumes; team-sport breaks remain eligible. Live mode starts off after a restart.
 - **Demo lab:** preview individual samples, or use **Inspect the banner and OBS** to show marked fixture data on both outputs. Choose all-live, all-upcoming, final, interrupted, mixed, or fallback states across all sports or one sport. Inspection starts paused; use Previous/Next fixture or Play rotation. **Return to live output** restores real games. Demo mode preserves saved selections and ends when the app quits.
 
+**Score refresh intervals** uses four shared controls: Live (12 seconds), Upcoming
+(60 seconds / 1 minute), Finished (300 seconds / 5 minutes), and No games found
+(300 seconds / 5 minutes). Live includes interruptions. Each control accepts whole
+seconds from 5 to 3600 and saves when you leave the field or press Enter.
+The hint shows the duration and how many sports inherit that interval.
+
+Expand **Sport-specific intervals** to edit exceptions or customize another sport
+and timing. By default, disc golf, Formula 1, and chess use 30 seconds for Live;
+chess also uses 900 seconds / 15 minutes for Finished. Other timings inherit the
+shared values. A custom timing stays independent even if it matches the shared
+value; **Use shared interval** restores inheritance. **Reset refresh intervals**
+restores only refresh timings and their default exceptions.
+
+Existing settings and older imports keep every sport's effective timing. Migration
+uses the most common value for each shared interval (ties prefer the standard
+shared default, then sport catalog order), and retains differences as exceptions.
+Exports preserve both timings and inheritance. Changing shared intervals updates
+only inheriting sports, including disabled sports for when they are re-enabled.
+Team schedule caches still have a 15-minute minimum; score feeds retain their
+configured timing, and tournament metadata, discovery caches, retries, and provider
+cooldowns keep their existing behavior. Details are available under **About score updates**.
+
 **Automatic game selection** in Settings chooses which games are suggested:
 **All watched teams + live spotlight**, or **Top watched team per sport**.
 **Rotation source** in Live control decides whether the banner uses those selections,

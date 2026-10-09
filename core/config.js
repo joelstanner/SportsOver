@@ -140,6 +140,7 @@
     });
 
     const rotationSeconds = Number(source.rotationSeconds);
+    const providerRefreshSeconds = normalizeProviderRefresh(source.providerRefreshSeconds);
     return {
       version: 8,
       timeZone: normalizeTimeZone(source.timeZone),
@@ -150,7 +151,8 @@
       bettingMixSources: Array.isArray(source.bettingMixSources)
         ? [...new Set(source.bettingMixSources.filter(value => ["betting", "player-stats", "custom", "game-details"].includes(value)))]
         : [...DEFAULT_CONFIG.bettingMixSources],
-      providerRefreshSeconds: normalizeProviderRefresh(source.providerRefreshSeconds),
+      providerRefreshSeconds,
+      providerRefreshPolicy: normalizeRefreshPolicy(source.providerRefreshPolicy, providerRefreshSeconds),
       sports,
       automaticWatchLists: {
         "disc-golf": normalizePdgaEvents(source.automaticWatchLists?.["disc-golf"]),
@@ -185,6 +187,55 @@
         return [state, Number.isInteger(seconds) && seconds >= 5 && seconds <= 3600 ? seconds : fallback];
       })
     )]));
+  }
+
+  // Keep effective per-sport seconds for existing feeds and older exports. The
+  // policy records inheritance, including explicit exceptions equal to a shared
+  // value. Legacy settings migrate without changing any effective interval.
+  function normalizeRefreshPolicy(value, intervals) {
+    const shared = {}, overrides = {};
+    for (const state of ["live", "pregame", "final", "idle"]) {
+      const counts = new Map();
+      for (const { key } of SPORT_CATALOG) {
+        const seconds = intervals[key][state];
+        counts.set(seconds, (counts.get(seconds) || 0) + 1);
+      }
+      const requested = value?.shared?.[state];
+      // Stable ties prefer the normal default, then the first sport's value.
+      const fallback = DEFAULT_CONFIG.providerRefreshSeconds.baseball[state];
+      const common = [...counts].sort((a, b) => b[1] - a[1] || (b[0] === fallback) - (a[0] === fallback))[0][0];
+      shared[state] = Number.isInteger(requested) && requested >= 5 && requested <= 3600 ? requested : common;
+      for (const { key } of SPORT_CATALOG) {
+        if (intervals[key][state] !== shared[state] || (Array.isArray(value?.overrides?.[key]) && value.overrides[key].includes(state))) {
+          (overrides[key] ||= []).push(state);
+        }
+      }
+    }
+    return { shared, overrides };
+  }
+
+  function setRefreshInterval(config, state, seconds, sport = null) {
+    if (!["live", "pregame", "final", "idle"].includes(state)
+      || (sport !== null && !findSportMetadata(sport))) return false;
+    if (seconds !== null && (!Number.isInteger(seconds) || seconds < 5 || seconds > 3600)) return false;
+    if (sport === null && seconds === null) return false;
+    const policy = config.providerRefreshPolicy;
+    if (sport === null) {
+      policy.shared[state] = seconds;
+      for (const { key } of SPORT_CATALOG) {
+        if (!policy.overrides[key]?.includes(state)) config.providerRefreshSeconds[key][state] = seconds;
+      }
+    } else if (seconds === null) {
+      const remaining = (policy.overrides[sport] || []).filter(key => key !== state);
+      if (remaining.length) policy.overrides[sport] = remaining;
+      else delete policy.overrides[sport];
+      config.providerRefreshSeconds[sport][state] = policy.shared[state];
+    } else {
+      const states = policy.overrides[sport] ||= [];
+      if (!states.includes(state)) states.push(state);
+      config.providerRefreshSeconds[sport][state] = seconds;
+    }
+    return true;
   }
 
   // Keep legacy tournament keys stable; extra banners have their own identity.
@@ -427,6 +478,7 @@
     reloadTeamCatalog,
     DEFAULT_CONFIG,
     normalizeConfig,
+    setRefreshInterval,
     loadConfig,
     saveConfig,
     resetConfig,

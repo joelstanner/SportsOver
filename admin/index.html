@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SportsOver Settings</title>
   <link rel="stylesheet" href="../core/odds.css?v=6">
-  <link rel="stylesheet" href="admin.css?v=34">
+  <link rel="stylesheet" href="admin.css?v=35">
   <link rel="stylesheet" href="../core/desktop.css?v=15">
 </head>
 <body>
@@ -143,10 +143,27 @@
 
       <section aria-labelledby="provider-refresh-heading">
         <h3 id="provider-refresh-heading">Score refresh intervals</h3>
-        <p>Seconds between requests for each score feed (5–3600). Live includes interruptions. Idle means no games found. Changes save automatically when you leave a field or press Enter.</p>
-        <p>Team schedules are cached for at least 15 minutes. League scoreboards and individual game scores follow the intervals below.</p>
-        <p>Rotation reuses cached scores. Each open banner or preview makes its own requests.</p>
-        <div id="provider-refresh-fields"></div>
+        <p>How often to check for score updates. Shared intervals apply unless a sport has a custom timing.</p>
+        <div id="provider-refresh-fields" class="refresh-grid" role="group" aria-label="Shared score refresh intervals"></div>
+        <p class="refresh-note">Enter seconds (5–3600). Changes save when you leave a field or press Enter. Live includes interruptions.</p>
+        <details id="refresh-exceptions" class="refresh-disclosure">
+          <summary>Sport-specific intervals <span id="refresh-exceptions-summary"></span></summary>
+          <p>Custom timings stay independent when you change a shared interval. All other timings use the shared intervals.</p>
+          <div id="refresh-exception-fields"></div>
+          <div class="refresh-add">
+            <label class="field">Sport <select id="refresh-sport"></select></label>
+            <label class="field">Timing <select id="refresh-state"></select></label>
+            <button id="add-refresh-exception" class="button button--secondary" type="button">Customize timing</button>
+          </div>
+        </details>
+        <div class="refresh-footer">
+          <button id="reset-refresh-intervals" class="button button--quiet" type="button">Reset refresh intervals</button>
+          <details class="refresh-help">
+            <summary>About score updates</summary>
+            <p>These intervals control score checks, not how quickly a provider publishes updates. Rotation reuses cached scores. The desktop shares score requests across its banner and previews; standalone browser pages have separate caches.</p>
+            <p>Team schedules are cached for at least 15 minutes. Tournament details and event discovery use separate caches. Longer configured intervals, retry delays, and provider rate limits still apply.</p>
+          </details>
+        </div>
       </section>
 
       <div class="actions">
@@ -396,7 +413,7 @@
     </article>
   </template>
 
-  <script src="../core/config.js?v=27"></script>
+  <script src="../core/config.js?v=28"></script>
   <script src="../core/shared-state.js?v=4"></script>
   <script src="../core/automatic-watches.js?v=1"></script>
   <script src="../core/provider-network.js?v=2"></script>
@@ -422,7 +439,8 @@
   <script src="../sports/formula-1/providers/espn.js?v=1"></script>
   <script src="formula-1-settings.js?v=1"></script>
   <script src="automatic-watches.js?v=2"></script>
-  <script src="admin.js?v=49"></script>
+  <script src="refresh-settings.js?v=1"></script>
+  <script src="admin.js?v=50"></script>
   <script src="../core/desktop.js?v=28"></script>
 </body>
 </html>

@@ -305,9 +305,27 @@ iframe { max-width: 100%; border: 0; background: transparent; }
   .preview-stage { justify-items: start; overflow-x: auto; padding: 24px 12px; }
 }
 
-.provider-refresh-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 12px 0; border: 1px solid var(--muted); border-radius: 8px; }
-.provider-refresh-row input { width: 100%; min-width: 0; box-sizing: border-box; }
-@media (max-width: 540px) { .provider-refresh-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.refresh-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.refresh-grid input, .refresh-custom input { width: 100%; min-width: 0; }
+.refresh-note, .refresh-disclosure p, .refresh-help p { color: var(--muted); font-size: 0.8rem; line-height: 1.5; }
+.refresh-disclosure { margin-top: 20px; border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.refresh-disclosure summary, .refresh-help summary { cursor: pointer; }
+#refresh-exceptions-summary { display: block; margin: 7px 0 0 16px; color: var(--muted); font-size: 0.8rem; }
+.refresh-sport-row { min-width: 0; margin: 16px 0; padding: 16px; border: 1px solid var(--line); border-radius: 8px; }
+.refresh-sport-row legend { padding: 0 6px; font-weight: 700; }
+.refresh-custom { display: grid; grid-template-columns: minmax(140px, 1fr) auto; align-items: center; gap: 12px; margin: 10px 0; }
+.refresh-custom .button { align-self: center; }
+.refresh-add { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-top: 16px; }
+.refresh-add .field { flex: 1 1 180px; }
+.refresh-footer { display: flex; align-items: start; gap: 20px; margin-top: 16px; }
+.refresh-help { flex: 1; padding: 10px 0; font-size: 0.8rem; color: var(--muted); }
+@media (max-width: 540px) {
+  .refresh-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .refresh-custom { grid-template-columns: minmax(0, 1fr); }
+  .refresh-custom .button { justify-self: start; }
+  .refresh-footer { flex-direction: column; gap: 4px; }
+}
+
 
 .discovery-info { position: relative; }
 .display-mode-info { position: relative; }

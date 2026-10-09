@@ -3,6 +3,20 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.39.0 — 2026-10-09
+
+### Changed
+
+- Replace forty score refresh fields with four shared intervals and an expandable
+  section for sport-specific timings, with readable duration and inheritance hints.
+- Keep custom timings independent of shared changes and add per-timing
+  **Use shared interval** controls.
+- Add **Reset refresh intervals** to restore refresh defaults without changing
+  watched teams, display preferences, or rotation settings.
+
+Existing refresh timings migrate automatically without changing score polling.
+Older settings backups remain supported; no manual migration is required.
+
 ## 0.38.3 — 2026-10-09
 
 ### Changed
