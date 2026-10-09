@@ -31,6 +31,11 @@ once a day; **Check for updates…** is also available in its menus. Quit the ap
 then replace it in Applications on Mac or run the newer Windows installer over
 the same destination. Settings are retained.
 
+Update results open as a modal dialog attached to Settings. SportsOver restores
+and brings Settings forward, temporarily above the banner, until the dialog is
+closed. The menu says **Checking for updates…** during the request and
+**Update dialog open…** while awaiting your response. Background launches stay silent.
+
 ## Get started
 
 The banner and Settings open together. Closing Settings keeps SportsOver running;

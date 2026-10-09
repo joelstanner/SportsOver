@@ -14,9 +14,10 @@ const { gameRemoveMenuItem } = require('./banner-game-remove.cjs');
 const { browseFeedback } = require('./banner-navigation.cjs');
 const { createHandler, ORIGIN } = require('./protocol.cjs');
 const { createUpdateChecker } = require('./updates.cjs');
+const { showUpdateDialog } = require('./update-dialog.cjs');
 const { installHttpLogging } = require('./http-logging.cjs');
 const { installTestNetwork } = require('./test-network.cjs');
-const updateChecker = createUpdateChecker({ app, dialog, shell, onStateChange: menus,
+const updateChecker = createUpdateChecker({ app, dialog: { showMessageBox: showUpdateMessage }, shell, onStateChange: menus,
   // Node's default fetch bypasses Electron's test protocol handlers.
   ...(process.env.SPORTSOVER_TEST_DATA ? { fetchImpl: (...args) => net.fetch(...args) } : {}),
   readLastCheck: () => store?.value.desktop.lastUpdateCheck,
@@ -265,6 +266,10 @@ function openSettings() {
   secure(settings);
   settings.on('closed', () => { settings = null; });
   settings.loadURL(`${ORIGIN}/sports/admin/`);
+}
+function showUpdateMessage(options) {
+  openSettings();
+  return showUpdateDialog({ dialog, parent: settings, options, foreground: !quietTest });
 }
 function settingsBackup(action) {
   openSettings();

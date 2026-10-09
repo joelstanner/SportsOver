@@ -85,6 +85,37 @@ test('repeated clicks coalesce while a check is pending', async () => {
   assert.equal(f.checker.menuItem().enabled, true);
 });
 
+test('completed checks identify the open result and prevent duplicate requests or dialogs', async () => {
+  for (const options of [
+    {}, { tag: 'v0.13.1' },
+    { fetchImpl: async () => new Response('', { status: 404 }) },
+    { fetchImpl: async () => new Response('', { status: 429 }) },
+    { fetchImpl: async () => { throw Error('offline'); } },
+  ]) {
+    let close, opened;
+    const shown = new Promise(resolve => { opened = resolve; });
+    let dialogCount = 0;
+    const f = fixture({ ...options, dialog: { showMessageBox: () => {
+      dialogCount++;
+      opened();
+      return new Promise(resolve => { close = resolve; });
+    } } });
+    const pending = f.checker.check();
+    await shown;
+    assert.equal(f.checker.menuItem().label, 'Update dialog open…');
+    assert.equal(f.checker.menuItem().enabled, false);
+    const requestCount = f.requests.length;
+    await f.checker.check();
+    await f.checker.checkOnLaunch();
+    assert.equal(dialogCount, 1);
+    assert.equal(f.requests.length, requestCount);
+    close({ response: 1 });
+    await pending;
+    assert.equal(f.checker.menuItem().label, 'Check for updates…');
+    assert.equal(f.checker.menuItem().enabled, true);
+  }
+});
+
 test('normal launch announces a new version and saves the daily attempt', async () => {
   let saved;
   const f = fixture({ now: () => 100000000, saveLastCheck: value => { saved = value; }, choice: 0 });

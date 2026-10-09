@@ -34,6 +34,7 @@ function createUpdateChecker({ app, dialog, shell, fetchImpl = globalThis.fetch,
   now = Date.now, readLastCheck = () => null, saveLastCheck = () => {},
   readRateLimit = () => null, saveRateLimit = () => {} }) {
   let checking = false;
+  let showingResult = false;
   let lastAutomaticCheck = null;
   let rateLimit;
   function limits() {
@@ -49,17 +50,23 @@ function createUpdateChecker({ app, dialog, shell, fetchImpl = globalThis.fetch,
     rateLimit = { until, failures };
     try { saveRateLimit(rateLimit); } catch (_) { /* Still enforce the limit this session. */ }
   }
+  function showResult(options) {
+    checking = false;
+    showingResult = true;
+    onStateChange();
+    return dialog.showMessageBox(options);
+  }
   async function showRateLimit(interactive) {
-    if (interactive) await dialog.showMessageBox({ type: 'warning', title: 'SportsOver updates',
+    if (interactive) await showResult({ type: 'warning', title: 'SportsOver updates',
       message: 'GitHub update checks are temporarily paused.',
       detail: `GitHub has limited requests from this connection. Try again after ${new Date(limits().until).toLocaleString()}.`,
       buttons: ['OK'] });
   }
   function menuItem() {
-    return { id: 'check-updates', label: checking ? 'Checking for updates…' : 'Check for updates…', enabled: !checking, click: () => check() };
+    return { id: 'check-updates', label: checking ? 'Checking for updates…' : showingResult ? 'Update dialog open…' : 'Check for updates…', enabled: !checking && !showingResult, click: () => check() };
   }
   async function checkOnLaunch({ background = false } = {}) {
-    if (checking) return;
+    if (checking || showingResult) return;
     const timestamp = now();
     let previous = lastAutomaticCheck;
     try { previous ??= readLastCheck(); } catch (_) { /* A launch check must never interrupt startup. */ }
@@ -70,7 +77,7 @@ function createUpdateChecker({ app, dialog, shell, fetchImpl = globalThis.fetch,
     return check({ interactive: false, notify: !background });
   }
   async function check({ interactive = true, notify = true } = {}) {
-    if (checking) return;
+    if (checking || showingResult) return;
     checking = true;
     onStateChange();
     try {
@@ -97,7 +104,7 @@ function createUpdateChecker({ app, dialog, shell, fetchImpl = globalThis.fetch,
       }
       if (!response.ok) {
         if (response.status === 404) {
-          if (interactive) await dialog.showMessageBox({ type: 'info', title: 'SportsOver updates', message: 'No published release is available yet.', detail: `Installed version: ${current}`, buttons: ['OK'] });
+          if (interactive) await showResult({ type: 'info', title: 'SportsOver updates', message: 'No published release is available yet.', detail: `Installed version: ${current}`, buttons: ['OK'] });
           return;
         }
         throw Error('Release check failed');
@@ -109,22 +116,23 @@ function createUpdateChecker({ app, dialog, shell, fetchImpl = globalThis.fetch,
       const latest = release.tag_name;
       if (compareVersions(latest, current) > 0) {
         if (!notify) return;
-        const result = await dialog.showMessageBox({
+        const result = await showResult({
           type: 'info', title: 'SportsOver update available', message: `SportsOver ${latest.replace(/^v/, '')} is available.`,
           detail: `Installed version: ${current}\nOpen the GitHub release page to download and install the update.`,
           buttons: ['Open download page', 'Later'], defaultId: 0, cancelId: 1,
         });
         if (result.response === 0) await shell.openExternal(RELEASES_URL);
       } else if (interactive) {
-        await dialog.showMessageBox({ type: 'info', title: 'SportsOver updates', message: 'You’re up to date.', detail: `Installed version: ${current}\nLatest published version: ${latest.replace(/^v/, '')}`, buttons: ['OK'] });
+        await showResult({ type: 'info', title: 'SportsOver updates', message: 'You’re up to date.', detail: `Installed version: ${current}\nLatest published version: ${latest.replace(/^v/, '')}`, buttons: ['OK'] });
       }
     } catch (_) {
-      if (interactive) await dialog.showMessageBox({
+      if (interactive) await showResult({
         type: 'warning', title: 'SportsOver updates', message: 'Could not check for updates.',
         detail: 'Check your internet connection and try again. GitHub may be temporarily unavailable.', buttons: ['OK'],
       });
     } finally {
       checking = false;
+      showingResult = false;
       onStateChange();
     }
   }

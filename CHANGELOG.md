@@ -3,6 +3,15 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.39.1 — 2026-10-09
+
+### Fixed
+
+- Bring update results forward in a dialog attached to Settings, temporarily above
+  the banner, including when Settings is closed, hidden, or minimized.
+- Show **Update dialog open…** after an update check finishes so a pending result
+  no longer looks like a stuck request.
+
 ## 0.39.0 — 2026-10-09
 
 ### Changed

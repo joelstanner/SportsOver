@@ -4,6 +4,12 @@ Implementation tested on macOS (Darwin 24.6.0, Apple Silicon), Electron 44.5.0, 
 
 ## Automated checks
 
+`node scripts/update-dialog-smoke.cjs --visible` opens and automatically cancels
+real native update dialogs with closed, minimized, and hidden Settings windows.
+It uses isolated settings and mocked release metadata, verifies a visible modal
+owner above the banner, and checks normal window stacking and menu state return
+after dismissal. Run on each platform to verify its native window behavior.
+
 ### Before/after energy measurements (macOS)
 
 Run `npm run test:energy -- --energy` for native macOS Energy Impact, CPU and idle
