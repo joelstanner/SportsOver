@@ -3,6 +3,16 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.38.3 — 2026-10-09
+
+### Changed
+
+- Reduce background work by reusing unchanged banner content and slowing redundant
+  desktop recovery polling, while preserving immediate updates, live-score
+  refresh intervals, scrolling speed, and OBS freshness checks.
+- Add a repeatable macOS before/after benchmark with native energy measurements,
+  CPU and wakeup comparisons, and saved reports.
+
 ## 0.38.2 — 2026-10-08
 
 ### Changed
