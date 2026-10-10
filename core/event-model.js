@@ -41,6 +41,15 @@
     return event;
   }
 
+  // Scoreboards use curatedRank; game summaries expose the same display rank
+  // as rank. During NCAA tournaments ESPN may use the tournament seed here.
+  function espnTeamRank(competitor = {}) {
+    const value = competitor.curatedRank?.current ?? competitor.rank;
+    if (typeof value !== "number" && typeof value !== "string") return null;
+    const rank = Number(value);
+    return Number.isInteger(rank) && rank >= 1 && rank <= 25 ? rank : null;
+  }
+
   function gameUrl(value) {
     if (typeof value !== "string") return "";
     try {
@@ -233,5 +242,5 @@
   }
 
   global.SportsOverlay = global.SportsOverlay || {};
-  global.SportsOverlay.model = Object.freeze({ EVENT_STATES, createEvent, validateEvent, gameUrl, espnGameUrl, espnPreseason, espnOdds, espnDisplayInfo, formatPregameCountdown, formatPregameStart, formatGameTime, formatFinalStatus });
+  global.SportsOverlay.model = Object.freeze({ EVENT_STATES, createEvent, validateEvent, espnTeamRank, gameUrl, espnGameUrl, espnPreseason, espnOdds, espnDisplayInfo, formatPregameCountdown, formatPregameStart, formatGameTime, formatFinalStatus });
 })(typeof window === "undefined" ? globalThis : window);

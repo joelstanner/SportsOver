@@ -109,6 +109,7 @@
       id: String(team.id ?? boxscoreTeam.id ?? competitor.id ?? ""),
       name: team.displayName || boxscoreTeam.displayName || team.name || "Team",
       abbreviation,
+      rank: global.SportsOverlay.model.espnTeamRank(competitor),
       record: totalRecord?.summary || totalRecord?.displayValue || "",
       score: finiteNumberOrNull(competitor.score?.value ?? competitor.score),
       timeoutsRemaining,

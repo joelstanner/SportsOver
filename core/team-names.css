@@ -53,3 +53,27 @@ a.team-game-link { text-decoration: none; }
 #sports-overlay a.team-game-link[href]:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 2px; }
 .team-logo-link { display: flex; flex: 0 0 auto; }
 .team-logo-link:has(img[hidden]) { display: none; }
+
+/* Reserve space beside the logo, including layouts that hide team names. */
+:is(.football-mark, .basketball-mark):has(.team-rank) {
+  position: relative;
+  overflow: visible;
+  margin-left: 14px;
+}
+:is(.football-team--home .football-mark, .basketball-team--home .basketball-mark):has(.team-rank) {
+  margin-left: 0;
+  margin-right: 14px;
+}
+#sports-overlay .team-rank {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 3px);
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.85);
+  font: 700 9px/1 system-ui, sans-serif;
+  letter-spacing: 0;
+}
+#sports-overlay :is(.football-team--home, .basketball-team--home) .team-rank {
+  right: auto;
+  left: calc(100% + 3px);
+}

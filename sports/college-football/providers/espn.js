@@ -113,6 +113,7 @@
       id: String(team.id ?? competitor.id ?? ""),
       name: team.displayName || team.name || "Team",
       abbreviation,
+      rank: global.SportsOverlay.model.espnTeamRank(competitor),
       record: totalRecord?.summary || totalRecord?.displayValue || "",
       score: finiteNumberOrNull(competitor.score?.value ?? competitor.score),
       featured: teamMatches(competitor, featuredTeamId),

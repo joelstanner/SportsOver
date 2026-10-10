@@ -277,6 +277,13 @@ logo, for either home or away games in every game state, including OBS output.
 When full team names are shown, NBA banners display "Oklahoma City Plunder" in
 place of "Oklahoma City Thunder", including tooltips and accessibility labels.
 
+College football and men's college basketball show ESPN's supplied rank (1–25)
+as a small number beside the team logo, including compact desktop and OBS banners.
+On banner and Available games prefix ranked team names with `#` and the rank.
+Missing ranks and ESPN's unranked sentinel (99) are hidden. During NCAA tournaments,
+ESPN's display rank may represent the tournament seed rather than a poll ranking.
+Ranks come from the existing game feeds and require no additional requests.
+
 OBS checks the SportsOver engine heartbeat independently of score changes. After
 10 seconds without an advancing heartbeat, or when the engine reports it is not
 ready, the banner turns grey and replaces its values with `DATA OFFLINE` /

@@ -12,13 +12,29 @@
   function render(event, awayLabel, homeLabel, awayMark, homeMark) {
     const href = global.SportsOverlay.model.gameUrl(event.details?.gameUrl);
     for (const [label, mark, team] of [[awayLabel, awayMark, event.teams.away], [homeLabel, homeMark, event.teams.home]]) {
+      const rank = ["college-football", "college-basketball"].includes(event.sport)
+        ? global.SportsOverlay.model.espnTeamRank(team) : null;
+      const rankedName = `${rank ? `#${rank} ` : ""}${displayName(team, event.sport)}`;
+      if (mark) {
+        let badge = mark.querySelector(".team-rank");
+        if (rank) {
+          if (!badge) {
+            badge = mark.ownerDocument.createElement("span");
+            badge.className = "team-rank";
+            mark.append(badge);
+          }
+          badge.textContent = rank;
+          badge.setAttribute("aria-label", `Rank ${rank}`);
+        } else badge?.remove();
+        mark.title = rankedName;
+      }
       for (const element of [label, mark].filter(Boolean)) {
         clearLinks(element);
         if (href) {
           element.setAttribute("href", href);
           element.setAttribute("target", "_blank");
           element.setAttribute("rel", "noopener noreferrer");
-          element.setAttribute("aria-label", `${displayName(team, event.sport)} · Open game on ${event.sport === "baseball" ? "MLB" : "ESPN"}`);
+          element.setAttribute("aria-label", `${rankedName} · Open game on ${event.sport === "baseball" ? "MLB" : "ESPN"}`);
           element.classList.add("team-game-link");
         }
       }

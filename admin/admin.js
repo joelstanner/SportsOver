@@ -1248,6 +1248,8 @@
       id: competitor.team?.id ?? competitor.id,
       name: competitor.team?.displayName || competitor.team?.name,
       abbreviation: competitor.team?.abbreviation,
+      rank: ["college-football", "college-basketball"].includes(candidate.sport)
+        ? global.SportsOverlay.model.espnTeamRank(competitor) : null,
       logoUrl: competitor.team?.logo || competitor.team?.logos?.[0]?.href,
       score: competitor.score?.value ?? competitor.score,
     }));
@@ -1277,7 +1279,12 @@
     const away = competitors.find(competitor => competitor.homeAway === "away");
     const home = competitors.find(competitor => competitor.homeAway === "home");
     const ordered = away && home ? [away, home] : competitors;
-    const names = ordered.map(competitor => competitor.team?.shortDisplayName || competitor.team?.displayName || competitor.team?.name).filter(Boolean);
+    const names = ordered.map(competitor => {
+      const name = competitor.team?.shortDisplayName || competitor.team?.displayName || competitor.team?.name;
+      const rank = ["college-football", "college-basketball"].includes(candidate.sport)
+        ? global.SportsOverlay.model.espnTeamRank(competitor) : null;
+      return name ? `${rank ? `#${rank} ` : ""}${name}` : "";
+    }).filter(Boolean);
     return names.join(" at ") || candidate.raw?.shortName || candidate.raw?.name || `Game ${candidate.id}`;
   }
 
