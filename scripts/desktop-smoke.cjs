@@ -14,6 +14,7 @@ const quiet = testMode() === 'quiet';
 (async () => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'sportsover-smoke-'));
   let application;
+  let testError;
   const errors = [];
   async function launch(background = false) {
     application = await electron.launch({ ...(process.env.SPORTSOVER_TEST_EXECUTABLE ? { executablePath: process.env.SPORTSOVER_TEST_EXECUTABLE, args: background ? ['--background'] : [] } : { args: [path.resolve(__dirname, '..'), ...(background ? ['--background'] : [])] }), env: { ...process.env, SPORTSOVER_TEST_DATA: directory } });
@@ -864,5 +865,16 @@ const quiet = testMode() === 'quiet';
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).visible), true, 'normal second launch still recovers banner');
     assert.deepEqual(errors, []);
     console.log(`Desktop/shared-engine smoke passed. Screenshots and isolated data: ${directory}`);
-  } finally { if (application) await application.close(); }
+  } catch (error) {
+    testError = error;
+    throw error;
+  } finally {
+    if (application) {
+      try { await application.close(); }
+      catch (error) {
+        if (!testError) throw error;
+        console.error('Desktop smoke cleanup also failed:', error);
+      }
+    }
+  }
 })().catch(error => { console.error(error); process.exitCode = 1; });
