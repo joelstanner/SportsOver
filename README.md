@@ -94,6 +94,12 @@ static text to read it in full. The banner retains the full alternate content.
 - **Live mode:** show live games from your rotation, with configurable finished-game
   retention (20 minutes by default). Tournament breaks leave Live mode until play
   resumes; team-sport breaks remain eligible. Live mode starts off after a restart.
+  **On banner** keeps the full rotation visible while Live mode is on: live games
+  come first, followed by retained finals, then dimmed inactive games marked
+  “Outside Live mode.” Dimmed games stay selected but do not play on the banner.
+  Card controls remain available; ordering arrows move games within each group.
+  This temporary sorting does not change the saved order, which returns when
+  Live mode is turned off. Sport and pinned-only list filters still apply.
 - **Demo lab:** preview individual samples, or use **Inspect the banner and OBS** to show marked fixture data on both outputs. Choose all-live, all-upcoming, final, interrupted, mixed, or fallback states across all sports or one sport. Inspection starts paused; use Previous/Next fixture or Play rotation. **Return to live output** restores real games. Demo mode preserves saved selections and ends when the app quits.
 
 **Score refresh intervals** uses four shared controls: Live (12 seconds), Upcoming

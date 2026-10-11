@@ -271,7 +271,10 @@ const quiet = testMode() === 'quiet';
     assert.equal(await admin.locator('#rotation-mode').isDisabled(), true);
     assert.equal(await admin.locator('#rotation-queue .lock-game').first().isDisabled(), false);
     await admin.locator('#rotation-queue [data-game-key="baseball:1"]').waitFor();
-    assert.equal(await admin.locator('#rotation-queue [data-game-key="baseball:3"]').count(), 0);
+    assert.equal(await admin.locator('#rotation-queue [data-game-key="baseball:3"].is-live-mode-inactive').count(), 1,
+      'upcoming games remain visible and dimmed during Live mode');
+    assert.equal(await admin.locator('#rotation-queue .game-card').first().getAttribute('data-game-key'), 'baseball:1',
+      'live games appear before inactive selections');
     assert.deepEqual(await engine.evaluate(() => window.SportsOverlay.config.loadConfig().lockedGameKeys), ['baseball:3']);
     assert.equal(await admin.locator('#available-games [data-game-key="baseball:3"]').count(), 0, 'filtered upcoming games remain selected, not available to add again');
     await admin.locator('#available-games [data-game-key="baseball:2"] .add-game').click();

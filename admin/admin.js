@@ -967,9 +967,18 @@
       : pinnedOnly ? "Show pinned and unpinned games in this list."
       : "Show only pinned games in this list.";
     document.querySelector("#live-mode-note").textContent = active
-      ? `Live mode filters the banner to live games from your rotation. Pins apply to eligible games; finished games stay for ${workingConfig.liveModeFinalMinutes} minutes.`
+      ? `Live games appear first. Dimmed games stay in your rotation but are off the banner during Live mode. Pins apply to eligible games; finished games stay for ${workingConfig.liveModeFinalMinutes} minutes. Reorder within each group.`
       : "Show only live games from your rotation on the banner. Finished games stay for the time set in Settings.";
-    const queue = currentRotationQueue();
+    const activeQueue = currentRotationQueue();
+    const eligibleKeys = new Set(activeQueue.map(rotationEntryKey));
+    // Keep saved selections visible, including breaks and upcoming games. The
+    // live queue supplies fresher states and retained finals no longer selected
+    // automatically. This ordering is only for the list, not the saved rotation.
+    const queue = active ? [...new Map([...normalRotationQueue(), ...activeQueue]
+      .map(entry => [rotationEntryKey(entry), entry])).values()] : activeQueue;
+    const liveGroup = entry => !eligibleKeys.has(rotationEntryKey(entry)) ? 2
+      : global.SportsOverlay.liveMode.isLive(entry) ? 0 : 1;
+    if (active) queue.sort((a, b) => liveGroup(a) - liveGroup(b));
     const queueList = document.querySelector("#rotation-queue");
     const availableList = document.querySelector("#available-games");
     // Clearing odds and rebuilding cards can shrink a scrolled list temporarily.
@@ -995,16 +1004,19 @@
     const shownCount = queue.filter(matchesListFilters).length;
     const loadingGames = engineLoading || engineRotationState?.discoveryPending === true;
     document.querySelector("#rotation-count").textContent = engineLoading && !queue.length ? "Loading…"
-      : `${queueSportFilter || pinnedOnly ? `${shownCount} of ` : ""}${queue.length} game${queue.length === 1 ? "" : "s"}${loadingGames ? " · loading…" : ""}`;
+      : `${queueSportFilter || pinnedOnly ? `${shownCount} of ` : ""}${queue.length} game${queue.length === 1 ? "" : "s"}${active ? ` · ${activeQueue.length} in Live mode` : ""}${loadingGames ? " · loading…" : ""}`;
 
     if (!queue.length) appendRotationEmpty(queueList, engineLoading ? "Loading games…" : active ? "No live games in rotation. Live mode is still on."
       : availableRotationEntries.length ? "No games selected for the banner." : "Refresh games to build the live queue.");
     else if (!shownCount) appendRotationEmpty(queueList, pinnedOnly
       ? queueSportFilter ? "No pinned games for this sport in rotation." : "No pinned games in rotation."
       : "No games for this sport in rotation.");
-    // Filter only the cards; actions retain their positions in the full rotation.
-    queue.forEach((entry, index) => {
-      if (matchesListFilters(entry)) renderQueueGame(entry, index, queue, queueList);
+    // Reorder within a status group so an arrow always produces a visible move.
+    // List filters still leave the underlying ordering intact.
+    queue.forEach(entry => {
+      const reorderQueue = active ? queue.filter(item => liveGroup(item) === liveGroup(entry)) : queue;
+      if (matchesListFilters(entry)) renderQueueGame(entry, reorderQueue.indexOf(entry), reorderQueue, queueList,
+        active && !eligibleKeys.has(rotationEntryKey(entry)));
     });
     highlightBannerGame();
 
@@ -1079,9 +1091,16 @@
     });
   }
 
-  function renderQueueGame(entry, index, queue, list) {
+  function renderQueueGame(entry, index, queue, list, inactive = false) {
     const card = document.querySelector("#queue-game-template").content.firstElementChild.cloneNode(true);
     fillGameCard(card, entry);
+    card.classList.toggle("is-live-mode-inactive", inactive);
+    if (inactive) {
+      const note = document.createElement("span");
+      note.className = "game-live-mode-note";
+      note.textContent = "Outside Live mode";
+      card.querySelector(".game-copy").append(note);
+    }
     const key = rotationEntryKey(entry);
     const automaticKeys = new Set(automaticRotationEntries.map(rotationEntryKey));
     card.querySelector(".game-source").textContent = automaticKeys.has(key) ? "AUTO" : "ADDED";

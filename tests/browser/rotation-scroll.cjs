@@ -13,7 +13,7 @@ config.providerRefreshSeconds.football = { live: 5, pregame: 5, final: 5, idle: 
 config.includedGames = Array.from({ length: 16 }, (_, index) => `football:${1000 + index}`);
 const events = Array.from({ length: 32 }, (_, index) => ({
   id: String(1000 + index), date: new Date().toISOString(),
-  status: { type: { state: 'in', completed: false, description: 'In Progress' } },
+  status: { type: { state: index === 0 ? 'pre' : 'in', completed: false, description: index === 0 ? 'Scheduled' : 'In Progress' } },
   competitions: [{ odds: [{ awayTeamOdds: { moneyLine: -110 }, homeTeamOdds: { moneyLine: -110 } }], competitors: [
     { homeAway: 'away', team: { id: '1', displayName: `Away ${index}`, abbreviation: 'AWY' }, score: '7' },
     { homeAway: 'home', team: { id: '2', displayName: `Home ${index}`, abbreviation: 'HME' }, score: '14' },
@@ -45,6 +45,13 @@ const events = Array.from({ length: 32 }, (_, index) => ({
     await page.getByText('Games refreshed', { exact: true }).waitFor();
     assert.equal(await page.locator('#rotation-queue .game-card').count(), 16);
     assert.equal(await page.locator('#available-games .game-card').count(), 16);
+    await page.locator('#live-mode').click();
+    assert.equal(await page.locator('#rotation-queue .game-card').count(), 16, 'browser Live mode keeps the full rotation');
+    assert.equal(await page.locator('#rotation-queue .game-card').first().getAttribute('data-game-key'), 'football:1001', 'live games sort first');
+    assert.equal(await page.locator('#rotation-queue .is-live-mode-inactive').getAttribute('data-game-key'), 'football:1000', 'upcoming selection is dimmed');
+    await page.locator('#live-mode').click();
+    assert.equal(await page.locator('#rotation-queue .is-live-mode-inactive').count(), 0);
+    assert.equal(await page.locator('#rotation-queue .game-card').first().getAttribute('data-game-key'), 'football:1000', 'browser saved order is restored');
     await page.locator('#rotation-queue').scrollIntoViewIfNeeded();
     const positions = () => page.evaluate(() => ['rotation-queue', 'available-games'].map(id => document.getElementById(id).scrollTop));
     const key = await page.evaluate(() => {
