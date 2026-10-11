@@ -162,6 +162,14 @@ const quiet = testMode() === 'quiet';
     assert.deepEqual(await admin.evaluate(() => window.SportsOverlay.config.loadConfig()), configBeforeReset, 'desktop cancellation keeps settings');
     const lockToggle = admin.locator('[data-desktop="toggle-lock"]');
     const visibilityToggle = admin.locator('[data-desktop="toggle-visibility"]');
+    // Native actions finish before their status event has necessarily reached
+    // Settings. Wait for the rendered state before reading it or clicking again.
+    async function waitForDesktopLabel(action, label) {
+      await admin.waitForFunction(({ action, label }) =>
+        document.querySelector(`[data-desktop="${action}"]`).textContent === label, { action, label });
+    }
+    await waitForDesktopLabel('toggle-lock', 'Lock');
+    await waitForDesktopLabel('toggle-visibility', 'Hide');
     assert.equal(await lockToggle.innerText(), 'Lock');
     assert.equal(await visibilityToggle.innerText(), 'Hide');
     assert.equal(await admin.locator('[data-desktop="lock"], [data-desktop="unlock"], [data-desktop="show"], [data-desktop="hide"]').count(), 0, 'only two stateful banner controls remain');
@@ -178,15 +186,19 @@ const quiet = testMode() === 'quiet';
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).visible), false);
     await admin.waitForFunction(() => document.querySelector('[data-desktop="toggle-visibility"]').textContent === 'Show');
     await lockToggle.click();
+    await waitForDesktopLabel('toggle-lock', 'Unlock');
     assert.equal(await lockToggle.innerText(), 'Unlock');
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).locked), true);
     await lockToggle.click();
+    await waitForDesktopLabel('toggle-lock', 'Lock');
     assert.equal(await lockToggle.innerText(), 'Lock');
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).visible), false, 'unlocking a hidden banner keeps it hidden');
     await visibilityToggle.click();
+    await waitForDesktopLabel('toggle-visibility', 'Hide');
     assert.equal(await visibilityToggle.innerText(), 'Hide');
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).visible), true);
     await visibilityToggle.click();
+    await waitForDesktopLabel('toggle-visibility', 'Show');
     assert.equal(await visibilityToggle.innerText(), 'Show');
     await application.evaluate(({ Menu }) => Menu.getApplicationMenu().getMenuItemById('toggle-banner').click());
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).visible), true);
@@ -197,6 +209,7 @@ const quiet = testMode() === 'quiet';
     });
     await admin.waitForFunction(() => document.querySelector('[data-desktop="toggle-lock"]').textContent === 'Unlock');
     await lockToggle.click();
+    await waitForDesktopLabel('toggle-lock', 'Lock');
     assert.equal(await lockToggle.innerText(), 'Lock');
     await banner.locator('.scorebug').waitFor();
     assert.match(await banner.locator('body').innerText(), /SEA|Mariners/i);
@@ -731,6 +744,7 @@ const quiet = testMode() === 'quiet';
     await banner.screenshot({ path: path.join(directory, 'banner.png'), omitBackground: true });
     await admin.screenshot({ path: path.join(directory, 'settings.png') });
     await lockToggle.click();
+    await waitForDesktopLabel('toggle-lock', 'Unlock');
     assert.equal(await lockToggle.innerText(), 'Unlock');
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).locked), true);
     const lockedGame = await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey);
@@ -746,6 +760,7 @@ const quiet = testMode() === 'quiet';
     assert.equal(await engine.evaluate(() => window.SportsOverlay.engine.describe().currentGameKey), lockedGame, 'locked double-click does not navigate');
 
     await lockToggle.click();
+    await waitForDesktopLabel('toggle-lock', 'Lock');
     assert.equal(await lockToggle.innerText(), 'Lock');
     assert.equal(await admin.evaluate(async () => (await window.sportsDesktop.status()).locked), false);
     await admin.locator('#desktop-size').selectOption('1.5');
@@ -776,6 +791,7 @@ const quiet = testMode() === 'quiet';
     const before = await (await fetch(`${base}/api/v1/state`, { headers })).json();
     const overrideKey = before.currentGameKey === 'baseball:1' ? 'baseball:2' : 'baseball:1';
     await visibilityToggle.click();
+    await waitForDesktopLabel('toggle-visibility', 'Show');
     assert.equal(await visibilityToggle.innerText(), 'Show');
     const command = { requestId: 'smoke-override', type: 'show-game', gameKey: overrideKey, durationSeconds: 5 };
     const response = await fetch(`${base}/api/v1/commands`, { method: 'POST', headers, body: JSON.stringify(command) });
