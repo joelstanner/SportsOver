@@ -3,6 +3,15 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.40.0 — 2026-10-10
+
+### Added
+
+- Show ESPN's supplied college football and men's college basketball rankings as
+  small, unboxed numbers beside team logos across desktop and OBS banners.
+- Include rankings in team names in **On banner** and **Available games**. Hide
+  missing and unranked values; NCAA tournament numbers may represent seeds.
+
 ## 0.39.1 — 2026-10-09
 
 ### Fixed

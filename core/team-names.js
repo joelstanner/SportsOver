@@ -15,7 +15,7 @@
       const rank = ["college-football", "college-basketball"].includes(event.sport)
         ? global.SportsOverlay.model.espnTeamRank(team) : null;
       const rankedName = `${rank ? `#${rank} ` : ""}${displayName(team, event.sport)}`;
-      if (mark) {
+      if (mark && ["college-football", "college-basketball"].includes(event.sport)) {
         let badge = mark.querySelector(".team-rank");
         if (rank) {
           if (!badge) {
