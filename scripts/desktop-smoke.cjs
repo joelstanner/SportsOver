@@ -611,10 +611,19 @@ const quiet = testMode() === 'quiet';
       };
       globalThis.closeBannerTestMenu = async () => {
         const menu = globalThis.bannerTestMenu;
+        // On Windows, cancelling a native tracking loop from a DevTools
+        // evaluation can terminate Electron with STATUS_STACK_BUFFER_OVERRUN.
+        // Send a real OS key so dismissal runs through the native event loop.
+        // Renderer keyboard events do not reach the native popup.
+        if (process.platform === 'win32') {
+          await new Promise((resolve, reject) => {
+            require('node:child_process').execFile('powershell.exe', [
+              '-NoProfile', '-NonInteractive', '-Command',
+              "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{ESC}')",
+            ], { timeout: 10000, windowsHide: true }, error => error ? reject(error) : resolve());
+          });
+        } else menu.closePopup(menu.testWindow);
         // Wait for native dismissal before an action rebuilds the app menus.
-        // Dismiss the same window's runner that popup() opened. The close-all
-        // path uses different native runner ownership on Windows.
-        menu.closePopup(menu.testWindow);
         let timeout;
         try {
           await Promise.race([menu.testClosed, new Promise((_, reject) => {
