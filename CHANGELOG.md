@@ -3,6 +3,15 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.40.2 — 2026-10-12
+
+### Fixed
+
+- Keep "Oklahoma City Plunder" fully visible in final-game name slots, shrinking
+  the text further when needed instead of switching to OKC.
+- Let other final-game team names shrink to 70% of their normal font size before
+  falling back to abbreviations.
+
 ## 0.40.1 — 2026-10-12
 
 ### Fixed

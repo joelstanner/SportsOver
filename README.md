@@ -282,6 +282,9 @@ NBA banners use the bundled Gary Payton image in place of Oklahoma City's team
 logo, for either home or away games in every game state, including OBS output.
 When full team names are shown, NBA banners display "Oklahoma City Plunder" in
 place of "Oklahoma City Thunder", including tooltips and accessibility labels.
+Final-game team names can shrink to 70% of their normal font size before falling
+back to abbreviations. "Oklahoma City Plunder" shrinks further when necessary to
+keep its full name visible in final-game name slots.
 
 College football and men's college basketball show ESPN's supplied rank (1–25)
 as a small number beside the team logo, including compact desktop and OBS banners.

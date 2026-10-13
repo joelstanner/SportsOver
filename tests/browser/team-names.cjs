@@ -14,6 +14,10 @@ const root = path.resolve(__dirname, '../..');
       const url = new URL(route.request().url());
       if (url.hostname !== 'overlay.test') return route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"><circle cx="14" cy="14" r="12" fill="white"/></svg>' });
       if (url.pathname.startsWith('/api/')) return route.fulfill({ json: { initialized: false } });
+      // Snapshot layout tests supply their own HTML; polling must not replace it.
+      if (url.pathname === '/core/output.js') return route.fulfill({ contentType: 'text/javascript', body: '' });
+      // Match the engine's base layout here; OBS preset geometry has its own suite.
+      if (url.pathname === '/core/obs-layouts.css') return route.fulfill({ contentType: 'text/css', body: '' });
       const relative = url.pathname.slice(1) || 'index.html';
       const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
       try { await route.fulfill({ body: await fs.readFile(path.join(root, relative)), contentType: types[path.extname(relative)] }); }
@@ -62,6 +66,66 @@ const root = path.resolve(__dirname, '../..');
           assert.equal(await page.locator(ids[index]).evaluate(el => el.scrollWidth <= el.clientWidth), true, `${sport} ${state} name fits`);
         }
         assert.equal(await page.locator('#sports-overlay').evaluate(el => el.scrollWidth <= el.clientWidth), true, `${sport} ${state} fits banner`);
+      }
+      if (sport === 'basketball') {
+        for (const width of [460, 400]) for (const plunderSide of ['away', 'home']) {
+          await page.evaluate(({ width, plunderSide }) => {
+            window.testEvent.state = 'final';
+            window.testEvent.detailedState = 'Final';
+            window.testEvent.details.preseason = true;
+            for (const side of ['away', 'home']) {
+              const plunder = side === plunderSide;
+              Object.assign(window.testEvent.teams[side], {
+                id: plunder ? '25' : '1', name: plunder ? 'Oklahoma City Thunder' : 'Atlanta Hawks',
+                abbreviation: plunder ? 'OKC' : 'ATL', score: plunder ? 110 : 113,
+                logoUrl: `https://a.espncdn.com/i/teamlogos/nba/500/${plunder ? 'okc' : 'atl'}.png`,
+              });
+            }
+            document.querySelector('#sports-overlay').style.width = `${width}px`;
+            window.testLayout.render(window.testEvent);
+          }, { width, plunderSide });
+          const label = page.locator(`#basketball-${plunderSide}-abbr`);
+          assert.equal(await label.innerText(), 'Oklahoma City Plunder', `${width}px ${plunderSide}: full final name`);
+          const fit = await label.evaluate(el => ({ width: el.clientWidth, content: el.scrollWidth, font: getComputedStyle(el).fontSize }));
+          assert.ok(fit.content <= fit.width, `${width}px ${plunderSide}: Plunder fits ${JSON.stringify(fit)}`);
+          const html = await page.locator('#sports-overlay').evaluate(el => el.outerHTML);
+          const output = await context.newPage();
+          await output.goto('http://overlay.test/display.html');
+          await output.locator('#sports-overlay').evaluate((el, html) => { el.outerHTML = html; }, html);
+          const outputLabel = output.locator(`#basketball-${plunderSide}-abbr`);
+          assert.equal(await outputLabel.innerText(), 'Oklahoma City Plunder');
+          assert.equal(await outputLabel.evaluate(el => el.scrollWidth <= el.clientWidth), true, 'Plunder fits output snapshot');
+          await output.close();
+          await page.screenshot({ path: `/tmp/sportsover-plunder-${width}-${plunderSide}.png` });
+          await page.evaluate(() => {
+            window.testEvent.state = 'live';
+            window.testLayout.render(window.testEvent);
+          });
+          assert.equal(await label.innerText(), 'OKC', 'live game still uses abbreviation');
+          assert.equal(await label.evaluate(el => el.style.fontSize + el.style.letterSpacing), '', 'live game resets font');
+        }
+        // Give another real team a slot that requires the new 75% final sizing.
+        const generalFit = await page.evaluate(() => {
+          document.querySelector('#sports-overlay').style.removeProperty('width');
+          window.testEvent.state = 'final';
+          Object.assign(window.testEvent.teams.away, { id: '13', name: 'Los Angeles Lakers', abbreviation: 'LAL', logoUrl: '' });
+          window.testLayout.render(window.testEvent);
+          const label = document.querySelector('#basketball-away-abbr');
+          label.style.removeProperty('font-size');
+          label.style.letterSpacing = '0';
+          label.textContent = 'Los Angeles Lakers';
+          const size = parseFloat(getComputedStyle(label).fontSize);
+          const range = document.createRange();
+          range.selectNodeContents(label);
+          label.style.width = `${Math.ceil(range.getBoundingClientRect().width * 0.77)}px`;
+          window.testLayout.render(window.testEvent);
+          const result = { text: label.textContent, fits: label.scrollWidth <= label.clientWidth, scale: parseFloat(getComputedStyle(label).fontSize) / size };
+          label.style.removeProperty('width');
+          return result;
+        });
+        assert.equal(generalFit.text, 'Los Angeles Lakers');
+        assert.equal(generalFit.fits, true);
+        assert.ok(generalFit.scale < 0.8 && generalFit.scale >= 0.7, 'other final names can shrink below 80%');
       }
       for (const state of ['pregame', 'final', ...(hasHalftime || sport === 'hockey' ? ['interrupted'] : [])]) {
         if (sport === 'football') {

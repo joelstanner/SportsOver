@@ -49,6 +49,8 @@
     for (const [side, label] of [["away", awayLabel], ["home", homeLabel]]) {
       const team = event.teams[side];
       const name = displayName(team, event.sport);
+      const keepFullName = event.state === "final" && event.sport === "basketball"
+        && /^Oklahoma City Plunder$/i.test(name);
       // Clear the previous matchup's adjustments before measuring this name.
       label.style.removeProperty("font-size");
       label.style.removeProperty("letter-spacing");
@@ -58,13 +60,25 @@
         const fontSize = parseFloat(global.getComputedStyle(label).fontSize);
         // Full names need less tracking than short abbreviations. Give longer
         // names a modest size adjustment before falling back to initials.
+        // Final scores can use smaller names because the live details are gone.
         label.style.letterSpacing = "0";
-        for (const scale of [0.95, 0.9, 0.85, 0.8]) {
+        const scales = event.state === "final" ? [0.95, 0.9, 0.85, 0.8, 0.75, 0.7] : [0.95, 0.9, 0.85, 0.8];
+        for (const scale of scales) {
           if (label.scrollWidth <= label.clientWidth) break;
           label.style.fontSize = `${fontSize * scale}px`;
         }
+        if (keepFullName && label.scrollWidth > label.clientWidth) {
+          // Fit the full Plunder name even beside three-digit final scores.
+          // Leave a pixel of headroom for rounded browser width measurements.
+          let currentSize = parseFloat(global.getComputedStyle(label).fontSize);
+          while (label.scrollWidth > label.clientWidth && currentSize > 1) {
+            currentSize = Math.max(1, Math.min(currentSize - 0.25,
+              currentSize * Math.max(1, label.clientWidth - 1) / label.scrollWidth));
+            label.style.fontSize = `${currentSize}px`;
+          }
+        }
       }
-      if (expand && (label.clientWidth === 0 || label.scrollWidth > label.clientWidth)) {
+      if (expand && !keepFullName && (label.clientWidth === 0 || label.scrollWidth > label.clientWidth)) {
         label.textContent = team.abbreviation;
         label.style.removeProperty("font-size");
         label.style.removeProperty("letter-spacing");
