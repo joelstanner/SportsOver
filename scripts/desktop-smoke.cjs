@@ -617,7 +617,7 @@ const quiet = testMode() === 'quiet';
         // Renderer keyboard events do not reach the native popup.
         if (process.platform === 'win32') {
           await new Promise((resolve, reject) => {
-            require('node:child_process').execFile('powershell.exe', [
+            process.getBuiltinModule('node:child_process').execFile('powershell.exe', [
               '-NoProfile', '-NonInteractive', '-Command',
               "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('{ESC}')",
             ], { timeout: 10000, windowsHide: true }, error => error ? reject(error) : resolve());
