@@ -18,6 +18,9 @@ const quiet = testMode() === 'quiet';
   const errors = [];
   async function launch(background = false) {
     application = await electron.launch({ ...(process.env.SPORTSOVER_TEST_EXECUTABLE ? { executablePath: process.env.SPORTSOVER_TEST_EXECUTABLE, args: background ? ['--background'] : [] } : { args: [path.resolve(__dirname, '..'), ...(background ? ['--background'] : [])] }), env: { ...process.env, SPORTSOVER_TEST_DATA: directory } });
+    application.process().once('exit', (code, signal) => {
+      console.log(`Desktop test process exited: code=${code}, signal=${signal}`);
+    });
     application.on('window', page => page.on('pageerror', error => errors.push(error.message)));
     await application.evaluate(async ({ session }, fixture) => {
       globalThis.sportsTestRequests = [];
@@ -595,6 +598,7 @@ const quiet = testMode() === 'quiet';
         if (template[0]?.label === 'Settings…' && template.some(item => item.id === 'hide-banner')) {
           const popup = menu.popup.bind(menu);
           menu.popup = options => {
+            menu.testWindow = options.window;
             menu.testClosed = new Promise(resolve => popup({ ...options, callback: () => {
               options?.callback?.(); resolve();
             } }));
@@ -608,7 +612,9 @@ const quiet = testMode() === 'quiet';
       globalThis.closeBannerTestMenu = async () => {
         const menu = globalThis.bannerTestMenu;
         // Wait for native dismissal before an action rebuilds the app menus.
-        menu.closePopup();
+        // Dismiss the same window's runner that popup() opened. The close-all
+        // path uses different native runner ownership on Windows.
+        menu.closePopup(menu.testWindow);
         let timeout;
         try {
           await Promise.race([menu.testClosed, new Promise((_, reject) => {
