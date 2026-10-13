@@ -53,7 +53,32 @@ function updateBannerShape() {
   const { width } = banner.getBounds();
   banner.setShape(normalBounds ? [] : [{ x: 0, y: 0, width, height: Math.round(width * 100 / 472) }]);
 }
-function compactRotation() { return !!banner && !normalBounds && banner.getBounds().width < 236 && store?.value.desktop.skipIndividualWhenSmall !== false; }
+function compactRotation() { return !!banner && !banner.isDestroyed() && !normalBounds && banner.getBounds().width < 236 && store?.value.desktop.skipIndividualWhenSmall !== false; }
+function publishEngineFrame(event, frame) {
+  // Renderers can deliver queued frames after Command-Q starts closing windows.
+  if (quitting || event.sender.isDestroyed()) return;
+  if (event.senderFrame !== event.sender.mainFrame) return;
+  if (typeof frame?.html !== 'string' || frame.html.length > 1000000 || !Array.isArray(frame.metadata?.availableEntries)) return;
+  if (event.sender !== inspectionWindow?.webContents && event.sender !== engineWindow.webContents) return;
+  const bannerAvailable = banner && !banner.isDestroyed();
+  const compact = compactRotation();
+  if (bannerAvailable && frame.metadata.compactRotation !== compact) {
+    event.sender.send('engine:command', { type: 'compact-rotation', value: compact });
+    return;
+  }
+  if (event.sender === inspectionWindow?.webContents) {
+    if (frame.metadata.inspection?.revision !== inspectionSettings?.revision) return;
+    inspectionEngine.publish(frame);
+    if (bannerAvailable) banner.webContents.send('desktop:frame', outputSource.output());
+    return;
+  }
+  if (event.sender !== engineWindow.webContents) return;
+  const sequence = engineState.frame.sequence;
+  engineState.publish(frame);
+  if (!inspectionSettings && engineState.frame.sequence !== sequence && banner && !banner.isDestroyed()) {
+    banner.webContents.send('desktop:frame', outputSource.output());
+  }
+}
 let lastCompactRotation;
 function syncCompactRotation() {
   const value = compactRotation();
@@ -383,27 +408,7 @@ else {
     engineState.on('override', value => {
       if (engineWindow && !engineWindow.isDestroyed() && !engineWindow.webContents.isCrashed()) engineWindow.webContents.send('engine:command', { type: 'override', value });
     });
-    ipcMain.on('engine:publish', (event, frame) => {
-      if (event.senderFrame !== event.sender.mainFrame) return;
-      if (typeof frame?.html !== 'string' || frame.html.length > 1000000 || !Array.isArray(frame.metadata?.availableEntries)) return;
-      if (event.sender !== inspectionWindow?.webContents && event.sender !== engineWindow.webContents) return;
-      if (banner && frame.metadata.compactRotation !== compactRotation()) {
-        event.sender.send('engine:command', { type: 'compact-rotation', value: compactRotation() });
-        return;
-      }
-      if (event.sender === inspectionWindow?.webContents) {
-        if (frame.metadata.inspection?.revision !== inspectionSettings?.revision) return;
-        inspectionEngine.publish(frame);
-        banner.webContents.send('desktop:frame', outputSource.output());
-        return;
-      }
-      if (event.sender !== engineWindow.webContents) return;
-      const sequence = engineState.frame.sequence;
-      engineState.publish(frame);
-      if (!inspectionSettings && engineState.frame.sequence !== sequence && banner && !banner.isDestroyed()) {
-        banner.webContents.send('desktop:frame', outputSource.output());
-      }
-    });
+    ipcMain.on('engine:publish', publishEngineFrame);
     ipcMain.handle('engine:state', event => { authorize(event); return engineState.state(); });
     const bounds = fitBounds(store.value.desktop.bounds, screen.getAllDisplays());
     // A macOS panel can float above fullscreen apps without hiding the whole app
@@ -614,5 +619,5 @@ function authorize(event) {
 }
 app.on('activate', () => { if (banner && !backgroundStartup) openSettings(); });
 app.on('window-all-closed', () => { /* Tray owns the application lifetime. */ });
-app.on('before-quit', () => { quitting = true; inspectionWindow?.destroy(); inspectionEngine?.stop(); arrowResize.cancel(); bannerGesture({ phase: 'cancel' }); clearTimeout(saveTimer); if (banner && store) persist({ bounds: normalBounds || banner.getBounds() }); });
+app.on('before-quit', () => { quitting = true; inspectionWindow?.destroy(); inspectionEngine?.stop(); arrowResize.cancel(); bannerGesture({ phase: 'cancel' }); clearTimeout(saveTimer); if (banner && !banner.isDestroyed() && store) persist({ bounds: normalBounds || banner.getBounds() }); });
 app.on('will-quit', () => { globalShortcut.unregisterAll(); tray?.destroy(); engineState.stop(); outputServer?.close(); });

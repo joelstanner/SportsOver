@@ -3,6 +3,16 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.40.1 — 2026-10-12
+
+### Fixed
+
+- Prevent an intermittent JavaScript error when quitting with ⌘Q while the live
+  or demo engine still has display updates queued.
+- Keep the full rotation visible in **On banner** during Live mode, with inactive
+  games dimmed and marked “Outside Live mode.” Restore saved ordering when Live
+  mode is turned off.
+
 ## 0.40.0 — 2026-10-10
 
 ### Added
