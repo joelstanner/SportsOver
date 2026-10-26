@@ -173,10 +173,66 @@
       const location = [text(venue.address?.city), text(venue.address?.state)].filter(Boolean).join(", ");
       gameDetails.push(`Venue: ${text(venue.fullName)}${location ? ` · ${location}` : ""}`);
     }
-    const channels = array(competition.broadcasts).flatMap(broadcast => array(broadcast?.names).concat(broadcast?.media?.shortName || []))
-      .concat(array(competition.geoBroadcasts).map(broadcast => broadcast?.media?.shortName)).map(text).filter(Boolean);
-    if (channels.length) gameDetails.push(`Broadcast: ${[...new Set(channels)].join(", ")}`);
     return { playerStats, gameDetails };
+  }
+
+  // Exact service identities only. Never treat a paid sibling (FS1, CBS Sports
+  // Network, Peacock, FOX ONE) as its over-the-air parent or infer simulcasts.
+  const FREE_BROADCASTS = new Map([
+    ...["ABC", "CBS", "NBC", "FOX", "ION", "Telemundo", "Univision", "UniMas"]
+      .map(name => [name.toLowerCase(), { name, access: "Antenna" }]),
+    ["cw", { name: "The CW", access: "Antenna" }],
+    ["the cw", { name: "The CW", access: "Antenna" }],
+    ...["Tubi", "Pluto TV", "CBS Sports Golazo Network"]
+      .map(name => [name.toLowerCase(), { name, access: "Free stream" }]),
+  ]);
+
+  function freeBroadcasts(payload = {}, sport = "") {
+    const array = value => Array.isArray(value) ? value : [];
+    const competition = payload.header?.competitions?.[0] ?? payload.competitions?.[0] ?? payload;
+    const geo = array(competition.geoBroadcasts);
+    // Geographic entries supersede legacy names, which can duplicate broadcasts
+    // from other countries without carrying the region needed to filter them.
+    const entries = geo.length ? geo : array(competition.broadcasts);
+    const result = new Map();
+    for (const entry of entries) {
+      if (!entry || typeof entry !== "object") continue;
+      if (entry.postGameShow === true) continue;
+      const region = String(entry.region || "").trim().toLowerCase();
+      if (region && !["us", "usa"].includes(region)) continue;
+      // MLB's TV schedule omits country. Its exact US network identities can be
+      // used; ESPN must explicitly identify the US to avoid ambiguous names.
+      if (!region && sport !== "baseball") continue;
+      const type = String(entry.type?.shortName || entry.type || "").toLowerCase();
+      if (!["tv", "streaming", "web", "internet"].includes(type)) continue;
+      const names = array(entry.names).concat(entry.media?.shortName || entry.name || []);
+      for (const value of names) {
+        if (typeof value !== "string") continue;
+        for (const part of value.split(/\s*[/,]\s*/)) {
+          const service = FREE_BROADCASTS.get(part.trim().replace(/\s+/g, " ").toLowerCase());
+          if (!service) continue;
+          if (service.access === "Antenna" && type && type !== "tv") continue;
+          if (service.access === "Free stream" && entry.mvpdAuthRequired === true) continue;
+          result.set(service.name, { ...service });
+        }
+      }
+    }
+    return [...result.values()];
+  }
+
+  function renderBroadcast(mount, event) {
+    let label = mount.querySelector(":scope > .sports-broadcast");
+    const broadcasts = ["pregame", "live", "interrupted"].includes(event?.state)
+      ? event.details?.freeBroadcasts || [] : [];
+    mount.classList.toggle("has-free-broadcast", broadcasts.length > 0);
+    if (!broadcasts.length) { label?.remove(); return; }
+    if (!label) {
+      label = mount.ownerDocument.createElement("div");
+      label.className = "sports-broadcast";
+      mount.append(label);
+    }
+    label.textContent = broadcasts.map(item => `${item.name} · ${item.access}`).join(" / ");
+    label.title = `${label.textContent}. US coverage; antenna reception and game availability depend on your local market. Free streams may require a free account.`;
   }
 
   function selectedTimeZone() {
@@ -242,5 +298,5 @@
   }
 
   global.SportsOverlay = global.SportsOverlay || {};
-  global.SportsOverlay.model = Object.freeze({ EVENT_STATES, createEvent, validateEvent, espnTeamRank, gameUrl, espnGameUrl, espnPreseason, espnOdds, espnDisplayInfo, formatPregameCountdown, formatPregameStart, formatGameTime, formatFinalStatus });
+  global.SportsOverlay.model = Object.freeze({ EVENT_STATES, createEvent, validateEvent, espnTeamRank, gameUrl, espnGameUrl, espnPreseason, espnOdds, espnDisplayInfo, freeBroadcasts, renderBroadcast, formatPregameCountdown, formatPregameStart, formatGameTime, formatFinalStatus });
 })(typeof window === "undefined" ? globalThis : window);

@@ -1193,6 +1193,10 @@
         workingConfig.timeZone === "local" ? undefined : workingConfig.timeZone);
     }
     const candidate = entry.candidate;
+    global.SportsOverlay.model.renderBroadcast(card.querySelector(".game-copy"), {
+      state: candidate.state,
+      details: { freeBroadcasts: global.SportsOverlay.model.freeBroadcasts(candidate.raw || {}, candidate.sport) },
+    });
     const odds = global.SportsOverlay.model.espnOdds(candidate.raw || {});
     const teams = gameTeams(candidate);
     if (teams.length === 2) {

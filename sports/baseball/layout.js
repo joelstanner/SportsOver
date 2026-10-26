@@ -149,6 +149,7 @@
     }
 
     function render(event) {
+      global.SportsOverlay.model.renderBroadcast(mount, event);
       const { away, home } = event.teams;
       showElement(els.gameView, true);
       showElement(els.noGame, false);
@@ -260,6 +261,7 @@
 
     function renderNoEvent(message = "No selected game today", visible = true) {
       delete els.bug.dataset.state;
+      global.SportsOverlay.model.renderBroadcast(mount, null);
       global.SportsOverlay.countdown?.clear(els.status);
       global.SportsOverlay.teamNames.clearLinks(els.awayAbbr, els.homeAbbr, els.awayMark, els.homeMark);
       delete els.bug.dataset.preseason;

@@ -42,6 +42,7 @@ function layoutFixture() {
     if (!elements.has(id)) elements.set(id, { hidden: false, textContent: '', isConnected: true, dataset: {},
       closest: selector => { assert.equal(selector, '#sports-overlay'); return element(selector); },
       clientWidth: 438, scrollWidth: 300, style: { setProperty() {}, removeProperty() {} },
+      querySelector: () => null,
       classList: { add() {}, remove() {}, toggle() {} }, setAttribute() {}, removeAttribute() {} });
     return elements.get(id);
   }

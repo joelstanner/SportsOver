@@ -1,0 +1,52 @@
+.sports-broadcast {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #b7e7d0;
+  font: 600 10px/12px system-ui, sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+#sports-overlay > .sports-broadcast {
+  display: block;
+  order: 99;
+  flex: 0 0 12px;
+  padding: 0 8px;
+  text-align: center;
+  background: rgba(3, 9, 20, 0.35);
+}
+.game-copy > .sports-broadcast { order: 1; font-size: 11px; line-height: 15px; }
+/* Reserve twelve pixels inside the fixed-height native/OBS frame. */
+#sports-overlay.has-free-broadcast > .game-view { min-height: 48px; }
+#sports-overlay.has-free-broadcast > :is(.football-main, .basketball-main, .hockey-main, .soccer-main) { min-height: 34px; }
+#sports-overlay.has-free-broadcast > :is(.football-last-play, .basketball-last-play, .soccer-last-event) { padding-top: 0; padding-bottom: 0; }
+#sports-overlay.has-free-broadcast > .sports-odds { padding-top: 0; padding-bottom: 0; line-height: 12px; }
+#sports-overlay.has-free-broadcast > .football-main { min-height: 42px; }
+#sports-overlay.has-free-broadcast[data-state="pregame"] > .football-main { min-height: 34px; }
+#sports-overlay.has-free-broadcast .football-live-detail > div { padding-top: 0; padding-bottom: 0; }
+#sports-overlay.has-free-broadcast > :is(.football-status, .basketball-status, .hockey-status, .soccer-status) { min-height: 18px; line-height: 16px; }
+/* Compact score/logo layouts keep their geometry. Use their lower margin for
+   the label instead of allowing the generic compact rule to hide it. */
+@media (width < 236px) {
+  .desktop-banner #sports-overlay > .sports-broadcast {
+    display: block !important;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 270px;
+    border-radius: 3px;
+  }
+}
+@media (max-width: 400px) {
+  body:not(.desktop-banner) #sports-overlay > .sports-broadcast {
+    display: block !important;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 270px;
+    border-radius: 3px;
+  }
+}

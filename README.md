@@ -61,7 +61,7 @@ choice, or missing alternate data leave available odds visible.
 
 When betting info is off or odds are unavailable, custom text appears by itself,
 player stats change every 10 seconds without immediately repeating, and game
-details alternate available venue and broadcast information every 10 seconds.
+details show available venue information.
 With betting info off, missing stats or details fall back to **Betting Info:
 Hidden**; blank and empty custom text remove the row.
 
@@ -74,6 +74,27 @@ and preserves its animation through refreshes. Hover or focus pauses it; reduced
 motion disables the animation and allows manual scrolling. All stats and game
 details come from existing ESPN game responses, with no extra provider requests.
 Turn **Show alternate content** off to return to the regular odds display.
+
+Free U.S. game broadcasts appear in a separate, persistent label on the banner
+and both **On banner** and **Available games** cards, independently of betting
+and alternate-content settings. Labels distinguish **Antenna** from **Free stream**
+and appear for upcoming, live, and interrupted games; finished games and unknown
+coverage have no label. Hover for the local-availability note. Antenna reception
+and the specific game carried vary by market; this is not a ZIP-code TV guide.
+
+Recognized antenna networks are ABC, CBS, NBC, FOX, The CW, ION, Telemundo,
+Univision, and UniMas. Recognized free streams are Tubi, Pluto TV, and CBS Sports
+Golazo Network, only when explicitly listed for that game. Free accounts may be
+required. Paid services, trials, generic YouTube listings, radio, foreign entries,
+and unrecognized names are omitted. Mixed listings retain only their qualifying
+component (for example, **FOX / FOX ONE** becomes **FOX · Antenna**).
+
+ESPN team sports use country-tagged U.S. broadcast entries from their existing
+scoreboard and summary responses. MLB uses TV entries from its existing schedules,
+including broadcast metadata in the team schedule request. No additional requests
+or refresh timers are added; existing cache intervals, retries, and cooldowns are
+unchanged. The current F1, PDGA, and chess integrations do not supply qualifying
+TV coverage. Unfiltered broadcast names no longer appear in rotating game details.
 
 The **game lists** (**On banner** and **Available games**) omit player stats,
 including from Scrolling mix. Selecting Random player stats leaves these lists

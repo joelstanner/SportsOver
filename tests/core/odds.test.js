@@ -146,17 +146,19 @@ test('embedded player boxscores, game leaders, venue and broadcast info normaliz
       {name:'assists',displayName:'Assists',leaders:[{athlete:{id:'3',displayName:'Casey Example'},mainStat:{label:'AST',value:'4'}}]}]}],
   });
   assert.deepEqual(info.playerStats.map(stat=>stat.text),['Alex Example (AWY) · PTS: 12','Alex Example (AWY) · REB: 0','Casey Example (AWY) · AST: 4']);
-  assert.deepEqual(info.gameDetails,['Venue: Example Arena · Example City, CA','Broadcast: ABC, ESPN']);
+  assert.deepEqual(info.gameDetails,['Venue: Example Arena · Example City, CA']);
   assert.deepEqual(global.SportsOverlay.model.espnDisplayInfo({leaders:[null,{}],boxscore:{players:[null]}}),{playerStats:[],gameDetails:[]});
 });
 
 test('all ESPN providers preserve display info and scoreboard player leaders', () => {
   const payload = {id:'display-info',header:{competitions:[{...competition,status:{type:{state:'pre'}},venue:{fullName:'Example Arena'},
+    broadcasts:[{media:{shortName:'NBC'},region:'us',type:{shortName:'TV'}}],
     competitors:[{homeAway:'away',team:{id:'1',abbreviation:'AWY'},leaders:[{name:'goals',displayName:'Goals',leaders:[{athlete:{id:'1',displayName:'Example Player'},displayValue:'7'}]}]},
       {homeAway:'home',team:{id:'2',abbreviation:'HME'}}]}]}};
   for (const name of ['espn-nfl','espn-ncaaf','espn-nba','espn-ncaam','espn-nhl','espn-mls']) {
     const info = global.SportsOverlay.registry.getProvider(name).normalizeEvent(payload).details;
     assert.deepEqual(info.gameDetails,['Venue: Example Arena']);
+    assert.deepEqual(info.freeBroadcasts,[{name:'NBC',access:'Antenna'}]);
     assert.equal(info.playerStats[0].text,'Example Player (AWY) · Goals: 7');
   }
 });

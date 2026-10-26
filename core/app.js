@@ -547,7 +547,7 @@ async function renderGame(entry, revision, { animate = false, fast = false } = {
     const discovered = cachedDiscoveries?.flatMap(result => result.availableEntries)
       .find(candidate => entryKey(candidate) === entryKey(entry));
     if (entry.context.providerModule.withSchedule) {
-      event = entry.context.providerModule.withSchedule(event, discovered?.candidate.raw);
+      event = entry.context.providerModule.withSchedule(event, discovered?.candidate.raw ?? entry.candidate.raw);
     }
     if (event.competitionType !== "individual" && entry.context.sport !== "baseball") {
       event.details.odds ??= window.SportsOverlay.model.espnOdds(discovered?.candidate.raw ?? entry.candidate.raw);

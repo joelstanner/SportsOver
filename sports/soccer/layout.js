@@ -44,6 +44,7 @@
     };
 
     function render(event) {
+      global.SportsOverlay.model.renderBroadcast(mount, event);
       const { away, home } = event.teams;
       els.bug.classList.remove("is-loading", "is-hidden");
       els.bug.dataset.sport = event.sport;
@@ -86,6 +87,7 @@
 
     function renderNoEvent(message = "No selected soccer match", visible = true) {
       delete els.bug.dataset.state;
+      global.SportsOverlay.model.renderBroadcast(mount, null);
       global.SportsOverlay.countdown?.clear(els.statusText);
       global.SportsOverlay.teamNames.clearLinks(els.awayAbbr, els.homeAbbr, els.awayMark, els.homeMark);
       global.SportsOverlay.odds?.clear(els.bug);

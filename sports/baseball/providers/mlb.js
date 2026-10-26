@@ -34,7 +34,7 @@
     }
 
     async function findGames(date = new Date()) {
-      const schedule = await fetchJson(`${scheduleUrl}&startDate=${formatLocalDate(addDays(date, -1))}&endDate=${formatLocalDate(addDays(date, 7))}&hydrate=seriesStatus`);
+      const schedule = await fetchJson(`${scheduleUrl}&startDate=${formatLocalDate(addDays(date, -1))}&endDate=${formatLocalDate(addDays(date, 7))}&hydrate=broadcasts,seriesStatus`);
       return schedule.dates?.flatMap(entry => entry.games ?? []) ?? [];
     }
 
@@ -52,8 +52,11 @@
   }
 
   function withSchedule(event, game) {
+    if (!game || String(game.gamePk) !== event.id) return event;
+    if (Array.isArray(game.broadcasts)) event = { ...event, details: { ...event.details,
+      freeBroadcasts: global.SportsOverlay.model.freeBroadcasts(game, "baseball") } };
     const rounds = { F: "WILD CARD", D: "DIVISION SERIES", L: "CHAMPIONSHIP", W: "WORLD SERIES" };
-    if (!game || String(game.gamePk) !== event.id || !rounds[game.gameType]) return event;
+    if (!rounds[game.gameType]) return event;
     const status = game.seriesStatus || {};
     const number = game.seriesGameNumber ?? status.gameNumber;
     const length = status.totalGames ?? game.gamesInSeries;

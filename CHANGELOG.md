@@ -3,6 +3,22 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.41.0 — 2026-10-25
+
+### Added
+
+- Show separate free U.S. broadcast labels on team-sport banners and both **On
+  banner** and **Available games** cards, independently of betting settings.
+  Distinguish antenna networks from free streams; hide paid, unknown, and
+  finished-game coverage. Local game availability still varies by market.
+- Reuse existing ESPN and MLB responses for broadcast information, with no
+  additional requests or changes to refresh timing.
+
+### Changed
+
+- Replace unfiltered broadcast text in rotating game details with the dedicated
+  free-broadcast label, keeping venue information in game details.
+
 ## 0.40.2 — 2026-10-12
 
 ### Fixed
