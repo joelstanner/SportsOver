@@ -3,6 +3,13 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.41.1 — 2026-10-27
+
+### Fixed
+
+- Remove the black background outside the rounded application icon, making
+  the exterior transparent while retaining the navy scoreboard artwork.
+
 ## 0.41.0 — 2026-10-25
 
 ### Added
