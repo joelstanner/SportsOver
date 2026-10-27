@@ -3,6 +3,13 @@
 User-visible changes are listed newest first. Dates record version bumps, not
 publication to an app store or a GitHub release.
 
+## 0.41.2 — 2026-10-27
+
+### Fixed
+
+- Resize the application icon within its transparent canvas to match the
+  spacing of standard macOS icons, preserving the existing scoreboard artwork.
+
 ## 0.41.1 — 2026-10-27
 
 ### Fixed
