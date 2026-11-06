@@ -1,6 +1,15 @@
 # Desktop verification
 
-Implementation tested on macOS (Darwin 24.6.0, Apple Silicon), Electron 44.5.0, Node 22.16.0. Windows and Linux were not run.
+The initial implementation was tested on macOS (Darwin 24.6.0, Apple Silicon),
+Electron 44.5.0, and Node 22.16.0; Windows and Linux were not run in that initial
+check. This is historical coverage, not the current release verification status.
+
+As of 2026-11-05, the [0.41.2 release record](https://github.com/joelstanner/SportsOver/releases/tag/v0.41.2)
+documents successful macOS arm64/x64 and Windows x64 packaging and automated smoke
+checks for commit `7d8854d1443a3b1afb24aa277b2fe8aadd28a494`. See the Windows status
+below for exact run links and the manual checks that remain separate. No new
+platform tests were run for this documentation update; Linux execution is not
+established by these release records.
 
 ## Automated checks
 
@@ -220,10 +229,63 @@ checks do not prove Gatekeeper acceptance or Apple notarization.
 
 ## Windows packaging verification status
 
-Windows packaging and a Windows Actions build/install/smoke workflow have been
-added. No actual Windows build or execution was performed in the Linux editing
-environment. The workflow must pass on Windows before claiming automated native
-execution. Its mocked HTTP browser-source checks remain distinct from running
-OBS itself. All manual checks above remain required, especially real pointer and
+The original workflow implementation was prepared in a Linux editing environment
+without Windows execution. Later release validation supersedes that limitation:
+the [0.41.2 release record](https://github.com/joelstanner/SportsOver/releases/tag/v0.41.2)
+documents [Windows x64 CI](https://github.com/joelstanner/SportsOver/actions/runs/40595017673)
+covering unit tests, network checks, packaging, checksum verification, and
+unpacked/installed application smoke tests. The corresponding
+[macOS CI run](https://github.com/joelstanner/SportsOver/actions/runs/40595017657)
+covers Apple Silicon and Intel packaging and packaged/installed smoke tests.
+Both runs are recorded against release commit
+`7d8854d1443a3b1afb24aa277b2fe8aadd28a494`.
+
+These automated checks use fixtures. They do not establish browser-download
+Gatekeeper/SmartScreen acceptance, physical multi-monitor behavior, or real OBS
+integration. The manual checks above remain separate, including real pointer and
 drag/lock interactions, always-on-top over ordinary/maximized apps, mixed-DPI
-monitors, tray overflow, recovery shortcuts, real feeds and OBS reconnection.
+monitors, tray overflow, recovery shortcuts, real feeds, and OBS reconnection.
+
+## Historical troubleshooting findings — reviewed 2026-11-05
+
+Local release logs contain the following useful failure signatures. They describe
+past runs; they are not evidence that the current release is failing.
+
+- **Windows symlink permissions:** local 0.37.1/0.37.2 and later unit-test logs
+  report `EPERM` when `tests/desktop/build-backups.test.cjs` creates a symbolic
+  link. A failure at that setup operation does not establish a backup-cleanup
+  logic defect. Check whether the test environment permits symbolic-link creation
+  before diagnosing the assertions. Keep failed runs reported as failures.
+- **Native window geometry and timing:** a local 0.40.0 resize smoke check saw
+  `945 !== 944`, and an Intel macOS CI run failed the "native resize has
+  intermediate frames" assertion. Capture display scaling, platform, and frame
+  observations when investigating; do not relax geometry assertions or claim a
+  product fix from these historical logs alone.
+- **Asynchronous control labels:** an Intel macOS smoke run observed `Unlock`
+  while expecting `Lock`. The current desktop smoke script explicitly waits for
+  the expected lock label. Preserve state-based waits when editing the test and
+  retain the original assertion output when a run fails.
+
+## Local evidence and retention
+
+`/logs/` and `reports/energy/` are local, Git-ignored evidence directories. Ignoring
+them does not delete their contents or back them up. Keep existing logs, screenshots,
+downloaded installers, checksums, and verification records locally; publish release
+downloads through GitHub Releases rather than committing them to source history.
+
+Release-note copies for 0.37.1, 0.37.2, 0.39.1, 0.40.0, and 0.41.0 were checked
+against their published GitHub Releases during this review. Their user-facing
+changes are also covered in `CHANGELOG.md`. Put new lasting findings in tracked
+documentation or `TODO.md` before treating local evidence as disposable.
+
+Retain the four `sportsover-debug-*.log` files from 2026-10-08 and 2026-10-26 for
+the pending outbound-request audit in `TODO.md`. These are historical raw traffic
+observations from different versions and run durations, not controlled before/after
+measurements. Any request-reduction claim needs comparable observation windows
+and provider/endpoint grouping. Store a reviewed analysis in a tracked location
+outside these ignored directories.
+
+The local `reports/energy/broadcasts/verify-release.ps1` is a one-off checksum
+checker hardcoded to 0.41.0. Keep it as evidence; parameterize and review it before
+promoting it into tracked `scripts/`. The release verification requirements remain
+in [PACKAGING.md](PACKAGING.md).

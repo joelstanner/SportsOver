@@ -28,3 +28,6 @@ dist/
 
 # Local before/after energy reports and screenshots.
 reports/energy/
+
+# Local release downloads, verification output, screenshots, and runtime logs.
+/logs/
